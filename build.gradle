@@ -1,0 +1,33 @@
+buildscript {
+	repositories {
+		mavenCentral()
+	}
+
+	dependencies {
+		classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+	}
+}
+
+
+subprojects {
+	apply plugin: 'maven-publish'
+
+	group 'tigase.jaxmpp'
+	version "$jaxmpp_version"
+
+	publishing {
+		publications {
+			mavenJava(MavenPublication) {
+				from components.java
+			}
+		}
+	}
+
+	repositories {
+		mavenLocal()
+		maven {url "http://maven-repo.tigase.org/repository/release"}
+		maven {url "http://maven-repo.tigase.org/repository/snapshot"}
+		jcenter()
+		mavenCentral()
+	}
+}

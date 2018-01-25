@@ -1,0 +1,5 @@
+rootProject.name = 'jaxmpp'
+
+include 'jaxmpp-common'
+include 'jaxmpp-jvm'
+include 'jaxmpp-js'
