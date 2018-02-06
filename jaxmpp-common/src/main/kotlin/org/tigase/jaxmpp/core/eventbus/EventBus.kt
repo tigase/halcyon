@@ -1,7 +1,7 @@
 package org.tigase.jaxmpp.core.eventbus
 
-expect fun createHandlersMap(): MutableMap<String, MutableCollection<EventHandler<*>>>
-expect fun createHandlersList(): MutableCollection<EventHandler<*>>
+import org.tigase.jaxmpp.core.logger.Level
+import org.tigase.jaxmpp.core.logger.Logger
 
 open class EventBus {
 
@@ -9,10 +9,12 @@ open class EventBus {
 		const val ALL_EVENTS = "EventBus#ALL_EVENTS"
 	}
 
-	var handlersMap = createHandlersMap()
+	private val log = Logger("org.tigase.jaxmpp.core.eventbus.EventBus")
+
+	var handlersMap = HashMap<String, MutableCollection<EventHandler<*>>>()// createHandlersMap()
 
 	private fun getHandlers(eventType: String): Collection<EventHandler<*>> {
-		val result = createHandlersList()
+		val result = HashSet<EventHandler<*>>()
 
 		val a = handlersMap[ALL_EVENTS]
 		if (a != null && a.isNotEmpty()) {
@@ -35,10 +37,12 @@ open class EventBus {
 	}
 
 	protected open fun fire(event: Event, handlers: Collection<EventHandler<*>>) {
-		try {
-			handlers.forEach { eventHandler -> (eventHandler as EventHandler<Event>).onEvent(event) }
-		} catch (e: Exception) {
-			println(e)
+		handlers.forEach { eventHandler ->
+			try {
+				(eventHandler as EventHandler<Event>).onEvent(event)
+			} catch (e: Exception) {
+				if (log.isLoggable(Level.WARNING)) log.log(Level.WARNING, "Problem on handling event", e)
+			}
 		}
 	}
 
@@ -46,7 +50,7 @@ open class EventBus {
 		synchronized(this) {
 			var handlers = handlersMap[eventType]
 			if (handlers == null) {
-				handlers = createHandlersList()
+				handlers = HashSet()
 				handlersMap[eventType] = handlers
 			}
 			handlers.add(handler)

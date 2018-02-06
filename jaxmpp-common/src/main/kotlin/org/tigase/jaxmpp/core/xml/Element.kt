@@ -1,9 +1,8 @@
 package org.tigase.jaxmpp.core.xml
 
-internal expect fun createElementAttributesMap(): MutableMap<String, String>
-internal expect fun createElementChildrenList(): MutableList<Element>
+import org.tigase.jaxmpp.core.xmpp.JID
 
-data class Element(val name: String) {
+class Element(val name: String) {
 
 	companion object {
 		fun create(name: String, xmlns: String? = null, value: String? = null): Element = Element(name).also {
@@ -15,9 +14,9 @@ data class Element(val name: String) {
 	var parent: Element? = null
 		internal set
 
-	internal var _children: MutableList<Element> = createElementChildrenList()
+	internal var _children: MutableList<Element> = ArrayList()// createElementChildrenList()
 
-	internal val _attributes: MutableMap<String, String> = createElementAttributesMap()
+	internal val _attributes: MutableMap<String, String> = HashMap()// createElementAttributesMap()
 
 	val children: List<Element>
 		get() = _children

@@ -1,29 +1,28 @@
 package org.tigase.jaxmpp.core.xml.parser
 
+import org.tigase.jaxmpp.core.logger.Logger
+import org.tigase.jaxmpp.core.logger.Level
 import org.tigase.jaxmpp.core.xml.Element
 import org.tigase.jaxmpp.core.xml.ElementBuilder
-import java.lang.StringBuilder
-import java.util.*
-import java.util.logging.Level
-import java.util.logging.Logger
 
 class XMPPDomHandler(val onNextElement: (Element) -> Unit, val onStreamStarted: (Map<String, String>) -> Unit,
 					 val onStreamClosed: () -> Unit, val onParseError: (String) -> Unit) : SimpleHandler {
+
 
 	companion object {
 		private val ELEM_STREAM_STREAM = "stream:stream"
 
 	}
 
-	private val log = Logger.getLogger(XMPPDomHandler::class.java.name)
+	private val log = Logger("org.tigase.jaxmpp.core.xml.parser.XMPPDomHandler")
 
-	private val namespaces = TreeMap<String, String>()
+	private val namespaces = HashMap<String, String>()
 
 	private var parserState: Any? = null
 
 	private var elementBuilder: ElementBuilder? = null
 
-	override fun endElement(name: StringBuilder?): Boolean {
+	override fun endElement(name: String): Boolean {
 		if (log.isLoggable(Level.FINEST)) {
 			log.finest("End element name: " + name)
 		}
@@ -50,12 +49,11 @@ class XMPPDomHandler(val onNextElement: (Element) -> Unit, val onStreamStarted: 
 		return false;
 	}
 
-	override fun startElement(name: StringBuilder, attr_names: Array<StringBuilder?>?,
-							  attr_values: Array<StringBuilder>?) {
+	override fun startElement(name: String, attr_names: Array<String?>?, attr_values: Array<String?>?) {
 		if (log.isLoggable(Level.FINEST)) {
 			log.finest("Start element name: " + name)
-			log.finest("Element attributes names: " + Arrays.toString(attr_names))
-			log.finest("Element attributes values: " + Arrays.toString(attr_values))
+			log.finest("Element attributes names: " + attr_names!!.joinToString { " " })
+			log.finest("Element attributes values: " + attr_values!!.joinToString { " " })
 		}
 
 		// Look for 'xmlns:' declarations:
@@ -72,7 +70,7 @@ class XMPPDomHandler(val onNextElement: (Element) -> Unit, val onStreamStarted: 
 					// TODO should use a StringCache instead of intern() to
 					// avoid potential
 					// DOS by exhausting permgen
-					namespaces.put(attr_names[i]!!.substring("xmlns:".length, attr_names[i]!!.length).intern(),
+					namespaces.put(attr_names[i]!!.substring("xmlns:".length, attr_names[i]!!.length),
 								   attr_values!![i].toString())
 
 					if (log.isLoggable(Level.FINEST)) {
@@ -159,7 +157,7 @@ class XMPPDomHandler(val onNextElement: (Element) -> Unit, val onStreamStarted: 
 
 	override fun restoreParserState(): Any? = parserState
 
-	override fun elementCData(cdata: StringBuilder?) {
+	override fun elementCData(cdata: String) {
 		elementBuilder!!.value(cdata.toString())
 	}
 
@@ -167,13 +165,13 @@ class XMPPDomHandler(val onNextElement: (Element) -> Unit, val onStreamStarted: 
 		this.parserState = state
 	}
 
-	override fun otherXML(other: StringBuilder?) {
+	override fun otherXML(other: String) {
 		if (log.isLoggable(Level.FINEST)) {
 			log.finest("Other XML content: " + other)
 		}
 	}
 
-	override fun error(errorMessage: String?) {
+	override fun error(errorMessage: String) {
 		log.warning("XML content parse error.")
 
 		if (log.isLoggable(Level.FINE)) {

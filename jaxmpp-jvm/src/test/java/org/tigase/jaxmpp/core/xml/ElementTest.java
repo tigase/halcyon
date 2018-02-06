@@ -1,7 +1,5 @@
 package org.tigase.jaxmpp.core.xml;
 
-import kotlin.Unit;
-import kotlin.jvm.functions.Function1;
 import org.junit.Test;
 
 import static junit.framework.TestCase.*;
@@ -25,7 +23,6 @@ public class ElementTest {
 				.child("x")
 				.value("tigase:offline")
 				.xmlns("tigase");
-
 		return b.getElement();
 	}
 
@@ -54,6 +51,5 @@ public class ElementTest {
 		assertNotNull(c);
 		assertEquals("body", c.getName());
 		assertEquals("thread", c.getNextSibling().getName());
-
 	}
 }

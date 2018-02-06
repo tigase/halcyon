@@ -11,6 +11,7 @@ class StreamParserTest {
 		var r: Result? = null
 		val parser = object : StreamParser() {
 			override fun onParseError(errorMessage: String) {
+				println(errorMessage)
 				r = Result(null, true)
 			}
 
@@ -33,6 +34,13 @@ class StreamParserTest {
 	}
 
 	@Test
+	fun testParse0() {
+		val input = "<x>ok</x>"
+		var tmp = parse(input)
+		assertEquals(input, tmp.element!!.getAsString())
+	}
+
+	@Test
 	fun testParse() {
 		val input = "<message><body>body</body><html><body><p><em>Wow</em>*, I&apos;m* <span>green</span>with <strong>envy</strong>!</p></body></html></message>"
 		var tmp = parse(input)
@@ -41,6 +49,8 @@ class StreamParserTest {
 
 	@Test
 	fun testEntities() {
+
+
 		var e = parse("<message from=\"test@example.com\"><body>© §      ∉ ⇒ </body></message>")
 		assertFalse(e.error)
 		assertEquals("© §      ∉ ⇒ ", e.element!!.findChild("message", "body")!!.value)
