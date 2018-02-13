@@ -109,6 +109,17 @@ class ResponseManager {
 		res.listen(callback)
 	}
 
+	fun registerRequest(element: Element, init: ResponseManager.HandlerHelper.() -> Unit) {
+		val res = registerRequest(element)
+		res.listen(init)
+	}
+
+	fun registerRequest(element: Element, onSuccess: (Element) -> Unit, onError: (Element, ErrorCondition) -> Unit,
+						onTimeout: () -> Unit) {
+		val res = registerRequest(element)
+		res.listen(onSuccess, onError, onTimeout)
+	}
+
 	fun getHandler(response: Element): ResponseHandler? {
 		val id = response.attributes["id"] ?: return null
 		val from = response.attributes["from"]

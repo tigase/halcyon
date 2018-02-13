@@ -12,7 +12,7 @@ import kotlin.test.fail
 class ResponseManagerTest {
 
 	@Test
-	fun testSuccess() {
+	fun testSuccessHandler01() {
 		val rm = ResponseManager()
 
 		val e = stanza("iq") {
@@ -36,6 +36,62 @@ class ResponseManagerTest {
 				fail()
 			}
 		});
+
+		val resp = stanza("iq") {
+			attribute("id", "1")
+			attribute("type", "result")
+			attribute("from", "a@b.c")
+		};
+		val handler = rm.getHandler(resp)
+
+		assertNotNull(handler)
+		rm.run(handler!!, resp)
+		assertEquals(1, successCounter)
+	}
+
+	@Test
+	fun testSuccessHandler02() {
+		val rm = ResponseManager()
+
+		val e = stanza("iq") {
+			attribute("id", "1")
+			attribute("type", "get")
+			attribute("to", "a@b.c")
+		}
+
+		var successCounter = 0;
+
+		rm.registerRequest(e) {
+			onSuccess { _ -> ++successCounter }
+			onError { _, _ -> fail() }
+			onTimeout { fail() }
+		}
+
+		val resp = stanza("iq") {
+			attribute("id", "1")
+			attribute("type", "result")
+			attribute("from", "a@b.c")
+		};
+		val handler = rm.getHandler(resp)
+
+		assertNotNull(handler)
+		rm.run(handler!!, resp)
+		assertEquals(1, successCounter)
+	}
+
+	@Test
+	fun testSuccessHandler03() {
+		val rm = ResponseManager()
+
+		val e = stanza("iq") {
+			attribute("id", "1")
+			attribute("type", "get")
+			attribute("to", "a@b.c")
+		}
+
+		var successCounter = 0;
+
+		rm.registerRequest(e, onSuccess = { ++successCounter }, onError = { _, _ -> fail() }, onTimeout = { fail() })
 
 		val resp = stanza("iq") {
 			attribute("id", "1")

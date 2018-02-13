@@ -1,6 +1,6 @@
 package org.tigase.jaxmpp.core.logger
 
-enum class Level(value: Int) {
+enum class Level(val value: Int) {
 	OFF(Int.MAX_VALUE),
 	SEVERE(1000),
 	WARNING(900),

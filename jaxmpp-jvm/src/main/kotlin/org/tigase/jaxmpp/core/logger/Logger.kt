@@ -4,10 +4,6 @@ actual class Logger actual constructor(name: String) {
 
 	private val log = java.util.logging.Logger.getLogger(name)
 
-	init {
-		println("!!!!!!!!!!!!!!!!!!!!! >$name<")
-	}
-
 	private fun cnv(level: Level): java.util.logging.Level = when (level) {
 		Level.OFF -> java.util.logging.Level.OFF
 		Level.SEVERE -> java.util.logging.Level.SEVERE
