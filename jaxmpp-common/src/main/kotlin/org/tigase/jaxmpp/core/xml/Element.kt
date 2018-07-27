@@ -1,7 +1,5 @@
 package org.tigase.jaxmpp.core.xml
 
-import org.tigase.jaxmpp.core.xmpp.JID
-
 class Element(val name: String) {
 
 	companion object {
@@ -25,13 +23,6 @@ class Element(val name: String) {
 		get() = _attributes
 
 	val xmlns: String?
-//		set(value) {
-//			if (value == null) {
-//				_attributes.remove("xmlns")
-//			} else {
-//				_attributes["xmlns"] = value
-//			}
-//		}
 		get() = _attributes["xmlns"]
 
 	var value: String? = null
@@ -121,5 +112,9 @@ class Element(val name: String) {
 			builder.append('>')
 		}
 		return builder.toString()
+	}
+
+	override fun toString(): String {
+		return "XMLElement[name='$name' hash='${hashCode()}']"
 	}
 }

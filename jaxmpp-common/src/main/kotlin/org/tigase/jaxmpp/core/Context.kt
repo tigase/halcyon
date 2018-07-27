@@ -12,5 +12,4 @@ interface Context {
 	val writer: PacketWriter
 
 	val modules: ModulesManager
-
 }

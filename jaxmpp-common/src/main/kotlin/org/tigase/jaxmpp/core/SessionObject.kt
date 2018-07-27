@@ -48,8 +48,8 @@ class SessionObject {
 			val entry = this.properties.get(key)
 			return if (entry == null) {
 				null
-			} else if (scope == null || scope === entry!!.scope) {
-				entry!!.value as T?
+			} else if (scope == null || scope == entry.scope) {
+				entry.value as T?
 			} else {
 				null
 			}
@@ -94,11 +94,11 @@ class SessionObject {
 		return this
 	}
 
-	fun setProperty(key: String, value: Any): SessionObject {
+	fun setProperty(key: String, value: Any?): SessionObject {
 		return setProperty(Scope.session, key, value)
 	}
 
-	fun setUserProperty(key: String, value: Any): SessionObject {
+	fun setUserProperty(key: String, value: Any?): SessionObject {
 		return setProperty(Scope.user, key, value)
 	}
 
@@ -142,6 +142,7 @@ class SessionObject {
 		 * Name of property used to keep users JID
 		 */
 		const val USER_BARE_JID = "userBareJid"
+
 	}
 
 }

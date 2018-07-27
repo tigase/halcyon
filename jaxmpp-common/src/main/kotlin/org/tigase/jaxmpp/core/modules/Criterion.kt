@@ -25,6 +25,12 @@ class Criterion private constructor() {
 			}
 		}
 
+		fun nameAndXmlns(name: String, xmlns: String): Criteria {
+			return object : Criteria {
+				override fun match(element: Element): Boolean = name == element.name && xmlns == element.xmlns
+			}
+		}
+
 		fun xmlns(xmlns: String): Criteria {
 			return object : Criteria {
 				override fun match(element: Element): Boolean = xmlns == element.xmlns

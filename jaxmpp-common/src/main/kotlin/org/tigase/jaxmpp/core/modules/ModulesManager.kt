@@ -41,7 +41,7 @@ class ModulesManager {
 	fun <T : XmppModule> getModule(type: String): T = this.modules[type] as T? ?: throw JaXMPPException(
 			"Module '$type' not registered!")
 
-	fun getModuleFor(element: Element): Array<XmppModule> {
+	fun getModulesFor(element: Element): Array<XmppModule> {
 		synchronized(modules) {
 			return modules.values.filter { xmppModule ->
 				(xmppModule.criteria != null && xmppModule.criteria!!.match(element))

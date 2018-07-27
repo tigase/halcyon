@@ -28,8 +28,8 @@ class ModulesManagerTest {
 	class Module02 : XmppModule {
 		override val type = "Module02"
 		override lateinit var context: Context
-		override val criteria: Criteria = Criterion.name("msg")
-		override val features: Array<String> = arrayOf("a", "b")
+		override val criteria = Criterion.name("msg")
+		override val features = arrayOf("a", "b")
 
 		override fun initialize() {
 		}
@@ -56,10 +56,10 @@ class ModulesManagerTest {
 
 		assertTrue(arrayOf("1", "2", "a", "b").sortedArray() contentDeepEquals mm.getAvailableFeatures().sortedArray())
 
-		assertEquals(0, mm.getModuleFor(stanza("presence") {}).size)
-		assertEquals(1, mm.getModuleFor(stanza("iq") {}).size)
-		assertEquals(1, mm.getModuleFor(stanza("msg") {}).size)
-		assertEquals("Module01", mm.getModuleFor(stanza("iq") {}).first().type)
+		assertEquals(0, mm.getModulesFor(stanza("presence") {}).size)
+		assertEquals(1, mm.getModulesFor(stanza("iq") {}).size)
+		assertEquals(1, mm.getModulesFor(stanza("msg") {}).size)
+		assertEquals("Module01", mm.getModulesFor(stanza("iq") {}).first().type)
 
 	}
 

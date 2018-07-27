@@ -3,17 +3,17 @@ package org.tigase.jaxmpp.core.eventbus;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
 import org.junit.Test;
+import org.tigase.jaxmpp.core.SessionObject;
 
 import java.util.ArrayList;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 public class EventBusMultiThreadTest {
 
 	private static int EVENTS = 1000;
 	private static int THREADS = 1000;
-	private final EventBus eventBus = new EventBus();
+	private final AbstractEventBus eventBus = new AbstractEventBus(new SessionObject()) {
+	};
 
 	private Boolean working;
 
@@ -23,21 +23,21 @@ public class EventBusMultiThreadTest {
 		final ConcurrentLinkedQueue<String> result1 = new ConcurrentLinkedQueue<String>();
 		final ConcurrentLinkedQueue<String> result2 = new ConcurrentLinkedQueue<String>();
 
-		eventBus.register(EventBus.ALL_EVENTS, (EventHandler<TestEvent>) event -> {
+		eventBus.register(AbstractEventBus.ALL_EVENTS, (EventHandler<TestEvent>) (sessionObject, event) -> {
 			try {
 				result0.add(event.value);
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
 		});
-		eventBus.register(TestEvent.TYPE, (EventHandler<TestEvent>) event -> {
+		eventBus.register(TestEvent.TYPE, (EventHandler<TestEvent>) (sessionObject, event) -> {
 			try {
 				result1.add(event.value);
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
 		});
-		eventBus.register(TestEvent.TYPE, (EventHandler<TestEvent>) event -> {
+		eventBus.register(TestEvent.TYPE, (EventHandler<TestEvent>) (sessionObject, event) -> {
 			try {
 				result2.add(event.value);
 			} catch (Exception e) {
@@ -48,7 +48,7 @@ public class EventBusMultiThreadTest {
 		final ArrayList<Thread> threads = new ArrayList<>();
 		final EventHandler<TestEvent> ttt = new EventHandler<TestEvent>() {
 			@Override
-			public void onEvent(@NotNull TestEvent event) {
+			public void onEvent(SessionObject sessionObject, @NotNull TestEvent event) {
 
 			}
 		};

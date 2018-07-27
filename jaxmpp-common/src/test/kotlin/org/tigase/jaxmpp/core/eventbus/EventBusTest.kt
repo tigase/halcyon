@@ -1,5 +1,6 @@
 package org.tigase.jaxmpp.core.eventbus
 
+import org.tigase.jaxmpp.core.SessionObject
 import kotlin.test.Test
 
 class EventBusTest {
@@ -24,14 +25,14 @@ class EventBusTest {
 
 	@Test
 	fun testEventBus() {
-		val eventBus = EventBus()
+		val eventBus = EventBus(SessionObject())
 
 		eventBus.register(Event01.TYPE, object : EventHandler<Event01> {
-			override fun onEvent(event: Event01) {
+			override fun onEvent(sessionObject: SessionObject, event: Event01) {
 				println(event)
 			}
 		})
-		eventBus.register<Event>{ event01 ->
+		eventBus.register<Event> { _, event01 ->
 			println()
 		}
 

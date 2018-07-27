@@ -1,5 +1,7 @@
 package org.tigase.jaxmpp.core.logger
 
+import java.util.logging.LogRecord
+
 actual class Logger actual constructor(name: String) {
 
 	private val log = java.util.logging.Logger.getLogger(name)
@@ -17,7 +19,7 @@ actual class Logger actual constructor(name: String) {
 	}
 
 	actual fun isLoggable(level: Level): Boolean {
-		return false
+		return log.isLoggable(cnv(level))
 	}
 
 	actual fun log(level: Level, msg: String) {
@@ -37,7 +39,8 @@ actual class Logger actual constructor(name: String) {
 	}
 
 	actual fun finest(msg: String) {
-		log.finest(msg)
+		val lr = LogRecord(java.util.logging.Level.FINEST, msg)
+		log.log(lr)
 	}
 
 	actual fun config(msg: String) {

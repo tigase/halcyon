@@ -1,7 +1,7 @@
 package org.tigase.jaxmpp.core.xml.parser
 
-import org.tigase.jaxmpp.core.logger.Logger
 import org.tigase.jaxmpp.core.logger.Level
+import org.tigase.jaxmpp.core.logger.Logger
 import org.tigase.jaxmpp.core.xml.Element
 import org.tigase.jaxmpp.core.xml.ElementBuilder
 
@@ -52,8 +52,8 @@ class XMPPDomHandler(val onNextElement: (Element) -> Unit, val onStreamStarted: 
 	override fun startElement(name: String, attr_names: Array<String?>?, attr_values: Array<String?>?) {
 		if (log.isLoggable(Level.FINEST)) {
 			log.finest("Start element name: " + name)
-			log.finest("Element attributes names: " + attr_names!!.joinToString { " " })
-			log.finest("Element attributes values: " + attr_values!!.joinToString { " " })
+			log.finest("Element attributes names: " + attr_names?.joinToString { " " })
+			log.finest("Element attributes values: " + attr_values?.joinToString { " " })
 		}
 
 		// Look for 'xmlns:' declarations:

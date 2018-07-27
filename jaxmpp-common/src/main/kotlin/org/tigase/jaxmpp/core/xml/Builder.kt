@@ -1,5 +1,7 @@
 package org.tigase.jaxmpp.core.xml
 
+import org.tigase.jaxmpp.core.xmpp.IdGenerator
+
 class Node(name: String) {
 
 	internal val element = Element(name)
@@ -39,6 +41,10 @@ class Node(name: String) {
 
 	operator fun String.invoke(vararg attributes: Pair<String, Any>, init: (Node.() -> Unit)? = null): Element {
 		return element(this, init)
+	}
+
+	fun id() {
+		element._attributes["id"] = IdGenerator.nextId()
 	}
 
 	fun element(name: String, init: (Node.() -> Unit)? = null): Element {

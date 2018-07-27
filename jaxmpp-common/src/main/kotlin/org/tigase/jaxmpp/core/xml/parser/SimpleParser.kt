@@ -103,18 +103,19 @@ class SimpleParser {
 		// return Arrays.binarySearch(WHITE_CHARS, chr) >= 0;
 	}
 
-	fun parse(handler: SimpleHandler, data: String) {
-		parse(handler, data.asSequence())
+	fun parse(handler: SimpleHandler, data: CharArray) {
+		parse(handler, data, 0, data.size - 1)
 	}
 
-	fun parse(handler: SimpleHandler, data: Sequence<Char>) {
+	fun parse(handler: SimpleHandler, data: CharArray, offset: Int, len: Int) {
 		var parser_state = handler.restoreParserState() as ParserState?
 
 		if (parser_state == null) {
 			parser_state = ParserState()
 		}    // end of if (parser_state == null)
 
-		LOOP@ for (chr in data) {
+		LOOP@ for (idx in offset..offset + len) {
+			val chr = data[idx]
 //		for (index in off until len) {
 //			val chr Char = data[index]
 

@@ -1,6 +1,7 @@
 package org.tigase.jaxmpp.core.connector
 
 import org.tigase.jaxmpp.core.Context
+import org.tigase.jaxmpp.core.xmpp.SessionController
 
 abstract class AbstractConnector(val context: Context) {
 
@@ -8,13 +9,15 @@ abstract class AbstractConnector(val context: Context) {
 		protected set(value) {
 			val old = field
 			field = value
-			context.eventBus.fire(StateChangeEvent(old, field))
+			context.eventBus.fire(ConnectorStateChangeEvent(old, field))
 		}
 
-	var isCompressed: Boolean = false
-		protected set
+	abstract fun createSessionController(): SessionController
 
-	var isSecure: Boolean = false
-		protected set
+	abstract fun send(data: CharSequence)
+
+	abstract fun start()
+
+	abstract fun stop()
 
 }

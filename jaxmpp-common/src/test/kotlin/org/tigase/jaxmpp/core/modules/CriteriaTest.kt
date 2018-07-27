@@ -8,28 +8,29 @@ import kotlin.test.assertTrue
 
 class CriteriaTest {
 
-val element: Element = stanza("iq") {
-	xmlns = "jabber:client"
-	attribute("to", "a@b.c")
-	attribute("from", "wojtas@wp.pl")
-	attribute("type", "set")
-	"pubsub" {
-		xmlns = "a:b"
-		"publish" {
-			attribute("node", "123")
-			"item" {
-				attribute("id", "345")
-				value = "x"
-			}
-			"item"{
-				attribute("id", "456")
-			}
-			"item" {
-				attribute("id", "567")
+
+	val element: Element = stanza("iq") {
+		xmlns = "jabber:client"
+		attribute("to", "a@b.c")
+		attribute("from", "wojtas@wp.pl")
+		attribute("type", "set")
+		"pubsub" {
+			xmlns = "a:b"
+			"publish" {
+				attribute("node", "123")
+				"item" {
+					attribute("id", "345")
+					value = "x"
+				}
+				"item"{
+					attribute("id", "456")
+				}
+				"item" {
+					attribute("id", "567")
+				}
 			}
 		}
 	}
-}
 
 	@Test
 	fun testCriterion() {

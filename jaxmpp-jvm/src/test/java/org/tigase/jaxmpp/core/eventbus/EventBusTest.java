@@ -3,6 +3,7 @@ package org.tigase.jaxmpp.core.eventbus;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
 import org.junit.Test;
+import org.tigase.jaxmpp.core.SessionObject;
 
 import java.util.ArrayList;
 
@@ -10,12 +11,12 @@ public class EventBusTest {
 
 	@Test
 	public void testBasic() {
-		final EventBus eventBus = new EventBus();
+		final EventBus eventBus = new EventBus(new SessionObject());
 		final ArrayList<String> responses = new ArrayList<>();
 
 		EventHandler<TestEvent> handler = new EventHandler<TestEvent>() {
 			@Override
-			public void onEvent(@NotNull TestEvent event) {
+			public void onEvent(SessionObject sessionObject, @NotNull TestEvent event) {
 				responses.add(((TestEvent) event).value);
 			}
 		};

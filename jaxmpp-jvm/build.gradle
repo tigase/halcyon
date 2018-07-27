@@ -3,6 +3,9 @@ apply plugin: 'kotlin-platform-jvm'
 dependencies {
 	compile "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
 	expectedBy project(":jaxmpp-common")
+
+	compile "org.minidns:minidns-hla:0.3.1"
+
 	testCompile "junit:junit:4.12"
 	testCompile "org.jetbrains.kotlin:kotlin-test-junit:$kotlin_version"
 	testCompile "org.jetbrains.kotlin:kotlin-test:$kotlin_version"
