@@ -5,7 +5,6 @@ import org.minidns.hla.SrvType
 import org.tigase.jaxmpp.core.Context
 import org.tigase.jaxmpp.core.SessionObject
 import org.tigase.jaxmpp.core.connector.*
-import org.tigase.jaxmpp.core.exceptions.JaXMPPException
 import org.tigase.jaxmpp.core.logger.Level
 import org.tigase.jaxmpp.core.logger.Logger
 import org.tigase.jaxmpp.core.xml.Element
@@ -45,6 +44,7 @@ class SocketConnector(context: Context) : AbstractConnector(context) {
 
 		override fun onParseError(errorMessage: String) {
 			log.finest("Parse error: $errorMessage")
+			context.eventBus.fire(ParseErrorEvent(errorMessage))
 		}
 	}
 
@@ -78,7 +78,7 @@ class SocketConnector(context: Context) : AbstractConnector(context) {
 			}
 
 		}
-		throw JaXMPPException("Cannot open socket")
+		throw ConnectorException("Cannot open socket")
 	}
 
 	override fun start() {
@@ -93,6 +93,7 @@ class SocketConnector(context: Context) : AbstractConnector(context) {
 
 		val writer = OutputStreamWriter(this.socket.getOutputStream())
 		this.worker = SocketWorker(socket, parser, writer)
+		this.worker.onError = {exception -> onWorkerException(exception) }
 		worker.start()
 
 		val sb = StringBuilder()
@@ -107,6 +108,11 @@ class SocketConnector(context: Context) : AbstractConnector(context) {
 
 	}
 
+	private fun onWorkerException(cause: Exception) {
+		cause.printStackTrace()
+		TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+	}
+
 	override fun stop() {
 		if (state == State.Connecting || state == State.Connected) {
 			state = State.Disconnecting
@@ -118,7 +124,8 @@ class SocketConnector(context: Context) : AbstractConnector(context) {
 	}
 
 	override fun send(data: CharSequence) {
-		if (log.isLoggable(Level.FINEST)) log.log(Level.FINEST, "Sending: $data")
+		if (log.isLoggable(Level.FINEST)) log.log(Level.FINEST, "Sending (${worker.socket.isConnected}, ${!worker
+				.socket.isOutputShutdown}): $data")
 		worker.writer.write(data.toString())
 		worker.writer.flush()
 	}

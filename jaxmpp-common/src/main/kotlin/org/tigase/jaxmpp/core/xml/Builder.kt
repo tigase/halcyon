@@ -63,6 +63,16 @@ fun stanza(name: String, init: Node.() -> Unit): Element {
 	return n.element
 }
 
+fun response(element: Element, init: Node.() -> Unit): Element {
+	val n = Node(element.name)
+	n.element._attributes["id"] = element._attributes["id"]!!
+	n.element._attributes["type"] = "result"
+	if (element._attributes["to"] != null) n.element._attributes["from"] = element._attributes["to"]!!
+	if (element._attributes["from"] != null) n.element._attributes["to"] = element._attributes["from"]!!
+	n.init()
+	return n.element
+}
+
 fun main(args: Array<String>) {
 	val stanza = stanza("message") {
 		attribute("id", "1")

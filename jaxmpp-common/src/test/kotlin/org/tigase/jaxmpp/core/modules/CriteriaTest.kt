@@ -43,6 +43,10 @@ class CriteriaTest {
 
 		assertTrue(Criterion.not(Criterion.and(Criterion.xmlns("jabber:client"), Criterion.name("X"))).match(element))
 		assertFalse(Criterion.not(Criterion.and(Criterion.xmlns("jabber:client"), Criterion.name("iq"))).match(element))
+
+		assertTrue(Criterion.chain(Criterion.name("iq"), Criterion.xmlns("a:b")).match(element))
+		assertFalse(Criterion.chain(Criterion.name("iq"), Criterion.xmlns("a:c")).match(element))
+		assertFalse(Criterion.chain(Criterion.name("presence"), Criterion.xmlns("a:b")).match(element))
 	}
 
 }

@@ -3,6 +3,7 @@ package org.tigase.jaxmpp.core
 import org.tigase.jaxmpp.Configurator
 import org.tigase.jaxmpp.core.connector.AbstractConnector
 import org.tigase.jaxmpp.core.connector.ReceivedXMLElementEvent
+import org.tigase.jaxmpp.core.connector.SentXMLElementEvent
 import org.tigase.jaxmpp.core.eventbus.Event
 import org.tigase.jaxmpp.core.eventbus.EventBus
 import org.tigase.jaxmpp.core.exceptions.JaXMPPException
@@ -14,15 +15,24 @@ import org.tigase.jaxmpp.core.requests.RequestsManager
 import org.tigase.jaxmpp.core.xml.Element
 import org.tigase.jaxmpp.core.xml.stanza
 import org.tigase.jaxmpp.core.xmpp.SessionController
+import org.tigase.jaxmpp.core.xmpp.modules.BindModule
+import org.tigase.jaxmpp.core.xmpp.modules.PingModule
 import org.tigase.jaxmpp.core.xmpp.modules.StreamErrorModule
 import org.tigase.jaxmpp.core.xmpp.modules.StreamFeaturesModule
 import org.tigase.jaxmpp.core.xmpp.modules.auth.SaslModule
+import org.tigase.jaxmpp.core.xmpp.modules.sm.StreamManagementModule
 
 data class JaXMPPStateChangeEvent(val oldState: AbstractJaXMPP.State, val newState: AbstractJaXMPP.State) : Event(
 		TYPE) {
 
 	companion object {
 		const val TYPE = "org.tigase.jaxmpp.core.JaXMPPStateChangeEvent"
+	}
+}
+
+data class TickEvent(val timestamp: Long) : Event(TYPE) {
+	companion object {
+		const val TYPE = "org.tigase.jaxmpp.core.TickEvent"
 	}
 }
 
@@ -60,13 +70,21 @@ abstract class AbstractJaXMPP : Context, PacketWriter {
 		eventBus.register<ReceivedXMLElementEvent>(ReceivedXMLElementEvent.TYPE,
 												   handler = { _, event -> processReceivedXmlElement(event.element) })
 
+		eventBus.register<SessionController.StopEverythingEvent>(
+				SessionController.StopEverythingEvent.TYPE) { sessionObject, event -> disconnect() }
 
 		modules.register(StreamErrorModule())
 		modules.register(StreamFeaturesModule())
+		modules.register(StreamManagementModule())
 		modules.register(SaslModule())
+		modules.register(BindModule())
+		modules.register(PingModule())
 	}
 
 	protected fun processReceivedXmlElement(element: Element) {
+		val handled = requestsManager.findAndExecute(element);
+		if (handled) return
+
 		val modules = modules.getModulesFor(element)
 		if (modules.isEmpty()) {
 			log.fine("Unsupported stanza: " + element.getAsString())
@@ -101,19 +119,26 @@ abstract class AbstractJaXMPP : Context, PacketWriter {
 
 	protected abstract fun createConnector(): AbstractConnector
 
+	protected fun tick() {
+		eventBus.fire(TickEvent(currentTimestamp()))
+	}
+
 	override fun writeDirectly(element: Element) {
 		if (this.connector == null) throw JaXMPPException("Connector is not initialized")
 		connector!!.send(element.getAsString())
+		eventBus.fire(SentXMLElementEvent(element, null))
 	}
 
 	override fun write(stanza: Element): Request {
 		if (this.connector == null) throw JaXMPPException("Connector is not initialized")
 		val request = requestsManager.create(stanza)
 		connector!!.send(stanza.getAsString())
+		eventBus.fire(SentXMLElementEvent(stanza, request))
 		return request
 	}
 
 	fun connect() {
+		modules.initModules()
 		log.info("Connecting")
 		state = State.Connecting
 		try {

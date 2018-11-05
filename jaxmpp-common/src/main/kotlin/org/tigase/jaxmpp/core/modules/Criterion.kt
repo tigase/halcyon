@@ -37,5 +37,28 @@ class Criterion private constructor() {
 			}
 		}
 
+		fun chain(vararg children: Criteria): Criteria {
+
+			fun find(children: List<Element>, cr: Criteria): Element? {
+				return children.firstOrNull { element -> cr.match(element) }
+			}
+
+			return object : Criteria {
+				override fun match(element: Element): Boolean {
+					var current: Element? = element
+					val it = children.iterator()
+					if (!it.hasNext() || !it.next().match(current!!)) return false
+
+					while (it.hasNext()) {
+						val cr = it.next()
+						current = find(current!!.children, cr)
+						if (current == null) return false
+					}
+
+					return true
+				}
+			}
+		}
+
 	}
 }

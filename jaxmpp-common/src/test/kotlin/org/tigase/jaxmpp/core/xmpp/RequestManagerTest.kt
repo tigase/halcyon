@@ -120,7 +120,7 @@ class RequestManagerTest {
 		rm.create(e).handle {
 			error { request, element, errorCondition ->
 				++errorCounter
-				assertEquals(ErrorCondition.not_allowed, errorCondition)
+				assertEquals(ErrorCondition.NotAllowed, errorCondition)
 			}
 		}
 

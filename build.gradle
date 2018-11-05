@@ -10,19 +10,6 @@ buildscript {
 
 
 subprojects {
-	apply plugin: 'maven-publish'
-
-	group 'tigase.jaxmpp'
-	version "$jaxmpp_version"
-
-	publishing {
-		publications {
-			mavenJava(MavenPublication) {
-				from components.java
-			}
-		}
-	}
-
 	repositories {
 		mavenLocal()
 		maven {url "http://maven-repo.tigase.org/repository/release"}

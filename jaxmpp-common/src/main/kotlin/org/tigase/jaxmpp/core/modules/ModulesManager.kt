@@ -38,8 +38,8 @@ class ModulesManager {
 
 	fun isRegistered(type: String): Boolean = this.modules.containsKey(type)
 
-	fun <T : XmppModule> getModule(type: String): T = this.modules[type] as T? ?: throw JaXMPPException(
-			"Module '$type' not registered!")
+	fun <T : XmppModule> getModule(type: String): T? = this.modules[type] as T?
+	// throw JaXMPPException("Module '$type' not registered!")
 
 	fun getModulesFor(element: Element): Array<XmppModule> {
 		synchronized(modules) {

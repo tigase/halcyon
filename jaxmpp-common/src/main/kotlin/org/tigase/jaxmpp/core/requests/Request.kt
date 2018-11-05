@@ -55,6 +55,8 @@ class Request(val jid: JID?, val id: String, val creationTimestamp: Long, val re
 
 	}
 
+	private val data = HashMap<String, Any>()
+
 	var responseStanza: Element? = null
 		internal set(value) {
 			field = value
@@ -120,6 +122,19 @@ class Request(val jid: JID?, val id: String, val creationTimestamp: Long, val re
 		if (stanzaType == StanzaType.Get || stanzaType == StanzaType.Set) {
 			callback?.timeout(this)
 		}
+	}
+
+	fun isSet(param: String): Boolean {
+		val v = data[param];
+		return v != null && v is Boolean && v
+	}
+
+	fun setData(name: String, value: Any) {
+		data[name] = value;
+	}
+
+	fun getData(name: String): Any? {
+		return data[name];
 	}
 
 }

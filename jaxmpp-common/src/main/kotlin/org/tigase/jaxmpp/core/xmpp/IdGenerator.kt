@@ -7,7 +7,19 @@ class IdGenerator {
 
 	private var buffer = kotlin.IntArray(4, init = { 0 })
 
-	private val seed: Long = f(currentTimestamp())
+	private val seed = createSeed()
+
+	private fun createSeed(): IntArray {
+		var t = currentTimestamp()
+		var result = IntArray(0)
+		while (t > 0) {
+			val c = t % ALPHABET.length
+			t -= c
+			t /= ALPHABET.length
+			result += arrayListOf<Int>(c.toInt())
+		}
+		return result
+	}
 
 	private var counter: Long = 0
 
@@ -34,8 +46,12 @@ class IdGenerator {
 
 	private fun hash(): IntArray {
 		counter += 1
-		val result = buffer.copyOf(buffer.size + 1)
-		val iv = f(counter) xor seed
+
+//		val result =  buffer.copyOf(buffer.size + 1)
+
+		val result = buffer + seed + kotlin.IntArray(1, init = { 0 })
+
+		val iv = f(counter)
 		result[result.size - 1] = (iv % ALPHABET.length).absoluteValue.toInt()
 
 		var prng: Long = iv

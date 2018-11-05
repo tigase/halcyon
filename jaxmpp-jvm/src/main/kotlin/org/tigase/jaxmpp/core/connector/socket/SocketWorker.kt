@@ -7,14 +7,19 @@ import java.io.InputStreamReader
 import java.io.OutputStreamWriter
 import java.io.Reader
 import java.net.Socket
-import java.net.SocketException
 
 class SocketWorker(s: Socket, val parser: StreamParser, val writer: OutputStreamWriter) : Thread() {
 
 	private val log = Logger("org.tigase.jaxmpp.core.connector.socket.SocketWorker")
 
+	var onActiveChange: ((Boolean) -> Unit)? = null
+
 	var isActive = false
-		private set
+		private set(value) {
+			val tmp = field
+			field = value
+			if (tmp != field) onActiveChange?.invoke(field)
+		}
 
 	var socket: Socket = s
 		set(value) {
@@ -23,6 +28,7 @@ class SocketWorker(s: Socket, val parser: StreamParser, val writer: OutputStream
 		}
 
 	private lateinit var reader: Reader
+	var onError: ((Exception) -> Unit)? = null
 
 	init {
 		name = "Socket-Worker-Thread"
@@ -48,13 +54,17 @@ class SocketWorker(s: Socket, val parser: StreamParser, val writer: OutputStream
 
 				parser.parse(buffer, 0, len - 1)
 			}
-		} catch (e: SocketException) {
-			log.log(Level.FINE, "Exception in Socket Worker", e)
-			if (!socket.isClosed) throw e
+		} catch (e: Exception) {
+			if (!socket.isClosed) {
+				log.log(Level.FINE, "Exception in Socket Worker", e)
+				onError?.invoke(e)
+			} else {
+				log.log(Level.FINEST, "Socket is closed", e)
+			}
 		} finally {
 			isActive = false
+			log.fine("Socket Worker Stopped")
 		}
-		log.fine("Socket Worker Stopped")
 	}
 
 }
