@@ -2,11 +2,12 @@ package org.tigase.jaxmpp.core.logger
 
 import java.util.logging.LogRecord
 
+@Suppress("NOTHING_TO_INLINE")
 actual class Logger actual constructor(name: String) {
 
 	private val log = java.util.logging.Logger.getLogger(name)
 
-	private fun cnv(level: Level): java.util.logging.Level = when (level) {
+	private inline fun cnv(level: Level): java.util.logging.Level = when (level) {
 		Level.OFF -> java.util.logging.Level.OFF
 		Level.SEVERE -> java.util.logging.Level.SEVERE
 		Level.WARNING -> java.util.logging.Level.WARNING
@@ -22,41 +23,65 @@ actual class Logger actual constructor(name: String) {
 		return log.isLoggable(cnv(level))
 	}
 
-	actual fun log(level: Level, msg: String) {
-		log.log(cnv(level), msg)
-	}
+	private inline fun doLog(level: Level, msg: String, caught: Exception?) {
+		val lr = LogRecord(cnv(level), msg)
+		if (caught != null) lr.thrown = caught
 
-	actual fun log(level: Level, msg: String, caught: Exception) {
-		log.log(cnv(level), msg, caught)
-	}
+		fillCaller(lr)
 
-	actual fun fine(msg: String) {
-		log.fine(msg)
-	}
-
-	actual fun finer(msg: String) {
-		log.finer(msg)
-	}
-
-	actual fun finest(msg: String) {
-		val lr = LogRecord(java.util.logging.Level.FINEST, msg)
 		log.log(lr)
 	}
 
+	private fun fillCaller(lr: LogRecord) {
+		val trace = Throwable()
+		val list = trace.stackTrace
+
+		list.find { stackTraceElement ->
+			!stackTraceElement.className.startsWith(
+				"org.tigase.jaxmpp.core.logger."
+			)
+		}.let { stackTraceElement ->
+			if (stackTraceElement != null) {
+				lr.sourceClassName = stackTraceElement.className
+				lr.sourceMethodName = stackTraceElement.methodName
+			}
+		}
+	}
+
+	actual fun log(level: Level, msg: String) {
+		doLog(level, msg, null)
+	}
+
+	actual fun log(level: Level, msg: String, caught: Exception) {
+		doLog(level, msg, caught)
+	}
+
+	actual fun fine(msg: String) {
+		doLog(Level.FINE, msg, null)
+	}
+
+	actual fun finer(msg: String) {
+		doLog(Level.FINER, msg, null)
+	}
+
+	actual fun finest(msg: String) {
+		doLog(Level.FINEST, msg, null)
+	}
+
 	actual fun config(msg: String) {
-		log.config(msg)
+		doLog(Level.CONFIG, msg, null)
 	}
 
 	actual fun info(msg: String) {
-		log.info(msg)
+		doLog(Level.INFO, msg, null)
 	}
 
 	actual fun warning(msg: String) {
-		log.warning(msg)
+		doLog(Level.WARNING, msg, null)
 	}
 
 	actual fun severe(msg: String) {
-		log.severe(msg)
+		doLog(Level.SEVERE, msg, null)
 	}
 
 }
