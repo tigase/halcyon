@@ -1,7 +1,4 @@
-.gradle/
-.idea/
-build/
-jaxmpp-common/build/
-jaxmpp-js/build/
-jaxmpp-jvm/build/
+.gradle
+.idea
+build
 

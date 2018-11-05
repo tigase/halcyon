@@ -1,5 +1,15 @@
+pluginManagement {
+	resolutionStrategy {
+		eachPlugin {
+			if (requested.id.id == "kotlin-multiplatform") {
+				useModule("org.jetbrains.kotlin:kotlin-gradle-plugin:${requested.version}")
+			}
+		}
+	}
+}
+enableFeaturePreview('GRADLE_METADATA')
+
 rootProject.name = 'jaxmpp'
 
-include 'jaxmpp-common'
-include 'jaxmpp-jvm'
-include 'jaxmpp-js'
+include 'jaxmpp-core'
+
