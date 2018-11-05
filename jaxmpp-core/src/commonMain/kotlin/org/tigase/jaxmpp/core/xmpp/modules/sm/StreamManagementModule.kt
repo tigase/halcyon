@@ -38,7 +38,8 @@ class StreamManagementModule : XmppModule {
 
 	class StreamManagementEnabledEvent(val id: String, val resume: Boolean, val mx: Long?) : Event(TYPE) {
 		companion object {
-			const val TYPE = "org.tigase.jaxmpp.core.xmpp.modules.sm.StreamManagementModule.StreamManagementEnabledEvent"
+			const val TYPE =
+				"org.tigase.jaxmpp.core.xmpp.modules.sm.StreamManagementModule.StreamManagementEnabledEvent"
 		}
 	}
 
@@ -199,7 +200,7 @@ class StreamManagementModule : XmppModule {
 
 	private fun processElementSent(element: Element, request: Request?) {
 		if (!isAckEnable(context.sessionObject)) return
-		if (element.xmlns == XMLNS && (element.name == "a" || element.name == "r")) return
+		if (element.xmlns == XMLNS) return
 
 		synchronized(this) {
 			if (request != null) {
