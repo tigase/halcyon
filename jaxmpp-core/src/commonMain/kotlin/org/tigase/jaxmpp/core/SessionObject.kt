@@ -30,21 +30,18 @@ class SessionObject {
 	}
 
 	fun clear(scopes: Array<Scope>) {
-		synchronized(properties) {
 			val iterator = this.properties.entries.iterator()
 			while (iterator.hasNext()) {
 				val entry = iterator.next()
 				if (scopes.contains(entry.value.scope)) {
 					iterator.remove()
 				}
-			}
 		}
 		val event = ClearedEvent(scopes)
 		eventBus.fire(event)
 	}
 
 	fun <T> getProperty(scope: Scope?, key: String): T? {
-		synchronized(properties) {
 			val entry = this.properties.get(key)
 			return if (entry == null) {
 				null
@@ -52,7 +49,6 @@ class SessionObject {
 				entry.value as T?
 			} else {
 				null
-			}
 		}
 	}
 
@@ -78,7 +74,6 @@ class SessionObject {
 	}
 
 	fun setProperty(scope: Scope, key: String, value: Any?): SessionObject {
-		synchronized(properties) {
 			if (value == null) {
 				this.properties.remove(key)
 			} else {
@@ -89,7 +84,6 @@ class SessionObject {
 				}
 				e.scope = scope
 				e.value = value
-			}
 		}
 		return this
 	}

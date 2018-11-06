@@ -128,16 +128,14 @@ class StreamManagementModule : XmppModule {
 
 		if (log.isLoggable(Level.FINE)) log.fine("Expected h=$lh, received h=$h")
 
-		synchronized(this) {
-			if (lh >= h) {
-				lh = context.sessionObject.getProperty<Long>(OUTGOING_STREAM_H_KEY) ?: 0
-				val left = lh - h
-				while (queue.size > left) {
-					val x = queue.get(0);
-					queue.remove(x);
-					if (x is Request) {
-						x.setData(Delivered, true)
-					}
+		if (lh >= h) {
+			lh = context.sessionObject.getProperty<Long>(OUTGOING_STREAM_H_KEY) ?: 0
+			val left = lh - h
+			while (queue.size > left) {
+				val x = queue.get(0);
+				queue.remove(x);
+				if (x is Request) {
+					x.setData(Delivered, true)
 				}
 			}
 		}
@@ -167,17 +165,15 @@ class StreamManagementModule : XmppModule {
 		val h = element.attributes["h"]?.toLong() ?: 0
 
 		val unacked = mutableListOf<Any>()
-		synchronized(this) {
-			var lh = context.sessionObject.getProperty<Long>(OUTGOING_STREAM_H_KEY) ?: 0
-			val left = lh - h
-			if (left > 0) while (queue.size > left) {
-				val x = queue.get(0);
-				queue.remove(x);
-			}
-			context.sessionObject.setProperty(OUTGOING_STREAM_H_KEY, h)
-			unacked.addAll(queue);
-			queue.clear()
+		var lh = context.sessionObject.getProperty<Long>(OUTGOING_STREAM_H_KEY) ?: 0
+		val left = lh - h
+		if (left > 0) while (queue.size > left) {
+			val x = queue.get(0);
+			queue.remove(x);
 		}
+		context.sessionObject.setProperty(OUTGOING_STREAM_H_KEY, h)
+		unacked.addAll(queue);
+		queue.clear()
 
 		unacked.forEach {
 			when (it) {
@@ -202,12 +198,10 @@ class StreamManagementModule : XmppModule {
 		if (!isAckEnable(context.sessionObject)) return
 		if (element.xmlns == XMLNS) return
 
-		synchronized(this) {
-			if (request != null) {
-				queue.add(request)
-			} else {
-				queue.add(element)
-			}
+		if (request != null) {
+			queue.add(request)
+		} else {
+			queue.add(element)
 		}
 		increment(OUTGOING_STREAM_H_KEY)
 	}

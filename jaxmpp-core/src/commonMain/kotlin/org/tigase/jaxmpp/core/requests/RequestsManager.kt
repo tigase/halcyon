@@ -23,9 +23,7 @@ class RequestsManager {
 		val jid = element.getToAttr()
 
 		val request = Request(jid, id, currentTimestamp(), element)
-		synchronized(this) {
-			requests[id] = request
-		}
+		requests[id] = request
 		return request
 	}
 
@@ -33,11 +31,11 @@ class RequestsManager {
 		val id = response.attributes["id"] ?: return null
 		val from = response.attributes["from"]
 
-		val request = synchronized(this) { requests[id] } ?: return null
+		val request =   requests[id]  ?: return null
 
 		if (!verify(request, response)) return null
 
-		synchronized(this) { requests.remove(id) }
+		requests.remove(id)
 		return request
 	}
 
@@ -69,17 +67,15 @@ class RequestsManager {
 
 	fun findOutdated() {
 		val now = currentTimestamp()
-		synchronized(this) {
-			val iterator = requests.entries.iterator()
-			while (iterator.hasNext()) {
-				val request = iterator.next().value;
-				if (request.creationTimestamp + request.timeoutDelay <= now) {
-					iterator.remove()
-					try {
-						request.callTimeout()
-					} catch (e: Exception) {
-						log.log(Level.WARNING, "Problem on calling timeout on request " + request.id, e)
-					}
+		val iterator = requests.entries.iterator()
+		while (iterator.hasNext()) {
+			val request = iterator.next().value;
+			if (request.creationTimestamp + request.timeoutDelay <= now) {
+				iterator.remove()
+				try {
+					request.callTimeout()
+				} catch (e: Exception) {
+					log.log(Level.WARNING, "Problem on calling timeout on request " + request.id, e)
 				}
 			}
 		}

@@ -31,9 +31,7 @@ open class AbstractEventBus(val sessionObject: SessionObject) {
 	}
 
 	fun fire(event: Event) {
-		val handlers = synchronized(this) {
-			getHandlers(event.type)
-		}
+		val handlers = getHandlers(event.type)
 		fire(event, handlers)
 	}
 
@@ -51,14 +49,12 @@ open class AbstractEventBus(val sessionObject: SessionObject) {
 	}
 
 	fun <T : Event> register(eventType: String = ALL_EVENTS, handler: EventHandler<T>) {
-		synchronized(this) {
-			var handlers = handlersMap[eventType]
-			if (handlers == null) {
-				handlers = HashSet()
-				handlersMap[eventType] = handlers
-			}
-			handlers.add(handler)
+		var handlers = handlersMap[eventType]
+		if (handlers == null) {
+			handlers = HashSet()
+			handlersMap[eventType] = handlers
 		}
+		handlers.add(handler)
 	}
 
 	fun <T : Event> register(eventType: String = ALL_EVENTS, handler: (SessionObject, T) -> Unit) {
@@ -70,22 +66,18 @@ open class AbstractEventBus(val sessionObject: SessionObject) {
 	}
 
 	fun unregister(eventType: String = ALL_EVENTS, handler: EventHandler<*>) {
-		synchronized(this) {
-			val handlers = handlersMap[eventType]
-			if (handlers != null) {
-				handlers.remove(handler)
+		val handlers = handlersMap[eventType]
+		if (handlers != null) {
+			handlers.remove(handler)
 //				if (handlers.isEmpty()) {
 //					handlersMap.remove(eventType)
 //				}
-			}
 		}
 	}
 
 	fun unregister(handler: EventHandler<*>) {
-		synchronized(this) {
-			for ((eventType, handlers) in handlersMap) {
-				handlers.remove(handler)
-			}
+		for ((eventType, handlers) in handlersMap) {
+			handlers.remove(handler)
 		}
 	}
 

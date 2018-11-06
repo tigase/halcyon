@@ -1,7 +1,6 @@
 package org.tigase.jaxmpp.core.modules
 
 import org.tigase.jaxmpp.core.Context
-import org.tigase.jaxmpp.core.exceptions.JaXMPPException
 import org.tigase.jaxmpp.core.xml.Element
 
 class ModulesManager {
@@ -19,10 +18,8 @@ class ModulesManager {
 	}
 
 	fun initModules() {
-		synchronized(modulesToInitialize) {
-			modulesToInitialize.forEach { xmppModule -> xmppModule.initialize() }
-			modulesToInitialize.clear()
-		}
+		modulesToInitialize.forEach { xmppModule -> xmppModule.initialize() }
+		modulesToInitialize.clear()
 	}
 
 	fun getAvailableFeatures(): Array<String> {
@@ -42,11 +39,9 @@ class ModulesManager {
 	// throw JaXMPPException("Module '$type' not registered!")
 
 	fun getModulesFor(element: Element): Array<XmppModule> {
-		synchronized(modules) {
-			return modules.values.filter { xmppModule ->
-				(xmppModule.criteria != null && xmppModule.criteria!!.match(element))
-			}.toTypedArray()
-		}
+		return modules.values.filter { xmppModule ->
+			(xmppModule.criteria != null && xmppModule.criteria!!.match(element))
+		}.toTypedArray()
 	}
 
 }
