@@ -58,8 +58,6 @@ class SocketWorker(s: Socket, val parser: StreamParser, val writer: OutputStream
 			if (!socket.isClosed) {
 				log.log(Level.FINE, "Exception in Socket Worker", e)
 				onError?.invoke(e)
-			} else {
-				log.log(Level.FINEST, "Socket is closed", e)
 			}
 		} finally {
 			isActive = false

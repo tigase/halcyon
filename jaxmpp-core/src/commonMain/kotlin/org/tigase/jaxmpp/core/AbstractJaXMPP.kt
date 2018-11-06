@@ -23,14 +23,15 @@ import org.tigase.jaxmpp.core.xmpp.modules.auth.SaslModule
 import org.tigase.jaxmpp.core.xmpp.modules.sm.StreamManagementModule
 
 data class JaXMPPStateChangeEvent(val oldState: AbstractJaXMPP.State, val newState: AbstractJaXMPP.State) : Event(
-		TYPE) {
+	TYPE
+) {
 
 	companion object {
 		const val TYPE = "org.tigase.jaxmpp.core.JaXMPPStateChangeEvent"
 	}
 }
 
-data class TickEvent(val timestamp: Long) : Event(TYPE) {
+data class TickEvent(val counter: Long, val timestamp: Long) : Event(TYPE) {
 	companion object {
 		const val TYPE = "org.tigase.jaxmpp.core.TickEvent"
 	}
@@ -50,6 +51,8 @@ abstract class AbstractJaXMPP : Context, PacketWriter {
 	protected var connector: AbstractConnector? = null
 	protected var sessionController: SessionController? = null
 
+	private var tickCounter: Long = 0;
+
 	final override val sessionObject: SessionObject = SessionObject()
 	final override val eventBus: EventBus = EventBus(sessionObject)
 	override val writer: PacketWriter
@@ -67,11 +70,13 @@ abstract class AbstractJaXMPP : Context, PacketWriter {
 
 	init {
 		modules.context = this
-		eventBus.register<ReceivedXMLElementEvent>(ReceivedXMLElementEvent.TYPE,
-												   handler = { _, event -> processReceivedXmlElement(event.element) })
+		eventBus.register<ReceivedXMLElementEvent>(
+			ReceivedXMLElementEvent.TYPE,
+			handler = { _, event -> processReceivedXmlElement(event.element) })
 
 		eventBus.register<SessionController.StopEverythingEvent>(
-				SessionController.StopEverythingEvent.TYPE) { sessionObject, event -> disconnect() }
+			SessionController.StopEverythingEvent.TYPE
+		) { sessionObject, event -> disconnect() }
 
 		modules.register(StreamErrorModule())
 		modules.register(StreamFeaturesModule())
@@ -120,7 +125,7 @@ abstract class AbstractJaXMPP : Context, PacketWriter {
 	protected abstract fun createConnector(): AbstractConnector
 
 	protected fun tick() {
-		eventBus.fire(TickEvent(currentTimestamp()))
+		eventBus.fire(TickEvent(++tickCounter, currentTimestamp()))
 	}
 
 	override fun writeDirectly(element: Element) {

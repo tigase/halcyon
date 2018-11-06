@@ -2,9 +2,14 @@ package org.tigase.jaxmpp.core.eventbus
 
 import org.tigase.jaxmpp.core.SessionObject
 import org.tigase.jaxmpp.core.logger.Level
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Executors
 
 actual class EventBus actual constructor(sessionObject: SessionObject) : AbstractEventBus(sessionObject) {
+
+	override fun createHandlersMap(): MutableMap<String, MutableSet<EventHandler<*>>> = ConcurrentHashMap()
+
+	override fun createHandlersSet(): MutableSet<EventHandler<*>> = ConcurrentHashMap.newKeySet<EventHandler<*>>()
 
 	enum class Mode {
 		NoThread,

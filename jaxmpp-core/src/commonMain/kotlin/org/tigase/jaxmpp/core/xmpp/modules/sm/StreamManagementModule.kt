@@ -136,6 +136,7 @@ class StreamManagementModule : XmppModule {
 				queue.remove(x);
 				if (x is Request) {
 					x.setData(Delivered, true)
+					log.fine("Marked as delivery: $x")
 				}
 			}
 		}

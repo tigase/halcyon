@@ -4,7 +4,7 @@ import org.tigase.jaxmpp.core.SessionObject
 import org.tigase.jaxmpp.core.logger.Level
 import org.tigase.jaxmpp.core.logger.Logger
 
-open class AbstractEventBus(val sessionObject: SessionObject) {
+abstract class AbstractEventBus(val sessionObject: SessionObject) {
 
 	companion object {
 		const val ALL_EVENTS = "EventBus#ALL_EVENTS"
@@ -12,7 +12,11 @@ open class AbstractEventBus(val sessionObject: SessionObject) {
 
 	protected val log = Logger("org.tigase.jaxmpp.core.eventbus.EventBus")
 
-	protected var handlersMap = HashMap<String, MutableCollection<EventHandler<*>>>()// createHandlersMap()
+	protected var handlersMap: MutableMap<String, MutableSet<EventHandler<*>>> = createHandlersMap()
+
+	protected abstract fun createHandlersMap(): MutableMap<String, MutableSet<EventHandler<*>>>
+
+	protected abstract fun createHandlersSet(): MutableSet<EventHandler<*>>
 
 	private fun getHandlers(eventType: String): Collection<EventHandler<*>> {
 		val result = HashSet<EventHandler<*>>()
@@ -32,6 +36,7 @@ open class AbstractEventBus(val sessionObject: SessionObject) {
 
 	fun fire(event: Event) {
 		val handlers = getHandlers(event.type)
+
 		fire(event, handlers)
 	}
 
@@ -49,12 +54,14 @@ open class AbstractEventBus(val sessionObject: SessionObject) {
 	}
 
 	fun <T : Event> register(eventType: String = ALL_EVENTS, handler: EventHandler<T>) {
-		var handlers = handlersMap[eventType]
-		if (handlers == null) {
-			handlers = HashSet()
-			handlersMap[eventType] = handlers
+		synchronized(this) {
+			var handlers = handlersMap[eventType]
+			if (handlers == null) {
+				handlers = createHandlersSet()
+				handlersMap[eventType] = handlers
+			}
+			handlers.add(handler)
 		}
-		handlers.add(handler)
 	}
 
 	fun <T : Event> register(eventType: String = ALL_EVENTS, handler: (SessionObject, T) -> Unit) {
@@ -66,18 +73,22 @@ open class AbstractEventBus(val sessionObject: SessionObject) {
 	}
 
 	fun unregister(eventType: String = ALL_EVENTS, handler: EventHandler<*>) {
-		val handlers = handlersMap[eventType]
-		if (handlers != null) {
-			handlers.remove(handler)
+		synchronized(this) {
+			val handlers = handlersMap[eventType]
+			if (handlers != null) {
+				handlers.remove(handler)
 //				if (handlers.isEmpty()) {
 //					handlersMap.remove(eventType)
 //				}
+			}
 		}
 	}
 
 	fun unregister(handler: EventHandler<*>) {
-		for ((eventType, handlers) in handlersMap) {
-			handlers.remove(handler)
+		synchronized(this) {
+			for ((eventType, handlers) in handlersMap) {
+				handlers.remove(handler)
+			}
 		}
 	}
 

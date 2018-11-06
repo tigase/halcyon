@@ -73,7 +73,7 @@ class Request(val jid: JID?, val id: String, val creationTimestamp: Long, val re
 	private fun findCondition(stanza: Element): ErrorCondition {
 		val error = stanza.children.firstOrNull { element -> element.name == "error" } ?: return ErrorCondition.Unknown
 		val cnd = error.children.firstOrNull { element -> element.xmlns == XMPPException.XMLNS }
-				?: return ErrorCondition.Unknown
+			?: return ErrorCondition.Unknown
 		return ErrorCondition.getByElementName(cnd.name)
 	}
 
@@ -135,6 +135,10 @@ class Request(val jid: JID?, val id: String, val creationTimestamp: Long, val re
 
 	fun getData(name: String): Any? {
 		return data[name];
+	}
+
+	override fun toString(): String {
+		return "Request[to=$jid, id=$id: ${requestStanza.getAsString()}]"
 	}
 
 }

@@ -40,13 +40,13 @@ object Base64 {
 	}
 
 	/**
-	 * Translates the specified Base64 string into a byte array.
+	 * Translates the specified Base64 string into a char array.
 	 *
 	 * @param s the Base64 string (not null)
 	 *
-	 * @return the byte array (not null)
+	 * @return the char array (not null)
 	 */
-	fun decode(s: String): ByteArray {
+	fun decode(s: String): CharArray {
 		var separatorsCounter = 0
 		val inputLen = s.length
 		for (i in 0 until inputLen) {
@@ -67,7 +67,7 @@ object Base64 {
 
 		val outputLen = (inputLen - separatorsCounter) * 3 / 4 - deltas
 
-		val buffer = ByteArray(outputLen)
+		val buffer = CharArray(outputLen)
 		val mask = 0xFF
 		var index = 0
 		var o: Int
@@ -91,7 +91,7 @@ object Base64 {
 				}
 			}
 
-			buffer[index++] = (c0 shl 2 or (c1 shr 4) and mask).toByte()
+			buffer[index++] = (c0 shl 2 or (c1 shr 4) and mask).toChar()
 			if (index >= buffer.size) {
 				break
 			}
@@ -103,7 +103,7 @@ object Base64 {
 					break
 				}
 			}
-			buffer[index++] = (c1 shl 4 or (c2 shr 2) and mask).toByte()
+			buffer[index++] = (c1 shl 4 or (c2 shr 2) and mask).toChar()
 			if (index >= buffer.size) {
 				break
 			}
@@ -115,10 +115,15 @@ object Base64 {
 					break
 				}
 			}
-			buffer[index++] = (c2 shl 6 or c3 and mask).toByte()
+			buffer[index++] = (c2 shl 6 or c3 and mask).toChar()
 		}
 
 		return buffer
+	}
+
+	fun decodeToString(s: String): String {
+		val buf = decode(s)
+		return String(buf)
 	}
 
 	/**

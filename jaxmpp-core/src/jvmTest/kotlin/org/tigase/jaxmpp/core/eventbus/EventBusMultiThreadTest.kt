@@ -7,9 +7,7 @@ import java.util.concurrent.ConcurrentLinkedQueue
 
 class EventBusMultiThreadTest {
 
-	private val eventBus = object : AbstractEventBus(SessionObject()) {
-
-	}
+	private val eventBus = EventBus(SessionObject())
 
 	private var working: Boolean = false
 
@@ -20,23 +18,23 @@ class EventBusMultiThreadTest {
 		val result1 = ConcurrentLinkedQueue<String>()
 		val result2 = ConcurrentLinkedQueue<String>()
 
-		eventBus.register<TestEvent>(TestEvent.TYPE) { sessionObject, t -> }
+		eventBus.register<TestEvent>(TestEvent.TYPE) { _, _ -> }
 
-		eventBus.register<TestEvent>(AbstractEventBus.ALL_EVENTS) { sessionObject, event ->
+		eventBus.register<TestEvent>(AbstractEventBus.ALL_EVENTS) { _, event ->
 			try {
 				result0.add(event.value)
 			} catch (e: Exception) {
 				e.printStackTrace()
 			}
 		}
-		eventBus.register<TestEvent>(TestEvent.TYPE) { sessionObject, event ->
+		eventBus.register<TestEvent>(TestEvent.TYPE) { _, event ->
 			try {
 				result1.add(event.value)
 			} catch (e: Exception) {
 				e.printStackTrace()
 			}
 		}
-		eventBus.register<TestEvent>(TestEvent.TYPE) { sessionObject, event ->
+		eventBus.register<TestEvent>(TestEvent.TYPE) { _, event ->
 			try {
 				result2.add(event.value)
 			} catch (e: Exception) {
@@ -87,7 +85,7 @@ class EventBusMultiThreadTest {
 	internal class TestEvent(val value: String?) : Event(TYPE) {
 		companion object {
 
-			val TYPE = "test:event"
+			const val TYPE = "test:event"
 		}
 
 	}
@@ -108,9 +106,8 @@ class EventBusMultiThreadTest {
 	}
 
 	companion object {
-
-		private val EVENTS = 1000
-		private val THREADS = 1000
+		private const val EVENTS = 1000
+		private const val THREADS = 1000
 	}
 
 }
