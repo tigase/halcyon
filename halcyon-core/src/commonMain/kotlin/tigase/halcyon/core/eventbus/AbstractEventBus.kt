@@ -1,3 +1,20 @@
+/*
+ * Tigase Halcyon XMPP Library
+ * Copyright (C) 2018 Tigase, Inc. (office@tigase.com)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
+ * the Free Software Foundation, version 3 of the License.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. Look for COPYING file in the top folder.
+ * If not, see http://www.gnu.org/licenses/.
+ */
 package tigase.halcyon.core.eventbus
 
 abstract class AbstractEventBus(val sessionObject: tigase.halcyon.core.SessionObject) {
@@ -38,8 +55,7 @@ abstract class AbstractEventBus(val sessionObject: tigase.halcyon.core.SessionOb
 	}
 
 	protected open fun fire(
-		event: tigase.halcyon.core.eventbus.Event,
-		handlers: Collection<tigase.halcyon.core.eventbus.EventHandler<*>>
+		event: tigase.halcyon.core.eventbus.Event, handlers: Collection<tigase.halcyon.core.eventbus.EventHandler<*>>
 	) {
 		if (log.isLoggable(tigase.halcyon.core.logger.Level.FINEST)) {
 			log.finest("Firing event $event with ${handlers.size} handlers")
@@ -47,22 +63,18 @@ abstract class AbstractEventBus(val sessionObject: tigase.halcyon.core.SessionOb
 		handlers.forEach { eventHandler ->
 			try {
 				(eventHandler as tigase.halcyon.core.eventbus.EventHandler<tigase.halcyon.core.eventbus.Event>).onEvent(
-					sessionObject,
-					event
+					sessionObject, event
 				)
 			} catch (e: Exception) {
 				if (log.isLoggable(tigase.halcyon.core.logger.Level.WARNING)) log.log(
-					tigase.halcyon.core.logger.Level.WARNING,
-					"Problem on handling event",
-					e
+					tigase.halcyon.core.logger.Level.WARNING, "Problem on handling event", e
 				)
 			}
 		}
 	}
 
 	fun <T : tigase.halcyon.core.eventbus.Event> register(
-		eventType: String = tigase.halcyon.core.eventbus.AbstractEventBus.Companion.ALL_EVENTS,
-		handler: tigase.halcyon.core.eventbus.EventHandler<T>
+		eventType: String = tigase.halcyon.core.eventbus.AbstractEventBus.Companion.ALL_EVENTS, handler: tigase.halcyon.core.eventbus.EventHandler<T>
 	) {
 		synchronized(this) {
 			var handlers = handlersMap[eventType]
@@ -75,8 +87,7 @@ abstract class AbstractEventBus(val sessionObject: tigase.halcyon.core.SessionOb
 	}
 
 	fun <T : tigase.halcyon.core.eventbus.Event> register(
-		eventType: String = tigase.halcyon.core.eventbus.AbstractEventBus.Companion.ALL_EVENTS,
-		handler: (tigase.halcyon.core.SessionObject, T) -> Unit
+		eventType: String = tigase.halcyon.core.eventbus.AbstractEventBus.Companion.ALL_EVENTS, handler: (tigase.halcyon.core.SessionObject, T) -> Unit
 	) {
 		register(eventType, object : tigase.halcyon.core.eventbus.EventHandler<T> {
 			override fun onEvent(sessionObject: tigase.halcyon.core.SessionObject, event: T) {
@@ -86,8 +97,7 @@ abstract class AbstractEventBus(val sessionObject: tigase.halcyon.core.SessionOb
 	}
 
 	fun unregister(
-		eventType: String = tigase.halcyon.core.eventbus.AbstractEventBus.Companion.ALL_EVENTS,
-		handler: tigase.halcyon.core.eventbus.EventHandler<*>
+		eventType: String = tigase.halcyon.core.eventbus.AbstractEventBus.Companion.ALL_EVENTS, handler: tigase.halcyon.core.eventbus.EventHandler<*>
 	) {
 		synchronized(this) {
 			val handlers = handlersMap[eventType]

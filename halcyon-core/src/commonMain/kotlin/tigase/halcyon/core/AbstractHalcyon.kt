@@ -1,3 +1,20 @@
+/*
+ * Tigase Halcyon XMPP Library
+ * Copyright (C) 2018 Tigase, Inc. (office@tigase.com)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
+ * the Free Software Foundation, version 3 of the License.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. Look for COPYING file in the top folder.
+ * If not, see http://www.gnu.org/licenses/.
+ */
 package tigase.halcyon.core
 
 import tigase.halcyon.core.requests.Request
@@ -15,8 +32,7 @@ import tigase.halcyon.core.xmpp.modules.auth.SaslModule
 import tigase.halcyon.core.xmpp.modules.sm.StreamManagementModule
 
 data class HalcyonStateChangeEvent(
-	val oldState: tigase.halcyon.core.AbstractHalcyon.State,
-	val newState: tigase.halcyon.core.AbstractHalcyon.State
+	val oldState: tigase.halcyon.core.AbstractHalcyon.State, val newState: tigase.halcyon.core.AbstractHalcyon.State
 ) : tigase.halcyon.core.eventbus.Event(
 	tigase.halcyon.core.HalcyonStateChangeEvent.Companion.TYPE
 ) {
@@ -26,8 +42,8 @@ data class HalcyonStateChangeEvent(
 	}
 }
 
-data class TickEvent(val counter: Long, val timestamp: Long) :
-	tigase.halcyon.core.eventbus.Event(tigase.halcyon.core.TickEvent.Companion.TYPE) {
+data class TickEvent(val counter: Long, val timestamp: Long) : tigase.halcyon.core.eventbus.Event(tigase.halcyon.core.TickEvent.Companion.TYPE) {
+
 	companion object {
 		const val TYPE = "tigase.halcyon.core.TickEvent"
 	}
@@ -50,12 +66,10 @@ abstract class AbstractHalcyon : tigase.halcyon.core.Context, tigase.halcyon.cor
 	private var tickCounter: Long = 0
 
 	final override val sessionObject: tigase.halcyon.core.SessionObject = tigase.halcyon.core.SessionObject()
-	final override val eventBus: tigase.halcyon.core.eventbus.EventBus =
-		tigase.halcyon.core.eventbus.EventBus(sessionObject)
+	final override val eventBus: tigase.halcyon.core.eventbus.EventBus = tigase.halcyon.core.eventbus.EventBus(sessionObject)
 	override val writer: tigase.halcyon.core.PacketWriter
 		get() = this
-	final override val modules: tigase.halcyon.core.modules.ModulesManager =
-		tigase.halcyon.core.modules.ModulesManager()
+	final override val modules: tigase.halcyon.core.modules.ModulesManager = tigase.halcyon.core.modules.ModulesManager()
 	val requestsManager: RequestsManager = RequestsManager()
 	val configurator: tigase.halcyon.Configurator = tigase.halcyon.Configurator(sessionObject)
 	private val executor = tigase.halcyon.core.excutor.Executor()

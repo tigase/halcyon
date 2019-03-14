@@ -1,3 +1,20 @@
+/*
+ * Tigase Halcyon XMPP Library
+ * Copyright (C) 2018 Tigase, Inc. (office@tigase.com)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
+ * the Free Software Foundation, version 3 of the License.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. Look for COPYING file in the top folder.
+ * If not, see http://www.gnu.org/licenses/.
+ */
 package tigase.halcyon.core.eventbus
 
 import java.util.concurrent.ConcurrentHashMap
@@ -9,8 +26,7 @@ actual class EventBus actual constructor(sessionObject: tigase.halcyon.core.Sess
 	override fun createHandlersMap(): MutableMap<String, MutableSet<tigase.halcyon.core.eventbus.EventHandler<*>>> =
 		ConcurrentHashMap()
 
-	override fun createHandlersSet(): MutableSet<tigase.halcyon.core.eventbus.EventHandler<*>> =
-		ConcurrentHashMap.newKeySet<tigase.halcyon.core.eventbus.EventHandler<*>>()
+	override fun createHandlersSet(): MutableSet<tigase.halcyon.core.eventbus.EventHandler<*>> = ConcurrentHashMap.newKeySet<tigase.halcyon.core.eventbus.EventHandler<*>>()
 
 	enum class Mode {
 		NoThread,
@@ -30,41 +46,33 @@ actual class EventBus actual constructor(sessionObject: tigase.halcyon.core.Sess
 	}
 
 	private fun fireNoThread(
-		event: tigase.halcyon.core.eventbus.Event,
-		handlers: Collection<tigase.halcyon.core.eventbus.EventHandler<*>>
+		event: tigase.halcyon.core.eventbus.Event, handlers: Collection<tigase.halcyon.core.eventbus.EventHandler<*>>
 	) {
 		handlers.forEach { eventHandler ->
 			try {
 				(eventHandler as tigase.halcyon.core.eventbus.EventHandler<tigase.halcyon.core.eventbus.Event>).onEvent(
-					sessionObject,
-					event
+					sessionObject, event
 				)
 			} catch (e: Exception) {
 				if (log.isLoggable(tigase.halcyon.core.logger.Level.WARNING)) log.log(
-					tigase.halcyon.core.logger.Level.WARNING,
-					"Problem on handling event",
-					e
+					tigase.halcyon.core.logger.Level.WARNING, "Problem on handling event", e
 				)
 			}
 		}
 	}
 
 	private fun fireThreadPerEvent(
-		event: tigase.halcyon.core.eventbus.Event,
-		handlers: Collection<tigase.halcyon.core.eventbus.EventHandler<*>>
+		event: tigase.halcyon.core.eventbus.Event, handlers: Collection<tigase.halcyon.core.eventbus.EventHandler<*>>
 	) {
 		executor.execute {
 			handlers.forEach { eventHandler ->
 				try {
 					(eventHandler as tigase.halcyon.core.eventbus.EventHandler<tigase.halcyon.core.eventbus.Event>).onEvent(
-						sessionObject,
-						event
+						sessionObject, event
 					)
 				} catch (e: Exception) {
 					if (log.isLoggable(tigase.halcyon.core.logger.Level.WARNING)) log.log(
-						tigase.halcyon.core.logger.Level.WARNING,
-						"Problem on handling event",
-						e
+						tigase.halcyon.core.logger.Level.WARNING, "Problem on handling event", e
 					)
 				}
 			}
@@ -72,21 +80,17 @@ actual class EventBus actual constructor(sessionObject: tigase.halcyon.core.Sess
 	}
 
 	private fun fireThreadPerHandler(
-		event: tigase.halcyon.core.eventbus.Event,
-		handlers: Collection<tigase.halcyon.core.eventbus.EventHandler<*>>
+		event: tigase.halcyon.core.eventbus.Event, handlers: Collection<tigase.halcyon.core.eventbus.EventHandler<*>>
 	) {
 		handlers.forEach { eventHandler ->
 			executor.execute {
 				try {
 					(eventHandler as tigase.halcyon.core.eventbus.EventHandler<tigase.halcyon.core.eventbus.Event>).onEvent(
-						sessionObject,
-						event
+						sessionObject, event
 					)
 				} catch (e: Exception) {
 					if (log.isLoggable(tigase.halcyon.core.logger.Level.WARNING)) log.log(
-						tigase.halcyon.core.logger.Level.WARNING,
-						"Problem on handling event",
-						e
+						tigase.halcyon.core.logger.Level.WARNING, "Problem on handling event", e
 					)
 				}
 			}
@@ -94,8 +98,7 @@ actual class EventBus actual constructor(sessionObject: tigase.halcyon.core.Sess
 	}
 
 	override fun fire(
-		event: tigase.halcyon.core.eventbus.Event,
-		handlers: Collection<tigase.halcyon.core.eventbus.EventHandler<*>>
+		event: tigase.halcyon.core.eventbus.Event, handlers: Collection<tigase.halcyon.core.eventbus.EventHandler<*>>
 	) {
 		if (log.isLoggable(tigase.halcyon.core.logger.Level.FINEST)) {
 			log.finest("Firing event $event with ${handlers.size} handlers")

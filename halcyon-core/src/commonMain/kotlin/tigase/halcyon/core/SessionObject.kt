@@ -1,3 +1,20 @@
+/*
+ * Tigase Halcyon XMPP Library
+ * Copyright (C) 2018 Tigase, Inc. (office@tigase.com)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
+ * the Free Software Foundation, version 3 of the License.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. Look for COPYING file in the top folder.
+ * If not, see http://www.gnu.org/licenses/.
+ */
 package tigase.halcyon.core
 
 import tigase.halcyon.core.xmpp.BareJID
@@ -13,6 +30,7 @@ class SessionObject {
 	class ClearedEvent(val scopes: Array<tigase.halcyon.core.SessionObject.Scope>) : tigase.halcyon.core.eventbus.Event(
 		tigase.halcyon.core.SessionObject.ClearedEvent.Companion.TYPE
 	) {
+
 		companion object {
 			const val TYPE = "SessionObject::ClearedEvent"
 		}
@@ -29,25 +47,25 @@ class SessionObject {
 	}
 
 	fun clear(scopes: Array<tigase.halcyon.core.SessionObject.Scope>) {
-			val iterator = this.properties.entries.iterator()
-			while (iterator.hasNext()) {
-				val entry = iterator.next()
-				if (scopes.contains(entry.value.scope)) {
-					iterator.remove()
-				}
+		val iterator = this.properties.entries.iterator()
+		while (iterator.hasNext()) {
+			val entry = iterator.next()
+			if (scopes.contains(entry.value.scope)) {
+				iterator.remove()
+			}
 		}
 		val event = tigase.halcyon.core.SessionObject.ClearedEvent(scopes)
 		eventBus.fire(event)
 	}
 
 	fun <T> getProperty(scope: tigase.halcyon.core.SessionObject.Scope?, key: String): T? {
-			val entry = this.properties.get(key)
-			return if (entry == null) {
-				null
-			} else if (scope == null || scope == entry.scope) {
-				entry.value as T?
-			} else {
-				null
+		val entry = this.properties.get(key)
+		return if (entry == null) {
+			null
+		} else if (scope == null || scope == entry.scope) {
+			entry.value as T?
+		} else {
+			null
 		}
 	}
 
@@ -73,20 +91,18 @@ class SessionObject {
 	}
 
 	fun setProperty(
-		scope: tigase.halcyon.core.SessionObject.Scope,
-		key: String,
-		value: Any?
+		scope: tigase.halcyon.core.SessionObject.Scope, key: String, value: Any?
 	): tigase.halcyon.core.SessionObject {
-			if (value == null) {
-				this.properties.remove(key)
-			} else {
-				var e: tigase.halcyon.core.SessionObject.Entry? = this.properties.get(key)
-				if (e == null) {
-					e = tigase.halcyon.core.SessionObject.Entry()
-					this.properties.put(key, e)
-				}
-				e.scope = scope
-				e.value = value
+		if (value == null) {
+			this.properties.remove(key)
+		} else {
+			var e: tigase.halcyon.core.SessionObject.Entry? = this.properties.get(key)
+			if (e == null) {
+				e = tigase.halcyon.core.SessionObject.Entry()
+				this.properties.put(key, e)
+			}
+			e.scope = scope
+			e.value = value
 		}
 		return this
 	}

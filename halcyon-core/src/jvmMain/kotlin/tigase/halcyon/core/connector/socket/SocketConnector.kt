@@ -1,3 +1,20 @@
+/*
+ * Tigase Halcyon XMPP Library
+ * Copyright (C) 2018 Tigase, Inc. (office@tigase.com)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
+ * the Free Software Foundation, version 3 of the License.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. Look for COPYING file in the top folder.
+ * If not, see http://www.gnu.org/licenses/.
+ */
 package tigase.halcyon.core.connector.socket
 
 import org.minidns.hla.DnssecResolverApi
@@ -88,7 +105,7 @@ class SocketConnector(context: tigase.halcyon.core.Context) : tigase.halcyon.cor
 
 		val writer = OutputStreamWriter(this.socket.getOutputStream())
 		this.worker = SocketWorker(socket, parser, writer)
-		this.worker.onError = {exception -> onWorkerException(exception) }
+		this.worker.onError = { exception -> onWorkerException(exception) }
 		worker.start()
 
 		val sb = StringBuilder()
@@ -120,8 +137,9 @@ class SocketConnector(context: tigase.halcyon.core.Context) : tigase.halcyon.cor
 
 	override fun send(data: CharSequence) {
 		if (log.isLoggable(tigase.halcyon.core.logger.Level.FINEST)) log.log(
-			tigase.halcyon.core.logger.Level.FINEST, "Sending (${worker.socket.isConnected}, ${!worker
-				.socket.isOutputShutdown}): $data")
+			tigase.halcyon.core.logger.Level.FINEST,
+			"Sending (${worker.socket.isConnected}, ${!worker.socket.isOutputShutdown}): $data"
+		)
 		worker.writer.write(data.toString())
 		worker.writer.flush()
 	}

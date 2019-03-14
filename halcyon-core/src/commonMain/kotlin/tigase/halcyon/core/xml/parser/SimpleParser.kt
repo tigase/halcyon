@@ -1,8 +1,6 @@
 /*
- * SimpleParser.java
- *
- * Tigase Jabber/XMPP XML Tools
- * Copyright (C) 2004-2017 "Tigase, Inc." <office@tigase.com>
+ * Tigase Halcyon XMPP Library
+ * Copyright (C) 2018 Tigase, Inc. (office@tigase.com)
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -193,7 +191,8 @@ class SimpleParser {
 
 					if (chr == ERR_NAME_CHARS[0] || chr == ERR_NAME_CHARS[1] || chr == ERR_NAME_CHARS[2]) {
 						parser_state.state = State.ERROR
-						parser_state.errorMessage = "Not allowed character in start element name: " + chr + "\nExisting characters in start element name: " + parser_state.element_name!!.toString()
+						parser_state.errorMessage =
+							"Not allowed character in start element name: " + chr + "\nExisting characters in start element name: " + parser_state.element_name!!.toString()
 
 						continue@LOOP
 					}    // end of if ()
@@ -202,7 +201,8 @@ class SimpleParser {
 
 					if (parser_state.element_name!!.length > MAX_ELEMENT_NAME_SIZE) {
 						parser_state.state = State.ERROR
-						parser_state.errorMessage = "Max element name size exceeded: " + MAX_ELEMENT_NAME_SIZE + "\nreceived: " + parser_state.element_name!!.toString()
+						parser_state.errorMessage =
+							"Max element name size exceeded: " + MAX_ELEMENT_NAME_SIZE + "\nreceived: " + parser_state.element_name!!.toString()
 					}
 				}
 
@@ -213,7 +213,8 @@ class SimpleParser {
 
 					if (chr == SLASH) {
 						parser_state.state = State.ERROR
-						parser_state.errorMessage = "Not allowed character in close element name: " + chr + "\nExisting characters in close element name: " + parser_state.element_name!!.toString()
+						parser_state.errorMessage =
+							"Not allowed character in close element name: " + chr + "\nExisting characters in close element name: " + parser_state.element_name!!.toString()
 
 						continue@LOOP
 					}    // end of if (chr == SLASH)
@@ -222,7 +223,8 @@ class SimpleParser {
 						parser_state.state = State.ELEMENT_CDATA
 						if (!handler.endElement(parser_state.element_name!!.toString())) {
 							parser_state.state = State.ERROR
-							parser_state.errorMessage = "Malformed XML: element close found without open for this element: " + parser_state.element_name!!
+							parser_state.errorMessage =
+								"Malformed XML: element close found without open for this element: " + parser_state.element_name!!
 							continue@LOOP
 						}
 
@@ -234,7 +236,8 @@ class SimpleParser {
 
 					if (chr == ERR_NAME_CHARS[0] || chr == ERR_NAME_CHARS[1] || chr == ERR_NAME_CHARS[2]) {
 						parser_state.state = State.ERROR
-						parser_state.errorMessage = "Not allowed character in close element name: " + chr + "\nExisting characters in close element name: " + parser_state.element_name!!.toString()
+						parser_state.errorMessage =
+							"Not allowed character in close element name: " + chr + "\nExisting characters in close element name: " + parser_state.element_name!!.toString()
 
 						continue@LOOP
 					}    // end of if ()
@@ -243,7 +246,8 @@ class SimpleParser {
 
 					if (parser_state.element_name!!.length > MAX_ELEMENT_NAME_SIZE) {
 						parser_state.state = State.ERROR
-						parser_state.errorMessage = "Max element name size exceeded: " + MAX_ELEMENT_NAME_SIZE + "\nreceived: " + parser_state.element_name!!.toString()
+						parser_state.errorMessage =
+							"Max element name size exceeded: " + MAX_ELEMENT_NAME_SIZE + "\nreceived: " + parser_state.element_name!!.toString()
 					}
 				}
 
@@ -256,9 +260,11 @@ class SimpleParser {
 
 					if (chr == CLOSE_BRACKET) {
 						parser_state.state = State.ELEMENT_CDATA
-						handler.startElement(parser_state.element_name!!.toString(),
-											 toStringArray(parser_state.attrib_names),
-											 toStringArray(parser_state.attrib_values))
+						handler.startElement(
+							parser_state.element_name!!.toString(),
+							toStringArray(parser_state.attrib_names),
+							toStringArray(parser_state.attrib_values)
+						)
 						parser_state.attrib_names = null
 						parser_state.attrib_values = null
 						parser_state.current_attr = -1
@@ -284,7 +290,8 @@ class SimpleParser {
 							if (parser_state.current_attr == parser_state.attrib_names!!.size - 1) {
 								if (parser_state.attrib_names!!.size >= ATTRIBUTES_NUMBER_LIMIT) {
 									parser_state.state = State.ERROR
-									parser_state.errorMessage = "Attributes nuber limit exceeded: " + ATTRIBUTES_NUMBER_LIMIT + "\nreceived: " + parser_state.element_name!!.toString()
+									parser_state.errorMessage =
+										"Attributes nuber limit exceeded: " + ATTRIBUTES_NUMBER_LIMIT + "\nreceived: " + parser_state.element_name!!.toString()
 									continue@LOOP
 								} else {
 									val new_size = parser_state.attrib_names!!.size + MAX_ATTRIBS_NUMBER
@@ -311,7 +318,8 @@ class SimpleParser {
 
 					if (chr == ERR_NAME_CHARS[0] || chr == ERR_NAME_CHARS[1] || chr == ERR_NAME_CHARS[2]) {
 						parser_state.state = State.ERROR
-						parser_state.errorMessage = "Not allowed character in element attribute name: " + chr + "\nExisting characters in element attribute name: " + parser_state.attrib_names!![parser_state.current_attr].toString()
+						parser_state.errorMessage =
+							"Not allowed character in element attribute name: " + chr + "\nExisting characters in element attribute name: " + parser_state.attrib_names!![parser_state.current_attr].toString()
 
 						continue@LOOP
 					}    // end of if ()
@@ -320,7 +328,8 @@ class SimpleParser {
 
 					if (parser_state.attrib_names!![parser_state.current_attr]!!.length > MAX_ATTRIBUTE_NAME_SIZE) {
 						parser_state.state = State.ERROR
-						parser_state.errorMessage = "Max attribute name size exceeded: " + MAX_ATTRIBUTE_NAME_SIZE + "\nreceived: " + parser_state.attrib_names!![parser_state.current_attr].toString()
+						parser_state.errorMessage =
+							"Max attribute name size exceeded: " + MAX_ATTRIBUTE_NAME_SIZE + "\nreceived: " + parser_state.attrib_names!![parser_state.current_attr].toString()
 					}
 				}
 
@@ -352,7 +361,8 @@ class SimpleParser {
 						}
 						'<' -> {
 							parser_state.state = State.ERROR
-							parser_state.errorMessage = "Not allowed character in element attribute value: " + chr + "\nExisting characters in element attribute value: " + parser_state.attrib_values!![parser_state.current_attr].toString()
+							parser_state.errorMessage =
+								"Not allowed character in element attribute value: " + chr + "\nExisting characters in element attribute value: " + parser_state.attrib_values!![parser_state.current_attr].toString()
 						}
 						else -> {
 						}
@@ -360,7 +370,8 @@ class SimpleParser {
 
 					if (parser_state.attrib_values!![parser_state.current_attr]!!.length > MAX_ATTRIBUTE_VALUE_SIZE) {
 						parser_state.state = State.ERROR
-						parser_state.errorMessage = "Max attribute value size exceeded: " + MAX_ATTRIBUTE_VALUE_SIZE + "\nreceived: " + parser_state.attrib_values!![parser_state.current_attr].toString()
+						parser_state.errorMessage =
+							"Max attribute value size exceeded: " + MAX_ATTRIBUTE_VALUE_SIZE + "\nreceived: " + parser_state.attrib_values!![parser_state.current_attr].toString()
 					}
 				}
 
@@ -381,7 +392,8 @@ class SimpleParser {
 						}
 						'<' -> {
 							parser_state.state = State.ERROR
-							parser_state.errorMessage = "Not allowed character in element attribute value: " + chr + "\nExisting characters in element attribute value: " + parser_state.attrib_values!![parser_state.current_attr].toString()
+							parser_state.errorMessage =
+								"Not allowed character in element attribute value: " + chr + "\nExisting characters in element attribute value: " + parser_state.attrib_values!![parser_state.current_attr].toString()
 						}
 						else -> {
 						}
@@ -389,7 +401,8 @@ class SimpleParser {
 
 					if (parser_state.attrib_values!![parser_state.current_attr]!!.length > MAX_ATTRIBUTE_VALUE_SIZE) {
 						parser_state.state = State.ERROR
-						parser_state.errorMessage = "Max attribute value size exceeded: " + MAX_ATTRIBUTE_VALUE_SIZE + "\nreceived: " + parser_state.attrib_values!![parser_state.current_attr].toString()
+						parser_state.errorMessage =
+							"Max attribute value size exceeded: " + MAX_ATTRIBUTE_VALUE_SIZE + "\nreceived: " + parser_state.attrib_values!![parser_state.current_attr].toString()
 					}
 				}
 
@@ -423,7 +436,8 @@ class SimpleParser {
 
 					if (parser_state.element_cdata!!.length > MAX_CDATA_SIZE) {
 						parser_state.state = State.ERROR
-						parser_state.errorMessage = "Max cdata size exceeded: " + MAX_CDATA_SIZE + "\nreceived: " + parser_state.element_cdata!!.toString()
+						parser_state.errorMessage =
+							"Max cdata size exceeded: " + MAX_CDATA_SIZE + "\nreceived: " + parser_state.element_cdata!!.toString()
 					}
 				}
 
@@ -477,7 +491,8 @@ class SimpleParser {
 					if (valid) {
 						when (parser_state.parentState) {
 							SimpleParser.State.ATTRIB_VALUE_D, SimpleParser.State.ATTRIB_VALUE_S -> parser_state.attrib_values!![parser_state.current_attr]!!.append(
-									chr)
+								chr
+							)
 							SimpleParser.State.ELEMENT_CDATA -> parser_state.element_cdata!!.append(chr)
 						}
 					} else {
@@ -504,7 +519,8 @@ class SimpleParser {
 
 					if (parser_state.element_cdata!!.length > MAX_CDATA_SIZE) {
 						parser_state.state = State.ERROR
-						parser_state.errorMessage = "Max cdata size exceeded: " + MAX_CDATA_SIZE + "\nreceived: " + parser_state.element_cdata!!.toString()
+						parser_state.errorMessage =
+							"Max cdata size exceeded: " + MAX_CDATA_SIZE + "\nreceived: " + parser_state.element_cdata!!.toString()
 					}
 				}
 
@@ -515,7 +531,7 @@ class SimpleParser {
 					return
 				}
 
-			// break;
+				// break;
 				else -> throw RuntimeException("Unknown SimpleParser state: " + parser_state.state)
 			}// Skip everything up to open bracket
 			// do nothing, skip white chars

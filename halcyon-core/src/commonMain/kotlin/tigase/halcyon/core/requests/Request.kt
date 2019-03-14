@@ -1,3 +1,20 @@
+/*
+ * Tigase Halcyon XMPP Library
+ * Copyright (C) 2018 Tigase, Inc. (office@tigase.com)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
+ * the Free Software Foundation, version 3 of the License.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. Look for COPYING file in the top folder.
+ * If not, see http://www.gnu.org/licenses/.
+ */
 package tigase.halcyon.core.requests
 
 import getTypeAttr
@@ -72,8 +89,7 @@ class Request(val jid: JID?, val id: String, val creationTimestamp: Long, val re
 
 	private fun findCondition(stanza: Element): ErrorCondition {
 		val error = stanza.children.firstOrNull { element -> element.name == "error" } ?: return ErrorCondition.Unknown
-		val cnd = error.children.firstOrNull { element -> element.xmlns == XMPPException.XMLNS }
-			?: return ErrorCondition.Unknown
+		val cnd = error.children.firstOrNull { element -> element.xmlns == XMPPException.XMLNS } ?: return ErrorCondition.Unknown
 		return ErrorCondition.getByElementName(cnd.name)
 	}
 
