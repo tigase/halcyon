@@ -9,7 +9,7 @@ pluginManagement {
 }
 enableFeaturePreview('GRADLE_METADATA')
 
-rootProject.name = 'jaxmpp'
+rootProject.name = 'halcyon'
 
-include 'jaxmpp-core'
+include 'halcyon-core'
 
