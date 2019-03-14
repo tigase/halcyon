@@ -31,7 +31,7 @@ class RequestsManager {
 		val id = response.attributes["id"] ?: return null
 		val from = response.attributes["from"]
 
-		val request =   requests[id]  ?: return null
+		val request = requests[id] ?: return null
 
 		if (!verify(request, response)) return null
 
@@ -60,7 +60,11 @@ class RequestsManager {
 	fun findAndExecute(response: Element): Boolean {
 		var r = getRequest(response) ?: return false
 		executor.execute {
-			r.responseStanza = response
+			try {
+				r.responseStanza = response
+			} catch (e: Throwable) {
+				log.log(Level.WARNING, "Error on processing response", e)
+			}
 		}
 		return true
 	}

@@ -2,12 +2,14 @@ package org.tigase.jaxmpp.core.xmpp.modules
 
 import org.tigase.jaxmpp.core.Context
 import org.tigase.jaxmpp.core.eventbus.Event
-import org.tigase.jaxmpp.core.exceptions.JaXMPPException
+import org.tigase.jaxmpp.core.modules.Criteria
 import org.tigase.jaxmpp.core.modules.XmppModule
 import org.tigase.jaxmpp.core.requests.Request
 import org.tigase.jaxmpp.core.xml.Element
-import org.tigase.jaxmpp.core.xml.stanza
+import org.tigase.jaxmpp.core.xml.element
+import org.tigase.jaxmpp.core.xmpp.ErrorCondition
 import org.tigase.jaxmpp.core.xmpp.JID
+import org.tigase.jaxmpp.core.xmpp.XMPPException
 
 sealed class BindEvent(type: String) : Event(type) {
 
@@ -34,13 +36,13 @@ class BindModule : XmppModule {
 
 	override val type = TYPE
 	override lateinit var context: Context
-	override val criteria = null
+	override val criteria: Criteria? = null
 	override val features = arrayOf(XMLNS)
 
 	override fun initialize() {}
 
 	fun bind() {
-		val stanza = stanza("iq") {
+		val stanza = element("iq") {
 			id()
 			attribute("type", "set")
 			"bind"{
@@ -61,7 +63,7 @@ class BindModule : XmppModule {
 	}
 
 	override fun process(element: Element) {
-		throw JaXMPPException("Not supported")
+		throw XMPPException(ErrorCondition.BadRequest)
 	}
 
 }

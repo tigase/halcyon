@@ -10,7 +10,7 @@ class ElementTest {
 			.attribute("from", "juliet@example.com/balcony").attribute("type", "chat").child("subject")
 			.value("I implore you!").up().child("body").value("Wherefore art thou, Romeo?").up().child("thread")
 			.value("e0ffe42b28561960c6b12b944a092794b9683a38").up().child("x").value("tigase:offline").xmlns("tigase")
-		return b.element
+		return b.build()
 	}
 
 	@Test

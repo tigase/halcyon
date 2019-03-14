@@ -1,7 +1,7 @@
 package org.tigase.jaxmpp.core.requests
 
 import org.tigase.jaxmpp.core.xml.Element
-import org.tigase.jaxmpp.core.xml.stanza
+import org.tigase.jaxmpp.core.xml.element
 import org.tigase.jaxmpp.core.xmpp.JID
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -12,13 +12,13 @@ class RequestTest {
 
 	@Test
 	fun testLateCallbackInit() {
-		val req = Request(JID.parse("a@b.c"), "1", 1, stanza("iq") {
+		val req = Request(JID.parse("a@b.c"), "1", 1, element("iq") {
 			attribute("id", "123")
 			attribute("to", "a@b.c")
 			attribute("type", "set")
 		})
 
-		val response = stanza("iq") {
+		val response = element("iq") {
 			attribute("id", "123")
 			attribute("from", "a@b.c")
 			attribute("type", "result")
@@ -34,13 +34,13 @@ class RequestTest {
 
 	@Test
 	fun testEarlyCallbackInit() {
-		val req = Request(JID.parse("a@b.c"), "1", 1, stanza("iq") {
+		val req = Request(JID.parse("a@b.c"), "1", 1, element("iq") {
 			attribute("id", "123")
 			attribute("to", "a@b.c")
 			attribute("type", "set")
 		})
 
-		val response = stanza("iq") {
+		val response = element("iq") {
 			attribute("id", "123")
 			attribute("from", "a@b.c")
 			attribute("type", "result")
@@ -56,13 +56,13 @@ class RequestTest {
 
 	@Test
 	fun testResponseSuccess() {
-		val req = Request(JID.parse("a@b.c"), "1", 1, stanza("iq") {
+		val req = Request(JID.parse("a@b.c"), "1", 1, element("iq") {
 			attribute("id", "123")
 			attribute("to", "a@b.c")
 			attribute("type", "set")
 		})
 
-		val response = stanza("iq") {
+		val response = element("iq") {
 			attribute("id", "123")
 			attribute("from", "a@b.c")
 			attribute("type", "result")
@@ -82,13 +82,13 @@ class RequestTest {
 
 	@Test
 	fun testResponseError() {
-		val req = Request(JID.parse("a@b.c"), "1", 1, stanza("iq") {
+		val req = Request(JID.parse("a@b.c"), "1", 1, element("iq") {
 			attribute("id", "123")
 			attribute("to", "a@b.c")
 			attribute("type", "set")
 		})
 
-		val response = stanza("iq") {
+		val response = element("iq") {
 			attribute("id", "123")
 			attribute("from", "a@b.c")
 			attribute("type", "error")

@@ -8,7 +8,7 @@ import org.tigase.jaxmpp.core.exceptions.JaXMPPException
 import org.tigase.jaxmpp.core.modules.Criterion
 import org.tigase.jaxmpp.core.modules.XmppModule
 import org.tigase.jaxmpp.core.xml.Element
-import org.tigase.jaxmpp.core.xml.stanza
+import org.tigase.jaxmpp.core.xml.element
 
 sealed class AuthEvent(type: String) : Event(type) {
 	data class AuthStartedEvent(val mechanism: String) : AuthEvent(
@@ -127,7 +127,7 @@ class SaslModule : XmppModule {
 		val password = context.sessionObject.getProperty<String>(SessionObject.PASSWORD)!!
 		val mechanism = "PLAIN"
 //		context.sessionObject.setProperty(AUTH_STATE, )
-		val authElement = stanza("auth") {
+		val authElement = element("auth") {
 			xmlns = XMLNS
 			attribute("mechanism", mechanism)
 			+Base64.encode('\u0000' + username + '\u0000' + password)

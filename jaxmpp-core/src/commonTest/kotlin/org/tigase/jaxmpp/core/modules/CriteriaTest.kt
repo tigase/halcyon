@@ -1,7 +1,7 @@
 package org.tigase.jaxmpp.core.modules
 
 import org.tigase.jaxmpp.core.xml.Element
-import org.tigase.jaxmpp.core.xml.stanza
+import org.tigase.jaxmpp.core.xml.element
 import kotlin.test.Test
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
@@ -9,7 +9,7 @@ import kotlin.test.assertTrue
 class CriteriaTest {
 
 
-	val element: Element = stanza("iq") {
+	val element: Element = element("iq") {
 		xmlns = "jabber:client"
 		attribute("to", "a@b.c")
 		attribute("from", "wojtas@wp.pl")

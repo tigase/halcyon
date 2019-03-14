@@ -7,18 +7,18 @@ import org.tigase.jaxmpp.core.connector.SentXMLElementEvent
 import org.tigase.jaxmpp.core.eventbus.Event
 import org.tigase.jaxmpp.core.eventbus.EventBus
 import org.tigase.jaxmpp.core.exceptions.JaXMPPException
+import org.tigase.jaxmpp.core.excutor.Executor
 import org.tigase.jaxmpp.core.logger.Level
 import org.tigase.jaxmpp.core.logger.Logger
 import org.tigase.jaxmpp.core.modules.ModulesManager
 import org.tigase.jaxmpp.core.requests.Request
 import org.tigase.jaxmpp.core.requests.RequestsManager
 import org.tigase.jaxmpp.core.xml.Element
-import org.tigase.jaxmpp.core.xml.stanza
+import org.tigase.jaxmpp.core.xml.element
+import org.tigase.jaxmpp.core.xmpp.ErrorCondition
 import org.tigase.jaxmpp.core.xmpp.SessionController
-import org.tigase.jaxmpp.core.xmpp.modules.BindModule
-import org.tigase.jaxmpp.core.xmpp.modules.PingModule
-import org.tigase.jaxmpp.core.xmpp.modules.StreamErrorModule
-import org.tigase.jaxmpp.core.xmpp.modules.StreamFeaturesModule
+import org.tigase.jaxmpp.core.xmpp.XMPPException
+import org.tigase.jaxmpp.core.xmpp.modules.*
 import org.tigase.jaxmpp.core.xmpp.modules.auth.SaslModule
 import org.tigase.jaxmpp.core.xmpp.modules.sm.StreamManagementModule
 
@@ -60,6 +60,7 @@ abstract class AbstractJaXMPP : Context, PacketWriter {
 	final override val modules: ModulesManager = ModulesManager()
 	val requestsManager: RequestsManager = RequestsManager()
 	val configurator: Configurator = Configurator(sessionObject)
+	private val executor = Executor()
 
 	var state = State.Disconnected
 		internal set(value) {
@@ -70,9 +71,8 @@ abstract class AbstractJaXMPP : Context, PacketWriter {
 
 	init {
 		modules.context = this
-		eventBus.register<ReceivedXMLElementEvent>(
-			ReceivedXMLElementEvent.TYPE,
-			handler = { _, event -> processReceivedXmlElement(event.element) })
+		eventBus.register<ReceivedXMLElementEvent>(ReceivedXMLElementEvent.TYPE,
+												   handler = { _, event -> processReceivedXmlElement(event.element) })
 
 		eventBus.register<SessionController.StopEverythingEvent>(
 			SessionController.StopEverythingEvent.TYPE
@@ -93,26 +93,85 @@ abstract class AbstractJaXMPP : Context, PacketWriter {
 		val modules = modules.getModulesFor(element)
 		if (modules.isEmpty()) {
 			log.fine("Unsupported stanza: " + element.getAsString())
-			sendErrorBack(element)
+			sendErrorBack(element, XMPPException(ErrorCondition.FeatureNotImplemented))
 			return
 		}
 
-		modules.forEach {
+		executor.execute {
 			try {
-				it.process(element)
+				modules.forEach {
+					it.process(element)
+				}
+			} catch (e: XMPPException) {
+				if (log.isLoggable(Level.FINEST)) log.log(
+					Level.FINEST, "Error ${e.condition} during processing stanza " + element.getAsString(), e
+				)
+				sendErrorBack(element, e)
 			} catch (e: Exception) {
-				log.log(Level.WARNING, "Problem on processing element " + element.getAsString(), e)
+				if (log.isLoggable(Level.FINEST)) log.log(
+					Level.FINEST, "Problem on processing element " + element.getAsString(), e
+				)
+				sendErrorBack(element, e)
 			}
 		}
 	}
 
-	fun sendErrorBack(element: Element) {
+	private fun createError(element: Element, caught: Exception): Element? {
+		if (caught is XMPPException) {
+			return createError(element, caught.condition, caught.message)
+		} else {
+			return null
+		}
+	}
+
+	private fun createError(element: Element, errorCondition: ErrorCondition, msg: String?): Element {
+		val resp = element(element.name) {
+			attribute("type", "error")
+			element.attributes["id"]?.apply {
+				attribute("id", this)
+			}
+			element.attributes["from"]?.apply {
+				attribute("to", this)
+			}
+
+			"error"{
+				errorCondition.type?.let {
+					attribute("type", it)
+				}
+				errorCondition.errorCode?.let {
+					attribute("code", it.toString())
+				}
+
+				errorCondition.elementName {
+					attribute("xmlns", XMPPException.XMLNS)
+				}
+
+				msg?.let {
+					"text"{
+						attribute("xmlns", XMPPException.XMLNS)
+						+it
+					}
+				}
+
+			}
+
+		}
+		return resp
+	}
+
+	private fun sendErrorBack(element: Element, exception: Exception) {
 		when (element.name) {
 			"iq", "presence", "message" -> {
-				TODO("Dorobic wysylanie bledów")
+				if (element.attributes["type"] == "error") {
+					log.fine("Ignoring unexpected error response")
+					return
+				}
+				createError(element, exception)?.apply {
+					writeDirectly(this)
+				}
 			}
 			else -> {
-				writeDirectly(stanza("stream:error") {
+				writeDirectly(element("stream:error") {
 					"unsupported-stanza-type"{
 						xmlns = "urn:ietf:params:xml:ns:xmpp-streams"
 					}

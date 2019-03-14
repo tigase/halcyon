@@ -22,6 +22,8 @@ class XMPPException : JaXMPPException {
 		this.condition = condition
 	}
 
+
+
 	companion object {
 		const val XMLNS = "urn:ietf:params:xml:ns:xmpp-stanzas";
 	}

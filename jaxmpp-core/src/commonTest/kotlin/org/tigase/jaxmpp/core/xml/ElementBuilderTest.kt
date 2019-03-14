@@ -10,15 +10,15 @@ class ElementBuilderTest {
 
 	private fun createElement2(): Element {
 		val b = ElementBuilder.create("message").attribute("to", "romeo@example.net")
-				.attribute("from", "juliet@example.com/balcony").attribute("type", "chat").child("subject")
-				.value("I implore you!").up().child("body").value("Wherefore art thou, Romeo?").up().child("thread")
-				.value("e0ffe42b28561960c6b12b944a092794b9683a38").up().child("x").xmlns("test:urn").child("presence")
-				.value("dnd")
+			.attribute("from", "juliet@example.com/balcony").attribute("type", "chat").child("subject")
+			.value("I implore you!").up().child("body").value("Wherefore art thou, Romeo?").up().child("thread")
+			.value("e0ffe42b28561960c6b12b944a092794b9683a38").up().child("x").xmlns("test:urn").child("presence")
+			.value("dnd")
 
-		return b.element
+		return b.build()
 	}
 
-	private fun createElement1(): Element = stanza("message") {
+	private fun createElement1(): Element = element("message") {
 		attribute("to", "romeo@example.net")
 		attribute("from", "juliet@example.com/balcony")
 		attribute("type", "chat")
@@ -86,7 +86,6 @@ class ElementBuilderTest {
 
 		test(receivedElement!!)
 	}
-
 
 	@Test
 	fun testBuilder() {

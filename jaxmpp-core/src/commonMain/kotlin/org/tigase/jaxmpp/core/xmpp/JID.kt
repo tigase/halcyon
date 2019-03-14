@@ -1,5 +1,7 @@
 package org.tigase.jaxmpp.core.xmpp
 
+import kotlin.jvm.JvmStatic
+
 data class JID(val bareJID: BareJID, val resource: String?) {
 
 	constructor(localpart: String? = null, domain: String, resource: String? = null) : this(
@@ -15,10 +17,12 @@ data class JID(val bareJID: BareJID, val resource: String?) {
 	override fun toString(): String = bareJID.toString() + if (resource != null) "/$resource" else ""
 
 	companion object {
+		@JvmStatic
 		fun parse(jid: String): JID {
 			val x = parseJID(jid)
 			return JID(BareJID(x[0], x[1]!!), x[2])
 		}
 	}
-
 }
+
+fun String.toJID(): JID = JID.parse(this)

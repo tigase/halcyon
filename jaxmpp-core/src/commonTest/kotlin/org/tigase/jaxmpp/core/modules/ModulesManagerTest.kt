@@ -5,7 +5,7 @@ import org.tigase.jaxmpp.core.PacketWriter
 import org.tigase.jaxmpp.core.SessionObject
 import org.tigase.jaxmpp.core.eventbus.EventBus
 import org.tigase.jaxmpp.core.xml.Element
-import org.tigase.jaxmpp.core.xml.stanza
+import org.tigase.jaxmpp.core.xml.element
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -56,10 +56,10 @@ class ModulesManagerTest {
 
 		assertTrue(arrayOf("1", "2", "a", "b").sortedArray() contentDeepEquals mm.getAvailableFeatures().sortedArray())
 
-		assertEquals(0, mm.getModulesFor(stanza("presence") {}).size)
-		assertEquals(1, mm.getModulesFor(stanza("iq") {}).size)
-		assertEquals(1, mm.getModulesFor(stanza("msg") {}).size)
-		assertEquals("Module01", mm.getModulesFor(stanza("iq") {}).first().type)
+		assertEquals(0, mm.getModulesFor(element("presence") {}).size)
+		assertEquals(1, mm.getModulesFor(element("iq") {}).size)
+		assertEquals(1, mm.getModulesFor(element("msg") {}).size)
+		assertEquals("Module01", mm.getModulesFor(element("iq") {}).first().type)
 
 	}
 

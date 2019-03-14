@@ -18,7 +18,7 @@ actual class Logger actual constructor(name: String) {
 		}
 	}
 
-	actual fun log(level: Level, msg: String, caught: Exception) {
+	actual fun log(level: Level, msg: String, caught: Throwable) {
 		log(level, msg + '\n' + caught.toString())
 	}
 

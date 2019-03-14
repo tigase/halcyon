@@ -12,7 +12,7 @@ import org.tigase.jaxmpp.core.modules.Criterion
 import org.tigase.jaxmpp.core.modules.XmppModule
 import org.tigase.jaxmpp.core.requests.Request
 import org.tigase.jaxmpp.core.xml.Element
-import org.tigase.jaxmpp.core.xml.stanza
+import org.tigase.jaxmpp.core.xml.element
 import org.tigase.jaxmpp.core.xmpp.ErrorCondition
 import org.tigase.jaxmpp.core.xmpp.XMPPException
 import org.tigase.jaxmpp.core.xmpp.modules.StreamFeaturesModule
@@ -156,7 +156,7 @@ class StreamManagementModule : XmppModule {
 		if (!force && h == lastH) return
 
 		context.sessionObject.setProperty(INCOMING_STREAM_H_LAST_SENT_KEY, h);
-		context.writer.writeDirectly(stanza("a") {
+		context.writer.writeDirectly(element("a") {
 			xmlns = XMLNS
 			attribute("h", h.toString())
 		})
@@ -211,7 +211,7 @@ class StreamManagementModule : XmppModule {
 
 	fun enable() {
 		if (isSupported()) {
-			context.writer.writeDirectly(stanza("enable") {
+			context.writer.writeDirectly(element("enable") {
 				xmlns = XMLNS
 				attribute("resume", "true")
 			})
@@ -230,14 +230,14 @@ class StreamManagementModule : XmppModule {
 	}
 
 	fun request() {
-		context.writer.writeDirectly(stanza("r") { xmlns = XMLNS })
+		context.writer.writeDirectly(element("r") { xmlns = XMLNS })
 	}
 
 	fun resume() {
 		var h = context.sessionObject.getProperty<Long>(INCOMING_STREAM_H_KEY) ?: 0
 		var id = context.sessionObject.getProperty<String>(RESUMPTION_ID_KEY)
 
-		context.writer.writeDirectly(stanza("resume") {
+		context.writer.writeDirectly(element("resume") {
 			xmlns = XMLNS
 			attribute("h", h.toString())
 			if (id != null) attribute("id", id)

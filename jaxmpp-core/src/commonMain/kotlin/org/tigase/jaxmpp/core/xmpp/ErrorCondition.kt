@@ -1,6 +1,6 @@
 package org.tigase.jaxmpp.core.xmpp
 
-enum class ErrorCondition(val elementName: String, val type: String?, val errorCode: Int) {
+enum class ErrorCondition(val elementName: String, val type: String?, val errorCode: Int?) {
 	/**
 	 * the sender has sent XML that is malformed or that cannot be processed
 	 * (e.g., an IQ stanza that includes an unrecognized value of the 'type'
@@ -145,15 +145,15 @@ enum class ErrorCondition(val elementName: String, val type: String?, val errorC
 	 */
 	UnexpectedRequest("unexpected-request", "wait", 400),
 
-	Unknown("unknown", null, 0);
+	Unknown("unknown", null, null);
 
 	companion object {
 
 		protected val conditions = HashMap<String, ErrorCondition>()
 
 		fun getByElementName(
-				name: String): ErrorCondition = ErrorCondition.values().firstOrNull { it.elementName == name }
-			?: Unknown
+			name: String
+		): ErrorCondition = ErrorCondition.values().firstOrNull { it.elementName == name } ?: Unknown
 	}
 
 }

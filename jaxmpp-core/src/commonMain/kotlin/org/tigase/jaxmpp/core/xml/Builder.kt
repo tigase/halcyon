@@ -57,7 +57,7 @@ class Node(name: String) {
 
 }
 
-fun stanza(name: String, init: Node.() -> Unit): Element {
+fun element(name: String, init: Node.() -> Unit): Element {
 	val n = Node(name)
 	n.init()
 	return n.element
@@ -74,7 +74,7 @@ fun response(element: Element, init: Node.() -> Unit): Element {
 }
 
 fun main(args: Array<String>) {
-	val stanza = stanza("message") {
+	val stanza = element("message") {
 		attribute("id", "1")
 		attribute("to", "romeo@example.net")
 		attribute("from", "juliet@example.com/balcony")

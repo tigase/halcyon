@@ -1,6 +1,7 @@
 package org.tigase.jaxmpp.core.modules
 
 import org.tigase.jaxmpp.core.Context
+import org.tigase.jaxmpp.core.exceptions.JaXMPPException
 import org.tigase.jaxmpp.core.xml.Element
 
 class ModulesManager {
@@ -35,8 +36,10 @@ class ModulesManager {
 
 	fun isRegistered(type: String): Boolean = this.modules.containsKey(type)
 
-	fun <T : XmppModule> getModule(type: String): T? = this.modules[type] as T?
-	// throw JaXMPPException("Module '$type' not registered!")
+	fun <T : XmppModule> getModule(type: String): T {
+		val module = this.modules[type] ?: throw throw JaXMPPException("Module '$type' not registered!")
+		return module as T
+	}
 
 	fun getModulesFor(element: Element): Array<XmppModule> {
 		return modules.values.filter { xmppModule ->

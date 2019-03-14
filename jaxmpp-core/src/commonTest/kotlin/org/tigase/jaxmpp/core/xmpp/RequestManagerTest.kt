@@ -3,7 +3,7 @@ package org.tigase.jaxmpp.core.xmpp
 import org.tigase.jaxmpp.core.requests.Request
 import org.tigase.jaxmpp.core.requests.RequestsManager
 import org.tigase.jaxmpp.core.xml.Element
-import org.tigase.jaxmpp.core.xml.stanza
+import org.tigase.jaxmpp.core.xml.element
 import kotlin.test.*
 
 class RequestManagerTest {
@@ -12,7 +12,7 @@ class RequestManagerTest {
 	fun testSuccessHandler01() {
 		val rm = RequestsManager()
 
-		val e = stanza("iq") {
+		val e = element("iq") {
 			attribute("id", "1")
 			attribute("type", "get")
 			attribute("to", "a@b.c")
@@ -35,7 +35,7 @@ class RequestManagerTest {
 
 		})
 
-		val resp = stanza("iq") {
+		val resp = element("iq") {
 			attribute("id", "1")
 			attribute("type", "result")
 			attribute("from", "a@b.c")
@@ -51,7 +51,7 @@ class RequestManagerTest {
 	fun testSuccessHandler02() {
 		val rm = RequestsManager()
 
-		val e = stanza("iq") {
+		val e = element("iq") {
 			attribute("id", "1")
 			attribute("type", "get")
 			attribute("to", "a@b.c")
@@ -66,7 +66,7 @@ class RequestManagerTest {
 
 		}
 
-		val resp = stanza("iq") {
+		val resp = element("iq") {
 			attribute("id", "1")
 			attribute("type", "result")
 			attribute("from", "a@b.c")
@@ -80,7 +80,7 @@ class RequestManagerTest {
 	fun testSuccessHandler03() {
 		val rm = RequestsManager()
 
-		val e = stanza("iq") {
+		val e = element("iq") {
 			attribute("id", "1")
 			attribute("type", "get")
 			attribute("to", "a@b.c")
@@ -95,7 +95,7 @@ class RequestManagerTest {
 			}
 		}
 
-		val resp = stanza("iq") {
+		val resp = element("iq") {
 			attribute("id", "1")
 			attribute("type", "result")
 			attribute("from", "a@b.c")
@@ -109,7 +109,7 @@ class RequestManagerTest {
 	fun testError() {
 		val rm = RequestsManager()
 
-		val e = stanza("iq") {
+		val e = element("iq") {
 			attribute("id", "1")
 			attribute("type", "get")
 			attribute("to", "a@b.c")
@@ -124,7 +124,7 @@ class RequestManagerTest {
 			}
 		}
 
-		val resp = stanza("iq") {
+		val resp = element("iq") {
 			attribute("id", "1")
 			attribute("type", "error")
 			attribute("from", "a@b.c")
@@ -145,7 +145,7 @@ class RequestManagerTest {
 
 		var counter = 0
 
-		val r1 = rm.create(stanza("iq") {
+		val r1 = rm.create(element("iq") {
 			attribute("id", "1")
 			attribute("type", "get")
 			attribute("to", "a@b.c")
@@ -153,14 +153,14 @@ class RequestManagerTest {
 		r1.timeoutDelay = 0
 		r1.handle { timeout { _ -> ++counter } }
 
-		val r2 = rm.create(stanza("iq") {
+		val r2 = rm.create(element("iq") {
 			attribute("id", "2")
 			attribute("type", "get")
 			attribute("to", "a@b.c")
 		})
 		r2.handle { timeout { _ -> ++counter } }
 
-		val r3 = rm.create(stanza("message") {
+		val r3 = rm.create(element("message") {
 			attribute("id", "3")
 			attribute("to", "a@b.c")
 		})
@@ -171,12 +171,12 @@ class RequestManagerTest {
 
 		assertEquals(1, counter)
 
-		assertFalse(rm.findAndExecute(stanza("iq") {
+		assertFalse(rm.findAndExecute(element("iq") {
 			attribute("id", "1")
 			attribute("type", "result")
 			attribute("from", "a@b.c")
 		}))
-		assertTrue(rm.findAndExecute(stanza("iq") {
+		assertTrue(rm.findAndExecute(element("iq") {
 			attribute("id", "2")
 			attribute("type", "result")
 			attribute("from", "a@b.c")

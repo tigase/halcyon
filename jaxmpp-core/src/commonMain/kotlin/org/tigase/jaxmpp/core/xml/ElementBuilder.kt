@@ -1,6 +1,8 @@
 package org.tigase.jaxmpp.core.xml
 
-class ElementBuilder private constructor(val element: Element) {
+import kotlin.jvm.JvmStatic
+
+class ElementBuilder private constructor(private val element: Element) {
 
 	var currentElement: Element = element
 		private set
@@ -15,6 +17,8 @@ class ElementBuilder private constructor(val element: Element) {
 		currentElement = element
 		return this
 	}
+
+	fun build(): Element = element
 
 	fun attribute(key: String, value: String): ElementBuilder {
 		currentElement._attributes[key] = value
@@ -43,10 +47,12 @@ class ElementBuilder private constructor(val element: Element) {
 
 	companion object {
 
+		@JvmStatic
 		fun create(name: String): ElementBuilder {
 			return ElementBuilder(Element(name))
 		}
 
+		@JvmStatic
 		fun create(name: String, xmlns: String): ElementBuilder {
 			val element = Element(name)
 			element._attributes["xmlns"] = xmlns

@@ -37,7 +37,7 @@ class XMPPDomHandler(val onNextElement: (Element) -> Unit, val onStreamStarted: 
 		val elemName = tmp_name.substringAfter(":")
 
 		if (elementBuilder != null && elementBuilder!!.onTop && elementBuilder!!.currentElement.name == elemName) {
-			val element = elementBuilder!!.element
+			val element = elementBuilder!!.build()
 			elementBuilder = null
 			onNextElement.invoke(element)
 			return true

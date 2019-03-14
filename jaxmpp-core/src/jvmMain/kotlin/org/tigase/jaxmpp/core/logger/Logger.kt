@@ -23,7 +23,7 @@ actual class Logger actual constructor(name: String) {
 		return log.isLoggable(cnv(level))
 	}
 
-	private inline fun doLog(level: Level, msg: String, caught: Exception?) {
+	private inline fun doLog(level: Level, msg: String, caught: Throwable?) {
 		val lr = LogRecord(cnv(level), msg)
 		if (caught != null) lr.thrown = caught
 
@@ -52,7 +52,7 @@ actual class Logger actual constructor(name: String) {
 		doLog(level, msg, null)
 	}
 
-	actual fun log(level: Level, msg: String, caught: Exception) {
+	actual fun log(level: Level, msg: String, caught: Throwable) {
 		doLog(level, msg, caught)
 	}
 

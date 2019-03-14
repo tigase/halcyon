@@ -5,7 +5,7 @@ expect class Logger(name: String) {
 	fun isLoggable(level: Level): Boolean
 
 	fun log(level: Level, msg: String)
-	fun log(level: Level, msg: String, caught: Exception)
+	fun log(level: Level, msg: String, caught: Throwable)
 
 	fun fine(msg: String)
 	fun finer(msg: String)
