@@ -22,7 +22,7 @@ import tigase.halcyon.core.xml.Element
 
 interface PacketWriter {
 
-	fun write(stanza: Element): Request
+	fun write(stanza: Element): Request<*>
 
 	fun writeDirectly(stanza: Element)
 

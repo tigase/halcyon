@@ -17,7 +17,6 @@
  */
 package tigase.halcyon.core.xmpp.modules
 
-import tigase.halcyon.core.requests.Request
 import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xml.element
 import tigase.halcyon.core.xmpp.ErrorCondition
@@ -62,9 +61,10 @@ class BindModule : tigase.halcyon.core.modules.XmppModule {
 				xmlns = XMLNS
 			}
 		}
+
 		context.writer.write(stanza).response { request, element, result ->
 			when (result) {
-				is Request.Result.Success -> {
+				is tigase.halcyon.core.requests.Result.Success<*> -> {
 					val bind = result.responseStanza.getChildrenNS("bind", XMLNS)!!
 					val jidElement = bind.getFirstChild("jid")!!
 					val jid = JID.parse(jidElement.value!!)

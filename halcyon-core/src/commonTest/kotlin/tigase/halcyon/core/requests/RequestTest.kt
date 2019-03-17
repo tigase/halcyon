@@ -29,7 +29,7 @@ class RequestTest {
 
 	@Test
 	fun testLateCallbackInit() {
-		val req = Request(JID.parse("a@b.c"), "1", 1, element("iq") {
+		val req = Request<Any>(JID.parse("a@b.c"), "1", 1, element("iq") {
 			attribute("id", "123")
 			attribute("to", "a@b.c")
 			attribute("type", "set")
@@ -43,15 +43,15 @@ class RequestTest {
 
 		req.responseStanza = response
 
-		var rr: Request.Result? = null
+		var rr: Result<Any>? = null
 		req.response { request, element, result -> rr = result }
 
-		assertTrue(rr is Request.Result.Success)
+		assertTrue(rr is Result.Success)
 	}
 
 	@Test
 	fun testEarlyCallbackInit() {
-		val req = Request(JID.parse("a@b.c"), "1", 1, element("iq") {
+		val req = Request<Any>(JID.parse("a@b.c"), "1", 1, element("iq") {
 			attribute("id", "123")
 			attribute("to", "a@b.c")
 			attribute("type", "set")
@@ -62,18 +62,18 @@ class RequestTest {
 			attribute("from", "a@b.c")
 			attribute("type", "result")
 		}
-		var rr: Request.Result? = null
+		var rr: Result<Any>? = null
 		req.response { request, element, result -> rr = result }
 
 		req.responseStanza = response
 
 		assertNotNull(rr, "Result cannot be null here!")
-		assertTrue(rr is Request.Result.Success, "Result isn't Success")
+		assertTrue(rr is Result.Success, "Result isn't Success")
 	}
 
 	@Test
 	fun testResponseSuccess() {
-		val req = Request(JID.parse("a@b.c"), "1", 1, element("iq") {
+		val req = Request<Any>(JID.parse("a@b.c"), "1", 1, element("iq") {
 			attribute("id", "123")
 			attribute("to", "a@b.c")
 			attribute("type", "set")
@@ -87,7 +87,7 @@ class RequestTest {
 
 		var rr: Element? = null
 		req.handle {
-			success { request, element ->
+			success { request, element, _ ->
 				rr = element
 			}
 		}
@@ -99,7 +99,7 @@ class RequestTest {
 
 	@Test
 	fun testResponseError() {
-		val req = Request(JID.parse("a@b.c"), "1", 1, element("iq") {
+		val req = Request<Any>(JID.parse("a@b.c"), "1", 1, element("iq") {
 			attribute("id", "123")
 			attribute("to", "a@b.c")
 			attribute("type", "set")
@@ -111,13 +111,13 @@ class RequestTest {
 			attribute("type", "error")
 		}
 
-		var rr: Request.Result? = null
+		var rr: Result<Any>? = null
 		req.response { request, element, result -> rr = result }
 
 		req.responseStanza = response
 
 		assertNotNull(rr, "Result cannot be null here!")
-		assertTrue(rr is Request.Result.Error, "Result isn't Error")
+		assertTrue(rr is Result.Error, "Result isn't Error")
 	}
 
 }

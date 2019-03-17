@@ -17,8 +17,25 @@
  */
 package tigase.halcyon.core.requests
 
+import tigase.halcyon.core.exceptions.HalcyonException
 import tigase.halcyon.core.xml.Element
-import tigase.halcyon.core.xmpp.JID
+import tigase.halcyon.core.xmpp.ErrorCondition
+import tigase.halcyon.core.xmpp.XMPPException
 
-expect class Request<V : Any>(jid: JID?, id: String, creationTimestamp: Long, requestStanza: Element) :
-	AbstractRequest<V>
+sealed class Result<out V : Any> {
+
+	abstract fun get(): V?
+
+	class Success<out V : Any>(val responseStanza: Element, val value: V?) : Result<V>() {
+		override fun get(): V? = value
+	}
+
+	class Error<out V : Any>(val responseStanza: Element, val error: ErrorCondition) : Result<V>() {
+		override fun get(): V = throw XMPPException(error)
+	}
+
+	class Timeout<out V : Any> : Result<V>() {
+		override fun get(): V = throw HalcyonException("Request timeout")
+	}
+
+}

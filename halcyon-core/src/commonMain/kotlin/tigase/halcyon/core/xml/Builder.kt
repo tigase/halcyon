@@ -80,6 +80,13 @@ fun element(name: String, init: Node.() -> Unit): Element {
 	return n.element
 }
 
+fun stanza(name: String, init: Node.() -> Unit): Element {
+	val n = Node(name)
+	n.init()
+	n.id()
+	return n.element
+}
+
 fun response(element: Element, init: Node.() -> Unit): Element {
 	val n = Node(element.name)
 	n.element._attributes["id"] = element._attributes["id"]!!

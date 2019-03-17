@@ -17,6 +17,7 @@
  */
 package tigase.halcyon.core.modules
 
+import tigase.halcyon.core.requests.RequestBuilder
 import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xml.element
 import kotlin.test.Test
@@ -55,6 +56,10 @@ class ModulesManagerTest {
 	fun test01() {
 		val mm = tigase.halcyon.core.modules.ModulesManager()
 		mm.context = object : tigase.halcyon.core.Context {
+			override fun <T : Any> requestBuilder(stanza: Element): RequestBuilder<T> {
+				TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+			}
+
 			override val eventBus: tigase.halcyon.core.eventbus.EventBus
 				get() = TODO("not implemented")
 			override val sessionObject: tigase.halcyon.core.SessionObject

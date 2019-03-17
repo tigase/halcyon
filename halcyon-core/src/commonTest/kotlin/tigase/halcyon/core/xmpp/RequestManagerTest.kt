@@ -19,6 +19,8 @@ package tigase.halcyon.core.xmpp
 
 import tigase.halcyon.core.requests.Request
 import tigase.halcyon.core.requests.RequestsManager
+import tigase.halcyon.core.requests.ResponseHandler
+import tigase.halcyon.core.requests.Result
 import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xml.element
 import kotlin.test.*
@@ -37,16 +39,16 @@ class RequestManagerTest {
 
 		var successCounter = 0
 
-		rm.create(e).response(object : Request.Callback {
-			override fun success(request: Request, responseStanza: Element) {
+		rm.create(e).response(object : ResponseHandler<Any> {
+			override fun success(request: Request<Any>, responseStanza: Element, v: Any?) {
 				++successCounter
 			}
 
-			override fun error(request: Request, responseStanza: Element, errorCondition: ErrorCondition) {
+			override fun error(request: Request<Any>, responseStanza: Element, errorCondition: ErrorCondition) {
 				fail()
 			}
 
-			override fun timeout(request: Request) {
+			override fun timeout(request: Request<Any>) {
 				fail()
 			}
 
@@ -77,7 +79,7 @@ class RequestManagerTest {
 		var successCounter = 0
 
 		rm.create(e).handle {
-			success { _, _ -> ++successCounter }
+			success { request, element, any -> ++successCounter }
 			error { _, _, _ -> fail() }
 			timeout { fail() }
 
@@ -105,9 +107,10 @@ class RequestManagerTest {
 
 		var successCounter = 0
 
-		rm.create(e).response { request: Request, element: Element?, result: Request.Result ->
+
+		rm.create(e).response { request, element, result ->
 			when (result) {
-				is Request.Result.Success -> ++successCounter
+				is Result.Success -> ++successCounter
 				else -> fail()
 			}
 		}

@@ -17,8 +17,33 @@
  */
 package tigase.halcyon.core.requests
 
+import tigase.halcyon.core.AbstractHalcyon
+import tigase.halcyon.core.currentTimestamp
 import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xmpp.JID
 
-expect class Request<V : Any>(jid: JID?, id: String, creationTimestamp: Long, requestStanza: Element) :
-	AbstractRequest<V>
+class RequestBuilder<T : Any>(
+	private val halcyon: AbstractHalcyon, private val stanzaToSend: Element
+) {
+
+
+	private var request: Request<T>
+
+	init {
+		val j = stanzaToSend.attributes["to"]
+		val jid = if (j != null) JID.parse(j) else null
+		this.request = Request<T>(jid, stanzaToSend.attributes["id"]!!, currentTimestamp(), stanzaToSend)
+	}
+
+	fun resultBuilder(resultConverter: ResultConverter<T>): RequestBuilder<T> {
+		request.resultConverter = resultConverter
+		return this
+	}
+
+	fun send(): Request<T> {
+		halcyon.requestsManager.register(request)
+		halcyon.write(request)
+		return request
+	}
+
+}

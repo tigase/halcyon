@@ -40,10 +40,12 @@ class StreamManagementModule : tigase.halcyon.core.modules.XmppModule {
 		const val RESUMPTION_ID_KEY = "$XMLNS#RESUMPTION_ID"
 		const val RESUMPTION_TIME_KEY = "$XMLNS#RESUMPTION_TIME"
 
-		fun isAckEnable(sessionObject: tigase.halcyon.core.SessionObject) = sessionObject.getProperty<Boolean>(ACK_ENABLED_KEY) ?: false
+		fun isAckEnable(sessionObject: tigase.halcyon.core.SessionObject) =
+			sessionObject.getProperty<Boolean>(ACK_ENABLED_KEY) ?: false
 	}
 
-	class StreamManagementEnabledEvent(val id: String, val resume: Boolean, val mx: Long?) : tigase.halcyon.core.eventbus.Event(TYPE) {
+	class StreamManagementEnabledEvent(val id: String, val resume: Boolean, val mx: Long?) :
+		tigase.halcyon.core.eventbus.Event(TYPE) {
 
 		companion object {
 			const val TYPE = "tigase.halcyon.core.xmpp.modules.sm.StreamManagementModule.StreamManagementEnabledEvent"
@@ -152,7 +154,7 @@ class StreamManagementModule : tigase.halcyon.core.modules.XmppModule {
 			while (queue.size > left) {
 				val x = queue.get(0)
 				queue.remove(x)
-				if (x is Request) {
+				if (x is Request<*>) {
 					x.setData(Delivered, true)
 					log.fine("Marked as delivery: $x")
 				}
@@ -196,7 +198,7 @@ class StreamManagementModule : tigase.halcyon.core.modules.XmppModule {
 
 		unacked.forEach {
 			when (it) {
-				is Request -> context.writer.write(it.requestStanza)
+				is Request<*> -> context.writer.write(it.requestStanza)
 				is Element -> context.writer.write(it)
 			}
 		}
@@ -213,7 +215,7 @@ class StreamManagementModule : tigase.halcyon.core.modules.XmppModule {
 		return v
 	}
 
-	private fun processElementSent(element: Element, request: Request?) {
+	private fun processElementSent(element: Element, request: Request<*>?) {
 		if (!isAckEnable(context.sessionObject)) return
 		if (element.xmlns == XMLNS) return
 

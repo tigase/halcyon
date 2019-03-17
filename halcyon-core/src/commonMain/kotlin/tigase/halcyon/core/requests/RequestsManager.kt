@@ -29,18 +29,23 @@ class RequestsManager {
 
 	private val executor = tigase.halcyon.core.excutor.Executor()
 
-	private val requests = HashMap<String, Request>()
+	private val requests = HashMap<String, Request<*>>()
 
-	fun create(element: Element): Request {
-		val id = element.getIdAttr() ?: throw tigase.halcyon.core.exceptions.HalcyonException("Stanza must contains 'id' attribute")
+	fun create(element: Element): Request<Any> {
+		val id = element.getIdAttr()
+			?: throw tigase.halcyon.core.exceptions.HalcyonException("Stanza must contains 'id' attribute")
 		val jid = element.getToAttr()
 
-		val request = Request(jid, id, currentTimestamp(), element)
+		val request = Request<Any>(jid, id, currentTimestamp(), element)
 		requests[id] = request
 		return request
 	}
 
-	fun getRequest(response: Element): Request? {
+	internal fun register(request: Request<*>) {
+		requests[request.id] = request
+	}
+
+	fun getRequest(response: Element): Request<*>? {
 		val id = response.attributes["id"] ?: return null
 		val from = response.attributes["from"]
 
@@ -52,7 +57,7 @@ class RequestsManager {
 		return request
 	}
 
-	private fun verify(entry: Request, response: Element): Boolean {
+	private fun verify(entry: Request<*>, response: Element): Boolean {
 		val jid = response.getFromAttr()
 
 		if (jid != null && entry.jid != null && jid.bareJID == entry.jid.bareJID) {

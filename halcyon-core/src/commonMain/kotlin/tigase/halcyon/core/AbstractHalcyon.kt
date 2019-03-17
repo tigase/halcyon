@@ -18,6 +18,7 @@
 package tigase.halcyon.core
 
 import tigase.halcyon.core.requests.Request
+import tigase.halcyon.core.requests.RequestBuilder
 import tigase.halcyon.core.requests.RequestsManager
 import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xml.element
@@ -42,7 +43,8 @@ data class HalcyonStateChangeEvent(
 	}
 }
 
-data class TickEvent(val counter: Long, val timestamp: Long) : tigase.halcyon.core.eventbus.Event(tigase.halcyon.core.TickEvent.Companion.TYPE) {
+data class TickEvent(val counter: Long, val timestamp: Long) :
+	tigase.halcyon.core.eventbus.Event(tigase.halcyon.core.TickEvent.Companion.TYPE) {
 
 	companion object {
 		const val TYPE = "tigase.halcyon.core.TickEvent"
@@ -66,10 +68,12 @@ abstract class AbstractHalcyon : tigase.halcyon.core.Context, tigase.halcyon.cor
 	private var tickCounter: Long = 0
 
 	final override val sessionObject: tigase.halcyon.core.SessionObject = tigase.halcyon.core.SessionObject()
-	final override val eventBus: tigase.halcyon.core.eventbus.EventBus = tigase.halcyon.core.eventbus.EventBus(sessionObject)
+	final override val eventBus: tigase.halcyon.core.eventbus.EventBus =
+		tigase.halcyon.core.eventbus.EventBus(sessionObject)
 	override val writer: tigase.halcyon.core.PacketWriter
 		get() = this
-	final override val modules: tigase.halcyon.core.modules.ModulesManager = tigase.halcyon.core.modules.ModulesManager()
+	final override val modules: tigase.halcyon.core.modules.ModulesManager =
+		tigase.halcyon.core.modules.ModulesManager()
 	val requestsManager: RequestsManager = RequestsManager()
 	val configurator: tigase.halcyon.Configurator = tigase.halcyon.Configurator(sessionObject)
 	private val executor = tigase.halcyon.core.excutor.Executor()
@@ -209,12 +213,18 @@ abstract class AbstractHalcyon : tigase.halcyon.core.Context, tigase.halcyon.cor
 		eventBus.fire(tigase.halcyon.core.connector.SentXMLElementEvent(element, null))
 	}
 
-	override fun write(stanza: Element): Request {
+	override fun write(stanza: Element): Request<*> {
 		if (this.connector == null) throw tigase.halcyon.core.exceptions.HalcyonException("Connector is not initialized")
 		val request = requestsManager.create(stanza)
 		connector!!.send(stanza.getAsString())
 		eventBus.fire(tigase.halcyon.core.connector.SentXMLElementEvent(stanza, request))
 		return request
+	}
+
+	internal fun write(request: Request<*>) {
+		if (this.connector == null) throw tigase.halcyon.core.exceptions.HalcyonException("Connector is not initialized")
+		connector!!.send(request.requestStanza.getAsString())
+		eventBus.fire(tigase.halcyon.core.connector.SentXMLElementEvent(request.requestStanza, request))
 	}
 
 	fun connect() {
@@ -243,5 +253,7 @@ abstract class AbstractHalcyon : tigase.halcyon.core.Context, tigase.halcyon.cor
 			state = tigase.halcyon.core.AbstractHalcyon.State.Disconnected
 		}
 	}
+
+	override fun <T : Any> requestBuilder(stanza: Element): RequestBuilder<T> = RequestBuilder<T>(this, stanza)
 
 }

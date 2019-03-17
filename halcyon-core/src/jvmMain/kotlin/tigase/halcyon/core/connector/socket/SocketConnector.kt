@@ -19,6 +19,9 @@ package tigase.halcyon.core.connector.socket
 
 import org.minidns.hla.DnssecResolverApi
 import org.minidns.hla.SrvType
+import tigase.halcyon.core.SessionObject
+import tigase.halcyon.core.TickEvent
+import tigase.halcyon.core.eventbus.EventHandler
 import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xml.parser.StreamParser
 import tigase.halcyon.core.xmpp.BareJID
@@ -37,6 +40,12 @@ class SocketConnector(context: tigase.halcyon.core.Context) : tigase.halcyon.cor
 	private val log = tigase.halcyon.core.logger.Logger("tigase.halcyon.core.connector.socket.SocketConnector")
 
 	private lateinit var socket: Socket
+
+	private val tickHandler = object : EventHandler<TickEvent> {
+		override fun onEvent(sessionObject: SessionObject, event: TickEvent) {
+			onTick()
+		}
+	}
 
 	private val parser = object : StreamParser() {
 		override fun onNextElement(element: Element) {
@@ -117,7 +126,7 @@ class SocketConnector(context: tigase.halcyon.core.Context) : tigase.halcyon.cor
 		send(sb)
 
 		state = tigase.halcyon.core.connector.State.Connected
-
+		context.eventBus.register(TickEvent.TYPE, tickHandler)
 	}
 
 	private fun onWorkerException(cause: Exception) {
@@ -127,6 +136,7 @@ class SocketConnector(context: tigase.halcyon.core.Context) : tigase.halcyon.cor
 
 	override fun stop() {
 		if (state == tigase.halcyon.core.connector.State.Connecting || state == tigase.halcyon.core.connector.State.Connected) {
+			context.eventBus.unregister(tickHandler)
 			state = tigase.halcyon.core.connector.State.Disconnecting
 			if (!this.socket.isClosed) this.socket.close()
 			worker.interrupt()
@@ -154,6 +164,12 @@ class SocketConnector(context: tigase.halcyon.core.Context) : tigase.halcyon.cor
 		sb.append("to='${userJid.domain}'>")
 
 		send(sb)
+	}
+
+	private fun onTick() {
+		log.fine("Whitespace ping")
+		worker.writer.write(' '.toInt())
+		worker.writer.flush()
 	}
 
 }
