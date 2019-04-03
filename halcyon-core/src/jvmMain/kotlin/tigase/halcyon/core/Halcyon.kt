@@ -28,6 +28,8 @@ actual class Halcyon actual constructor() : tigase.halcyon.core.AbstractHalcyon(
 
 	val timer = Timer("timer", true)
 
+	private val lock = java.lang.Object()
+
 	private val tickTask = object : TimerTask() {
 		override fun run() {
 			tick()
@@ -36,7 +38,13 @@ actual class Halcyon actual constructor() : tigase.halcyon.core.AbstractHalcyon(
 
 	init {
 		eventBus.mode = tigase.halcyon.core.eventbus.EventBus.Mode.ThreadPerHandler
-		timer.scheduleAtFixedRate(tickTask, 30_000, 30_000)
+		timer.scheduleAtFixedRate(tickTask, 2_000, 2_000)
 	}
 
+//	fun connect(sync: Boolean) {
+//		super.connect()
+//		synchronized(lock) {
+//			lock.wait(30000)
+//		}
+//	}
 }

@@ -17,6 +17,9 @@
  */
 package tigase.halcyon.core.xmpp
 
+import getIdAttr
+import getToAttr
+import tigase.halcyon.core.currentTimestamp
 import tigase.halcyon.core.requests.Request
 import tigase.halcyon.core.requests.RequestsManager
 import tigase.halcyon.core.requests.ResponseHandler
@@ -39,7 +42,7 @@ class RequestManagerTest {
 
 		var successCounter = 0
 
-		rm.create(e).response(object : ResponseHandler<Any> {
+		rm.register(create(e)).response(object : ResponseHandler<Any> {
 			override fun success(request: Request<Any>, responseStanza: Element, v: Any?) {
 				++successCounter
 			}
@@ -66,6 +69,13 @@ class RequestManagerTest {
 		assertEquals(1, successCounter)
 	}
 
+	private fun create(element: Element): Request<Any> {
+		val id = element.getIdAttr()
+			?: throw tigase.halcyon.core.exceptions.HalcyonException("Stanza must contains 'id' attribute")
+		val jid = element.getToAttr()
+		return Request(jid, id, currentTimestamp(), element)
+	}
+	
 	@Test
 	fun testSuccessHandler02() {
 		val rm = RequestsManager()
@@ -78,7 +88,7 @@ class RequestManagerTest {
 
 		var successCounter = 0
 
-		rm.create(e).handle {
+		rm.register(create(e)).handle {
 			success { request, element, any -> ++successCounter }
 			error { _, _, _ -> fail() }
 			timeout { fail() }
@@ -108,7 +118,7 @@ class RequestManagerTest {
 		var successCounter = 0
 
 
-		rm.create(e).response { request, element, result ->
+		rm.register(create(e)).response { request, element, result ->
 			when (result) {
 				is Result.Success -> ++successCounter
 				else -> fail()
@@ -137,7 +147,7 @@ class RequestManagerTest {
 
 		var errorCounter = 0
 
-		rm.create(e).handle {
+		rm.register(create(e)).handle {
 			error { request, element, errorCondition ->
 				++errorCounter
 				assertEquals(ErrorCondition.NotAllowed, errorCondition)
@@ -165,25 +175,25 @@ class RequestManagerTest {
 
 		var counter = 0
 
-		val r1 = rm.create(element("iq") {
+		val r1 = rm.register(create(element("iq") {
 			attribute("id", "1")
 			attribute("type", "get")
 			attribute("to", "a@b.c")
-		})
+		}))
 		r1.timeoutDelay = 0
 		r1.handle { timeout { _ -> ++counter } }
 
-		val r2 = rm.create(element("iq") {
+		val r2 = rm.register(create(element("iq") {
 			attribute("id", "2")
 			attribute("type", "get")
 			attribute("to", "a@b.c")
-		})
+		}))
 		r2.handle { timeout { _ -> ++counter } }
 
-		val r3 = rm.create(element("message") {
+		val r3 = rm.register(create(element("message") {
 			attribute("id", "3")
 			attribute("to", "a@b.c")
-		})
+		}))
 		r3.timeoutDelay = 0
 		r3.handle { timeout { _ -> ++counter } }
 

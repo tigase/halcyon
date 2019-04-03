@@ -43,8 +43,7 @@ data class HalcyonStateChangeEvent(
 	}
 }
 
-data class TickEvent(val counter: Long, val timestamp: Long) :
-	tigase.halcyon.core.eventbus.Event(tigase.halcyon.core.TickEvent.Companion.TYPE) {
+data class TickEvent(val counter: Long, val timestamp: Long) : tigase.halcyon.core.eventbus.Event(TYPE) {
 
 	companion object {
 		const val TYPE = "tigase.halcyon.core.TickEvent"
@@ -95,6 +94,8 @@ abstract class AbstractHalcyon : tigase.halcyon.core.Context, tigase.halcyon.cor
 		eventBus.register<SessionController.StopEverythingEvent>(
 			SessionController.StopEverythingEvent.TYPE
 		) { sessionObject, event -> disconnect() }
+
+		eventBus.register<TickEvent>(TickEvent.TYPE) { _, _ -> requestsManager.findOutdated() }
 
 		modules.register(StreamErrorModule())
 		modules.register(StreamFeaturesModule())
@@ -215,10 +216,8 @@ abstract class AbstractHalcyon : tigase.halcyon.core.Context, tigase.halcyon.cor
 
 	override fun write(stanza: Element): Request<*> {
 		if (this.connector == null) throw tigase.halcyon.core.exceptions.HalcyonException("Connector is not initialized")
-		val request = requestsManager.create(stanza)
-		connector!!.send(stanza.getAsString())
-		eventBus.fire(tigase.halcyon.core.connector.SentXMLElementEvent(stanza, request))
-		return request
+		val builder = requestBuilder<Any>(stanza)
+		return builder.send()
 	}
 
 	internal fun write(request: Request<*>) {

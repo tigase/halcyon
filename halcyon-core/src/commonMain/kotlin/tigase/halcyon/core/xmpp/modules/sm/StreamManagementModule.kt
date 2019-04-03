@@ -30,7 +30,10 @@ class StreamManagementModule : tigase.halcyon.core.modules.XmppModule {
 		const val XMLNS = "urn:xmpp:sm:3"
 		const val TYPE = XMLNS
 
-		const val Delivered = "$XMLNS#Delivered"
+		/**
+		 * Delivered to server.
+		 */
+		const val Delivered = "$XMLNS#DeliveredToServer"
 		const val ACK_ENABLED_KEY = "$XMLNS#ACK_ENABLED"
 		const val OUTGOING_STREAM_H_KEY = "$XMLNS#OUTGOING_STREAM_H"
 		const val INCOMING_STREAM_H_KEY = "$XMLNS#INCOMING_STREAM_H"
@@ -156,7 +159,7 @@ class StreamManagementModule : tigase.halcyon.core.modules.XmppModule {
 				queue.remove(x)
 				if (x is Request<*>) {
 					x.setData(Delivered, true)
-					log.fine("Marked as delivery: $x")
+					log.fine("Marked as 'delivered to server': $x")
 				}
 			}
 		}

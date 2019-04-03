@@ -18,8 +18,6 @@
 package tigase.halcyon.core.requests
 
 import getFromAttr
-import getIdAttr
-import getToAttr
 import tigase.halcyon.core.currentTimestamp
 import tigase.halcyon.core.xml.Element
 
@@ -31,18 +29,9 @@ class RequestsManager {
 
 	private val requests = HashMap<String, Request<*>>()
 
-	fun create(element: Element): Request<Any> {
-		val id = element.getIdAttr()
-			?: throw tigase.halcyon.core.exceptions.HalcyonException("Stanza must contains 'id' attribute")
-		val jid = element.getToAttr()
-
-		val request = Request<Any>(jid, id, currentTimestamp(), element)
-		requests[id] = request
-		return request
-	}
-
-	internal fun register(request: Request<*>) {
+	internal fun <T : Any> register(request: Request<T>): Request<T> {
 		requests[request.id] = request
+		return request
 	}
 
 	fun getRequest(response: Element): Request<*>? {
@@ -95,7 +84,7 @@ class RequestsManager {
 			if (request.creationTimestamp + request.timeoutDelay <= now) {
 				iterator.remove()
 				try {
-					request.callTimeout()
+					request.setTimeout()
 				} catch (e: Exception) {
 					log.log(
 						tigase.halcyon.core.logger.Level.WARNING,

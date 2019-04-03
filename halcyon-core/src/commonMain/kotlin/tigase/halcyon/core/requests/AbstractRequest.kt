@@ -17,9 +17,11 @@
  */
 package tigase.halcyon.core.requests
 
+import getTypeAttr
 import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xmpp.ErrorCondition
 import tigase.halcyon.core.xmpp.JID
+import tigase.halcyon.core.xmpp.StanzaType
 import tigase.halcyon.core.xmpp.XMPPException
 
 abstract class AbstractRequest<V : Any>(
@@ -32,25 +34,49 @@ abstract class AbstractRequest<V : Any>(
 
 	internal var resultConverter: ResultConverter<V>? = null
 
+	protected var timeout: Boolean = false
+
+	var completed: Boolean = false
+		internal set
+
 	var responseStanza: Element? = null
 		internal set(value) {
 			field = value
+			completed = true
 			callHandlers()
 		}
 
 	/**
 	 * Delay to timeout this request in milliseconds.
 	 */
-	var timeoutDelay = 30000
+	var timeoutDelay: Long = 30000
+
+	protected abstract fun createRequestTimeoutException(): RequestTimeoutException
+
+	protected abstract fun createRequestNotCompletedException(): RequestNotCompletedException
+
+	protected abstract fun createRequestErrorException(error: ErrorCondition): RequestErrorException
 
 	fun getResult(): V? {
+		if (timeout) throw createRequestTimeoutException()
+		if (!completed) throw createRequestNotCompletedException()
 		if (responseStanza == null) return null
+		responseStanza?.let {
+			if (it.getTypeAttr() == StanzaType.Error) {
+				throw createRequestErrorException(findCondition(it))
+			}
+		}
 		return if (resultConverter != null) resultConverter!!.invoke(responseStanza!!) else null
 	}
 
-	abstract fun callHandlers()
+	internal fun setTimeout() {
+		completed = true
+		callTimeout()
+	}
 
-	internal abstract fun callTimeout()
+	protected abstract fun callHandlers()
+
+	protected abstract fun callTimeout()
 
 	protected fun findCondition(stanza: Element): ErrorCondition {
 		val error = stanza.children.firstOrNull { element -> element.name == "error" } ?: return ErrorCondition.Unknown
@@ -105,6 +131,24 @@ abstract class AbstractRequest<V : Any>(
 
 	override fun toString(): String {
 		return "Request[to=$jid, id=$id: ${requestStanza.getAsString()}]"
+	}
+
+	override fun equals(other: Any?): Boolean {
+		if (this === other) return true
+		if (other !is AbstractRequest<*>) return false
+
+		if (jid != other.jid) return false
+		if (id != other.id) return false
+		if (creationTimestamp != other.creationTimestamp) return false
+
+		return true
+	}
+
+	override fun hashCode(): Int {
+		var result = jid?.hashCode() ?: 0
+		result = 31 * result + id.hashCode()
+		result = 31 * result + creationTimestamp.hashCode()
+		return result
 	}
 }
 

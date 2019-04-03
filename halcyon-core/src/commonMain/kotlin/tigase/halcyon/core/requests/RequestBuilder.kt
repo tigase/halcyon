@@ -17,19 +17,28 @@
  */
 package tigase.halcyon.core.requests
 
+import getIdAttr
 import tigase.halcyon.core.AbstractHalcyon
 import tigase.halcyon.core.currentTimestamp
 import tigase.halcyon.core.xml.Element
+import tigase.halcyon.core.xmpp.IdGenerator
 import tigase.halcyon.core.xmpp.JID
 
 class RequestBuilder<T : Any>(
 	private val halcyon: AbstractHalcyon, private val stanzaToSend: Element
 ) {
 
+	companion object {
+		private val COMPLETED_STANZAS = arrayOf("message", "presence")
+	}
 
 	private var request: Request<T>
 
 	init {
+		if (stanzaToSend.getIdAttr() == null) {
+			stanzaToSend._attributes["id"] = IdGenerator.nextId()
+		}
+
 		val j = stanzaToSend.attributes["to"]
 		val jid = if (j != null) JID.parse(j) else null
 		this.request = Request<T>(jid, stanzaToSend.attributes["id"]!!, currentTimestamp(), stanzaToSend)
@@ -40,9 +49,17 @@ class RequestBuilder<T : Any>(
 		return this
 	}
 
+	fun timeToLive(time: Long): RequestBuilder<T> {
+		request.timeoutDelay = time
+		return this
+	}
+
 	fun send(): Request<T> {
 		halcyon.requestsManager.register(request)
 		halcyon.write(request)
+		if (stanzaToSend.name in COMPLETED_STANZAS) {
+			request.completed = true
+		}
 		return request
 	}
 

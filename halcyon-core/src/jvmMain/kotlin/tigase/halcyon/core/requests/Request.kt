@@ -19,20 +19,27 @@ package tigase.halcyon.core.requests
 
 import getTypeAttr
 import tigase.halcyon.core.xml.Element
+import tigase.halcyon.core.xmpp.ErrorCondition
 import tigase.halcyon.core.xmpp.JID
 import tigase.halcyon.core.xmpp.StanzaType
-import java.util.concurrent.TimeUnit
 
 actual class Request<V : Any> actual constructor(
 	jid: JID?, id: String, creationTimestamp: Long, requestStanza: Element
 ) : AbstractRequest<V>(jid, id, creationTimestamp, requestStanza) {
 
+	override fun createRequestTimeoutException(): RequestTimeoutException = RequestTimeoutException(this)
+
+	override fun createRequestNotCompletedException(): RequestNotCompletedException = RequestNotCompletedException(this)
+
+	override fun createRequestErrorException(error: ErrorCondition): RequestErrorException =
+		RequestErrorException(this, error)
+
 	private val lock = java.lang.Object()
 
-	fun getResult(timeout: Long, unit: TimeUnit): V? {
-		if (responseStanza != null) return getResult()
+	fun getResultWait(): V? {
+		if (completed) return getResult()
 		synchronized(lock) {
-			lock.wait(unit.toMillis(timeout))
+			lock.wait()
 		}
 		return getResult()
 	}
@@ -56,7 +63,11 @@ actual class Request<V : Any> actual constructor(
 	override fun callTimeout() {
 		val stanzaType = requestStanza.getTypeAttr()
 		if (stanzaType == StanzaType.Get || stanzaType == StanzaType.Set) {
+			timeout = true
 			handler?.timeout(this)
+		}
+		synchronized(lock) {
+			lock.notify()
 		}
 	}
 
