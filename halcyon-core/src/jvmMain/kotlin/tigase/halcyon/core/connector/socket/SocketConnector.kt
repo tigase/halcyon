@@ -19,6 +19,7 @@ package tigase.halcyon.core.connector.socket
 
 import org.minidns.hla.DnssecResolverApi
 import org.minidns.hla.SrvType
+import tigase.halcyon.core.connector.State
 import tigase.halcyon.core.excutor.TickExecutor
 import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xml.parser.StreamParser
@@ -38,6 +39,8 @@ class SocketConnector(context: tigase.halcyon.core.Context) : tigase.halcyon.cor
 	private val log = tigase.halcyon.core.logger.Logger("tigase.halcyon.core.connector.socket.SocketConnector")
 
 	private lateinit var socket: Socket
+
+	private lateinit var worker: SocketWorker
 
 	private val whitespacePingExecutor = TickExecutor(context.eventBus, 30000) { onTick() }
 
@@ -64,8 +67,6 @@ class SocketConnector(context: tigase.halcyon.core.Context) : tigase.halcyon.cor
 	}
 
 	override fun createSessionController(): SessionController = SocketSessionController(context, this)
-
-	internal lateinit var worker: SocketWorker
 
 	protected fun createSocket(): Socket {
 		val forcedHost = context.sessionObject.getProperty<String>(SERVER_HOST)
@@ -161,9 +162,11 @@ class SocketConnector(context: tigase.halcyon.core.Context) : tigase.halcyon.cor
 	}
 
 	private fun onTick() {
-		log.fine("Whitespace ping")
-		worker.writer.write(' '.toInt())
-		worker.writer.flush()
+		if (state == State.Connected) {
+			log.fine("Whitespace ping")
+			worker.writer.write(' '.toInt())
+			worker.writer.flush()
+		}
 	}
 
 }
