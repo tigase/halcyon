@@ -12,4 +12,5 @@ pluginManagement {
 rootProject.name = 'halcyon'
 
 include 'halcyon-core'
+include 'halcyon-samples'
 
