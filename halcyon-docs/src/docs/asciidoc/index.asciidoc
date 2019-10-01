@@ -1,0 +1,16 @@
+= Tigase Halcyon XMPP Library
+Tigase Team <team@tigase.net>
+:toc:
+:numbered:
+:website: http://tigase.net
+:Date: 2019-03-14
+
+:leveloffset: 0
+
+:no title:
+
+:no author:
+
+include::text/Release_Notes.asciidoc[]
+
+include::text/Architecture.asciidoc[]

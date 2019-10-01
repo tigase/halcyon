@@ -1,0 +1,21 @@
+plugins {
+	id 'org.asciidoctor.convert' version '1.5.8.1'
+}
+
+version = '1.0.0-SNAPSHOT'
+
+asciidoctorj {
+	version = '1.5.5'
+}
+
+asciidoctor {
+//	sourceDir = new File("$projectDir/src/main/asciidoc")
+//	outputDir = new File("$buildDir/docs")
+	options = [doctype   : 'book',
+			   attributes: [
+//					'source-highlighter': 'highlightjs',
+'source-highlighter': 'coderay',
+toc                 : '',
+idprefix            : '',
+idseparator         : '-']]
+}
