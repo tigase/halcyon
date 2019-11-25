@@ -1,6 +1,14 @@
-<h1 align="center">
-  Halcyon
+<h1>
+  <div style="text-align: center">Halcyon</div>
+  <img src="halcyon-docs/src/docs/asciidoc/images/badge_pbt_dn_s.png" alt="Powered By Tigase"/>
 </h1>
+
+
+
+> :warning: **THIS SOFTWARE IS FINISHED YET**:
+> This library is under active development. We cannot ensure API stability.
+>
+> You can use it at your own risk.
 
 # What it is
 
