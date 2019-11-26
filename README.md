@@ -5,7 +5,7 @@
 
 
 
-> :warning: **THIS SOFTWARE IS FINISHED YET**:
+> :warning: **THIS SOFTWARE IS NOT FINISHED YET**:
 > This library is under active development. We cannot ensure API stability.
 >
 > You can use it at your own risk.
