@@ -1,0 +1,162 @@
+== Working with requests
+
+:toc:
+:numbered:
+:website: http://www.tigase.net
+
+Each module may perform some requests on other XMPP entities, and (if yes) must return `Request` object to allow check status of request and receive response.
+
+For example, suppose we want to ping XMPP server (as described in https://xmpp.org/extensions/xep-0199.html[XEP-0199]):
+
+.Sample ping request and response
+[source,xml]
+----
+<!-- Client sends: -->
+<iq to='tigase.net' id='ping-1' type='get'>
+  <ping xmlns='urn:xmpp:ping'/>
+</iq>
+
+<!-- Client receives: -->
+<iq from='tigase.net' to='client@tigase.net' id='ping-1' type='result'/>
+----
+
+There is module `PingModule` in Halcyon to do it:
+
+.Java sample
+[source,java]
+----
+PingModule pingModule = client.getModules().getModule(PingModule.TYPE);
+
+Request<PingModule.Pong> request = pingModule.ping(JID.parse("tigase.net"));
+----
+
+.Kotlin sample
+[source,kotlin]
+----
+val pingModule: PingModule = client.modules[PingModule.TYPE]
+val request = pingModule.ping("tigase.net".toJID())
+----
+
+When method `ping()` is call stanza is sent immediately and object `Request` is given back.
+
+There are few ways to get response from `request`.
+
+Simplest is to call method `getResult()` on request object.
+But we need to be prepare for four results:
+
+1. method may throws exception `RequestNotCompletedException` when response not received yet.
+To prevent it, we should check if request is completed with method `isCompleted()`.
+2. method may throws `RequestTimeoutException` if response was not received for specified time (by default 30 seconds).
+3. method may throws `RequestErrorException` if response was received but it was error.
+
+If everything goes fine, `getResult()` returns expected result object or `null` if response was empty.
+
+.Using getResult() in Java
+[source,java]
+----
+Request<PingModule.Pong> request = pingModule.ping(JID.parse("tigase.net"));
+try {
+    PingModule.Pong pong = request.getResult();
+    System.out.println("Pong: " + pong.getTime() + "ms");
+} catch (RequestTimeoutException e) {
+    System.out.println("Timeout. No response, and we will not waiting.");
+} catch (RequestErrorException e) {
+    System.out.println("Ping error " + e.getError().name());
+} catch (RequestNotCompletedException e){
+    System.out.println("No response yet. Still waiting.");
+}
+----
+
+Similar in Kotlin:
+
+.Using getResult() in Kotlin
+[source,kotlin]
+----
+try {
+    val pong = pingModule.ping("tigase.net".toJID()).getResult()
+    println("Pong: " + pong!!.time + "ms")
+} catch (e: RequestTimeoutException) {
+    println("Ping timeout. No response :-(")
+} catch (e: RequestErrorException) {
+    println("Ping error " + e.error.name)
+} catch (e: RequestNotCompletedException){
+    println("No response yet. Still waiting.")
+}
+----
+
+On JVM version of Halcyon there also is variant of above method called `getResultWait()`.
+This method is synchronous, it wait for response and returns result object or throw exception.
+Except for waiting for response, behavior of it is identical to `getResult()` method.
+
+Most universal way to receive result in asynchronous way is add `ResponseHandler` to `request`.
+
+NOTE: On JVM, methods of handler will be called from separate thread.
+
+.Adding ResponseHandler in Java
+[source,java]
+----
+pingModule.ping(JID.parse("tigase.net")).response(new ResponseHandler<PingModule.Pong>() {
+    @Override
+    public void success(@NotNull Request<PingModule.Pong> request, @NotNull Element element,
+                        @Nullable PingModule.Pong pong) {
+        System.out.println("Pong: " + pong.getTime() + "ms");
+    }
+
+    @Override
+    public void error(@NotNull Request<PingModule.Pong> request, @NotNull Element element,
+                      @NotNull ErrorCondition errorCondition) {
+        System.out.println("Ping error " + errorCondition.name());
+    }
+
+    @Override
+    public void timeout(@NotNull Request<PingModule.Pong> request) {
+        System.out.println("Ping timeout. No response :-(");
+    }
+});
+----
+
+Unfortunately in Kotlin this constriction doesn't looks good, but is possible.
+
+.Adding ResponseHandler in Kotlin
+[source,kotlin]
+----
+pingModule.ping(JID.parse("tigase.net")).response(object : ResponseHandler<Pong> {
+    override fun error(request: Request<Pong>, response: Element, error: ErrorCondition) {
+        println("Ping error ${error.name}")
+    }
+
+    override fun success(request: Request<Pong>, response: Element, pong: Pong?) {
+        println("Pong: ${pong!!.time}ms")
+    }
+
+    override fun timeout(request: Request<Pong>) {
+        println("Ping timeout. No response :-(")
+    }
+})
+----
+
+Kotlin allows us to use two more mays to handle responses:
+
+We can use sealed Result class to distinguish type of result.
+
+[source,kotlin]
+----
+pingModule.ping("tigase.net".toJID()).response { request, element, result ->
+    when (result) {
+        is Result.Success -> println("Pong: ${result.get()!!.time}ms")
+        is Result.Error -> println("Ping error ${result.error.name}")
+        is Result.Timeout -> println("Ping timeout. No response :-(")
+    }
+}
+----
+
+We can also use DSL, to build response handler:
+
+[source,kotlin]
+----
+pingModule.ping("tigase.net".toJID()).handle {
+    success { request, element, result -> println("Pong: ${result!!.time}ms") }
+    error { request, element, errorCondition -> println("Ping error ${errorCondition.name}") }
+    timeout { request -> println("Ping timeout. No response :-(") }
+}
+----
