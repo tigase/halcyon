@@ -17,7 +17,9 @@
  */
 package tigase.halcyon.core.xmpp
 
-class XMPPException : tigase.halcyon.core.exceptions.HalcyonException {
+import tigase.halcyon.core.exceptions.HalcyonException
+
+class XMPPException : HalcyonException {
 
 	val condition: ErrorCondition
 

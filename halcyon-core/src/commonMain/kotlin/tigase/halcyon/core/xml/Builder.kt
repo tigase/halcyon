@@ -17,28 +17,24 @@
  */
 package tigase.halcyon.core.xml
 
-import tigase.halcyon.core.xmpp.IdGenerator
-
-class Node(name: String) {
-
-	internal val element = Element(name)
+open class ElementNode(internal val element: Element) {
 
 	fun attribute(name: String, value: String) {
-		element._attributes[name] = value
+		element.attributes[name] = value
 	}
 
 	var xmlns: String?
 		set(value) {
 			if (value == null) {
-				element._attributes.remove("xmlns")
+				element.attributes.remove("xmlns")
 			} else {
-				element._attributes["xmlns"] = value
+				element.attributes["xmlns"] = value
 			}
 		}
 		get() = element.xmlns
 
 	operator fun String.unaryPlus() {
-		value = this
+		value = if (value == null) this else value + this
 	}
 
 	var value: String?
@@ -56,67 +52,38 @@ class Node(name: String) {
 		return n
 	}
 
-	operator fun String.invoke(vararg attributes: Pair<String, Any>, init: (Node.() -> Unit)? = null): Element {
+	operator fun String.invoke(vararg attributes: Pair<String, Any>, init: (ElementNode.() -> Unit)? = null): Element {
 		return element(this, init)
 	}
 
-	fun id() {
-		element._attributes["id"] = IdGenerator.nextId()
+	fun addChild(e: Element) {
+		e.parent = element
+		element.children.add(e)
 	}
 
-	fun element(name: String, init: (Node.() -> Unit)? = null): Element {
-		val e = Node(name)
+	fun element(name: String, init: (ElementNode.() -> Unit)? = null): Element {
+		val e = ElementNode(ElementImpl(name))
 		if (init != null) e.init()
 		e.element.parent = element
-		element._children.add(e.element)
+		element.children.add(e.element)
 		return e.element
 	}
 
 }
 
-fun element(name: String, init: Node.() -> Unit): Element {
-	val n = Node(name)
+fun element(name: String, init: ElementNode.() -> Unit): Element {
+	val n = ElementNode(ElementImpl(name))
 	n.init()
 	return n.element
 }
 
-fun stanza(name: String, init: Node.() -> Unit): Element {
-	val n = Node(name)
-	n.init()
-	n.id()
-	return n.element
-}
-
-fun response(element: Element, init: Node.() -> Unit): Element {
-	val n = Node(element.name)
-	n.element._attributes["id"] = element._attributes["id"]!!
-	n.element._attributes["type"] = "result"
-	if (element._attributes["to"] != null) n.element._attributes["from"] = element._attributes["to"]!!
-	if (element._attributes["from"] != null) n.element._attributes["to"] = element._attributes["from"]!!
+fun response(element: Element, init: ElementNode.() -> Unit): Element {
+	val n = ElementNode(ElementImpl(element.name))
+	n.element.attributes["id"] = element.attributes["id"]!!
+	n.element.attributes["type"] = "result"
+	if (element.attributes["to"] != null) n.element.attributes["from"] = element.attributes["to"]!!
+	if (element.attributes["from"] != null) n.element.attributes["to"] = element.attributes["from"]!!
 	n.init()
 	return n.element
 }
 
-fun main(args: Array<String>) {
-	val stanza = element("message") {
-		attribute("id", "1")
-		attribute("to", "romeo@example.net")
-		attribute("from", "juliet@example.com/balcony")
-		attribute("type", "chat")
-		"body" {
-			+"Wherefore art thou, Romeo?"
-		}
-		"thread"("e0ffe42b28561960c6b12b944a092794b9683a38")
-		element("subject") {
-			value = "I implore you!"
-		}
-		"x" {
-			xmlns = "test:urn"
-			"presence" {
-				+"dnd"
-			}
-		}
-	}
-
-	println(stanza.getAsString())
-}

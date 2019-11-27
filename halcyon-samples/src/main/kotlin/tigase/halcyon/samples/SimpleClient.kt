@@ -23,10 +23,10 @@ import tigase.halcyon.core.connector.ReceivedXMLElementEvent
 import tigase.halcyon.core.connector.SentXMLElementEvent
 import tigase.halcyon.core.eventbus.Event
 import tigase.halcyon.core.requests.Result
-import tigase.halcyon.core.xml.stanza
-import tigase.halcyon.core.xmpp.BareJID
 import tigase.halcyon.core.xmpp.modules.PingModule
 import tigase.halcyon.core.xmpp.modules.sm.StreamManagementModule
+import tigase.halcyon.core.xmpp.stanzas.message
+import tigase.halcyon.core.xmpp.toBareJID
 import tigase.halcyon.core.xmpp.toJID
 import java.util.logging.ConsoleHandler
 import java.util.logging.Level
@@ -42,6 +42,8 @@ fun main(args: Array<String>) {
 	Logger.getLogger("tigase.halcyon.core.eventbus").level = Level.WARNING
 
 	val halcyon = Halcyon()
+
+	val module: PingModule = halcyon.modules[PingModule.TYPE]
 
 	halcyon.eventBus.register<Event> { sessionObject, t -> if (t !is TickEvent) println("EVENT: $t") }
 	halcyon.eventBus.register<tigase.halcyon.core.connector.ConnectorStateChangeEvent>(
@@ -59,8 +61,13 @@ fun main(args: Array<String>) {
 		println(" >>> ${event.element.getAsString()}")
 	}
 
-	halcyon.configurator.userJID = BareJID.parse(args[0])
-	halcyon.configurator.userPassword = args[1]
+	halcyon.configuration.run {
+		setJID(args[0].toBareJID())
+		setPassword(args[1])
+	}
+
+//	halcyon.configurator.userJID = BareJID.parse(args[0])
+//	halcyon.configurator.userPassword = args[1]
 
 	halcyon.connect()
 
@@ -94,7 +101,7 @@ fun main(args: Array<String>) {
 				println("!+$result")
 			}
 			"m" -> {
-				val req = halcyon.write(stanza("message") {
+				val req = halcyon.write(message {
 					attribute("to", "bmalkow@malkowscy.net")
 					attribute("type", "chat")
 					"body"{
@@ -104,11 +111,10 @@ fun main(args: Array<String>) {
 				println("1." + req.completed)
 				println("2." + req.getResult())
 			}
-			"?" -> {
-
-			}
 			"quit" -> break@loop
+			"?" -> halcyon.modules.getModule<StreamManagementModule>(StreamManagementModule.TYPE).report()
 			"r" -> halcyon.modules.getModule<StreamManagementModule>(StreamManagementModule.TYPE).request()
+			"a" -> halcyon.modules.getModule<StreamManagementModule>(StreamManagementModule.TYPE).sendAck(true)
 			"resume" -> halcyon.modules.getModule<StreamManagementModule>(StreamManagementModule.TYPE).resume()
 			"ping" -> {
 				val pingModule = halcyon.modules.getModule<PingModule>(PingModule.TYPE)

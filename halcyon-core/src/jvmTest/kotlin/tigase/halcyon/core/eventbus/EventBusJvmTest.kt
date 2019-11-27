@@ -19,15 +19,18 @@ package tigase.halcyon.core.eventbus
 
 import org.junit.Assert
 import org.junit.Test
+import tigase.halcyon.core.SessionObject
 
 class EventBusJvmTest {
 
 	@Test
 	fun testBasic() {
-		val eventBus = tigase.halcyon.core.eventbus.EventBus(tigase.halcyon.core.SessionObject())
+		val sessionObject = SessionObject()
+		val eventBus = EventBus(sessionObject)
+		sessionObject.eventBus = eventBus
 		val responses = mutableListOf<Any>()
 
-		val handler = object : tigase.halcyon.core.eventbus.EventHandler<TestEvent> {
+		val handler = object : EventHandler<TestEvent> {
 			@Override
 			override fun onEvent(sessionObject: tigase.halcyon.core.SessionObject, event: TestEvent) {
 				responses.add(event.value!!)

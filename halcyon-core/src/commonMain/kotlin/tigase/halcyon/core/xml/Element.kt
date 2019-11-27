@@ -17,35 +17,40 @@
  */
 package tigase.halcyon.core.xml
 
-class Element(val name: String) {
-
-	companion object {
-		fun create(name: String, xmlns: String? = null, value: String? = null): Element = Element(name).also {
-			if (xmlns != null) it._attributes["xmlns"] = xmlns
-			if (value != null) it.value = value
-		}
-	}
-
-	var parent: Element? = null
-		internal set
-
-	internal var _children: MutableList<Element> = ArrayList()// createElementChildrenList()
-
-	internal val _attributes: MutableMap<String, String> = HashMap()// createElementAttributesMap()
-
-	val children: List<Element>
-		get() = _children
-
-	val attributes: Map<String, String>
-		get() = _attributes
-
+interface Element {
+	var parent: Element?
 	val xmlns: String?
-		get() = _attributes["xmlns"]
+	val name: String
+	var value: String?
+	fun getFirstChild(): Element?
+	fun getFirstChild(name: String): Element?
+	fun getChildren(name: String): List<Element>
+	fun getChildrenNS(xmlns: String): List<Element>
+	fun getChildrenNS(name: String, xmlns: String): Element?
+	fun getChildAfter(child: Element): Element?
+	fun getAsString(): String
+	fun findChild(vararg elemPath: String): Element?
+	fun getNextSibling(): Element?
+	val children: MutableList<Element>
+	val attributes: MutableMap<String, String>
+}
 
-	var value: String? = null
-		internal set
+open class ElementWrapper(val wrappedElement: Element) : Element by wrappedElement
 
-	fun findChild(vararg elemPath: String): Element? {
+class ElementImpl(override val name: String) : Element {
+
+	override var parent: Element? = null
+
+	override val children: MutableList<Element> = ArrayList()
+
+	override val attributes: MutableMap<String, String> = HashMap()
+
+	override val xmlns: String?
+		get() = attributes["xmlns"]
+
+	override var value: String? = null
+
+	override fun findChild(vararg elemPath: String): Element? {
 		var child: Element? = this
 		if (elemPath.isEmpty()) return null
 		if (elemPath[0] != name) return null
@@ -60,41 +65,41 @@ class Element(val name: String) {
 		return child
 	}
 
-	fun getFirstChild(): Element? {
-		return if (!_children.isEmpty()) {
-			_children.first()
+	override fun getFirstChild(): Element? {
+		return if (!children.isEmpty()) {
+			children.first()
 		} else {
 			null
 		}
 	}
 
-	fun getFirstChild(name: String): Element? {
-		return if (!_children.isEmpty()) {
-			_children.firstOrNull { element -> element.name == name }
+	override fun getFirstChild(name: String): Element? {
+		return if (!children.isEmpty()) {
+			children.firstOrNull { element -> element.name == name }
 		} else {
 			null
 		}
 	}
 
-	fun getChildAfter(child: Element): Element? {
-		val index = _children.indexOf(child)
+	override fun getChildAfter(child: Element): Element? {
+		val index = children.indexOf(child)
 		if (index == -1) {
 			throw XmlException("Element not part of tree")
 		}
 		return children[index + 1]
 	}
 
-	fun getChildren(name: String): List<Element> = children.filter { element -> element.name == name }
+	override fun getChildren(name: String): List<Element> = children.filter { element -> element.name == name }
 
-	fun getChildrenNS(xmlns: String): List<Element> = children.filter { element -> element.xmlns == xmlns }
+	override fun getChildrenNS(xmlns: String): List<Element> = children.filter { element -> element.xmlns == xmlns }
 
-	fun getChildrenNS(name: String, xmlns: String): Element? = children.firstOrNull { element ->
+	override fun getChildrenNS(name: String, xmlns: String): Element? = children.firstOrNull { element ->
 		element.name == name && element.xmlns == xmlns
 	}
 
-	fun getNextSibling(): Element? = parent?.getChildAfter(this)
+	override fun getNextSibling(): Element? = parent?.getChildAfter(this)
 
-	fun getAsString(): String {
+	override fun getAsString(): String {
 		val builder = StringBuilder()
 		builder.append('<')
 		builder.append(name)

@@ -49,7 +49,7 @@ abstract class AbstractEventBus(val sessionObject: tigase.halcyon.core.SessionOb
 	}
 
 	fun fire(event: tigase.halcyon.core.eventbus.Event) {
-		val handlers = getHandlers(event.type)
+		val handlers = getHandlers(event.eventType)
 
 		fire(event, handlers)
 	}
@@ -74,7 +74,8 @@ abstract class AbstractEventBus(val sessionObject: tigase.halcyon.core.SessionOb
 	}
 
 	fun <T : tigase.halcyon.core.eventbus.Event> register(
-		eventType: String = tigase.halcyon.core.eventbus.AbstractEventBus.Companion.ALL_EVENTS, handler: tigase.halcyon.core.eventbus.EventHandler<T>
+		eventType: String = tigase.halcyon.core.eventbus.AbstractEventBus.Companion.ALL_EVENTS,
+		handler: tigase.halcyon.core.eventbus.EventHandler<T>
 	) {
 		synchronized(this) {
 			var handlers = handlersMap[eventType]
@@ -87,7 +88,8 @@ abstract class AbstractEventBus(val sessionObject: tigase.halcyon.core.SessionOb
 	}
 
 	fun <T : tigase.halcyon.core.eventbus.Event> register(
-		eventType: String = tigase.halcyon.core.eventbus.AbstractEventBus.Companion.ALL_EVENTS, handler: (tigase.halcyon.core.SessionObject, T) -> Unit
+		eventType: String = tigase.halcyon.core.eventbus.AbstractEventBus.Companion.ALL_EVENTS,
+		handler: (tigase.halcyon.core.SessionObject, T) -> Unit
 	) {
 		register(eventType, object : tigase.halcyon.core.eventbus.EventHandler<T> {
 			override fun onEvent(sessionObject: tigase.halcyon.core.SessionObject, event: T) {
@@ -97,7 +99,8 @@ abstract class AbstractEventBus(val sessionObject: tigase.halcyon.core.SessionOb
 	}
 
 	fun unregister(
-		eventType: String = tigase.halcyon.core.eventbus.AbstractEventBus.Companion.ALL_EVENTS, handler: tigase.halcyon.core.eventbus.EventHandler<*>
+		eventType: String = tigase.halcyon.core.eventbus.AbstractEventBus.Companion.ALL_EVENTS,
+		handler: tigase.halcyon.core.eventbus.EventHandler<*>
 	) {
 		synchronized(this) {
 			val handlers = handlersMap[eventType]

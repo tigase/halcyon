@@ -26,19 +26,35 @@ actual class Halcyon actual constructor() : tigase.halcyon.core.AbstractHalcyon(
 		return SocketConnector(this)
 	}
 
+	override fun reconnect(immediately: Boolean) {
+		if (!immediately) Thread.sleep(3000)
+		state = State.Connecting
+		startConnector()
+	}
+
 	val timer = Timer("timer", true)
 
 	private val lock = java.lang.Object()
 
-	private val tickTask = object : TimerTask() {
-		override fun run() {
-			tick()
-		}
-	}
+	private lateinit var tickTask: TimerTask
 
 	init {
 		eventBus.mode = tigase.halcyon.core.eventbus.EventBus.Mode.ThreadPerHandler
+	}
+
+	override fun onConnecting() {
+		super.onConnecting()
+		tickTask = object : TimerTask() {
+			override fun run() {
+				tick()
+			}
+		}
 		timer.scheduleAtFixedRate(tickTask, 2_000, 2_000)
+	}
+
+	override fun onDisconnecting() {
+		tickTask.cancel()
+		super.onDisconnecting()
 	}
 
 //	fun connect(sync: Boolean) {

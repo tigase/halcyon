@@ -17,56 +17,65 @@
  */
 package tigase.halcyon.core.logger
 
-actual class Logger actual constructor(name: String) {
+import kotlin.js.Date
 
-	var level: tigase.halcyon.core.logger.Level = tigase.halcyon.core.logger.Level.INFO
+actual class Logger actual constructor(val name: String) {
 
-	actual inline fun isLoggable(level: tigase.halcyon.core.logger.Level): Boolean = this.level.value >= level.value
+	companion object {
+		var levelFilter: Level = Level.INFO
+		var nameFilter: String? = null
+	}
 
-	actual inline fun log(level: tigase.halcyon.core.logger.Level, msg: String) {
+	actual fun isLoggable(level: Level): Boolean = levelFilter.value <= level.value
+
+	actual fun log(level: Level, msg: String) {
+//		if (nameFilter != null && !name.matches(nameFilter!!)) {
+//			return
+//		}
+		val dt = Date()
+		val formattedMsg = "${dt.toUTCString()} [$level] $name: $msg"
+
 		if (isLoggable(level)) when (level) {
-			tigase.halcyon.core.logger.Level.SEVERE -> console.error(msg)
-			tigase.halcyon.core.logger.Level.WARNING -> console.warn(msg)
-			tigase.halcyon.core.logger.Level.INFO -> console.info(msg)
-			tigase.halcyon.core.logger.Level.CONFIG -> console.info(msg)
-			tigase.halcyon.core.logger.Level.FINE, tigase.halcyon.core.logger.Level.FINER, tigase.halcyon.core.logger.Level.FINEST -> console.log(
-				msg
-			)
+			Level.SEVERE -> console.error(formattedMsg)
+			Level.WARNING -> console.warn(formattedMsg)
+			Level.INFO -> console.info(formattedMsg)
+			Level.CONFIG -> console.info(formattedMsg)
+			Level.FINE, Level.FINER, Level.FINEST -> console.log(formattedMsg)
 			else -> {
 			}
 		}
 	}
 
-	actual fun log(level: tigase.halcyon.core.logger.Level, msg: String, caught: Throwable) {
+	actual fun log(level: Level, msg: String, caught: Throwable) {
 		log(level, msg + '\n' + caught.toString())
 	}
 
 	actual fun fine(msg: String) {
-		log(tigase.halcyon.core.logger.Level.FINE, msg)
+		log(Level.FINE, msg)
 	}
 
 	actual fun finer(msg: String) {
-		log(tigase.halcyon.core.logger.Level.FINER, msg)
+		log(Level.FINER, msg)
 	}
 
 	actual fun finest(msg: String) {
-		log(tigase.halcyon.core.logger.Level.FINEST, msg)
+		log(Level.FINEST, msg)
 	}
 
 	actual fun config(msg: String) {
-		log(tigase.halcyon.core.logger.Level.CONFIG, msg)
+		log(Level.CONFIG, msg)
 	}
 
 	actual fun info(msg: String) {
-		log(tigase.halcyon.core.logger.Level.INFO, msg)
+		log(Level.INFO, msg)
 	}
 
 	actual fun warning(msg: String) {
-		log(tigase.halcyon.core.logger.Level.WARNING, msg)
+		log(Level.WARNING, msg)
 	}
 
 	actual fun severe(msg: String) {
-		log(tigase.halcyon.core.logger.Level.SEVERE, msg)
+		log(Level.SEVERE, msg)
 	}
 
 }

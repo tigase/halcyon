@@ -23,11 +23,11 @@ class ModulesManager {
 
 	lateinit var context: tigase.halcyon.core.Context
 
-	private val modules: MutableMap<String, tigase.halcyon.core.modules.XmppModule> = HashMap()
+	private val modules: MutableMap<String, XmppModule> = HashMap()
 
-	private val modulesToInitialize = mutableListOf<tigase.halcyon.core.modules.XmppModule>()
+	private val modulesToInitialize = mutableListOf<XmppModule>()
 
-	fun register(module: tigase.halcyon.core.modules.XmppModule) {
+	fun register(module: XmppModule) {
 		module.context = context
 		modules[module.type] = module
 		modulesToInitialize.add(module)
@@ -51,15 +51,24 @@ class ModulesManager {
 
 	fun isRegistered(type: String): Boolean = this.modules.containsKey(type)
 
-	fun <T : tigase.halcyon.core.modules.XmppModule> getModule(type: String): T {
-		val module = this.modules[type] ?: throw throw tigase.halcyon.core.exceptions.HalcyonException("Module '$type' not registered!")
+	@Suppress("UNCHECKED_CAST")
+	fun <T : XmppModule> getModule(type: String): T {
+		val module = this.modules[type]
+			?: throw throw tigase.halcyon.core.exceptions.HalcyonException("Module '$type' not registered!")
 		return module as T
 	}
 
-	fun getModulesFor(element: Element): Array<tigase.halcyon.core.modules.XmppModule> {
+	@Suppress("UNCHECKED_CAST")
+	fun <T : XmppModule> getModuleOrNull(type: String): T? {
+		return this.modules[type] as T?
+	}
+
+	fun getModulesFor(element: Element): Array<XmppModule> {
 		return modules.values.filter { xmppModule ->
 			(xmppModule.criteria != null && xmppModule.criteria!!.match(element))
 		}.toTypedArray()
 	}
+
+	operator fun <T : XmppModule> get(type: String): T = getModule(type)
 
 }

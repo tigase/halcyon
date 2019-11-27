@@ -17,6 +17,8 @@
  */
 package tigase.halcyon.core.xmpp.modules.sm
 
+import tigase.halcyon.core.connector.ReceivedXMLElementEvent
+import tigase.halcyon.core.connector.SentXMLElementEvent
 import tigase.halcyon.core.requests.Request
 import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xml.element
@@ -77,21 +79,12 @@ class StreamManagementModule : tigase.halcyon.core.modules.XmppModule {
 	private val queue = ArrayList<Any>()
 
 	override fun initialize() {
-		context.eventBus.register<tigase.halcyon.core.connector.SentXMLElementEvent>(
-			tigase.halcyon.core.connector.SentXMLElementEvent.TYPE,
-			handler = { _, event ->
-				processElementSent(
-					event.element,
-					event.request
-				)
-			})
-		context.eventBus.register<tigase.halcyon.core.connector.ReceivedXMLElementEvent>(
-			tigase.halcyon.core.connector.ReceivedXMLElementEvent.TYPE,
-			handler = { _, event ->
-				processElementReceived(
-					event.element
-				)
-			})
+		context.eventBus.register<SentXMLElementEvent>(SentXMLElementEvent.TYPE, handler = { _, event ->
+			processElementSent(event.element, event.request)
+		})
+		context.eventBus.register<ReceivedXMLElementEvent>(ReceivedXMLElementEvent.TYPE, handler = { _, event ->
+			processElementReceived(event.element)
+		})
 		context.eventBus.register<tigase.halcyon.core.TickEvent>(
 			tigase.halcyon.core.TickEvent.TYPE,
 			handler = { _, event -> onTick() })
@@ -100,15 +93,26 @@ class StreamManagementModule : tigase.halcyon.core.modules.XmppModule {
 	private fun onTick() {
 		if (isAckEnable(context.sessionObject)) {
 			if (queue.size > 0) request()
-
 			sendAck(false)
 		}
 	}
 
 	private fun processElementReceived(element: Element) {
-		if (element.xmlns != XMLNS) {
-			increment(INCOMING_STREAM_H_KEY)
+		if (!isAckEnable(context.sessionObject)) return
+		if (element.xmlns == XMLNS) return
+		increment(INCOMING_STREAM_H_KEY)
+	}
+
+	private fun processElementSent(element: Element, request: Request<*>?) {
+		if (!isAckEnable(context.sessionObject)) return
+		if (element.xmlns == XMLNS) return
+
+		if (request != null) {
+			queue.add(request)
+		} else {
+			queue.add(element)
 		}
+		increment(OUTGOING_STREAM_H_KEY)
 	}
 
 	fun reset() {
@@ -218,25 +222,13 @@ class StreamManagementModule : tigase.halcyon.core.modules.XmppModule {
 		return v
 	}
 
-	private fun processElementSent(element: Element, request: Request<*>?) {
-		if (!isAckEnable(context.sessionObject)) return
-		if (element.xmlns == XMLNS) return
-
-		if (request != null) {
-			queue.add(request)
-		} else {
-			queue.add(element)
-		}
-		increment(OUTGOING_STREAM_H_KEY)
-	}
-
 	fun isSupported(): Boolean = StreamFeaturesModule.isFeatureAvailable(context.sessionObject, "sm", XMLNS)
 
 	fun enable() {
 		if (isSupported()) {
 			context.writer.writeDirectly(element("enable") {
 				xmlns = XMLNS
-				attribute("resume", "true")
+				attribute("resume", "false")
 			})
 		}
 	}
@@ -253,6 +245,7 @@ class StreamManagementModule : tigase.halcyon.core.modules.XmppModule {
 	}
 
 	fun request() {
+		log.fine("Sending ACK request")
 		context.writer.writeDirectly(element("r") { xmlns = XMLNS })
 	}
 
@@ -265,6 +258,25 @@ class StreamManagementModule : tigase.halcyon.core.modules.XmppModule {
 			attribute("h", h.toString())
 			if (id != null) attribute("id", id)
 		})
+	}
+
+	fun report() {
+		println(
+			"""
+			SM Report
+			---------
+			
+			Enabled: ${isAckEnable(context.sessionObject)}
+			Outgoing stream H: ${context.sessionObject.getProperty<Long>(OUTGOING_STREAM_H_KEY)}
+			Incoming stream H: ${context.sessionObject.getProperty<Long>(INCOMING_STREAM_H_KEY)}
+			Incoming stream LAST KEY: ${context.sessionObject.getProperty<Long>(INCOMING_STREAM_H_LAST_SENT_KEY)}
+			 
+			Queue size: ${queue.size}
+			Queue: ${queue}
+			
+			---------
+		""".trimIndent()
+		)
 	}
 
 }

@@ -18,17 +18,20 @@
 package tigase.halcyon.core.xmpp.modules
 
 import tigase.halcyon.core.currentTimestamp
+import tigase.halcyon.core.modules.Criterion
 import tigase.halcyon.core.requests.Request
 import tigase.halcyon.core.xml.Element
-import tigase.halcyon.core.xml.element
 import tigase.halcyon.core.xml.response
 import tigase.halcyon.core.xmpp.ErrorCondition
 import tigase.halcyon.core.xmpp.JID
+import tigase.halcyon.core.xmpp.StanzaType
 import tigase.halcyon.core.xmpp.XMPPException
+import tigase.halcyon.core.xmpp.stanzas.IQ
+import tigase.halcyon.core.xmpp.stanzas.iq
 
 class PingModule : tigase.halcyon.core.modules.AbstractXmppIQModule(
-	TYPE, arrayOf(XMLNS), tigase.halcyon.core.modules.Criterion.chain(
-		tigase.halcyon.core.modules.Criterion.name("iq"), tigase.halcyon.core.modules.Criterion.xmlns(XMLNS)
+	TYPE, arrayOf(XMLNS), Criterion.chain(
+		Criterion.name(IQ.NAME), Criterion.xmlns(XMLNS)
 	)
 ) {
 
@@ -38,9 +41,9 @@ class PingModule : tigase.halcyon.core.modules.AbstractXmppIQModule(
 	}
 
 	fun ping(jid: JID? = null): Request<Pong> {
-		val stanza = element("iq") {
-			id()
-			if (jid != null) attribute("to", jid.toString())
+		val stanza = iq {
+			type = StanzaType.Get
+			if (jid != null) to = jid
 			"ping"{
 				xmlns = XMLNS
 			}

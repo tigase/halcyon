@@ -99,5 +99,6 @@ class IdGenerator {
 		private const val ALPHABET: String = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
 
 		fun nextId(): String = generator.nextId()
+		fun nextIdLongs(): String = generator.nextId() + generator.nextId()
 	}
 }

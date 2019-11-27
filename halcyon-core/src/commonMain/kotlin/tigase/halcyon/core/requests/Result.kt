@@ -38,4 +38,10 @@ sealed class Result<out V : Any> {
 		override fun get(): V = throw HalcyonException("Request timeout")
 	}
 
+	override fun toString(): String = when (this) {
+		is Success -> "Success(${get()})"
+		is Error -> "Error($error)"
+		is Timeout -> "Timeout()"
+	}
+
 }

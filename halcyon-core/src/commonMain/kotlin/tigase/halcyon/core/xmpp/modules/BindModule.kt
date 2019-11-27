@@ -17,66 +17,61 @@
  */
 package tigase.halcyon.core.xmpp.modules
 
+import tigase.halcyon.core.Context
+import tigase.halcyon.core.SessionObject
+import tigase.halcyon.core.modules.Criteria
+import tigase.halcyon.core.modules.XmppModule
+import tigase.halcyon.core.requests.Request
 import tigase.halcyon.core.xml.Element
-import tigase.halcyon.core.xml.element
 import tigase.halcyon.core.xmpp.ErrorCondition
 import tigase.halcyon.core.xmpp.JID
+import tigase.halcyon.core.xmpp.StanzaType
 import tigase.halcyon.core.xmpp.XMPPException
+import tigase.halcyon.core.xmpp.stanzas.iq
 
-sealed class BindEvent(type: String) : tigase.halcyon.core.eventbus.Event(type) {
-
-	class Success(val jid: JID) : BindEvent(TYPE) {
-		companion object {
-			const val TYPE = "tigase.halcyon.core.xmpp.modules.BindEvent.Success"
-		}
-	}
-
-	class Error : BindEvent(TYPE) {
-		companion object {
-			const val TYPE = "tigase.halcyon.core.xmpp.modules.BindEvent.Error"
-		}
-	}
-
-}
-
-class BindModule : tigase.halcyon.core.modules.XmppModule {
+class BindModule : XmppModule {
 
 	companion object {
 		const val XMLNS = "urn:ietf:params:xml:ns:xmpp-bind"
 		const val TYPE = XMLNS
+
+		fun getBindedJID(sessionObject: SessionObject): JID? = sessionObject.getProperty(XMLNS)
 	}
 
 	override val type = TYPE
-	override lateinit var context: tigase.halcyon.core.Context
-	override val criteria: tigase.halcyon.core.modules.Criteria? = null
+	override lateinit var context: Context
+	override val criteria: Criteria? = null
 	override val features = arrayOf(XMLNS)
 
 	override fun initialize() {}
 
-	fun bind() {
-		val stanza = element("iq") {
-			id()
-			attribute("type", "set")
+	fun bind(resource: String? = null): Request<BindResult> {
+		val stanza = iq {
+			type = StanzaType.Set
 			"bind"{
 				xmlns = XMLNS
-			}
-		}
-
-		context.writer.write(stanza).response { request, element, result ->
-			when (result) {
-				is tigase.halcyon.core.requests.Result.Success<*> -> {
-					val bind = result.responseStanza.getChildrenNS("bind", XMLNS)!!
-					val jidElement = bind.getFirstChild("jid")!!
-					val jid = JID.parse(jidElement.value!!)
-					context.sessionObject.setProperty(XMLNS, jid)
-					context.eventBus.fire(BindEvent.Success(jid))
+				resource?.let {
+					"resource"{
+						value = it
+					}
 				}
 			}
 		}
+		return context.requestBuilder<BindResult>(stanza).resultBuilder { element -> createBindResult(element) }.send()
+	}
+
+	private fun createBindResult(element: Element): BindResult {
+		val bind = element.getChildrenNS("bind", XMLNS)!!
+		val jidElement = bind.getFirstChild("jid")!!
+		val jid = JID.parse(jidElement.value!!)
+		context.sessionObject.setProperty(XMLNS, jid)
+		return BindResult(jid)
 	}
 
 	override fun process(element: Element) {
 		throw XMPPException(ErrorCondition.BadRequest)
 	}
+
+	data class BindResult(val jid: JID)
 
 }

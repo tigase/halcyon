@@ -17,7 +17,6 @@
  */
 package tigase.halcyon.core.xmpp.modules
 
-import tigase.halcyon.core.SessionObject
 import tigase.halcyon.core.xml.Element
 
 data class StreamFeaturesEvent(val features: Element) : tigase.halcyon.core.eventbus.Event(TYPE) {
@@ -51,7 +50,7 @@ class StreamFeaturesModule : tigase.halcyon.core.modules.XmppModule {
 	override fun initialize() {}
 
 	override fun process(element: Element) {
-		context.sessionObject.setProperty(tigase.halcyon.core.SessionObject.Scope.stream, FEATURES_KEY, element)
+		context.sessionObject.setProperty(tigase.halcyon.core.SessionObject.Scope.Stream, FEATURES_KEY, element)
 		context.eventBus.fire(StreamFeaturesEvent(element))
 	}
 }

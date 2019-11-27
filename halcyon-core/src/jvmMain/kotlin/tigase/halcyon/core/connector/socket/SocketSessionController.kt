@@ -17,80 +17,72 @@
  */
 package tigase.halcyon.core.connector.socket
 
+import tigase.halcyon.core.connector.AbstractSocketSessionController
+import tigase.halcyon.core.connector.ConnectionErrorEvent
+import tigase.halcyon.core.connector.socket.SocketConnector.Companion.SEE_OTHER_HOST_KEY
+import tigase.halcyon.core.connector.socket.SocketConnector.Companion.XMLNS_START_TLS
+import tigase.halcyon.core.logger.Level
+import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xmpp.SessionController
-import tigase.halcyon.core.xmpp.modules.BindEvent
-import tigase.halcyon.core.xmpp.modules.BindModule
+import tigase.halcyon.core.xmpp.StreamError
 import tigase.halcyon.core.xmpp.modules.StreamErrorEvent
 import tigase.halcyon.core.xmpp.modules.StreamFeaturesEvent
-import tigase.halcyon.core.xmpp.modules.auth.AuthEvent
-import tigase.halcyon.core.xmpp.modules.auth.SaslModule
-import tigase.halcyon.core.xmpp.modules.sm.StreamManagementModule
+import tigase.halcyon.core.xmpp.modules.auth.SASLEvent
+import tigase.halcyon.core.xmpp.modules.auth.SASLModule
 
 class SocketSessionController(
 	private val context: tigase.halcyon.core.Context, private val connector: SocketConnector
-) : SessionController {
+) : AbstractSocketSessionController(context, "tigase.halcyon.core.connector.socket.SocketSessionController") {
 
-	private val log = tigase.halcyon.core.logger.Logger("tigase.halcyon.core.connector.socket.SocketSessionController")
-
-	private val eventHandler = object : tigase.halcyon.core.eventbus.EventHandler<tigase.halcyon.core.eventbus.Event> {
-		override fun onEvent(
-			sessionObject: tigase.halcyon.core.SessionObject, event: tigase.halcyon.core.eventbus.Event
-		) {
-			processEvent(event)
-		}
+	override fun processAuthSuccessfull(event: SASLEvent.SASLSuccess) {
+		connector.restartStream()
 	}
 
-	private fun processEvent(event: tigase.halcyon.core.eventbus.Event) {
+	private fun isTLSAvailable(features: Element): Boolean = features.getChildrenNS("starttls", XMLNS_START_TLS) != null
+
+	override fun processConnectionError(event: ConnectionErrorEvent) {
+		log.log(Level.FINE, "Received connector exception: $event")
 		when (event) {
-			is tigase.halcyon.core.connector.ParseErrorEvent -> {
-				log.info("Stream parse error. Stopping connection.")
+			is SocketConnectionErrorEvent.HostNotFount -> {
+				log.info("Cannot find server in DNS")
 				context.eventBus.fire(
-					SessionController.StopEverythingEvent.ErrorStopEvent(
-						"Stream parse error: ${event.errorMessage}"
+					SessionController.SessionControllerEvents.ErrorStop(
+						"Cannot find server in DNS"
 					)
 				)
 			}
-			is StreamErrorEvent -> processStreamError(event)
-			is StreamFeaturesEvent -> processStreamFeaturesEvent(event)
-			is AuthEvent.AuthSuccessEvent -> {
-				connector.restartStream()
-			}
-			is BindEvent.Success -> {
-				context.modules.getModule<StreamManagementModule>(StreamManagementModule.TYPE).enable()
+			else -> {
+				context.eventBus.fire(SessionController.SessionControllerEvents.ErrorReconnect("Connection error"))
 			}
 		}
 	}
 
-	private fun processStreamFeaturesEvent(event: StreamFeaturesEvent) {
-		if (SaslModule.getAuthState(context.sessionObject) == SaslModule.State.Unknown) {
-			context.modules.getModule<SaslModule>(SaslModule.TYPE).startAuth()
-		}
-		if (SaslModule.getAuthState(context.sessionObject) == SaslModule.State.Success) {
-			context.modules.getModule<BindModule>(BindModule.TYPE).bind()
+	override fun processStreamFeaturesEvent(event: StreamFeaturesEvent) {
+		val authState = SASLModule.getAuthState(context.sessionObject)
+		val connectionSecured = connector.secured
+		val tlsAvailable: Boolean = isTLSAvailable(event.features)
+
+		if (!connectionSecured && tlsAvailable) {
+			connector.startTLS()
+		} else super.processStreamFeaturesEvent(event)
+	}
+
+	override fun processStreamError(event: StreamErrorEvent) {
+		when (event.condition) {
+			StreamError.SEE_OTHER_HOST -> processSeeOtherHost(event)
+			else -> super.processStreamError(event)
 		}
 	}
 
-	private fun processStreamError(event: StreamErrorEvent) {
-		when (event.error.name) {
-			"see-other-host" -> doSeeOtherHost(event.error.value!!)
-			else -> context.eventBus.fire(
-				SessionController.StopEverythingEvent.ErrorStopEvent("Stream error: ${event.error.name}")
+	private fun processSeeOtherHost(event: StreamErrorEvent) {
+		val url = event.errorElement.value
+		context.sessionObject.setProperty(SEE_OTHER_HOST_KEY, url)
+
+		context.eventBus.fire(
+			SessionController.SessionControllerEvents.ErrorReconnect(
+				"see-other-host: $url", immediately = true, force = true
 			)
-		}
+		)
 	}
 
-	private fun doSeeOtherHost(newHost: String) {
-		log.info("Received see-other-host. New host: $newHost")
-		connector.stop()
-		context.sessionObject.setProperty(SocketConnector.SERVER_HOST, newHost)
-		connector.start()
-	}
-
-	override fun start() {
-		context.eventBus.register(handler = eventHandler)
-	}
-
-	override fun stop() {
-		context.eventBus.unregister(eventHandler)
-	}
 }

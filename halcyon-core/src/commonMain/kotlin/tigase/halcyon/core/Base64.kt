@@ -157,8 +157,8 @@ object Base64 {
 		return String(output)
 	}
 
-	private fun findNexIt(s: String, i: Int): Int {
-		var i = i
+	private fun findNexIt(s: String, idx: Int): Int {
+		var i = idx
 		val sl = s.length - 1
 		var c2: Int
 		if (i >= sl) {

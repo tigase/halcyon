@@ -23,10 +23,9 @@ import java.util.concurrent.Executors
 actual class EventBus actual constructor(sessionObject: tigase.halcyon.core.SessionObject) :
 	tigase.halcyon.core.eventbus.AbstractEventBus(sessionObject) {
 
-	override fun createHandlersMap(): MutableMap<String, MutableSet<tigase.halcyon.core.eventbus.EventHandler<*>>> =
-		ConcurrentHashMap()
+	override fun createHandlersMap(): MutableMap<String, MutableSet<EventHandler<*>>> = ConcurrentHashMap()
 
-	override fun createHandlersSet(): MutableSet<tigase.halcyon.core.eventbus.EventHandler<*>> = ConcurrentHashMap.newKeySet<tigase.halcyon.core.eventbus.EventHandler<*>>()
+	override fun createHandlersSet(): MutableSet<EventHandler<*>> = ConcurrentHashMap.newKeySet<EventHandler<*>>()
 
 	enum class Mode {
 		NoThread,
@@ -46,11 +45,11 @@ actual class EventBus actual constructor(sessionObject: tigase.halcyon.core.Sess
 	}
 
 	private fun fireNoThread(
-		event: tigase.halcyon.core.eventbus.Event, handlers: Collection<tigase.halcyon.core.eventbus.EventHandler<*>>
+		event: Event, handlers: Collection<EventHandler<*>>
 	) {
 		handlers.forEach { eventHandler ->
 			try {
-				(eventHandler as tigase.halcyon.core.eventbus.EventHandler<tigase.halcyon.core.eventbus.Event>).onEvent(
+				(eventHandler as EventHandler<Event>).onEvent(
 					sessionObject, event
 				)
 			} catch (e: Exception) {
@@ -62,12 +61,12 @@ actual class EventBus actual constructor(sessionObject: tigase.halcyon.core.Sess
 	}
 
 	private fun fireThreadPerEvent(
-		event: tigase.halcyon.core.eventbus.Event, handlers: Collection<tigase.halcyon.core.eventbus.EventHandler<*>>
+		event: Event, handlers: Collection<EventHandler<*>>
 	) {
 		executor.execute {
 			handlers.forEach { eventHandler ->
 				try {
-					(eventHandler as tigase.halcyon.core.eventbus.EventHandler<tigase.halcyon.core.eventbus.Event>).onEvent(
+					(eventHandler as EventHandler<Event>).onEvent(
 						sessionObject, event
 					)
 				} catch (e: Exception) {
@@ -80,12 +79,12 @@ actual class EventBus actual constructor(sessionObject: tigase.halcyon.core.Sess
 	}
 
 	private fun fireThreadPerHandler(
-		event: tigase.halcyon.core.eventbus.Event, handlers: Collection<tigase.halcyon.core.eventbus.EventHandler<*>>
+		event: Event, handlers: Collection<EventHandler<*>>
 	) {
 		handlers.forEach { eventHandler ->
 			executor.execute {
 				try {
-					(eventHandler as tigase.halcyon.core.eventbus.EventHandler<tigase.halcyon.core.eventbus.Event>).onEvent(
+					(eventHandler as EventHandler<Event>).onEvent(
 						sessionObject, event
 					)
 				} catch (e: Exception) {
@@ -98,7 +97,7 @@ actual class EventBus actual constructor(sessionObject: tigase.halcyon.core.Sess
 	}
 
 	override fun fire(
-		event: tigase.halcyon.core.eventbus.Event, handlers: Collection<tigase.halcyon.core.eventbus.EventHandler<*>>
+		event: Event, handlers: Collection<EventHandler<*>>
 	) {
 		if (log.isLoggable(tigase.halcyon.core.logger.Level.FINEST)) {
 			log.finest("Firing event $event with ${handlers.size} handlers")

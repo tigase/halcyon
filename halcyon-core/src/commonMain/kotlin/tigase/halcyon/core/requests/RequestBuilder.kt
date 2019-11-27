@@ -36,7 +36,7 @@ class RequestBuilder<T : Any>(
 
 	init {
 		if (stanzaToSend.getIdAttr() == null) {
-			stanzaToSend._attributes["id"] = IdGenerator.nextId()
+			stanzaToSend.attributes["id"] = IdGenerator.nextId()
 		}
 
 		val j = stanzaToSend.attributes["to"]

@@ -17,10 +17,39 @@
  */
 package tigase.halcyon.core
 
+import tigase.halcyon.core.connector.WebSocketConnector
+import kotlin.browser.window
+
 actual class Halcyon actual constructor() : tigase.halcyon.core.AbstractHalcyon() {
 
+	private var intervalHandler: Int = -1
+
 	override fun createConnector(): tigase.halcyon.core.connector.AbstractConnector {
-		TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+		return WebSocketConnector(this)
 	}
 
+	override fun reconnect(immediately: Boolean) {
+		if (immediately) {
+			state = State.Connecting
+			startConnector()
+		} else {
+			window.setTimeout({
+								  state = State.Connecting
+								  startConnector()
+							  }, 3000)
+		}
+	}
+
+	override fun onConnecting() {
+		console.info("Starting interval")
+		super.onConnecting()
+		intervalHandler = window.setInterval({ tick() }, 2000)
+		console.info("Interval handler: $intervalHandler")
+	}
+
+	override fun onDisconnecting() {
+		console.info("Clearing interval handler: $intervalHandler")
+		window.clearInterval(intervalHandler)
+		super.onDisconnecting()
+	}
 }

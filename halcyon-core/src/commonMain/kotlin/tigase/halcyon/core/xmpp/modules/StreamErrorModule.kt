@@ -17,31 +17,56 @@
  */
 package tigase.halcyon.core.xmpp.modules
 
+import tigase.halcyon.core.Context
+import tigase.halcyon.core.eventbus.Event
+import tigase.halcyon.core.modules.Criterion
+import tigase.halcyon.core.modules.XmppModule
 import tigase.halcyon.core.xml.Element
+import tigase.halcyon.core.xmpp.StreamError
 
-data class StreamErrorEvent(val error: Element) : tigase.halcyon.core.eventbus.Event(TYPE) {
+/**
+ * XMPP stream error.
+ *
+ * @property element whole received `<stream:error>` element.
+ * @property condition parsed stream error enum to easy check kind of error.
+ * @property errorElement error condition element.
+ */
+data class StreamErrorEvent(val element: Element, val condition: StreamError, val errorElement: Element) : Event(TYPE) {
 
 	companion object {
 		const val TYPE = "tigase.halcyon.core.xmpp.modules.StreamErrorEvent"
 	}
 }
 
-class StreamErrorModule : tigase.halcyon.core.modules.XmppModule {
+class StreamErrorModule : XmppModule {
 
 	companion object {
 		const val TYPE = "StreamErrorModule"
+		const val XMLNS = "urn:ietf:params:xml:ns:xmpp-streams"
 	}
 
 	override val type = TYPE
-	override lateinit var context: tigase.halcyon.core.Context
-	override val criteria = tigase.halcyon.core.modules.Criterion.and(
-		tigase.halcyon.core.modules.Criterion.name("error"), tigase.halcyon.core.modules.Criterion.xmlns("http://etherx.jabber.org/streams")
+	override lateinit var context: Context
+	override val criteria = Criterion.and(
+		Criterion.name("error"), Criterion.xmlns("http://etherx.jabber.org/streams")
 	)
 	override val features: Array<String>? = null
 
 	override fun initialize() {}
 
+	private fun getByElementName(name: String): StreamError {
+		for (e in StreamError.values()) {
+			if (e.elementName == name) {
+				return e
+			}
+		}
+		return StreamError.UNKNOWN_STREAM_ERROR
+	}
+
 	override fun process(element: Element) {
-		context.eventBus.fire(StreamErrorEvent(element.getFirstChild()!!))
+		val c = element.getChildrenNS(XMLNS).first()
+		val e = getByElementName(c.name)
+
+		context.eventBus.fire(StreamErrorEvent(element, e,c))
 	}
 }

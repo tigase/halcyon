@@ -17,26 +17,54 @@
  */
 package tigase.halcyon.core.connector.socket
 
+import org.minidns.dnssec.DnssecValidationFailedException
 import org.minidns.hla.DnssecResolverApi
 import org.minidns.hla.SrvType
-import tigase.halcyon.core.connector.State
+import tigase.halcyon.core.Context
+import tigase.halcyon.core.SessionObject
+import tigase.halcyon.core.connector.*
 import tigase.halcyon.core.excutor.TickExecutor
+import tigase.halcyon.core.logger.Level
+import tigase.halcyon.core.logger.Logger
 import tigase.halcyon.core.xml.Element
+import tigase.halcyon.core.xml.element
 import tigase.halcyon.core.xml.parser.StreamParser
 import tigase.halcyon.core.xmpp.BareJID
+import tigase.halcyon.core.xmpp.ErrorCondition
 import tigase.halcyon.core.xmpp.SessionController
-import java.io.OutputStreamWriter
+import tigase.halcyon.core.xmpp.XMPPException
 import java.net.InetAddress
 import java.net.Socket
+import java.net.UnknownHostException
+import java.security.SecureRandom
+import java.security.cert.X509Certificate
+import javax.net.ssl.SSLContext
+import javax.net.ssl.SSLSocket
+import javax.net.ssl.SSLSocketFactory
+import javax.net.ssl.X509TrustManager
 
-class SocketConnector(context: tigase.halcyon.core.Context) : tigase.halcyon.core.connector.AbstractConnector(context) {
+sealed class SocketConnectionErrorEvent() : ConnectionErrorEvent() {
+
+	class TLSFailureEvent() : SocketConnectionErrorEvent()
+	class HostNotFount() : SocketConnectionErrorEvent()
+	class Unknown(val caught: Throwable) : SocketConnectionErrorEvent()
+
+}
+
+class SocketConnector(context: Context) : AbstractConnector(context) {
 
 	companion object {
 		const val SERVER_HOST = "SocketConnector.serverHost"
 		const val SERVER_PORT = "SocketConnector.serverPort"
+		const val SEE_OTHER_HOST_KEY = "SocketConnector.seeOtherHost"
+
+		const val XMLNS_START_TLS = "urn:ietf:params:xml:ns:xmpp-tls"
 	}
 
-	private val log = tigase.halcyon.core.logger.Logger("tigase.halcyon.core.connector.socket.SocketConnector")
+	var secured: Boolean = false
+		private set
+
+	private val log = Logger("tigase.halcyon.core.connector.socket.SocketConnector")
 
 	private lateinit var socket: Socket
 
@@ -44,38 +72,115 @@ class SocketConnector(context: tigase.halcyon.core.Context) : tigase.halcyon.cor
 
 	private val whitespacePingExecutor = TickExecutor(context.eventBus, 30000) { onTick() }
 
+	private var whiteSpaceEnabled: Boolean = true
+
 	private val parser = object : StreamParser() {
 		override fun onNextElement(element: Element) {
 			log.finest("Received element ${element.getAsString()}")
-			context.eventBus.fire(tigase.halcyon.core.connector.ReceivedXMLElementEvent(element))
+			processReceivedElement(element)
 		}
 
 		override fun onStreamClosed() {
 			log.finest("Stream closed")
-			context.eventBus.fire(tigase.halcyon.core.connector.StreamTerminatedEvent())
+			context.eventBus.fire(StreamTerminatedEvent())
 		}
 
 		override fun onStreamStarted(attrs: Map<String, String>) {
 			log.finest("Stream started: $attrs")
-			context.eventBus.fire(tigase.halcyon.core.connector.StreamStartedEvent(attrs))
+			context.eventBus.fire(StreamStartedEvent(attrs))
 		}
 
 		override fun onParseError(errorMessage: String) {
 			log.finest("Parse error: $errorMessage")
-			context.eventBus.fire(tigase.halcyon.core.connector.ParseErrorEvent(errorMessage))
+			context.eventBus.fire(ParseErrorEvent(errorMessage))
+		}
+	}
+
+	private fun processReceivedElement(element: Element) {
+		when (element.xmlns) {
+			XMLNS_START_TLS -> processTLSStanza(element)
+			else -> context.eventBus.fire(ReceivedXMLElementEvent(element))
+		}
+	}
+
+	private fun processTLSStanza(element: Element) {
+		when (element.name) {
+			"proceed" -> {
+				proceedTLS()
+			}
+			"failure" -> {
+				log.warning("Cannot establish TLS connection!")
+				context.eventBus.fire(SocketConnectionErrorEvent.TLSFailureEvent())
+			}
+			else -> throw XMPPException(ErrorCondition.BadRequest)
+		}
+	}
+
+	private fun getSocketFactory(): SSLSocketFactory {
+		val ctx = SSLContext.getInstance("TLS")
+
+		val trustManagers = arrayOf(object : X509TrustManager {
+			override fun checkClientTrusted(p0: Array<out X509Certificate>?, p1: String?) {
+				log.finest("Trusted!")
+			}
+
+			override fun checkServerTrusted(p0: Array<out X509Certificate>?, p1: String?) {
+				log.finest("Trusted!")
+			}
+
+			override fun getAcceptedIssuers(): Array<X509Certificate> = emptyArray()
+		})
+		ctx.init(emptyArray(), trustManagers, SecureRandom())
+
+		return ctx.socketFactory
+	}
+
+	private fun proceedTLS() {
+		log.info("Proceeding TLS")
+		try {
+			val userJid = context.sessionObject.getProperty<BareJID>(SessionObject.USER_BARE_JID)!!
+			log.finest("Disabling whitespace ping")
+			whiteSpaceEnabled = false
+
+			val factory = getSocketFactory()
+
+			val s1 = factory.createSocket(socket, userJid.domain, socket.port, true) as SSLSocket
+			s1.soTimeout = 0
+			s1.keepAlive = false
+			s1.tcpNoDelay = true
+			s1.useClientMode = true
+			s1.addHandshakeCompletedListener { handshakeCompletedEvent ->
+				log.info("Handshake completed $handshakeCompletedEvent")
+				secured = true
+			}
+
+			s1.startHandshake()
+
+
+			worker.socket = s1
+			restartStream()
+		} catch (e: Throwable) {
+			e.printStackTrace()
+		} finally {
+			log.finest("Enabling whitespace ping")
+			whiteSpaceEnabled = true
 		}
 	}
 
 	override fun createSessionController(): SessionController = SocketSessionController(context, this)
 
-	protected fun createSocket(): Socket {
-		val forcedHost = context.sessionObject.getProperty<String>(SERVER_HOST)
+	private fun createSocket(): Socket {
+		val seeOther = context.sessionObject.getProperty<String>(SEE_OTHER_HOST_KEY)
+		if (seeOther != null) {
+			return Socket(InetAddress.getByName(seeOther), 5222)
+		}
 
+		val forcedHost = context.sessionObject.getProperty<String>(SERVER_HOST)
 		if (forcedHost != null) {
 			return Socket(InetAddress.getByName(forcedHost), 5222)
 		}
 
-		val userJid = context.sessionObject.getProperty<BareJID>(tigase.halcyon.core.SessionObject.USER_BARE_JID)!!
+		val userJid = context.sessionObject.getProperty<BareJID>(SessionObject.USER_BARE_JID)!!
 
 		val result = DnssecResolverApi.INSTANCE.resolveSrv(SrvType.xmpp_client, userJid.domain)
 
@@ -94,79 +199,109 @@ class SocketConnector(context: tigase.halcyon.core.Context) : tigase.halcyon.cor
 			}
 
 		}
-		throw tigase.halcyon.core.connector.ConnectorException("Cannot open socket")
+		throw ConnectorException("Cannot open socket")
 	}
 
 	override fun start() {
-		state = tigase.halcyon.core.connector.State.Connecting
+		state = State.Connecting
 
-		val userJid = context.sessionObject.getProperty<BareJID>(tigase.halcyon.core.SessionObject.USER_BARE_JID)!!
+		val userJid = context.sessionObject.getProperty<BareJID>(SessionObject.USER_BARE_JID)!!
 
+		try {
+			this.socket = createSocket()
+			socket.soTimeout = 0
+			socket.keepAlive = false
+			socket.tcpNoDelay = true
+			log.fine("Opening socket connection to ${this.socket.inetAddress}")
 
+			this.worker = SocketWorker(socket, parser)
+			this.worker.onError = { exception -> onWorkerException(exception) }
+			worker.start()
 
-		this.socket = createSocket()
-		log.fine("Opening socket connection to ${this.socket.inetAddress}")
+			val sb = buildString {
+				append("<stream:stream xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams' ")
+				append("version='1.0' ")
+				append("from='$userJid' ")
+				append("to='${userJid.domain}'>")
+			}
+			send(sb)
 
-		val writer = OutputStreamWriter(this.socket.getOutputStream())
-		this.worker = SocketWorker(socket, parser, writer)
-		this.worker.onError = { exception -> onWorkerException(exception) }
-		worker.start()
-
-		val sb = StringBuilder()
-		sb.append("<stream:stream xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams' ")
-		sb.append("version='1.0' ")
-		sb.append("from='$userJid' ")
-		sb.append("to='${userJid.domain}'>")
-
-		send(sb)
-
-		state = tigase.halcyon.core.connector.State.Connected
-		whitespacePingExecutor.start()
+			state = State.Connected
+			whitespacePingExecutor.start()
+		} catch (e: Exception) {
+			state = State.Disconnected
+			context.eventBus.fire(createSocketConnectionErrorEvent(e))
+		}
 	}
 
 	private fun onWorkerException(cause: Exception) {
 		cause.printStackTrace()
-		TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+		state = State.Disconnected
+		context.eventBus.fire(createSocketConnectionErrorEvent(cause))
+	}
+
+	private fun createSocketConnectionErrorEvent(cause: Throwable): SocketConnectionErrorEvent = when (cause) {
+		is UnknownHostException, is DnssecValidationFailedException -> SocketConnectionErrorEvent.HostNotFount()
+		else -> SocketConnectionErrorEvent.Unknown(cause)
 	}
 
 	override fun stop() {
-		if (state == tigase.halcyon.core.connector.State.Connecting || state == tigase.halcyon.core.connector.State.Connected) {
-			whitespacePingExecutor.stop()
-			state = tigase.halcyon.core.connector.State.Disconnecting
-			if (!this.socket.isClosed) this.socket.close()
-			worker.interrupt()
-			while (worker.isActive) Thread.sleep(32)
-			state = tigase.halcyon.core.connector.State.Disconnected
+		if ((state == State.Connecting || state == State.Connected)) {
+			try {
+				closeStream()
+				state = State.Disconnecting
+				whitespacePingExecutor.stop()
+				Thread.sleep(175)
+				if (!this.socket.isClosed) {
+					worker.writer.close()
+					this.socket.close()
+				}
+				worker.interrupt()
+				while (worker.isActive) Thread.sleep(32)
+			} finally {
+				state = State.Disconnected
+			}
 		}
 	}
 
+	private fun closeStream() {
+		if (state == State.Connected) send("</stream:stream>")
+	}
+
 	override fun send(data: CharSequence) {
-		if (log.isLoggable(tigase.halcyon.core.logger.Level.FINEST)) log.log(
-			tigase.halcyon.core.logger.Level.FINEST,
-			"Sending (${worker.socket.isConnected}, ${!worker.socket.isOutputShutdown}): $data"
+		if (log.isLoggable(Level.FINEST)) log.log(
+			Level.FINEST, "Sending (${worker.socket.isConnected}, ${!worker.socket.isOutputShutdown}): $data"
 		)
 		worker.writer.write(data.toString())
 		worker.writer.flush()
 	}
 
 	fun restartStream() {
-		val userJid = context.sessionObject.getProperty<BareJID>(tigase.halcyon.core.SessionObject.USER_BARE_JID)!!
+		val userJid = context.sessionObject.getProperty<BareJID>(SessionObject.USER_BARE_JID)!!
 
-		val sb = StringBuilder()
-		sb.append("<stream:stream xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams' ")
-		sb.append("version='1.0' ")
-		sb.append("from='$userJid' ")
-		sb.append("to='${userJid.domain}'>")
-
+		val sb = buildString {
+			append("<stream:stream xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams' ")
+			append("version='1.0' ")
+			append("from='$userJid' ")
+			append("to='${userJid.domain}'>")
+		}
 		send(sb)
 	}
 
 	private fun onTick() {
-		if (state == State.Connected) {
+		if (state == State.Connected && whiteSpaceEnabled) {
 			log.fine("Whitespace ping")
 			worker.writer.write(' '.toInt())
 			worker.writer.flush()
 		}
+	}
+
+	fun startTLS() {
+		log.info("Running StartTLS")
+		val element = element("starttls") {
+			xmlns = XMLNS_START_TLS
+		}
+		context.writer.write(element)
 	}
 
 }

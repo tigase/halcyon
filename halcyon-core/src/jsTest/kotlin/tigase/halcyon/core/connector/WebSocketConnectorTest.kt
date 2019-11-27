@@ -15,23 +15,15 @@
  * along with this program. Look for COPYING file in the top folder.
  * If not, see http://www.gnu.org/licenses/.
  */
-package tigase.halcyon.core.xmpp
+package tigase.halcyon.core.connector
 
-interface SessionController {
+import kotlin.test.Test
 
-	sealed class StopEverythingEvent : tigase.halcyon.core.eventbus.Event(TYPE) {
+class WebSocketConnectorTest {
 
-		companion object {
-			const val TYPE = "tigase.halcyon.core.xmpp.SessionController.StopEverythingEvent"
-		}
-
-		class NormalStopEvent : StopEverythingEvent()
-		class ErrorStopEvent(val message: String) : StopEverythingEvent()
+	@Test
+	fun testBasic() {
 
 	}
-
-	fun start()
-
-	fun stop()
 
 }

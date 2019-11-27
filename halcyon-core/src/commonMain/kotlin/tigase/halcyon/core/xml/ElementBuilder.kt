@@ -28,9 +28,9 @@ class ElementBuilder private constructor(private val element: Element) {
 		get() = currentElement.parent == null
 
 	fun child(name: String): ElementBuilder {
-		val element = Element(name)
+		val element = ElementImpl(name)
 		element.parent = currentElement
-		currentElement._children.add(element)
+		currentElement.children.add(element)
 		currentElement = element
 		return this
 	}
@@ -38,12 +38,12 @@ class ElementBuilder private constructor(private val element: Element) {
 	fun build(): Element = element
 
 	fun attribute(key: String, value: String): ElementBuilder {
-		currentElement._attributes[key] = value
+		currentElement.attributes[key] = value
 		return this
 	}
 
 	fun attributes(attributes: Map<String, String>): ElementBuilder {
-		currentElement._attributes.putAll(attributes)
+		currentElement.attributes.putAll(attributes)
 		return this
 	}
 
@@ -53,7 +53,7 @@ class ElementBuilder private constructor(private val element: Element) {
 	}
 
 	fun xmlns(xmlns: String): ElementBuilder {
-		currentElement._attributes["xmlns"] = xmlns
+		currentElement.attributes["xmlns"] = xmlns
 		return this
 	}
 
@@ -66,13 +66,13 @@ class ElementBuilder private constructor(private val element: Element) {
 
 		@JvmStatic
 		fun create(name: String): ElementBuilder {
-			return ElementBuilder(Element(name))
+			return ElementBuilder(ElementImpl(name))
 		}
 
 		@JvmStatic
 		fun create(name: String, xmlns: String): ElementBuilder {
-			val element = Element(name)
-			element._attributes["xmlns"] = xmlns
+			val element = ElementImpl(name)
+			element.attributes["xmlns"] = xmlns
 			return ElementBuilder(element)
 		}
 	}

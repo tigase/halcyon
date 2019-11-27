@@ -1,8 +1,7 @@
 [[releaseNotes]]
-= Halcyon Release Notes
+== Halcyon Release Notes
 
 :toc:
 :numbered:
 :website: http://www.tigase.net
 
-== Changes

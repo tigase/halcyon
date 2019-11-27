@@ -1,30 +1,9 @@
 /*
- * docbook-xsl.css
- *
- * Tigase XMPP Client Library
- * Copyright (C) 2004-2018 "Tigase, Inc." <office@tigase.com>
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License as published by
- * the Free Software Foundation, either version 3 of the License,
- * or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
- *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program. Look for COPYING file in the top folder.
- * If not, see http://www.gnu.org/licenses/.
- */
-
-/*
   CSS stylesheet for XHTML produced by DocBook XSL stylesheets.
 */
 
 body {
-    font-family: Georgia, serif;
+    font-family: Georgia,serif;
 }
 
 code, pre {
@@ -50,9 +29,10 @@ body div {
     margin: 0;
 }
 
-h1, h2, h3, h4, h5, h6 {
+h1, h2, h3, h4, h5, h6
+{
     color: #527bbd;
-    font-family: Arial, Helvetica, sans-serif;
+    font-family: Arial,Helvetica,sans-serif;
 }
 
 div.toc p:first-child,
@@ -60,10 +40,11 @@ div.list-of-figures p:first-child,
 div.list-of-tables p:first-child,
 div.list-of-examples p:first-child,
 div.example p.title,
-div.sidebar p.title {
+div.sidebar p.title
+{
     font-weight: bold;
     color: #527bbd;
-    font-family: Arial, Helvetica, sans-serif;
+    font-family: Arial,Helvetica,sans-serif;
     margin-bottom: 0.2em;
 }
 
@@ -102,26 +83,22 @@ body h6 {
 body hr {
     border: none; /* Broken on IE6 */
 }
-
 div.footnotes hr {
     border: 1px solid silver;
 }
 
 div.navheader th, div.navheader td, div.navfooter td {
-    font-family: Arial, Helvetica, sans-serif;
+    font-family: Arial,Helvetica,sans-serif;
     font-size: 0.9em;
     font-weight: bold;
     color: #527bbd;
 }
-
 div.navheader img, div.navfooter img {
     border-style: none;
 }
-
 div.navheader a, div.navfooter a {
     font-weight: normal;
 }
-
 div.navfooter hr {
     border: 1px solid silver;
 }
@@ -174,15 +151,8 @@ div.sidebar {
     padding: 0.5em 1em;
     border: 1px solid silver;
 }
-
-div.sidebar * {
-    padding: 0;
-}
-
-div.sidebar div {
-    margin: 0;
-}
-
+div.sidebar * { padding: 0; }
+div.sidebar div { margin: 0; }
 div.sidebar p.title {
     margin-top: 0.5em;
     margin-bottom: 0.2em;
@@ -195,7 +165,6 @@ div.bibliomixed {
 div.glossary dt {
     font-weight: bold;
 }
-
 div.glossary dd p {
     margin-top: 0.2em;
 }
@@ -233,7 +202,8 @@ div.sidebar ul, div.sidebar ol {
 
 div.itemizedlist p.title,
 div.orderedlist p.title,
-div.variablelist p.title {
+div.variablelist p.title
+{
     margin-bottom: -0.8em;
 }
 
@@ -241,13 +211,11 @@ div.revhistory table {
     border-collapse: collapse;
     border: none;
 }
-
 div.revhistory th {
     border: none;
     color: #527bbd;
-    font-family: Arial, Helvetica, sans-serif;
+    font-family: Arial,Helvetica,sans-serif;
 }
-
 div.revhistory td {
     border: 1px solid silver;
 }
@@ -256,7 +224,8 @@ div.revhistory td {
 div.toc dl, div.toc dt,
 div.list-of-figures dl, div.list-of-figures dt,
 div.list-of-tables dl, div.list-of-tables dt,
-div.indexdiv dl, div.indexdiv dt {
+div.indexdiv dl, div.indexdiv dt
+{
     line-height: normal;
     margin-top: 0;
     margin-bottom: 0;
@@ -267,43 +236,45 @@ div.indexdiv dl, div.indexdiv dt {
   generated HTML.
 */
 div.table table,
-div.informaltable table {
+div.informaltable table
+{
     margin-left: 0;
     margin-right: 5%;
     margin-bottom: 0.8em;
 }
-
-div.informaltable table {
+div.informaltable table
+{
     margin-top: 0.4em
 }
-
 div.table thead,
 div.table tfoot,
 div.table tbody,
 div.informaltable thead,
 div.informaltable tfoot,
-div.informaltable tbody {
+div.informaltable tbody
+{
     /* No effect in IE6. */
     border-top: 3px solid #527bbd;
     border-bottom: 3px solid #527bbd;
 }
-
 div.table thead, div.table tfoot,
-div.informaltable thead, div.informaltable tfoot {
+div.informaltable thead, div.informaltable tfoot
+{
     font-weight: bold;
 }
 
 div.mediaobject img {
     margin-bottom: 0.8em;
 }
-
 div.figure p.title,
-div.table p.title {
+div.table p.title
+{
     margin-top: 1em;
     margin-bottom: 0.4em;
 }
 
-div.calloutlist p {
+div.calloutlist p
+{
     margin-top: 0em;
     margin-bottom: 0.4em;
 }
@@ -313,155 +284,46 @@ a img {
 }
 
 @media print {
-    div.navheader, div.navfooter {
-        display: none;
-    }
+    div.navheader, div.navfooter { display: none; }
 }
 
-span.aqua {
-    color: aqua;
-}
+span.aqua { color: aqua; }
+span.black { color: black; }
+span.blue { color: blue; }
+span.fuchsia { color: fuchsia; }
+span.gray { color: gray; }
+span.green { color: green; }
+span.lime { color: lime; }
+span.maroon { color: maroon; }
+span.navy { color: navy; }
+span.olive { color: olive; }
+span.purple { color: purple; }
+span.red { color: red; }
+span.silver { color: silver; }
+span.teal { color: teal; }
+span.white { color: white; }
+span.yellow { color: yellow; }
 
-span.black {
-    color: black;
-}
+span.aqua-background { background: aqua; }
+span.black-background { background: black; }
+span.blue-background { background: blue; }
+span.fuchsia-background { background: fuchsia; }
+span.gray-background { background: gray; }
+span.green-background { background: green; }
+span.lime-background { background: lime; }
+span.maroon-background { background: maroon; }
+span.navy-background { background: navy; }
+span.olive-background { background: olive; }
+span.purple-background { background: purple; }
+span.red-background { background: red; }
+span.silver-background { background: silver; }
+span.teal-background { background: teal; }
+span.white-background { background: white; }
+span.yellow-background { background: yellow; }
 
-span.blue {
-    color: blue;
-}
+span.big { font-size: 2em; }
+span.small { font-size: 0.6em; }
 
-span.fuchsia {
-    color: fuchsia;
-}
-
-span.gray {
-    color: gray;
-}
-
-span.green {
-    color: green;
-}
-
-span.lime {
-    color: lime;
-}
-
-span.maroon {
-    color: maroon;
-}
-
-span.navy {
-    color: navy;
-}
-
-span.olive {
-    color: olive;
-}
-
-span.purple {
-    color: purple;
-}
-
-span.red {
-    color: red;
-}
-
-span.silver {
-    color: silver;
-}
-
-span.teal {
-    color: teal;
-}
-
-span.white {
-    color: white;
-}
-
-span.yellow {
-    color: yellow;
-}
-
-span.aqua-background {
-    background: aqua;
-}
-
-span.black-background {
-    background: black;
-}
-
-span.blue-background {
-    background: blue;
-}
-
-span.fuchsia-background {
-    background: fuchsia;
-}
-
-span.gray-background {
-    background: gray;
-}
-
-span.green-background {
-    background: green;
-}
-
-span.lime-background {
-    background: lime;
-}
-
-span.maroon-background {
-    background: maroon;
-}
-
-span.navy-background {
-    background: navy;
-}
-
-span.olive-background {
-    background: olive;
-}
-
-span.purple-background {
-    background: purple;
-}
-
-span.red-background {
-    background: red;
-}
-
-span.silver-background {
-    background: silver;
-}
-
-span.teal-background {
-    background: teal;
-}
-
-span.white-background {
-    background: white;
-}
-
-span.yellow-background {
-    background: yellow;
-}
-
-span.big {
-    font-size: 2em;
-}
-
-span.small {
-    font-size: 0.6em;
-}
-
-span.underline {
-    text-decoration: underline;
-}
-
-span.overline {
-    text-decoration: overline;
-}
-
-span.line-through {
-    text-decoration: line-through;
-}
+span.underline { text-decoration: underline; }
+span.overline { text-decoration: overline; }
+span.line-through { text-decoration: line-through; }

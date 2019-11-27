@@ -1,4 +1,6 @@
-buildscript {}
+buildscript {
+
+}
 
 subprojects {
 	repositories {

@@ -17,6 +17,13 @@
  */
 package tigase.halcyon.core
 
+import tigase.halcyon.core.connector.AbstractConnector
+import tigase.halcyon.core.connector.ConnectorStateChangeEvent
+import tigase.halcyon.core.connector.SentXMLElementEvent
+import tigase.halcyon.core.eventbus.Event
+import tigase.halcyon.core.eventbus.EventHandler
+import tigase.halcyon.core.exceptions.HalcyonException
+import tigase.halcyon.core.logger.Logger
 import tigase.halcyon.core.requests.Request
 import tigase.halcyon.core.requests.RequestBuilder
 import tigase.halcyon.core.requests.RequestsManager
@@ -25,85 +32,115 @@ import tigase.halcyon.core.xml.element
 import tigase.halcyon.core.xmpp.ErrorCondition
 import tigase.halcyon.core.xmpp.SessionController
 import tigase.halcyon.core.xmpp.XMPPException
-import tigase.halcyon.core.xmpp.modules.BindModule
-import tigase.halcyon.core.xmpp.modules.PingModule
-import tigase.halcyon.core.xmpp.modules.StreamErrorModule
-import tigase.halcyon.core.xmpp.modules.StreamFeaturesModule
-import tigase.halcyon.core.xmpp.modules.auth.SaslModule
+import tigase.halcyon.core.xmpp.modules.*
+import tigase.halcyon.core.xmpp.modules.auth.SASLModule
+import tigase.halcyon.core.xmpp.modules.presence.PresenceModule
+import tigase.halcyon.core.xmpp.modules.pubsub.PubSubModule
 import tigase.halcyon.core.xmpp.modules.sm.StreamManagementModule
 
-data class HalcyonStateChangeEvent(
-	val oldState: tigase.halcyon.core.AbstractHalcyon.State, val newState: tigase.halcyon.core.AbstractHalcyon.State
-) : tigase.halcyon.core.eventbus.Event(
-	tigase.halcyon.core.HalcyonStateChangeEvent.Companion.TYPE
-) {
+data class HalcyonStateChangeEvent(val oldState: AbstractHalcyon.State, val newState: AbstractHalcyon.State) :
+	Event(TYPE) {
 
 	companion object {
 		const val TYPE = "tigase.halcyon.core.HalcyonStateChangeEvent"
 	}
 }
 
-data class TickEvent(val counter: Long, val timestamp: Long) : tigase.halcyon.core.eventbus.Event(TYPE) {
+data class TickEvent(val counter: Long, val timestamp: Long) : Event(TYPE) {
 
 	companion object {
 		const val TYPE = "tigase.halcyon.core.TickEvent"
 	}
 }
 
-abstract class AbstractHalcyon : tigase.halcyon.core.Context, tigase.halcyon.core.PacketWriter {
+abstract class AbstractHalcyon : Context, PacketWriter {
 
-	private val log = tigase.halcyon.core.logger.Logger("tigase.halcyon.core.AbstractHalcyon")
+	var running: Boolean = false
+		private set
+
+	private val log = Logger("tigase.halcyon.core.AbstractHalcyon")
 
 	enum class State {
 		Connecting,
 		Connected,
 		Disconnecting,
-		Disconnected
+		Disconnected,
+		Stopped
 	}
 
-	protected var connector: tigase.halcyon.core.connector.AbstractConnector? = null
+	protected var connector: AbstractConnector? = null
 	protected var sessionController: SessionController? = null
+
+	var autoReconnect: Boolean = true
 
 	private var tickCounter: Long = 0
 
-	final override val sessionObject: tigase.halcyon.core.SessionObject = tigase.halcyon.core.SessionObject()
+	final override val sessionObject: SessionObject = SessionObject()
 	final override val eventBus: tigase.halcyon.core.eventbus.EventBus =
 		tigase.halcyon.core.eventbus.EventBus(sessionObject)
-	override val writer: tigase.halcyon.core.PacketWriter
+	override val writer: PacketWriter
 		get() = this
 	final override val modules: tigase.halcyon.core.modules.ModulesManager =
 		tigase.halcyon.core.modules.ModulesManager()
 	val requestsManager: RequestsManager = RequestsManager()
-	val configurator: tigase.halcyon.Configurator = tigase.halcyon.Configurator(sessionObject)
+	val configuration: ConfigurationBuilder = ConfigurationBuilder(this)
 	private val executor = tigase.halcyon.core.excutor.Executor()
 
-	var state = tigase.halcyon.core.AbstractHalcyon.State.Disconnected
+	var state = State.Stopped
 		internal set(value) {
 			val old = field
 			field = value
-			eventBus.fire(tigase.halcyon.core.HalcyonStateChangeEvent(old, field))
+			if (old != field) eventBus.fire(HalcyonStateChangeEvent(old, field))
 		}
 
 	init {
+		sessionObject.eventBus = eventBus
 		modules.context = this
 		eventBus.register<tigase.halcyon.core.connector.ReceivedXMLElementEvent>(tigase.halcyon.core.connector.ReceivedXMLElementEvent.TYPE,
 																				 handler = { _, event ->
 																					 processReceivedXmlElement(event.element)
 																				 })
 
-		eventBus.register<SessionController.StopEverythingEvent>(
-			SessionController.StopEverythingEvent.TYPE
-		) { sessionObject, event -> disconnect() }
+		eventBus.register<SessionController.SessionControllerEvents>(
+			SessionController.SessionControllerEvents.TYPE
+		) { sessionObject, event -> onSessionControllerEvent(sessionObject, event) }
 
 		eventBus.register<TickEvent>(TickEvent.TYPE) { _, _ -> requestsManager.findOutdated() }
 
-		modules.register(StreamErrorModule())
-		modules.register(StreamFeaturesModule())
+		modules.register(PresenceModule())
+		modules.register(PubSubModule())
+		modules.register(MessageModule())
 		modules.register(StreamManagementModule())
-		modules.register(SaslModule())
+		modules.register(SASLModule())
 		modules.register(BindModule())
 		modules.register(PingModule())
+		modules.register(StreamErrorModule())
+		modules.register(StreamFeaturesModule())
 	}
+
+	protected open fun onSessionControllerEvent(
+		sessionObject: SessionObject, event: SessionController.SessionControllerEvents
+	) {
+		when (event) {
+			is SessionController.SessionControllerEvents.ErrorStop, is SessionController.SessionControllerEvents.ErrorReconnect -> processControllerErrorEvent(
+				event
+			)
+			is SessionController.SessionControllerEvents.Successful -> state = State.Connected
+		}
+	}
+
+	private fun processControllerErrorEvent(event: SessionController.SessionControllerEvents) {
+		if (event is SessionController.SessionControllerEvents.ErrorReconnect && (this.autoReconnect || event.force)) {
+			state = State.Disconnected
+			stopConnector {
+				reconnect(event.immediately)
+			}
+		} else {
+			disconnect()
+		}
+	}
+
+	abstract fun reconnect(immediately: Boolean = false)
 
 	protected fun processReceivedXmlElement(element: Element) {
 		val handled = requestsManager.findAndExecute(element)
@@ -173,9 +210,7 @@ abstract class AbstractHalcyon : tigase.halcyon.core.Context, tigase.halcyon.cor
 						+it
 					}
 				}
-
 			}
-
 		}
 		return resp
 	}
@@ -202,54 +237,118 @@ abstract class AbstractHalcyon : tigase.halcyon.core.Context, tigase.halcyon.cor
 		}
 	}
 
-	protected abstract fun createConnector(): tigase.halcyon.core.connector.AbstractConnector
+	protected abstract fun createConnector(): AbstractConnector
 
 	protected fun tick() {
 		eventBus.fire(tigase.halcyon.core.TickEvent(++tickCounter, tigase.halcyon.core.currentTimestamp()))
 	}
 
-	override fun writeDirectly(element: Element) {
-		if (this.connector == null) throw tigase.halcyon.core.exceptions.HalcyonException("Connector is not initialized")
-		connector!!.send(element.getAsString())
-		eventBus.fire(tigase.halcyon.core.connector.SentXMLElementEvent(element, null))
+	protected fun getConnectorState(): tigase.halcyon.core.connector.State =
+		this.connector?.state ?: tigase.halcyon.core.connector.State.Disconnected
+
+	override fun writeDirectly(stanza: Element) {
+		if (this.connector == null) throw HalcyonException("Connector is not initialized")
+		connector!!.send(stanza.getAsString())
+		eventBus.fire(SentXMLElementEvent(stanza, null))
 	}
 
 	override fun write(stanza: Element): Request<*> {
-		if (this.connector == null) throw tigase.halcyon.core.exceptions.HalcyonException("Connector is not initialized")
+		if (this.connector == null) throw HalcyonException("Connector is not initialized")
 		val builder = requestBuilder<Any>(stanza)
 		return builder.send()
 	}
 
 	internal fun write(request: Request<*>) {
-		if (this.connector == null) throw tigase.halcyon.core.exceptions.HalcyonException("Connector is not initialized")
+		if (this.connector == null) throw HalcyonException("Connector is not initialized")
 		connector!!.send(request.requestStanza.getAsString())
-		eventBus.fire(tigase.halcyon.core.connector.SentXMLElementEvent(request.requestStanza, request))
+		eventBus.fire(SentXMLElementEvent(request.requestStanza, request))
 	}
 
-	fun connect() {
-		modules.initModules()
-		log.info("Connecting")
-		state = tigase.halcyon.core.AbstractHalcyon.State.Connecting
-		try {
+	protected open fun onConnecting() {}
+
+	protected open fun onDisconnecting() {}
+
+	protected fun startConnector() {
+		if (running) {
+			log.fine("Starting connector")
+
+			stopConnector()
+
 			connector = createConnector()
 			sessionController = connector!!.createSessionController()
 
 			sessionController!!.start()
 			connector!!.start()
+		} else throw HalcyonException("Client is not running")
+	}
+
+	protected fun stopConnector(doAfterDisconnected: (() -> Unit)? = null) {
+		if (doAfterDisconnected != null) connector?.let {
+			waitForDisconnect(it, doAfterDisconnected)
+		}
+		sessionController?.stop()
+		sessionController = null
+		connector?.stop()
+		connector = null
+	}
+
+	protected fun waitForDisconnect(connector: AbstractConnector?, handler: () -> Unit) {
+		if (connector == null) {
+			handler.invoke()
+		} else {
+			var fired = false
+			val h: EventHandler<ConnectorStateChangeEvent> = object : EventHandler<ConnectorStateChangeEvent> {
+				override fun onEvent(sessionObject: SessionObject, event: ConnectorStateChangeEvent) {
+					if (!fired && event.newState == tigase.halcyon.core.connector.State.Disconnected) {
+						connector.context.eventBus.unregister(this)
+						fired = true
+						handler.invoke()
+					}
+				}
+			}
+			try {
+				connector.context.eventBus.register(ConnectorStateChangeEvent.TYPE, h)
+				if (!fired && connector.state == tigase.halcyon.core.connector.State.Disconnected) {
+					connector.context.eventBus.unregister(h)
+					fired = true
+					handler.invoke()
+				}
+			} finally {
+			}
+		}
+	}
+
+	fun connect() {
+		this.running = true
+		modules.initModules()
+		log.info("Connecting")
+		state = State.Connecting
+		onConnecting()
+		try {
+			startConnector()
 		} catch (e: Exception) {
-			state = tigase.halcyon.core.AbstractHalcyon.State.Disconnected
+			state = State.Stopped
 			throw e
 		}
 	}
 
 	fun disconnect() {
-		log.info("Disconnecting")
-		state = tigase.halcyon.core.AbstractHalcyon.State.Disconnecting
 		try {
-			sessionController?.stop()
-			connector?.stop()
+			this.running = false
+			log.info("Disconnecting")
+
+			modules.getModuleOrNull<StreamManagementModule>(StreamManagementModule.TYPE)?.let {
+				if (StreamManagementModule.isAckEnable(sessionObject) && getConnectorState() == tigase.halcyon.core.connector.State.Connected) {
+					it.sendAck(true)
+				}
+			}
+
+			state = State.Disconnecting
+			onDisconnecting()
+			stopConnector()
 		} finally {
-			state = tigase.halcyon.core.AbstractHalcyon.State.Disconnected
+			sessionObject.clear(arrayOf(SessionObject.Scope.Session, SessionObject.Scope.Stream))
+			state = State.Stopped
 		}
 	}
 
