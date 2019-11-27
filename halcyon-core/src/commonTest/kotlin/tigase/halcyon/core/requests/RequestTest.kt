@@ -41,7 +41,7 @@ class RequestTest {
 			attribute("type", "result")
 		}
 
-		req.responseStanza = response
+		req.setResponseStanza(response)
 
 		var rr: Result<Any>? = null
 		req.response { request, element, result -> rr = result }
@@ -65,7 +65,7 @@ class RequestTest {
 		var rr: Result<Any>? = null
 		req.response { request, element, result -> rr = result }
 
-		req.responseStanza = response
+		req.setResponseStanza(response)
 
 		assertNotNull(rr, "Result cannot be null here!")
 		assertTrue(rr is Result.Success, "Result isn't Success")
@@ -92,7 +92,7 @@ class RequestTest {
 			}
 		}
 
-		req.responseStanza = response
+		req.setResponseStanza(response)
 
 		assertEquals(response, rr)
 	}
@@ -114,7 +114,7 @@ class RequestTest {
 		var rr: Result<Any>? = null
 		req.response { request, element, result -> rr = result }
 
-		req.responseStanza = response
+		req.setResponseStanza(response)
 
 		assertNotNull(rr, "Result cannot be null here!")
 		assertTrue(rr is Result.Error, "Result isn't Error")
