@@ -65,7 +65,7 @@ class RequestManagerTest {
 		val handler = rm.getRequest(resp)
 
 		assertNotNull(handler)
-		handler.responseStanza = resp
+		handler.setResponseStanza(resp)
 		assertEquals(1, successCounter)
 	}
 
