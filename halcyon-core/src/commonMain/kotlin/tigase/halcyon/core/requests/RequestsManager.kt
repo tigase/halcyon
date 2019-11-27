@@ -68,7 +68,7 @@ class RequestsManager {
 		var r = getRequest(response) ?: return false
 		executor.execute {
 			try {
-				r.responseStanza = response
+				r.setResponseStanza(response)
 			} catch (e: Throwable) {
 				log.log(tigase.halcyon.core.logger.Level.WARNING, "Error on processing response", e)
 			}
@@ -95,5 +95,7 @@ class RequestsManager {
 			}
 		}
 	}
+
+	fun getWaitingRequestsSize(): Int = requests.size
 
 }

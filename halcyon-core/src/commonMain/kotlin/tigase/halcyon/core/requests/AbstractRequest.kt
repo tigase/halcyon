@@ -34,22 +34,27 @@ abstract class AbstractRequest<V : Any>(
 
 	internal var resultConverter: ResultConverter<V>? = null
 
-	protected var timeout: Boolean = false
+	protected var isTimeout: Boolean = false
 
-	var completed: Boolean = false
+	var isCompleted: Boolean = false
 		internal set
 
 	var responseStanza: Element? = null
-		internal set(value) {
-			field = value
-			completed = true
-			callHandlers()
-		}
+		private set
+
+	private var value: V? = null
 
 	/**
 	 * Delay to timeout this request in milliseconds.
 	 */
 	var timeoutDelay: Long = 30000
+
+	internal fun setResponseStanza(response: Element) {
+		responseStanza = response
+		value = if (resultConverter != null) resultConverter!!.invoke(responseStanza!!) else null
+		isCompleted = true
+		callHandlers()
+	}
 
 	protected abstract fun createRequestTimeoutException(): RequestTimeoutException
 
@@ -58,19 +63,19 @@ abstract class AbstractRequest<V : Any>(
 	protected abstract fun createRequestErrorException(error: ErrorCondition): RequestErrorException
 
 	fun getResult(): V? {
-		if (timeout) throw createRequestTimeoutException()
-		if (!completed) throw createRequestNotCompletedException()
+		if (isTimeout) throw createRequestTimeoutException()
+		if (!isCompleted) throw createRequestNotCompletedException()
 		if (responseStanza == null) return null
 		responseStanza?.let {
 			if (it.getTypeAttr() == StanzaType.Error) {
 				throw createRequestErrorException(findCondition(it))
 			}
 		}
-		return if (resultConverter != null) resultConverter!!.invoke(responseStanza!!) else null
+		return value
 	}
 
 	internal fun setTimeout() {
-		completed = true
+		isCompleted = true
 		callTimeout()
 	}
 

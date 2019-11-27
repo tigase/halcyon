@@ -17,12 +17,16 @@
  */
 package tigase.halcyon.core
 
+import tigase.halcyon.core.connector.AbstractConnector
 import tigase.halcyon.core.connector.socket.SocketConnector
+import tigase.halcyon.core.eventbus.EventBus
+import tigase.halcyon.core.eventbus.EventHandler
+import tigase.halcyon.core.exceptions.HalcyonException
 import java.util.*
 
-actual class Halcyon actual constructor() : tigase.halcyon.core.AbstractHalcyon() {
+actual class Halcyon actual constructor() : AbstractHalcyon() {
 
-	override fun createConnector(): tigase.halcyon.core.connector.AbstractConnector {
+	override fun createConnector(): AbstractConnector {
 		return SocketConnector(this)
 	}
 
@@ -34,12 +38,12 @@ actual class Halcyon actual constructor() : tigase.halcyon.core.AbstractHalcyon(
 
 	val timer = Timer("timer", true)
 
-	private val lock = java.lang.Object()
+	private val lock = Object()
 
 	private lateinit var tickTask: TimerTask
 
 	init {
-		eventBus.mode = tigase.halcyon.core.eventbus.EventBus.Mode.ThreadPerHandler
+		eventBus.mode = EventBus.Mode.ThreadPerHandler
 	}
 
 	override fun onConnecting() {
@@ -57,10 +61,35 @@ actual class Halcyon actual constructor() : tigase.halcyon.core.AbstractHalcyon(
 		super.onDisconnecting()
 	}
 
-//	fun connect(sync: Boolean) {
-//		super.connect()
-//		synchronized(lock) {
-//			lock.wait(30000)
-//		}
-//	}
+	fun waitForAllResponses() {
+		while (requestsManager.getWaitingRequestsSize() > 0) {
+			synchronized(lock) {
+				lock.wait(100)
+			}
+		}
+	}
+
+	fun connectAndWait() {
+		val handler = object : EventHandler<HalcyonStateChangeEvent> {
+			override fun onEvent(sessionObject: SessionObject, event: HalcyonStateChangeEvent) {
+				if (event.newState == State.Connected || event.newState == State.Stopped) {
+					synchronized(lock) {
+						lock.notify()
+					}
+				}
+			}
+		}
+		try {
+			eventBus.register(HalcyonStateChangeEvent.TYPE, handler)
+			super.connect()
+			synchronized(lock) {
+				lock.wait(30000)
+			}
+			if (state != State.Connected) {
+				throw HalcyonException("Cannot connect to XMPP server.")
+			}
+		} finally {
+			eventBus.unregister(handler)
+		}
+	}
 }

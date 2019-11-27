@@ -58,7 +58,7 @@ class RequestBuilder<T : Any>(
 		halcyon.requestsManager.register(request)
 		halcyon.write(request)
 		if (stanzaToSend.name in COMPLETED_STANZAS) {
-			request.completed = true
+			request.isCompleted = true
 		}
 		return request
 	}

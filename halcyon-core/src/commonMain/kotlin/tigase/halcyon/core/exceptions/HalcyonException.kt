@@ -17,7 +17,7 @@
  */
 package tigase.halcyon.core.exceptions
 
-open class HalcyonException : Exception {
+open class HalcyonException : RuntimeException {
 	constructor() : super()
 	constructor(message: String?) : super(message)
 	constructor(message: String?, cause: Throwable?) : super(message, cause)

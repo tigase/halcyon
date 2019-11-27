@@ -43,10 +43,10 @@ import javax.net.ssl.SSLSocket
 import javax.net.ssl.SSLSocketFactory
 import javax.net.ssl.X509TrustManager
 
-sealed class SocketConnectionErrorEvent() : ConnectionErrorEvent() {
+sealed class SocketConnectionErrorEvent : ConnectionErrorEvent() {
 
-	class TLSFailureEvent() : SocketConnectionErrorEvent()
-	class HostNotFount() : SocketConnectionErrorEvent()
+	class TLSFailureEvent : SocketConnectionErrorEvent()
+	class HostNotFount : SocketConnectionErrorEvent()
 	class Unknown(val caught: Throwable) : SocketConnectionErrorEvent()
 
 }
@@ -301,7 +301,7 @@ class SocketConnector(context: Context) : AbstractConnector(context) {
 		val element = element("starttls") {
 			xmlns = XMLNS_START_TLS
 		}
-		context.writer.write(element)
+		context.writer.writeDirectly(element)
 	}
 
 }

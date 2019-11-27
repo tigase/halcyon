@@ -37,7 +37,7 @@ actual class Request<V : Any> actual constructor(
 	private val lock = java.lang.Object()
 
 	fun getResultWait(): V? {
-		if (completed) return getResult()
+		if (isCompleted) return getResult()
 		synchronized(lock) {
 			lock.wait()
 		}
@@ -63,7 +63,7 @@ actual class Request<V : Any> actual constructor(
 	override fun callTimeout() {
 		val stanzaType = requestStanza.getTypeAttr()
 		if (stanzaType == StanzaType.Get || stanzaType == StanzaType.Set) {
-			timeout = true
+			isTimeout = true
 			handler?.timeout(this)
 		}
 		synchronized(lock) {

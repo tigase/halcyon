@@ -96,7 +96,7 @@ fun main(args: Array<String>) {
 			"y1" -> {
 				val pingModule = halcyon.modules.getModule<PingModule>(PingModule.TYPE)
 				val req = pingModule.ping()
-				while (!req.completed) print(".")
+				while (!req.isCompleted) print(".")
 				val result = req.getResult()
 				println("!+$result")
 			}
@@ -108,7 +108,7 @@ fun main(args: Array<String>) {
 						+"Hi!"
 					}
 				})
-				println("1." + req.completed)
+				println("1." + req.isCompleted)
 				println("2." + req.getResult())
 			}
 			"quit" -> break@loop

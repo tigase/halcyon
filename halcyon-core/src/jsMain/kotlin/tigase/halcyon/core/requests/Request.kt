@@ -48,7 +48,7 @@ actual class Request<V : Any> actual constructor(
 	override fun callTimeout() {
 		val stanzaType = requestStanza.getTypeAttr()
 		if (stanzaType == StanzaType.Get || stanzaType == StanzaType.Set) {
-			timeout = true
+			isTimeout = true
 			handler?.timeout(this)
 		}
 	}
