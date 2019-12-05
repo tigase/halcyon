@@ -17,23 +17,21 @@
  */
 package tigase.halcyon.core.xmpp.stanzas
 
-import getTypeAttr
 import tigase.halcyon.core.exceptions.HalcyonException
 import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xml.ElementImpl
 import tigase.halcyon.core.xml.ElementNode
 import tigase.halcyon.core.xmpp.IdGenerator
 import tigase.halcyon.core.xmpp.JID
-import tigase.halcyon.core.xmpp.StanzaType
 
-open class StanzaNode(element: Element) : ElementNode(element) {
+abstract class StanzaNode<STANZA_TYPE>(element: Element) : ElementNode(element) {
 
 	private fun getJID(attName: String): JID? {
 		val att = element.attributes[attName]
 		return if (att == null) null else JID.parse(att)
 	}
 
-	private fun setAtt(attName: String, value: String?) {
+	protected open fun setAtt(attName: String, value: String?) {
 		if (value == null) {
 			element.attributes.remove(attName)
 		} else {
@@ -53,38 +51,38 @@ open class StanzaNode(element: Element) : ElementNode(element) {
 		get() = getJID("from")
 		set(value) = setAtt("from", value?.toString())
 
-	var type: StanzaType?
-		set(value) = setAtt("type", value?.name?.toLowerCase())
-		get() = element.getTypeAttr()
+	abstract var type: STANZA_TYPE
+
 }
 
-class PresenceNode(element: Presence) : StanzaNode(element)
-class IQNode(element: IQ) : StanzaNode(element)
-class MessageNode(element: Message) : StanzaNode(element)
+class PresenceNode(element: Presence) : StanzaNode<PresenceType?>(element) {
+	override var type: PresenceType?
+		set(value) = setAtt("type", value?.value)
+		get() = PresenceType.values().firstOrNull { te -> te.value == value }
+
+}
+
+class IQNode(element: IQ) : StanzaNode<IQType>(element) {
+	override var type: IQType
+		set(value) = setAtt("type", value.value)
+		get() = IQType.values().first { te -> te.value == value }
+}
+
+class MessageNode(element: Message) : StanzaNode<MessageType?>(element) {
+	override var type: MessageType?
+		set(value) = setAtt("type", value?.value)
+		get() = MessageType.values().firstOrNull { te -> te.value == value }
+}
 
 @Suppress("UNCHECKED_CAST")
-fun <ST : Element> wrap(element: Element): ST {
-	return when (element.name) {
+fun <ST : Stanza<*>> wrap(element: Element): ST {
+	return if (element is Stanza<*>) element as ST
+	else when (element.name) {
 		Presence.NAME -> Presence(element) as ST
 		IQ.NAME -> IQ(element) as ST
 		Message.NAME -> Message(element) as ST
 		else -> throw HalcyonException("Unknown stanza type '${element.name}'.")
 	}
-}
-
-private fun stanzaByName(name: String): Element = when (name) {
-	Presence.NAME -> Presence(ElementImpl(name))
-	IQ.NAME -> IQ(ElementImpl(name))
-	Message.NAME -> Message(ElementImpl(name))
-	else -> throw HalcyonException("Unknown stanza type '$name'.")
-}
-
-@Suppress("UNCHECKED_CAST")
-fun <ST : Element> stanza(name: String, init: StanzaNode.() -> Unit): ST {
-	val n = StanzaNode(stanzaByName(name))
-	n.init()
-	n.id()
-	return n.element as ST
 }
 
 fun presence(init: PresenceNode.() -> Unit): Presence {

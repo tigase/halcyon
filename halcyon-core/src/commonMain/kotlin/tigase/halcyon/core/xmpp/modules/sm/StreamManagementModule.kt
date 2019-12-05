@@ -17,8 +17,16 @@
  */
 package tigase.halcyon.core.xmpp.modules.sm
 
+import tigase.halcyon.core.Context
+import tigase.halcyon.core.SessionObject
+import tigase.halcyon.core.TickEvent
 import tigase.halcyon.core.connector.ReceivedXMLElementEvent
 import tigase.halcyon.core.connector.SentXMLElementEvent
+import tigase.halcyon.core.eventbus.Event
+import tigase.halcyon.core.logger.Level
+import tigase.halcyon.core.logger.Logger
+import tigase.halcyon.core.modules.Criterion
+import tigase.halcyon.core.modules.XmppModule
 import tigase.halcyon.core.requests.Request
 import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xml.element
@@ -26,7 +34,7 @@ import tigase.halcyon.core.xmpp.ErrorCondition
 import tigase.halcyon.core.xmpp.XMPPException
 import tigase.halcyon.core.xmpp.modules.StreamFeaturesModule
 
-class StreamManagementModule : tigase.halcyon.core.modules.XmppModule {
+class StreamManagementModule : XmppModule {
 
 	companion object {
 		const val XMLNS = "urn:xmpp:sm:3"
@@ -45,36 +53,37 @@ class StreamManagementModule : tigase.halcyon.core.modules.XmppModule {
 		const val RESUMPTION_ID_KEY = "$XMLNS#RESUMPTION_ID"
 		const val RESUMPTION_TIME_KEY = "$XMLNS#RESUMPTION_TIME"
 
-		fun isAckEnable(sessionObject: tigase.halcyon.core.SessionObject) =
+		fun isAckEnable(sessionObject: SessionObject) =
 			sessionObject.getProperty<Boolean>(ACK_ENABLED_KEY) ?: false
 	}
 
-	class StreamManagementEnabledEvent(val id: String, val resume: Boolean, val mx: Long?) :
-		tigase.halcyon.core.eventbus.Event(TYPE) {
+	class StreamManagementEnabledEvent(val id: String, val resume: Boolean, val mx: Long?) : Event(TYPE) {
 
 		companion object {
-			const val TYPE = "tigase.halcyon.core.xmpp.modules.sm.StreamManagementModule.StreamManagementEnabledEvent"
+			const val TYPE =
+				"tigase.halcyon.core.xmpp.modules.sm.StreamManagementModule.StreamManagementEnabledEvent"
 		}
 	}
 
-	class StreamManagementFailedEvent(val error: ErrorCondition) : tigase.halcyon.core.eventbus.Event(TYPE) {
+	class StreamManagementFailedEvent(val error: ErrorCondition) : Event(TYPE) {
 		companion object {
-			const val TYPE = "tigase.halcyon.core.xmpp.modules.sm.StreamManagementModule.StreamManagementFailedEvent"
+			const val TYPE =
+				"tigase.halcyon.core.xmpp.modules.sm.StreamManagementModule.StreamManagementFailedEvent"
 		}
 	}
 
-	class StreamResumedEvent(val h: Long, val prevId: String) : tigase.halcyon.core.eventbus.Event(TYPE) {
+	class StreamResumedEvent(val h: Long, val prevId: String) : Event(TYPE) {
 		companion object {
 			const val TYPE = "tigase.halcyon.core.xmpp.modules.sm.StreamManagementModule.StreamResumedEvent"
 		}
 	}
 
 	override val type = TYPE
-	override lateinit var context: tigase.halcyon.core.Context
+	override lateinit var context: Context
 	override val features = arrayOf(XMLNS)
-	override val criteria = tigase.halcyon.core.modules.Criterion.xmlns(XMLNS)
+	override val criteria = Criterion.xmlns(XMLNS)
 
-	private val log = tigase.halcyon.core.logger.Logger("tigase.halcyon.core.xmpp.modules.sm.StreamManagementModule")
+	private val log = Logger("tigase.halcyon.core.xmpp.modules.sm.StreamManagementModule")
 
 	private val queue = ArrayList<Any>()
 
@@ -82,12 +91,12 @@ class StreamManagementModule : tigase.halcyon.core.modules.XmppModule {
 		context.eventBus.register<SentXMLElementEvent>(SentXMLElementEvent.TYPE, handler = { _, event ->
 			processElementSent(event.element, event.request)
 		})
-		context.eventBus.register<ReceivedXMLElementEvent>(ReceivedXMLElementEvent.TYPE, handler = { _, event ->
-			processElementReceived(event.element)
-		})
-		context.eventBus.register<tigase.halcyon.core.TickEvent>(
-			tigase.halcyon.core.TickEvent.TYPE,
-			handler = { _, event -> onTick() })
+		context.eventBus.register<ReceivedXMLElementEvent>(
+			ReceivedXMLElementEvent.TYPE,
+			handler = { _, event ->
+				processElementReceived(event.element)
+			})
+		context.eventBus.register<TickEvent>(TickEvent.TYPE, handler = { _, event -> onTick() })
 	}
 
 	private fun onTick() {
@@ -153,7 +162,7 @@ class StreamManagementModule : tigase.halcyon.core.modules.XmppModule {
 		val h = element.attributes["h"]?.toLong() ?: 0
 		var lh = context.sessionObject.getProperty<Long>(OUTGOING_STREAM_H_KEY) ?: 0
 
-		if (log.isLoggable(tigase.halcyon.core.logger.Level.FINE)) log.fine("Expected h=$lh, received h=$h")
+		if (log.isLoggable(Level.FINE)) log.fine("Expected h=$lh, received h=$h")
 
 		if (lh >= h) {
 			lh = context.sessionObject.getProperty<Long>(OUTGOING_STREAM_H_KEY) ?: 0
@@ -269,7 +278,9 @@ class StreamManagementModule : tigase.halcyon.core.modules.XmppModule {
 			Enabled: ${isAckEnable(context.sessionObject)}
 			Outgoing stream H: ${context.sessionObject.getProperty<Long>(OUTGOING_STREAM_H_KEY)}
 			Incoming stream H: ${context.sessionObject.getProperty<Long>(INCOMING_STREAM_H_KEY)}
-			Incoming stream LAST KEY: ${context.sessionObject.getProperty<Long>(INCOMING_STREAM_H_LAST_SENT_KEY)}
+			Incoming stream LAST KEY: ${context.sessionObject.getProperty<Long>(
+				INCOMING_STREAM_H_LAST_SENT_KEY
+			)}
 			 
 			Queue size: ${queue.size}
 			Queue: ${queue}

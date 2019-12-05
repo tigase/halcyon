@@ -17,11 +17,9 @@
  */
 package tigase.halcyon.core.requests
 
-import getTypeAttr
 import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xmpp.ErrorCondition
 import tigase.halcyon.core.xmpp.JID
-import tigase.halcyon.core.xmpp.StanzaType
 
 actual class Request<V : Any> actual constructor(
 	jid: JID?, id: String, creationTimestamp: Long, requestStanza: Element
@@ -29,12 +27,13 @@ actual class Request<V : Any> actual constructor(
 
 	override fun createRequestTimeoutException(): RequestTimeoutException = RequestTimeoutException(this)
 
-	override fun createRequestNotCompletedException(): RequestNotCompletedException = RequestNotCompletedException(this)
+	override fun createRequestNotCompletedException(): RequestNotCompletedException =
+		RequestNotCompletedException(this)
 
 	override fun createRequestErrorException(error: ErrorCondition): RequestErrorException =
 		RequestErrorException(this, error)
 
-	private val lock = java.lang.Object()
+	private val lock = Object()
 
 	fun getResultWait(): V? {
 		if (isCompleted) return getResult()
@@ -48,10 +47,10 @@ actual class Request<V : Any> actual constructor(
 		if (responseStanza == null) return
 
 		handler?.let {
-			val type = responseStanza!!.getTypeAttr()
-			if (type == StanzaType.Result) {
+			val type = responseStanza!!.attributes["type"]
+			if (type == "result") {
 				it.success(this, responseStanza!!, getResult())
-			} else if (type == StanzaType.Error) {
+			} else if (type == "error") {
 				it.error(this, responseStanza!!, findCondition(responseStanza!!))
 			}
 		}
@@ -61,8 +60,8 @@ actual class Request<V : Any> actual constructor(
 	}
 
 	override fun callTimeout() {
-		val stanzaType = requestStanza.getTypeAttr()
-		if (stanzaType == StanzaType.Get || stanzaType == StanzaType.Set) {
+		val stanzaType = requestStanza.attributes["type"]
+		if (stanzaType == "get" || stanzaType == "set") {
 			isTimeout = true
 			handler?.timeout(this)
 		}

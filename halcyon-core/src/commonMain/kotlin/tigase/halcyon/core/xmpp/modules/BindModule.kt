@@ -25,8 +25,8 @@ import tigase.halcyon.core.requests.Request
 import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xmpp.ErrorCondition
 import tigase.halcyon.core.xmpp.JID
-import tigase.halcyon.core.xmpp.StanzaType
 import tigase.halcyon.core.xmpp.XMPPException
+import tigase.halcyon.core.xmpp.stanzas.IQType
 import tigase.halcyon.core.xmpp.stanzas.iq
 
 class BindModule : XmppModule {
@@ -47,7 +47,7 @@ class BindModule : XmppModule {
 
 	fun bind(resource: String? = null): Request<BindResult> {
 		val stanza = iq {
-			type = StanzaType.Set
+			type = IQType.Set
 			"bind"{
 				xmlns = XMLNS
 				resource?.let {
@@ -57,7 +57,8 @@ class BindModule : XmppModule {
 				}
 			}
 		}
-		return context.requestBuilder<BindResult>(stanza).resultBuilder { element -> createBindResult(element) }.send()
+		return context.requestBuilder<BindResult>(stanza)
+			.resultBuilder { element -> createBindResult(element) }.send()
 	}
 
 	private fun createBindResult(element: Element): BindResult {

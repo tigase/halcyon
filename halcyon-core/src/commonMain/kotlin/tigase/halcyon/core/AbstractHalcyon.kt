@@ -24,6 +24,7 @@ import tigase.halcyon.core.eventbus.Event
 import tigase.halcyon.core.eventbus.EventHandler
 import tigase.halcyon.core.exceptions.HalcyonException
 import tigase.halcyon.core.logger.Logger
+import tigase.halcyon.core.modules.XmppModule
 import tigase.halcyon.core.requests.Request
 import tigase.halcyon.core.requests.RequestBuilder
 import tigase.halcyon.core.requests.RequestsManager
@@ -98,7 +99,9 @@ abstract class AbstractHalcyon : Context, PacketWriter {
 		modules.context = this
 		eventBus.register<tigase.halcyon.core.connector.ReceivedXMLElementEvent>(tigase.halcyon.core.connector.ReceivedXMLElementEvent.TYPE,
 																				 handler = { _, event ->
-																					 processReceivedXmlElement(event.element)
+																					 processReceivedXmlElement(
+																						 event.element
+																					 )
 																				 })
 
 		eventBus.register<SessionController.SessionControllerEvents>(
@@ -167,7 +170,9 @@ abstract class AbstractHalcyon : Context, PacketWriter {
 				sendErrorBack(element, e)
 			} catch (e: Exception) {
 				if (log.isLoggable(tigase.halcyon.core.logger.Level.FINEST)) log.log(
-					tigase.halcyon.core.logger.Level.FINEST, "Problem on processing element " + element.getAsString(), e
+					tigase.halcyon.core.logger.Level.FINEST,
+					"Problem on processing element " + element.getAsString(),
+					e
 				)
 				sendErrorBack(element, e)
 			}
@@ -247,26 +252,31 @@ abstract class AbstractHalcyon : Context, PacketWriter {
 		this.connector?.state ?: tigase.halcyon.core.connector.State.Disconnected
 
 	override fun writeDirectly(stanza: Element) {
-		if (this.connector == null) throw HalcyonException("Connector is not initialized")
-		connector!!.send(stanza.getAsString())
+		val c = this.connector ?: throw HalcyonException("Connector is not initialized")
+		if (c.state != tigase.halcyon.core.connector.State.Connected) throw HalcyonException("Connector is not connected")
+		c.send(stanza.getAsString())
 		eventBus.fire(SentXMLElementEvent(stanza, null))
 	}
 
 	override fun write(stanza: Element): Request<*> {
-		if (this.connector == null) throw HalcyonException("Connector is not initialized")
+		val c = this.connector ?: throw HalcyonException("Connector is not initialized")
+		if (c.state != tigase.halcyon.core.connector.State.Connected) throw HalcyonException("Connector is not connected")
 		val builder = requestBuilder<Any>(stanza)
 		return builder.send()
 	}
 
 	internal fun write(request: Request<*>) {
-		if (this.connector == null) throw HalcyonException("Connector is not initialized")
-		connector!!.send(request.requestStanza.getAsString())
+		val c = this.connector ?: throw HalcyonException("Connector is not initialized")
+		if (c.state != tigase.halcyon.core.connector.State.Connected) throw HalcyonException("Connector is not connected")
+		c.send(request.requestStanza.getAsString())
 		eventBus.fire(SentXMLElementEvent(request.requestStanza, request))
 	}
 
 	protected open fun onConnecting() {}
 
 	protected open fun onDisconnecting() {}
+
+	fun <T : XmppModule> getModule(type: String): T? = modules.getModuleOrNull<T>(type)
 
 	protected fun startConnector() {
 		if (running) {
@@ -283,6 +293,7 @@ abstract class AbstractHalcyon : Context, PacketWriter {
 	}
 
 	protected fun stopConnector(doAfterDisconnected: (() -> Unit)? = null) {
+		log.fine("Stopping connector${if (doAfterDisconnected != null) " (with action after disconnect)" else ""}")
 		if (doAfterDisconnected != null) connector?.let {
 			waitForDisconnect(it, doAfterDisconnected)
 		}
@@ -293,24 +304,29 @@ abstract class AbstractHalcyon : Context, PacketWriter {
 	}
 
 	protected fun waitForDisconnect(connector: AbstractConnector?, handler: () -> Unit) {
+		log.finer("Waiting for disconnection")
 		if (connector == null) {
+			log.finest("No connector. Calling handler.")
 			handler.invoke()
 		} else {
 			var fired = false
-			val h: EventHandler<ConnectorStateChangeEvent> = object : EventHandler<ConnectorStateChangeEvent> {
-				override fun onEvent(sessionObject: SessionObject, event: ConnectorStateChangeEvent) {
-					if (!fired && event.newState == tigase.halcyon.core.connector.State.Disconnected) {
-						connector.context.eventBus.unregister(this)
-						fired = true
-						handler.invoke()
+			val h: EventHandler<ConnectorStateChangeEvent> =
+				object : EventHandler<ConnectorStateChangeEvent> {
+					override fun onEvent(sessionObject: SessionObject, event: ConnectorStateChangeEvent) {
+						if (!fired && event.newState == tigase.halcyon.core.connector.State.Disconnected) {
+							connector.context.eventBus.unregister(this)
+							fired = true
+							log.finest("State changed. Calling handler.")
+							handler.invoke()
+						}
 					}
 				}
-			}
 			try {
 				connector.context.eventBus.register(ConnectorStateChangeEvent.TYPE, h)
 				if (!fired && connector.state == tigase.halcyon.core.connector.State.Disconnected) {
 					connector.context.eventBus.unregister(h)
 					fired = true
+					log.finest("State is Disconnected already. Calling handler.")
 					handler.invoke()
 				}
 			} finally {
@@ -319,6 +335,7 @@ abstract class AbstractHalcyon : Context, PacketWriter {
 	}
 
 	fun connect() {
+		sessionObject.clear(SessionObject.Scope.Session)
 		this.running = true
 		modules.initModules()
 		log.info("Connecting")
@@ -347,11 +364,12 @@ abstract class AbstractHalcyon : Context, PacketWriter {
 			onDisconnecting()
 			stopConnector()
 		} finally {
-			sessionObject.clear(arrayOf(SessionObject.Scope.Session, SessionObject.Scope.Stream))
+			sessionObject.clear(SessionObject.Scope.Session)
 			state = State.Stopped
 		}
 	}
 
-	override fun <T : Any> requestBuilder(stanza: Element): RequestBuilder<T> = RequestBuilder<T>(this, stanza)
+	override fun <T : Any> requestBuilder(stanza: Element): RequestBuilder<T> =
+		RequestBuilder<T>(this, stanza)
 
 }

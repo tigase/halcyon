@@ -20,22 +20,24 @@ package tigase.halcyon.core.modules
 import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xmpp.ErrorCondition
 import tigase.halcyon.core.xmpp.XMPPException
+import tigase.halcyon.core.xmpp.stanzas.IQ
+import tigase.halcyon.core.xmpp.stanzas.IQType
+import tigase.halcyon.core.xmpp.stanzas.wrap
 
-abstract class AbstractXmppIQModule(
-	type: String, features: Array<String>, criteria: tigase.halcyon.core.modules.Criteria
-) : tigase.halcyon.core.modules.AbstractXmppModule(type, features, criteria) {
+abstract class AbstractXmppIQModule(type: String, features: Array<String>, criteria: Criteria) :
+	AbstractXmppModule(type, features, criteria) {
 
 	final override fun process(element: Element) {
-		val type = element.attributes["type"]
-		when (type) {
-			"set" -> processSet(element)
-			"get" -> processGet(element)
+		val iq: IQ = wrap(element)
+		when (iq.type) {
+			IQType.Set -> processSet(iq)
+			IQType.Get -> processGet(iq)
 			else -> throw XMPPException(ErrorCondition.BadRequest)
 		}
 	}
 
-	abstract fun processGet(element: Element)
+	abstract fun processGet(element: IQ)
 
-	abstract fun processSet(element: Element)
+	abstract fun processSet(element: IQ)
 
 }

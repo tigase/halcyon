@@ -17,19 +17,17 @@
  */
 package tigase.halcyon.core.xmpp.stanzas
 
-import getTypeAttr
 import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xmpp.JID
-import tigase.halcyon.core.xmpp.StanzaType
 
-abstract class Stanza protected constructor(private val element: Element) {
+abstract class Stanza<STANZA_TYPE> protected constructor(private val element: Element) : Element by element {
 
 	private fun getJID(attName: String): JID? {
 		val att = element.attributes[attName]
 		return if (att == null) null else JID.parse(att)
 	}
 
-	private fun setAtt(attName: String, value: String?) {
+	protected open fun setAtt(attName: String, value: String?) {
 		if (value == null) {
 			element.attributes.remove(attName)
 		} else {
@@ -45,7 +43,9 @@ abstract class Stanza protected constructor(private val element: Element) {
 		get() = getJID("from")
 		set(value) = setAtt("from", value?.toString())
 
-	var type: StanzaType?
-		set(value) = setAtt("type", value?.name?.toLowerCase())
-		get() = element.getTypeAttr()
+	abstract var type: STANZA_TYPE
+
+//	var type: StanzaType?
+//		set(value) = setAtt("type", value?.name?.toLowerCase())
+//		get() = element.getTypeAttr()
 }

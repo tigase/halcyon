@@ -49,13 +49,26 @@ enum class Show(val weight: Int) {
 	 * "eXtended Away").
 	 */
 	xa(2);
-
 }
 
-class Presence(private val wrappedElement: Element) : Stanza(wrappedElement), Element by wrappedElement {
+enum class PresenceType(val value: String) {
+	Error("error"),
+	Probe("probe"),
+	Subscribe("subscribe"),
+	Subscribed("subscribed"),
+	Unavailable("unavailable"),
+	Unsubscribe("unsubscribe"),
+	Unsubscribed("unsubscribed"),
+}
+
+class Presence(private val wrappedElement: Element) : Stanza<PresenceType?>(wrappedElement) {
 
 	companion object {
 		const val NAME = "presence"
 	}
+
+	override var type: PresenceType?
+		set(value) = setAtt("type", value?.value)
+		get() = PresenceType.values().firstOrNull { te -> te.value == value }
 
 }

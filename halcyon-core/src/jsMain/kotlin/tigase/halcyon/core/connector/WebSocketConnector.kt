@@ -20,10 +20,12 @@ package tigase.halcyon.core.connector
 import org.w3c.dom.MessageEvent
 import org.w3c.dom.WebSocket
 import org.w3c.dom.events.Event
+import tigase.halcyon.core.Context
 import tigase.halcyon.core.SessionObject
 import tigase.halcyon.core.exceptions.HalcyonException
 import tigase.halcyon.core.excutor.TickExecutor
 import tigase.halcyon.core.logger.Level
+import tigase.halcyon.core.logger.Logger
 import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xml.parser.StreamParser
 import tigase.halcyon.core.xmpp.BareJID
@@ -31,10 +33,9 @@ import tigase.halcyon.core.xmpp.SessionController
 
 class WebSocketConnectionErrorEvent(description: String) : ConnectionErrorEvent()
 
-class WebSocketConnector(context: tigase.halcyon.core.Context) :
-	tigase.halcyon.core.connector.AbstractConnector(context) {
+class WebSocketConnector(context: Context) : AbstractConnector(context) {
 
-	private val log = tigase.halcyon.core.logger.Logger("tigase.halcyon.core.connector.WebSocketConnector")
+	private val log = Logger("tigase.halcyon.core.connector.WebSocketConnector")
 
 	private val whitespacePingExecutor = TickExecutor(context.eventBus, 25000) { onTick() }
 
@@ -65,14 +66,13 @@ class WebSocketConnector(context: tigase.halcyon.core.Context) :
 	override fun createSessionController(): SessionController = WebSocketSessionController(context, this)
 
 	override fun send(data: CharSequence) {
-		if (log.isLoggable(Level.FINEST)) log.log(
-			Level.FINEST, "Sending: $data"
-		)
+		if (log.isLoggable(Level.FINEST)) log.log(Level.FINEST, "Sending: $data")
 		try {
 			this.ws.send(data.toString())
 		} catch (e: Throwable) {
 			log.log(Level.WARNING, "Cannot send data.", e)
-			state = State.Disconnected
+			context.eventBus.fire(WebSocketConnectionErrorEvent("Cannot send data"))
+			throw e
 		}
 	}
 
@@ -104,8 +104,9 @@ class WebSocketConnector(context: tigase.halcyon.core.Context) :
 
 	private fun onSocketClose(event: Event): dynamic {
 		log.fine("Socket is closed: $event")
+		var oldState = state
 		state = State.Disconnected
-
+		if (oldState == State.Connected) context.eventBus.fire(WebSocketConnectionErrorEvent("Socket unexpectedly disconnected."))
 		return true
 	}
 
@@ -136,10 +137,14 @@ class WebSocketConnector(context: tigase.halcyon.core.Context) :
 
 	override fun stop() {
 		log.info("Stopping WebSocket connector")
-		state = State.Disconnecting
 		whitespacePingExecutor.stop()
+		if (state == State.Connected) closeStream()
+		state = State.Disconnecting
 		this.ws.close()
-//		state = State.Disconnected
+	}
+
+	private fun closeStream() {
+		send("</stream:stream>")
 	}
 
 	fun restartStream() {

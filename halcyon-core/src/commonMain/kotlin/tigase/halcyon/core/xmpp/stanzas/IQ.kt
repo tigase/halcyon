@@ -19,8 +19,20 @@ package tigase.halcyon.core.xmpp.stanzas
 
 import tigase.halcyon.core.xml.Element
 
-class IQ(val wrappedElement: Element) : Stanza(wrappedElement), Element by wrappedElement {
+enum class IQType(val value: String) {
+	Error("error"),
+	Get("get"),
+	Result("result"),
+	Set("set")
+}
+
+class IQ(val wrappedElement: Element) : Stanza<IQType>(wrappedElement) {
 	companion object {
 		const val NAME = "iq"
 	}
+
+	override var type: IQType
+		set(value) = setAtt("type", value.value)
+		get() = IQType.values().first { te -> te.value == value }
+
 }

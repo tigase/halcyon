@@ -18,21 +18,19 @@
 package tigase.halcyon.core.xmpp.modules
 
 import tigase.halcyon.core.currentTimestamp
+import tigase.halcyon.core.modules.AbstractXmppIQModule
 import tigase.halcyon.core.modules.Criterion
 import tigase.halcyon.core.requests.Request
-import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xml.response
 import tigase.halcyon.core.xmpp.ErrorCondition
 import tigase.halcyon.core.xmpp.JID
-import tigase.halcyon.core.xmpp.StanzaType
 import tigase.halcyon.core.xmpp.XMPPException
 import tigase.halcyon.core.xmpp.stanzas.IQ
+import tigase.halcyon.core.xmpp.stanzas.IQType
 import tigase.halcyon.core.xmpp.stanzas.iq
 
-class PingModule : tigase.halcyon.core.modules.AbstractXmppIQModule(
-	TYPE, arrayOf(XMLNS), Criterion.chain(
-		Criterion.name(IQ.NAME), Criterion.xmlns(XMLNS)
-	)
+class PingModule : AbstractXmppIQModule(
+	TYPE, arrayOf(XMLNS), Criterion.chain(Criterion.name(IQ.NAME), Criterion.xmlns(XMLNS))
 ) {
 
 	companion object {
@@ -42,21 +40,22 @@ class PingModule : tigase.halcyon.core.modules.AbstractXmppIQModule(
 
 	fun ping(jid: JID? = null): Request<Pong> {
 		val stanza = iq {
-			type = StanzaType.Get
+			type = IQType.Get
 			if (jid != null) to = jid
 			"ping"{
 				xmlns = XMLNS
 			}
 		}
 		val time0 = currentTimestamp()
-		return context.requestBuilder<Pong>(stanza).resultBuilder { element -> Pong(currentTimestamp() - time0) }.send()
+		return context.requestBuilder<Pong>(stanza)
+			.resultBuilder { element -> Pong(currentTimestamp() - time0) }.send()
 	}
 
-	override fun processGet(element: Element) {
+	override fun processGet(element: IQ) {
 		context.writer.write(response(element) { })
 	}
 
-	override fun processSet(element: Element) {
+	override fun processSet(element: IQ) {
 		throw XMPPException(ErrorCondition.NotAcceptable)
 	}
 

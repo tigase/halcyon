@@ -54,9 +54,9 @@ sealed class SocketConnectionErrorEvent : ConnectionErrorEvent() {
 class SocketConnector(context: Context) : AbstractConnector(context) {
 
 	companion object {
-		const val SERVER_HOST = "SocketConnector.serverHost"
-		const val SERVER_PORT = "SocketConnector.serverPort"
-		const val SEE_OTHER_HOST_KEY = "SocketConnector.seeOtherHost"
+		const val SERVER_HOST = "tigase.halcyon.core.connector.socket.SocketConnector#serverHost"
+		const val SERVER_PORT = "tigase.halcyon.core.connector.socket.SocketConnector#serverPort"
+		const val SEE_OTHER_HOST_KEY = "tigase.halcyon.core.connector.socket.SocketConnector#seeOtherHost"
 
 		const val XMLNS_START_TLS = "urn:ietf:params:xml:ns:xmpp-tls"
 	}
@@ -160,7 +160,8 @@ class SocketConnector(context: Context) : AbstractConnector(context) {
 			worker.socket = s1
 			restartStream()
 		} catch (e: Throwable) {
-			e.printStackTrace()
+			state = State.Disconnecting
+			context.eventBus.fire(createSocketConnectionErrorEvent(e))
 		} finally {
 			log.finest("Enabling whitespace ping")
 			whiteSpaceEnabled = true
@@ -236,19 +237,21 @@ class SocketConnector(context: Context) : AbstractConnector(context) {
 
 	private fun onWorkerException(cause: Exception) {
 		cause.printStackTrace()
-		state = State.Disconnected
+		state = State.Disconnecting
 		context.eventBus.fire(createSocketConnectionErrorEvent(cause))
 	}
 
-	private fun createSocketConnectionErrorEvent(cause: Throwable): SocketConnectionErrorEvent = when (cause) {
-		is UnknownHostException, is DnssecValidationFailedException -> SocketConnectionErrorEvent.HostNotFount()
-		else -> SocketConnectionErrorEvent.Unknown(cause)
-	}
+	private fun createSocketConnectionErrorEvent(cause: Throwable): SocketConnectionErrorEvent =
+		when (cause) {
+			is UnknownHostException, is DnssecValidationFailedException -> SocketConnectionErrorEvent.HostNotFount()
+			else -> SocketConnectionErrorEvent.Unknown(cause)
+		}
 
 	override fun stop() {
-		if ((state == State.Connecting || state == State.Connected)) {
+		if ((state != State.Disconnected)) {
+			log.fine("Stopping...")
 			try {
-				closeStream()
+				if (state == State.Connected) closeStream()
 				state = State.Disconnecting
 				whitespacePingExecutor.stop()
 				Thread.sleep(175)
@@ -257,6 +260,8 @@ class SocketConnector(context: Context) : AbstractConnector(context) {
 					this.socket.close()
 				}
 				worker.interrupt()
+
+
 				while (worker.isActive) Thread.sleep(32)
 			} finally {
 				state = State.Disconnected
@@ -269,11 +274,19 @@ class SocketConnector(context: Context) : AbstractConnector(context) {
 	}
 
 	override fun send(data: CharSequence) {
-		if (log.isLoggable(Level.FINEST)) log.log(
-			Level.FINEST, "Sending (${worker.socket.isConnected}, ${!worker.socket.isOutputShutdown}): $data"
-		)
-		worker.writer.write(data.toString())
-		worker.writer.flush()
+		try {
+			if (log.isLoggable(Level.FINEST)) log.log(
+				Level.FINEST,
+				"Sending (${worker.socket.isConnected}, ${!worker.socket.isOutputShutdown}): $data"
+			)
+			worker.writer.write(data.toString())
+			worker.writer.flush()
+		} catch (e: Exception) {
+			log.log(Level.WARNING, "Cannot send data to server", e)
+			state = State.Disconnecting
+			context.eventBus.fire(createSocketConnectionErrorEvent(e))
+			throw e
+		}
 	}
 
 	fun restartStream() {

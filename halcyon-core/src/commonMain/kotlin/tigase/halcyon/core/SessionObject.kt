@@ -25,9 +25,9 @@ import tigase.halcyon.core.xmpp.BareJID
 class SessionObject {
 
 	enum class Scope {
-		Session,
 		Stream,
-		User
+		Session,
+		User,
 	}
 
 	data class ClearedEvent(val scopes: Array<Scope>) : Event(TYPE) {
@@ -57,11 +57,17 @@ class SessionObject {
 	private val properties: MutableMap<String, Entry> = HashMap()
 
 	fun clear() {
-		clear(Scope.values())
+		clear(Int.MAX_VALUE)
 	}
 
-	fun clear(scopes: Array<Scope>) {
+	fun clear(scope: Scope) {
+		clear(scope.ordinal)
+	}
+
+	private fun clear(ordinal: Int) {
+		val scopes = Scope.values().filter { s -> s.ordinal <= ordinal }.toTypedArray()
 		val iterator = this.properties.entries.iterator()
+		log.fine("Clearing $scopes")
 		while (iterator.hasNext()) {
 			val entry = iterator.next()
 			if (scopes.contains(entry.value.scope)) {
@@ -105,19 +111,11 @@ class SessionObject {
 		return getProperty<T>(Scope.User, key)
 	}
 
-	fun setProperty(
-		scope: Scope, key: String, value: Any?
-	): SessionObject {
+	fun setProperty(scope: Scope, key: String, value: Any?): SessionObject {
 		if (value == null) {
 			this.properties.remove(key)
 		} else {
-			var e: Entry? = this.properties.get(key)
-			if (e == null) {
-				e = Entry()
-				this.properties.put(key, e)
-			}
-			e.scope = scope
-			e.value = value
+			this.properties[key] = Entry(scope, value)
 		}
 		return this
 	}
@@ -134,15 +132,7 @@ class SessionObject {
 		return "AbstractSessionObject{properties=$properties}"
 	}
 
-	private class Entry {
-
-		var scope: Scope? = null
-		var value: Any? = null
-
-		override fun toString(): String {
-			return "Entry{scope=$scope, value=$value}"
-		}
-	}
+	private data class Entry(val scope: Scope, val value: Any?)
 
 	companion object {
 		/**

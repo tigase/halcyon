@@ -29,7 +29,7 @@ import tigase.halcyon.core.xml.element
 import tigase.halcyon.core.xmpp.ErrorCondition
 import tigase.halcyon.core.xmpp.XMPPException
 
-sealed class SASLEvent() : Event(TYPE) {
+sealed class SASLEvent : Event(TYPE) {
 	companion object {
 		const val TYPE = "tigase.halcyon.core.xmpp.modules.auth.SASLEvent"
 	}
@@ -215,5 +215,9 @@ class SASLModule : XmppModule {
 			if (r != null) +r
 		}
 		context.writer.writeDirectly(authElement)
+	}
+
+	fun clear() {
+		context.sessionObject.setProperty(SessionObject.Scope.Session, SASL_CONTEXT, null)
 	}
 }

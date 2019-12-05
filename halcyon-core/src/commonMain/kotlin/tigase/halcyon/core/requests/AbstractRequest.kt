@@ -17,11 +17,9 @@
  */
 package tigase.halcyon.core.requests
 
-import getTypeAttr
 import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xmpp.ErrorCondition
 import tigase.halcyon.core.xmpp.JID
-import tigase.halcyon.core.xmpp.StanzaType
 import tigase.halcyon.core.xmpp.XMPPException
 
 abstract class AbstractRequest<V : Any>(
@@ -67,7 +65,7 @@ abstract class AbstractRequest<V : Any>(
 		if (!isCompleted) throw createRequestNotCompletedException()
 		if (responseStanza == null) return null
 		responseStanza?.let {
-			if (it.getTypeAttr() == StanzaType.Error) {
+			if (it.attributes["type"] == "error") {
 				throw createRequestErrorException(findCondition(it))
 			}
 		}
@@ -84,7 +82,8 @@ abstract class AbstractRequest<V : Any>(
 	protected abstract fun callTimeout()
 
 	protected fun findCondition(stanza: Element): ErrorCondition {
-		val error = stanza.children.firstOrNull { element -> element.name == "error" } ?: return ErrorCondition.Unknown
+		val error = stanza.children.firstOrNull { element -> element.name == "error" }
+			?: return ErrorCondition.Unknown
 		val cnd = error.children.firstOrNull { element -> element.xmlns == XMPPException.XMLNS }
 			?: return ErrorCondition.Unknown
 		return ErrorCondition.getByElementName(cnd.name)
@@ -138,23 +137,6 @@ abstract class AbstractRequest<V : Any>(
 		return "Request[to=$jid, id=$id: ${requestStanza.getAsString()}]"
 	}
 
-	override fun equals(other: Any?): Boolean {
-		if (this === other) return true
-		if (other !is AbstractRequest<*>) return false
-
-		if (jid != other.jid) return false
-		if (id != other.id) return false
-		if (creationTimestamp != other.creationTimestamp) return false
-
-		return true
-	}
-
-	override fun hashCode(): Int {
-		var result = jid?.hashCode() ?: 0
-		result = 31 * result + id.hashCode()
-		result = 31 * result + creationTimestamp.hashCode()
-		return result
-	}
 }
 
 typealias ResultConverter<T> = (Element) -> T

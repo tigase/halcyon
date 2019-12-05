@@ -93,6 +93,7 @@ open abstract class AbstractSocketSessionController(
 	}
 
 	protected open fun processStreamError(event: StreamErrorEvent) {
+		context.sessionObject.clear(SessionObject.Scope.Session)
 		when (event.errorElement.name) {
 			else -> context.eventBus.fire(
 				SessionController.SessionControllerEvents.ErrorReconnect(

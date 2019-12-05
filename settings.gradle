@@ -1,4 +1,4 @@
-rootProject.name = 'halcyon'
+rootProject.name = 'Tigase Halcyon'
 
 include 'halcyon-core'
 include 'halcyon-samples'

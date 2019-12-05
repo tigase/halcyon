@@ -17,18 +17,20 @@
  */
 package tigase.halcyon.core
 
+import tigase.halcyon.core.eventbus.EventBus
+import tigase.halcyon.core.modules.ModulesManager
 import tigase.halcyon.core.requests.RequestBuilder
 import tigase.halcyon.core.xml.Element
 
 interface Context {
 
-	val eventBus: tigase.halcyon.core.eventbus.EventBus
+	val eventBus: EventBus
 
-	val sessionObject: tigase.halcyon.core.SessionObject
+	val sessionObject: SessionObject
 
-	val writer: tigase.halcyon.core.PacketWriter
+	val writer: PacketWriter
 
-	val modules: tigase.halcyon.core.modules.ModulesManager
+	val modules: ModulesManager
 
 	fun <T : Any> requestBuilder(stanza: Element): RequestBuilder<T>
 }

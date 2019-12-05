@@ -17,6 +17,7 @@
  */
 package tigase.halcyon.core.connector.socket
 
+import tigase.halcyon.core.SessionObject
 import tigase.halcyon.core.connector.AbstractSocketSessionController
 import tigase.halcyon.core.connector.ConnectionErrorEvent
 import tigase.halcyon.core.connector.socket.SocketConnector.Companion.SEE_OTHER_HOST_KEY
@@ -38,10 +39,17 @@ class SocketSessionController(
 		connector.restartStream()
 	}
 
-	private fun isTLSAvailable(features: Element): Boolean = features.getChildrenNS("starttls", XMLNS_START_TLS) != null
+	private fun isTLSAvailable(features: Element): Boolean =
+		features.getChildrenNS("starttls", XMLNS_START_TLS) != null
 
 	override fun processConnectionError(event: ConnectionErrorEvent) {
 		log.log(Level.FINE, "Received connector exception: $event")
+
+		context.sessionObject.clear(SessionObject.Scope.Session)
+
+//		context.modules.getModuleOrNull<StreamManagementModule>(StreamManagementModule.TYPE)?.reset()
+//		context.modules.getModuleOrNull<SASLModule>(SASLModule.TYPE)?.clear()
+
 		when (event) {
 			is SocketConnectionErrorEvent.HostNotFount -> {
 				log.info("Cannot find server in DNS")

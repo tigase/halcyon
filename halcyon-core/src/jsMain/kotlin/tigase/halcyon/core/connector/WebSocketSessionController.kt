@@ -17,6 +17,7 @@
  */
 package tigase.halcyon.core.connector
 
+import tigase.halcyon.core.SessionObject
 import tigase.halcyon.core.logger.Level
 import tigase.halcyon.core.xmpp.SessionController
 import tigase.halcyon.core.xmpp.modules.auth.SASLEvent
@@ -31,6 +32,7 @@ class WebSocketSessionController(
 
 	override fun processConnectionError(event: ConnectionErrorEvent) {
 		log.log(Level.FINE, "Received connector exception: $event")
+		context.sessionObject.clear(SessionObject.Scope.Session)
 		context.eventBus.fire(SessionController.SessionControllerEvents.ErrorReconnect("Connection error"))
 	}
 

@@ -24,12 +24,14 @@ import tigase.halcyon.core.modules.Criterion
 import tigase.halcyon.core.modules.XmppModule
 import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xmpp.JID
-import tigase.halcyon.core.xmpp.StanzaType
 import tigase.halcyon.core.xmpp.stanzas.Presence
+import tigase.halcyon.core.xmpp.stanzas.PresenceType
 import tigase.halcyon.core.xmpp.stanzas.presence
 import tigase.halcyon.core.xmpp.stanzas.wrap
 
-data class PresenceReceivedEvent(val jid: JID, val stanzaType: StanzaType?, val stanza: Presence) : Event(TYPE) {
+data class PresenceReceivedEvent(val jid: JID, val stanzaType: PresenceType?, val stanza: Presence) :
+	Event(TYPE) {
+
 	companion object {
 		const val TYPE = "tigase.halcyon.core.xmpp.modules.presence.PresenceReceivedEvent"
 	}

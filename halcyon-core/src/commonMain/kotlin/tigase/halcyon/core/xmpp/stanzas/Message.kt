@@ -19,8 +19,21 @@ package tigase.halcyon.core.xmpp.stanzas
 
 import tigase.halcyon.core.xml.Element
 
-class Message(val wrappedElement: Element) : Stanza(wrappedElement), Element by wrappedElement {
+enum class MessageType(val value: String) {
+	Chat("chat"),
+	Error("error"),
+	Groupchat("groupchat"),
+	Headline("headline"),
+	Normal("normal")
+}
+
+class Message(val wrappedElement: Element) : Stanza<MessageType?>(wrappedElement) {
 	companion object {
 		const val NAME = "message"
 	}
+
+	override var type: MessageType?
+		set(value) = setAtt("type", value?.value)
+		get() = MessageType.values().firstOrNull { te -> te.value == value }
+
 }
