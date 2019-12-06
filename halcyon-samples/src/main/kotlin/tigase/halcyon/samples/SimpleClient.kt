@@ -123,7 +123,6 @@ fun main(args: Array<String>) {
 					when (result) {
 						is Result.Success -> println("Pong: " + result.get()!!.time + " ms")
 						is Result.Error -> println("Pong error: ${result.error}")
-						is Result.Timeout -> println("Pong timeout")
 					}
 				}
 

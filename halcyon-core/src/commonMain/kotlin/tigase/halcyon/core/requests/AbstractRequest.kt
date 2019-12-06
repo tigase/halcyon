@@ -22,7 +22,9 @@ import tigase.halcyon.core.xmpp.ErrorCondition
 import tigase.halcyon.core.xmpp.JID
 import tigase.halcyon.core.xmpp.XMPPException
 
-abstract class AbstractRequest<V : Any>(
+typealias ResultConverter<T> = (Element) -> T
+
+abstract class AbstractRequest<V : Any, RQTYP : Request<*>>(
 	val jid: JID?, val id: String, val creationTimestamp: Long, val requestStanza: Element
 ) {
 
@@ -54,14 +56,16 @@ abstract class AbstractRequest<V : Any>(
 		callHandlers()
 	}
 
-	protected abstract fun createRequestTimeoutException(): RequestTimeoutException
+	@Suppress("UNCHECKED_CAST")
+	protected fun createRequestNotCompletedException(): RequestNotCompletedException =
+		RequestNotCompletedException(this as RQTYP)
 
-	protected abstract fun createRequestNotCompletedException(): RequestNotCompletedException
-
-	protected abstract fun createRequestErrorException(error: ErrorCondition): RequestErrorException
+	@Suppress("UNCHECKED_CAST")
+	protected fun createRequestErrorException(error: ErrorCondition): RequestErrorException =
+		RequestErrorException(this as RQTYP, error)
 
 	fun getResult(): V? {
-		if (isTimeout) throw createRequestTimeoutException()
+		if (isTimeout) throw createRequestErrorException(ErrorCondition.RemoteServerTimeout)
 		if (!isCompleted) throw createRequestNotCompletedException()
 		if (responseStanza == null) return null
 		responseStanza?.let {
@@ -74,12 +78,30 @@ abstract class AbstractRequest<V : Any>(
 
 	internal fun setTimeout() {
 		isCompleted = true
-		callTimeout()
+
+		val stanzaType = requestStanza.attributes["type"]
+		if (stanzaType == "get" || stanzaType == "set") {
+			isTimeout = true
+		}
+		callHandlers()
 	}
 
-	protected abstract fun callHandlers()
+//	protected abstract fun callHandlers()
 
-	protected abstract fun callTimeout()
+	open fun callHandlers() {
+		if (isTimeout) handler?.error(this as Request<V>, null, ErrorCondition.RemoteServerTimeout)
+
+		if (responseStanza == null) return
+
+		handler?.let {
+			val type = responseStanza!!.attributes["type"]
+			if (type == "result") {
+				it.success(this as Request<V>, responseStanza!!, getResult())
+			} else if (type == "error") {
+				it.error(this as Request<V>, responseStanza!!, findCondition(responseStanza!!))
+			}
+		}
+	}
 
 	protected fun findCondition(stanza: Element): ErrorCondition {
 		val error = stanza.children.firstOrNull { element -> element.name == "error" }
@@ -111,13 +133,10 @@ abstract class AbstractRequest<V : Any>(
 			handler.invoke(request, response, Result.Success(response, value))
 		}
 
-		override fun error(request: Request<V>, response: Element, error: ErrorCondition) {
+		override fun error(request: Request<V>, response: Element?, error: ErrorCondition) {
 			handler.invoke(request, response, Result.Error(response, error))
 		}
 
-		override fun timeout(request: Request<V>) {
-			handler.invoke(request, null, Result.Timeout())
-		}
 	}
 
 	fun isSet(param: String): Boolean {
@@ -138,5 +157,3 @@ abstract class AbstractRequest<V : Any>(
 	}
 
 }
-
-typealias ResultConverter<T> = (Element) -> T

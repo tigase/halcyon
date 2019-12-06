@@ -18,20 +18,11 @@
 package tigase.halcyon.core.requests
 
 import tigase.halcyon.core.xml.Element
-import tigase.halcyon.core.xmpp.ErrorCondition
 import tigase.halcyon.core.xmpp.JID
 
-actual class Request<V : Any> actual constructor(
+actual open class Request<V : Any> actual constructor(
 	jid: JID?, id: String, creationTimestamp: Long, requestStanza: Element
-) : AbstractRequest<V>(jid, id, creationTimestamp, requestStanza) {
-
-	override fun createRequestTimeoutException(): RequestTimeoutException = RequestTimeoutException(this)
-
-	override fun createRequestNotCompletedException(): RequestNotCompletedException =
-		RequestNotCompletedException(this)
-
-	override fun createRequestErrorException(error: ErrorCondition): RequestErrorException =
-		RequestErrorException(this, error)
+) : AbstractRequest<V, Request<V>>(jid, id, creationTimestamp, requestStanza) {
 
 	private val lock = Object()
 
@@ -44,27 +35,7 @@ actual class Request<V : Any> actual constructor(
 	}
 
 	override fun callHandlers() {
-		if (responseStanza == null) return
-
-		handler?.let {
-			val type = responseStanza!!.attributes["type"]
-			if (type == "result") {
-				it.success(this, responseStanza!!, getResult())
-			} else if (type == "error") {
-				it.error(this, responseStanza!!, findCondition(responseStanza!!))
-			}
-		}
-		synchronized(lock) {
-			lock.notify()
-		}
-	}
-
-	override fun callTimeout() {
-		val stanzaType = requestStanza.attributes["type"]
-		if (stanzaType == "get" || stanzaType == "set") {
-			isTimeout = true
-			handler?.timeout(this)
-		}
+		super.callHandlers()
 		synchronized(lock) {
 			lock.notify()
 		}

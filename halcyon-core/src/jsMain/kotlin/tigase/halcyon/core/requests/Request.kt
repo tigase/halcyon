@@ -18,38 +18,8 @@
 package tigase.halcyon.core.requests
 
 import tigase.halcyon.core.xml.Element
-import tigase.halcyon.core.xmpp.ErrorCondition
 import tigase.halcyon.core.xmpp.JID
 
 actual open class Request<V : Any> actual constructor(
 	jid: JID?, id: String, creationTimestamp: Long, requestStanza: Element
-) : AbstractRequest<V>(jid, id, creationTimestamp, requestStanza) {
-
-	override fun createRequestTimeoutException(): RequestTimeoutException = RequestTimeoutException(this)
-
-	override fun createRequestNotCompletedException(): RequestNotCompletedException =
-		RequestNotCompletedException(this)
-
-	override fun createRequestErrorException(error: ErrorCondition): RequestErrorException =
-		RequestErrorException(this, error)
-
-	override fun callHandlers() {
-		if (responseStanza == null || handler == null) return
-
-		val type = responseStanza!!.attributes["type"]
-		if (type == "result") {
-			handler!!.success(this, responseStanza!!, getResult())
-		} else if (type == "error") {
-			handler!!.error(this, responseStanza!!, findCondition(responseStanza!!))
-		}
-	}
-
-	override fun callTimeout() {
-		val stanzaType = requestStanza.attributes["type"]
-		if (stanzaType == "get" || stanzaType == "set") {
-			isTimeout = true
-			handler?.timeout(this)
-		}
-	}
-
-}
+) : AbstractRequest<V, Request<V>>(jid, id, creationTimestamp, requestStanza)

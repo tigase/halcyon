@@ -22,8 +22,7 @@ import tigase.halcyon.core.xmpp.ErrorCondition
 
 interface ResponseHandler<T : Any> {
 	fun success(request: Request<T>, response: Element, value: T?)
-	fun error(request: Request<T>, response: Element, error: ErrorCondition)
-	fun timeout(request: Request<T>)
+	fun error(request: Request<T>, response: Element?, error: ErrorCondition)
 }
 
 typealias ResponseResultHandler<T> = (Request<T>, Element?, Result<T>) -> Unit
@@ -31,19 +30,14 @@ typealias ResponseResultHandler<T> = (Request<T>, Element?, Result<T>) -> Unit
 class HandlerHelper<T : Any> {
 
 	private var successHandler: ((Request<T>, Element, value: T?) -> Unit)? = null
-	private var errorHandler: ((Request<T>, Element, ErrorCondition) -> Unit)? = null
-	private var timeoutHandler: ((Request<T>) -> Unit)? = null
+	private var errorHandler: ((Request<T>, Element?, ErrorCondition) -> Unit)? = null
 
 	fun success(handler: (Request<T>, Element, result: T?) -> Unit) {
 		this.successHandler = handler
 	}
 
-	fun error(handler: (Request<T>, Element, ErrorCondition) -> Unit) {
+	fun error(handler: (Request<T>, Element?, ErrorCondition) -> Unit) {
 		this.errorHandler = handler
-	}
-
-	fun timeout(handler: (Request<T>) -> Unit) {
-		this.timeoutHandler = handler
 	}
 
 	internal fun responseHandler(): ResponseHandler<T> = object : ResponseHandler<T> {
@@ -51,13 +45,10 @@ class HandlerHelper<T : Any> {
 			successHandler?.invoke(request, response, value)
 		}
 
-		override fun error(request: Request<T>, response: Element, error: ErrorCondition) {
+		override fun error(request: Request<T>, response: Element?, error: ErrorCondition) {
 			errorHandler?.invoke(request, response, error)
 		}
 
-		override fun timeout(request: Request<T>) {
-			timeoutHandler?.invoke(request)
-		}
 	}
 
 }

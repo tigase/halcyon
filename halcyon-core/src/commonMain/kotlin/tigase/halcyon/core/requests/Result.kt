@@ -30,18 +30,13 @@ sealed class Result<out V : Any> {
 		override fun get(): V? = value
 	}
 
-	class Error<out V : Any>(val responseStanza: Element, val error: ErrorCondition) : Result<V>() {
+	class Error<out V : Any>(val responseStanza: Element?, val error: ErrorCondition) : Result<V>() {
 		override fun get(): V = throw XMPPException(error)
-	}
-
-	class Timeout<out V : Any> : Result<V>() {
-		override fun get(): V = throw HalcyonException("Request timeout")
 	}
 
 	override fun toString(): String = when (this) {
 		is Success -> "Success(${get()})"
 		is Error -> "Error($error)"
-		is Timeout -> "Timeout()"
 	}
 
 }

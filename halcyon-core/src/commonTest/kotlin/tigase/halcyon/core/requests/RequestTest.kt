@@ -20,10 +20,7 @@ package tigase.halcyon.core.requests
 import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xml.element
 import tigase.halcyon.core.xmpp.JID
-import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertNotNull
-import kotlin.test.assertTrue
+import kotlin.test.*
 
 class RequestTest {
 

@@ -47,11 +47,9 @@ class RequestManagerTest {
 				++successCounter
 			}
 
-			override fun error(request: Request<Any>, responseStanza: Element, errorCondition: ErrorCondition) {
-				fail()
-			}
-
-			override fun timeout(request: Request<Any>) {
+			override fun error(
+				request: Request<Any>, responseStanza: Element?, errorCondition: ErrorCondition
+			) {
 				fail()
 			}
 
@@ -75,7 +73,7 @@ class RequestManagerTest {
 		val jid = element.getToAttr()
 		return Request(jid, id, currentTimestamp(), element)
 	}
-	
+
 	@Test
 	fun testSuccessHandler02() {
 		val rm = RequestsManager()
@@ -91,8 +89,6 @@ class RequestManagerTest {
 		rm.register(create(e)).handle {
 			success { request, element, any -> ++successCounter }
 			error { _, _, _ -> fail() }
-			timeout { fail() }
-
 		}
 
 		val resp = element("iq") {
@@ -181,21 +177,21 @@ class RequestManagerTest {
 			attribute("to", "a@b.c")
 		}))
 		r1.timeoutDelay = 0
-		r1.handle { timeout { _ -> ++counter } }
+		r1.handle { error { _, _, errorCondition -> if (errorCondition == ErrorCondition.RemoteServerTimeout) ++counter } }
 
 		val r2 = rm.register(create(element("iq") {
 			attribute("id", "2")
 			attribute("type", "get")
 			attribute("to", "a@b.c")
 		}))
-		r2.handle { timeout { _ -> ++counter } }
+		r2.handle { error { _, _, errorCondition -> if (errorCondition == ErrorCondition.RemoteServerTimeout) ++counter } }
 
 		val r3 = rm.register(create(element("message") {
 			attribute("id", "3")
 			attribute("to", "a@b.c")
 		}))
 		r3.timeoutDelay = 0
-		r3.handle { timeout { _ -> ++counter } }
+		r3.handle { error { _, _, errorCondition -> if (errorCondition == ErrorCondition.RemoteServerTimeout) ++counter } }
 
 		rm.findOutdated()
 

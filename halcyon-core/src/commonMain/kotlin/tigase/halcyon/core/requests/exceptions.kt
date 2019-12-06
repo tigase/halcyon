@@ -28,12 +28,6 @@ class RequestNotCompletedException(request: Request<*>) : RequestException(reque
 	}
 }
 
-class RequestTimeoutException(request: Request<*>) : RequestException(request) {
-	override fun toString(): String {
-		return "RequestTimeoutException(request=$request)"
-	}
-}
-
 class RequestErrorException(request: Request<*>, val error: ErrorCondition) : RequestException(request) {
 	override fun toString(): String {
 		return "RequestErrorException(error=$error, request=$request)"

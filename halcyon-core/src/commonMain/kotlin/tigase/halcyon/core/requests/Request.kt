@@ -20,5 +20,5 @@ package tigase.halcyon.core.requests
 import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xmpp.JID
 
-expect class Request<V : Any>(jid: JID?, id: String, creationTimestamp: Long, requestStanza: Element) :
-	AbstractRequest<V>
+expect open class Request<V : Any>(jid: JID?, id: String, creationTimestamp: Long, requestStanza: Element) :
+	AbstractRequest<V, Request<V>>
