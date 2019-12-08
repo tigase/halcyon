@@ -22,7 +22,7 @@ import tigase.halcyon.core.xmpp.ErrorCondition
 
 interface IQResponseHandler<T : Any> {
 	fun success(request: IQRequest<T>, response: Element, value: T?)
-	fun error(request: IQRequest<T>, response: Element?, error: ErrorCondition)
+	fun error(request: IQRequest<T>, response: Element?, error: ErrorCondition, errorMessage: String?)
 }
 
 typealias IQResponseResultHandler<T> = (IQRequest<T>, Element?, Result<T>) -> Unit
@@ -30,13 +30,13 @@ typealias IQResponseResultHandler<T> = (IQRequest<T>, Element?, Result<T>) -> Un
 class IQHandlerHelper<T : Any> {
 
 	private var successHandler: ((IQRequest<T>, Element, value: T?) -> Unit)? = null
-	private var errorHandler: ((IQRequest<T>, Element?, ErrorCondition) -> Unit)? = null
+	private var errorHandler: ((IQRequest<T>, Element?, ErrorCondition, String?) -> Unit)? = null
 
 	fun success(handler: (IQRequest<T>, Element, result: T?) -> Unit) {
 		this.successHandler = handler
 	}
 
-	fun error(handler: (IQRequest<T>, Element?, ErrorCondition) -> Unit) {
+	fun error(handler: (IQRequest<T>, Element?, ErrorCondition, String?) -> Unit) {
 		this.errorHandler = handler
 	}
 
@@ -45,13 +45,15 @@ class IQHandlerHelper<T : Any> {
 			successHandler?.invoke(request, response, value)
 		}
 
-		override fun error(request: IQRequest<T>, response: Element?, error: ErrorCondition) {
-			errorHandler?.invoke(request, response, error)
+		override fun error(
+			request: IQRequest<T>, response: Element?, error: ErrorCondition, errorMessage: String?
+		) {
+			errorHandler?.invoke(request, response, error, errorMessage)
 		}
 
 	}
 }
 
-typealias MessageErrorHandler = (MessageRequest, Element?, ErrorCondition) -> Unit
+typealias MessageErrorHandler = (MessageRequest, Element?, ErrorCondition, String?) -> Unit
 
-typealias PresenceErrorHandler = (PresenceRequest, Element?, ErrorCondition) -> Unit
+typealias PresenceErrorHandler = (PresenceRequest, Element?, ErrorCondition, String?) -> Unit

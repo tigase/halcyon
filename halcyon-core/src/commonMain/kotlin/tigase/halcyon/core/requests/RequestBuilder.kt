@@ -59,7 +59,7 @@ class IQReqBuilder<V : Any>(private val halcyon: AbstractHalcyon, private val el
 			handler.invoke(request, response, Result.Success(response, value))
 		}
 
-		override fun error(request: IQRequest<V>, response: Element?, error: ErrorCondition) {
+		override fun error(request: IQRequest<V>, response: Element?, error: ErrorCondition, errorMessage: String?) {
 			handler.invoke(request, response, Result.Error(response, error))
 		}
 	}

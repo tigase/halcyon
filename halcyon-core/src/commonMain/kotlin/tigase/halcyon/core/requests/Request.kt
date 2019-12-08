@@ -61,7 +61,9 @@ abstract class Request<V : Any, STT : Stanza<*>>(
 
 	protected abstract fun createRequestNotCompletedException(): RequestNotCompletedException
 
-	protected abstract fun createRequestErrorException(error: ErrorCondition): RequestErrorException
+	protected abstract fun createRequestErrorException(
+		error: ErrorCondition, text: String? = null
+	): RequestErrorException
 
 	internal fun setTimeout() {
 		isCompleted = true
@@ -77,12 +79,20 @@ abstract class Request<V : Any, STT : Stanza<*>>(
 
 	protected abstract fun callHandlers()
 
-	protected fun findCondition(stanza: Element): ErrorCondition {
-		val error = stanza.children.firstOrNull { element -> element.name == "error" }
-			?: return ErrorCondition.Unknown
-		val cnd = error.children.firstOrNull { element -> element.xmlns == XMPPException.XMLNS }
-			?: return ErrorCondition.Unknown
-		return ErrorCondition.getByElementName(cnd.name)
+	data class Error(val condition: ErrorCondition, val message: String?)
+
+	protected fun findCondition(stanza: Element): Error {
+		val error = stanza.children.firstOrNull { element -> element.name == "error" } ?: return Error(
+			ErrorCondition.Unknown, null
+		)
+		val cnd =
+			error.children.firstOrNull { element -> element.xmlns == XMPPException.XMLNS } ?: return Error(
+				ErrorCondition.Unknown, null
+			)
+
+		val c = ErrorCondition.getByElementName(cnd.name)
+
+		return Error(c, null)
 	}
 
 	fun isSet(param: String): Boolean {
@@ -117,12 +127,13 @@ abstract class AbstractIQRequest<V : Any>(
 	private var value: V? = null
 
 	fun getResult(): V? {
-		if (isTimeout) throw createRequestErrorException(ErrorCondition.RemoteServerTimeout)
+		if (isTimeout) throw createRequestErrorException(ErrorCondition.RemoteServerTimeout, null)
 		if (!isCompleted) throw createRequestNotCompletedException()
 		if (responseStanza == null) return null
 		responseStanza?.let {
 			if (it.attributes["type"] == "error") {
-				throw createRequestErrorException(findCondition(it))
+				val e = findCondition(it)
+				throw createRequestErrorException(e.condition, e.message)
 			}
 		}
 		return value
@@ -131,7 +142,7 @@ abstract class AbstractIQRequest<V : Any>(
 	override fun callHandlers() {
 		if (isTimeout) {
 			handler?.error(
-				this as IQRequest<V>, null, ErrorCondition.RemoteServerTimeout
+				this as IQRequest<V>, null, ErrorCondition.RemoteServerTimeout, null
 			)
 		} else if (responseStanza != null) {
 			handler?.let {
@@ -139,7 +150,8 @@ abstract class AbstractIQRequest<V : Any>(
 				if (type == "result") {
 					it.success(this as IQRequest<V>, responseStanza!!, getResult())
 				} else if (type == "error") {
-					it.error(this as IQRequest<V>, responseStanza!!, findCondition(responseStanza!!))
+					val e = findCondition(responseStanza!!)
+					it.error(this as IQRequest<V>, responseStanza!!, e.condition, e.message)
 				}
 			}
 		}
@@ -148,8 +160,9 @@ abstract class AbstractIQRequest<V : Any>(
 	override fun createRequestNotCompletedException(): RequestNotCompletedException =
 		RequestNotCompletedException(this)
 
-	override fun createRequestErrorException(error: ErrorCondition): RequestErrorException =
-		RequestErrorException(this, error)
+	override fun createRequestErrorException(
+		error: ErrorCondition, text: String?
+	): RequestErrorException = RequestErrorException(this, error)
 
 }
 
@@ -175,14 +188,15 @@ class PresenceRequest(
 	override fun createRequestNotCompletedException(): RequestNotCompletedException =
 		RequestNotCompletedException(this)
 
-	override fun createRequestErrorException(error: ErrorCondition): RequestErrorException =
-		RequestErrorException(this, error)
+	override fun createRequestErrorException(
+		error: ErrorCondition, text: String?
+	): RequestErrorException = RequestErrorException(this, error)
 
 	override fun callHandlers() {
-		if (isTimeout) errorHandler?.invoke(this, null, ErrorCondition.RemoteServerTimeout)
+		if (isTimeout) errorHandler?.invoke(this, null, ErrorCondition.RemoteServerTimeout, null)
 		else if (responseStanza != null && responseStanza!!.attributes["type"] == "error") {
-			val condition = findCondition(responseStanza!!)
-			errorHandler?.invoke(this, responseStanza, condition)
+			val e = findCondition(responseStanza!!)
+			errorHandler?.invoke(this, responseStanza, e.condition, e.message)
 		}
 	}
 }
@@ -199,14 +213,15 @@ class MessageRequest(
 	override fun createRequestNotCompletedException(): RequestNotCompletedException =
 		RequestNotCompletedException(this)
 
-	override fun createRequestErrorException(error: ErrorCondition): RequestErrorException =
-		RequestErrorException(this, error)
+	override fun createRequestErrorException(
+		error: ErrorCondition, text: String?
+	): RequestErrorException = RequestErrorException(this, error)
 
 	override fun callHandlers() {
-		if (isTimeout) errorHandler?.invoke(this, null, ErrorCondition.RemoteServerTimeout)
+		if (isTimeout) errorHandler?.invoke(this, null, ErrorCondition.RemoteServerTimeout, null)
 		else if (responseStanza != null && responseStanza!!.attributes["type"] == "error") {
-			val condition = findCondition(responseStanza!!)
-			errorHandler?.invoke(this, responseStanza, condition)
+			val e = findCondition(responseStanza!!)
+			errorHandler?.invoke(this, responseStanza, e.condition, e.message)
 		}
 	}
 }

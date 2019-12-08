@@ -57,7 +57,10 @@ class RequestManagerTest {
 			}
 
 			override fun error(
-				request: IQRequest<Any>, responseStanza: Element?, errorCondition: ErrorCondition
+				request: IQRequest<Any>,
+				responseStanza: Element?,
+				errorCondition: ErrorCondition,
+				errorMessage: String?
 			) {
 				fail()
 			}
@@ -92,7 +95,7 @@ class RequestManagerTest {
 
 		val req = halcyon.request.iq<Any>(e).handle {
 			success { request, element, any -> ++successCounter }
-			error { _, _, _ -> fail() }
+			error { _, _, _, _ -> fail() }
 		}.build();
 
 		rm.register(req)
@@ -149,7 +152,7 @@ class RequestManagerTest {
 			"body"{
 				+"test"
 			}
-		}.error { messageRequest, element, errorCondition ->
+		}.error { messageRequest, element, errorCondition, errorMessage ->
 			if (errorCondition == ErrorCondition.NotAllowed) handled = true
 			else fail("Unexpected error type $errorCondition")
 		}.build()
@@ -182,7 +185,7 @@ class RequestManagerTest {
 			attribute("to", "a@b.c")
 		}
 		val req = halcyon.request.iq<Any>(e).handle {
-			error { request, element, errorCondition ->
+			error { request, element, errorCondition, _ ->
 				++errorCounter
 				assertEquals(ErrorCondition.NotAllowed, errorCondition)
 			}
@@ -217,7 +220,7 @@ class RequestManagerTest {
 			attribute("type", "get")
 			attribute("to", "a@b.c")
 		}).timeToLive(0)
-			.handle { error { _, _, errorCondition -> if (errorCondition == ErrorCondition.RemoteServerTimeout) ++counter } }
+			.handle { error { _, _, errorCondition, _ -> if (errorCondition == ErrorCondition.RemoteServerTimeout) ++counter } }
 			.build()
 		rm.register(r1)
 
@@ -226,12 +229,12 @@ class RequestManagerTest {
 			attribute("type", "get")
 			attribute("to", "a@b.c")
 		})
-			.handle { error { _, _, errorCondition -> if (errorCondition == ErrorCondition.RemoteServerTimeout) ++counter } }
+			.handle { error { _, _, errorCondition, _ -> if (errorCondition == ErrorCondition.RemoteServerTimeout) ++counter } }
 			.build()
 		rm.register(r2)
 
 		var r3 = halcyon.request.message { to = "a@b.c".toJID() }.timeToLive(0)
-			.error { messageRequest, element, errorCondition -> if (errorCondition == ErrorCondition.RemoteServerTimeout) ++counter }
+			.error { messageRequest, element, errorCondition, _ -> if (errorCondition == ErrorCondition.RemoteServerTimeout) ++counter }
 			.build()
 		rm.register(r3)
 
