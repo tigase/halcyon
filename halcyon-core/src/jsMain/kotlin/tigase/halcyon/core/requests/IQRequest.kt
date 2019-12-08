@@ -17,9 +17,15 @@
  */
 package tigase.halcyon.core.requests
 
-import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xmpp.JID
+import tigase.halcyon.core.xmpp.stanzas.IQ
 
-actual open class Request<V : Any> actual constructor(
-	jid: JID?, id: String, creationTimestamp: Long, requestStanza: Element
-) : AbstractRequest<V, Request<V>>(jid, id, creationTimestamp, requestStanza)
+actual class IQRequest<V : Any> actual constructor(
+	jid: JID?,
+	id: String,
+	creationTimestamp: Long,
+	requestStanza: IQ,
+	handler: IQResponseHandler<V>?,
+	resultConverter: ResultConverter<V>?,
+	timeoutDelay: Long
+) : AbstractIQRequest<V>(jid, id, creationTimestamp, requestStanza, handler, resultConverter, timeoutDelay)

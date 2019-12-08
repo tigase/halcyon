@@ -18,7 +18,195 @@
 package tigase.halcyon.core.requests
 
 import tigase.halcyon.core.xml.Element
+import tigase.halcyon.core.xmpp.ErrorCondition
 import tigase.halcyon.core.xmpp.JID
+import tigase.halcyon.core.xmpp.XMPPException
+import tigase.halcyon.core.xmpp.stanzas.IQ
+import tigase.halcyon.core.xmpp.stanzas.Message
+import tigase.halcyon.core.xmpp.stanzas.Presence
+import tigase.halcyon.core.xmpp.stanzas.Stanza
 
-expect open class Request<V : Any>(jid: JID?, id: String, creationTimestamp: Long, requestStanza: Element) :
-	AbstractRequest<V, Request<V>>
+typealias ResultConverter<T> = (Element) -> T
+
+abstract class Request<V : Any, STT : Stanza<*>>(
+	val jid: JID?, val id: String, val creationTimestamp: Long, val requestStanza: STT, var timeoutDelay: Long
+) {
+
+	protected val data = HashMap<String, Any>()
+
+	/**
+	 * `true` when no response for IQ or when stanza is not delivered to server (StreamManagement must be enabled)
+	 */
+	protected var isTimeout: Boolean = false
+
+	var isCompleted: Boolean = false
+		internal set
+
+	var isSent: Boolean = false
+		internal set(value) {
+			field = value
+			if (value && requestStanza.name != IQ.NAME) {
+				isCompleted = true
+			}
+		}
+
+	var responseStanza: Element? = null
+		private set
+
+	internal fun setResponseStanza(response: Element) {
+		responseStanza = response
+		isCompleted = true
+		callHandlers()
+	}
+
+	protected abstract fun createRequestNotCompletedException(): RequestNotCompletedException
+
+	protected abstract fun createRequestErrorException(error: ErrorCondition): RequestErrorException
+
+	internal fun setTimeout() {
+		isCompleted = true
+
+		val stanzaType = requestStanza.attributes["type"]
+		if (stanzaType == "get" || stanzaType == "set") {
+			isTimeout = true
+		}
+		callHandlers()
+	}
+
+//	protected abstract fun callHandlers()
+
+	protected abstract fun callHandlers()
+
+	protected fun findCondition(stanza: Element): ErrorCondition {
+		val error = stanza.children.firstOrNull { element -> element.name == "error" }
+			?: return ErrorCondition.Unknown
+		val cnd = error.children.firstOrNull { element -> element.xmlns == XMPPException.XMLNS }
+			?: return ErrorCondition.Unknown
+		return ErrorCondition.getByElementName(cnd.name)
+	}
+
+	fun isSet(param: String): Boolean {
+		val v = data[param]
+		return v != null && v is Boolean && v
+	}
+
+	fun setData(name: String, value: Any) {
+		data[name] = value
+	}
+
+	fun getData(name: String): Any? {
+		return data[name]
+	}
+
+	override fun toString(): String {
+		return "Request[to=$jid, id=$id: ${requestStanza.getAsString()}]"
+	}
+
+}
+
+abstract class AbstractIQRequest<V : Any>(
+	jid: JID?,
+	id: String,
+	creationTimestamp: Long,
+	requestStanza: IQ,
+	private val handler: IQResponseHandler<V>?,
+	private var resultConverter: ResultConverter<V>?,
+	timeoutDelay: Long
+) : Request<V, IQ>(jid, id, creationTimestamp, requestStanza, timeoutDelay) {
+
+	private var value: V? = null
+
+	fun getResult(): V? {
+		if (isTimeout) throw createRequestErrorException(ErrorCondition.RemoteServerTimeout)
+		if (!isCompleted) throw createRequestNotCompletedException()
+		if (responseStanza == null) return null
+		responseStanza?.let {
+			if (it.attributes["type"] == "error") {
+				throw createRequestErrorException(findCondition(it))
+			}
+		}
+		return value
+	}
+
+	override fun callHandlers() {
+		if (isTimeout) {
+			handler?.error(
+				this as IQRequest<V>, null, ErrorCondition.RemoteServerTimeout
+			)
+		} else if (responseStanza != null) {
+			handler?.let {
+				val type = responseStanza!!.attributes["type"]
+				if (type == "result") {
+					it.success(this as IQRequest<V>, responseStanza!!, getResult())
+				} else if (type == "error") {
+					it.error(this as IQRequest<V>, responseStanza!!, findCondition(responseStanza!!))
+				}
+			}
+		}
+	}
+
+	override fun createRequestNotCompletedException(): RequestNotCompletedException =
+		RequestNotCompletedException(this)
+
+	override fun createRequestErrorException(error: ErrorCondition): RequestErrorException =
+		RequestErrorException(this, error)
+
+}
+
+expect class IQRequest<V : Any>(
+	jid: JID?,
+	id: String,
+	creationTimestamp: Long,
+	requestStanza: IQ,
+	handler: IQResponseHandler<V>?,
+	resultConverter: ResultConverter<V>?,
+	timeoutDelay: Long
+) : AbstractIQRequest<V>
+
+class PresenceRequest(
+	jid: JID?,
+	id: String,
+	creationTimestamp: Long,
+	requestStanza: Presence,
+	private val errorHandler: PresenceErrorHandler?,
+	timeoutDelay: Long
+) : Request<Unit, Presence>(jid, id, creationTimestamp, requestStanza, timeoutDelay) {
+
+	override fun createRequestNotCompletedException(): RequestNotCompletedException =
+		RequestNotCompletedException(this)
+
+	override fun createRequestErrorException(error: ErrorCondition): RequestErrorException =
+		RequestErrorException(this, error)
+
+	override fun callHandlers() {
+		if (isTimeout) errorHandler?.invoke(this, null, ErrorCondition.RemoteServerTimeout)
+		else if (responseStanza != null && responseStanza!!.attributes["type"] == "error") {
+			val condition = findCondition(responseStanza!!)
+			errorHandler?.invoke(this, responseStanza, condition)
+		}
+	}
+}
+
+class MessageRequest(
+	jid: JID?,
+	id: String,
+	creationTimestamp: Long,
+	requestStanza: Message,
+	private val errorHandler: MessageErrorHandler?,
+	timeoutDelay: Long
+) : Request<Unit, Message>(jid, id, creationTimestamp, requestStanza, timeoutDelay) {
+
+	override fun createRequestNotCompletedException(): RequestNotCompletedException =
+		RequestNotCompletedException(this)
+
+	override fun createRequestErrorException(error: ErrorCondition): RequestErrorException =
+		RequestErrorException(this, error)
+
+	override fun callHandlers() {
+		if (isTimeout) errorHandler?.invoke(this, null, ErrorCondition.RemoteServerTimeout)
+		else if (responseStanza != null && responseStanza!!.attributes["type"] == "error") {
+			val condition = findCondition(responseStanza!!)
+			errorHandler?.invoke(this, responseStanza, condition)
+		}
+	}
+}

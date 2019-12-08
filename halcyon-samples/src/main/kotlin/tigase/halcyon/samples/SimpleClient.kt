@@ -77,39 +77,37 @@ fun main(args: Array<String>) {
 		when (line) {
 			"x" -> {
 				val pingModule = halcyon.modules.getModule<PingModule>(PingModule.TYPE)
-				val req = pingModule.ping()
-				val result = req.getResultWait()
+				val req = pingModule.ping().send()
+				val result = req.getResult()
 				println("!+$result")
 			}
 			"z" -> {
 				val pingModule = halcyon.modules.getModule<PingModule>(PingModule.TYPE)
-				val req = pingModule.ping("bmalkow@malkowscy.net".toJID())
-				val result = req.getResultWait()
+				val req = pingModule.ping("bmalkow@malkowscy.net".toJID()).send()
+				val result = req.getResult()
 				println("!+$result")
 			}
 			"y" -> {
 				val pingModule = halcyon.modules.getModule<PingModule>(PingModule.TYPE)
-				val req = pingModule.ping()
+				val req = pingModule.ping().send()
 				val result = req.getResult()
 				println("!+$result")
 			}
 			"y1" -> {
 				val pingModule = halcyon.modules.getModule<PingModule>(PingModule.TYPE)
-				val req = pingModule.ping()
+				val req = pingModule.ping().send()
 				while (!req.isCompleted) print(".")
 				val result = req.getResult()
 				println("!+$result")
 			}
 			"m" -> {
-				val req = halcyon.write(message {
+				val req = halcyon.writeDirectly(message {
 					attribute("to", "bmalkow@malkowscy.net")
 					attribute("type", "chat")
 					"body"{
 						+"Hi!"
 					}
 				})
-				println("1." + req.isCompleted)
-				println("2." + req.getResult())
 			}
 			"quit" -> break@loop
 			"?" -> halcyon.modules.getModule<StreamManagementModule>(StreamManagementModule.TYPE).report()

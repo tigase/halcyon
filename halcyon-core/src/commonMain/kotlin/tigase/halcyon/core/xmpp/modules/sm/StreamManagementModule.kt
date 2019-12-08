@@ -91,11 +91,10 @@ class StreamManagementModule : XmppModule {
 		context.eventBus.register<SentXMLElementEvent>(SentXMLElementEvent.TYPE, handler = { _, event ->
 			processElementSent(event.element, event.request)
 		})
-		context.eventBus.register<ReceivedXMLElementEvent>(
-			ReceivedXMLElementEvent.TYPE,
-			handler = { _, event ->
-				processElementReceived(event.element)
-			})
+		context.eventBus.register<ReceivedXMLElementEvent>(ReceivedXMLElementEvent.TYPE,
+														   handler = { _, event ->
+															   processElementReceived(event.element)
+														   })
 		context.eventBus.register<TickEvent>(TickEvent.TYPE, handler = { _, event -> onTick() })
 	}
 
@@ -112,7 +111,7 @@ class StreamManagementModule : XmppModule {
 		increment(INCOMING_STREAM_H_KEY)
 	}
 
-	private fun processElementSent(element: Element, request: Request<*>?) {
+	private fun processElementSent(element: Element, request: Request<*, *>?) {
 		if (!isAckEnable(context.sessionObject)) return
 		if (element.xmlns == XMLNS) return
 
@@ -170,7 +169,8 @@ class StreamManagementModule : XmppModule {
 			while (queue.size > left) {
 				val x = queue.get(0)
 				queue.remove(x)
-				if (x is Request<*>) {
+				if (x is Request<*, *>) {
+					x.isSent = true
 					x.setData(Delivered, true)
 					log.fine("Marked as 'delivered to server': $x")
 				}
@@ -207,6 +207,11 @@ class StreamManagementModule : XmppModule {
 		if (left > 0) while (queue.size > left) {
 			val x = queue.get(0)
 			queue.remove(x)
+			if (x is Request<*, *>) {
+				x.isSent = true
+				x.setData(Delivered, true)
+				log.fine("Marked as 'delivered to server': $x")
+			}
 		}
 		context.sessionObject.setProperty(OUTGOING_STREAM_H_KEY, h)
 		unacked.addAll(queue)
@@ -214,8 +219,8 @@ class StreamManagementModule : XmppModule {
 
 		unacked.forEach {
 			when (it) {
-				is Request<*> -> context.writer.write(it.requestStanza)
-				is Element -> context.writer.write(it)
+				is Request<*, *> -> context.writer.write(it)
+				is Element -> context.writer.writeDirectly(it)
 			}
 		}
 

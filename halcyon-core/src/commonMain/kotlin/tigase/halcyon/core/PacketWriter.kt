@@ -22,8 +22,14 @@ import tigase.halcyon.core.xml.Element
 
 interface PacketWriter {
 
-	fun write(stanza: Element): Request<*>
+	/**
+	 * Sends Request to server and register it for potential response or error handling.
+	 */
+	fun write(stanza: Request<*, *>)
 
+	/**
+	 * Sends prepared element directly to server, without registering response handlers.
+	 */
 	fun writeDirectly(stanza: Element)
 
 }

@@ -40,7 +40,7 @@ abstract class StanzaNode<STANZA_TYPE>(element: Element) : ElementNode(element) 
 	}
 
 	fun id() {
-		element.attributes["id"] = IdGenerator.nextId()
+		if (!element.attributes.containsKey("id")) element.attributes["id"] = IdGenerator.nextId()
 	}
 
 	var to: JID?

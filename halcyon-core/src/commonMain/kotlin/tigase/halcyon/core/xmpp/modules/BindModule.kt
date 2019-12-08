@@ -21,7 +21,7 @@ import tigase.halcyon.core.Context
 import tigase.halcyon.core.SessionObject
 import tigase.halcyon.core.modules.Criteria
 import tigase.halcyon.core.modules.XmppModule
-import tigase.halcyon.core.requests.Request
+import tigase.halcyon.core.requests.IQReqBuilder
 import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xmpp.ErrorCondition
 import tigase.halcyon.core.xmpp.JID
@@ -45,7 +45,7 @@ class BindModule : XmppModule {
 
 	override fun initialize() {}
 
-	fun bind(resource: String? = null): Request<BindResult> {
+	fun bind(resource: String? = null): IQReqBuilder<BindResult> {
 		val stanza = iq {
 			type = IQType.Set
 			"bind"{
@@ -57,8 +57,7 @@ class BindModule : XmppModule {
 				}
 			}
 		}
-		return context.requestBuilder<BindResult>(stanza)
-			.resultBuilder { element -> createBindResult(element) }.send()
+		return context.request.iq<BindResult>(stanza).resultBuilder { element -> createBindResult(element) }
 	}
 
 	private fun createBindResult(element: Element): BindResult {

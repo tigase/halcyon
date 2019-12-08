@@ -20,35 +20,38 @@ package tigase.halcyon.core.requests
 import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xmpp.ErrorCondition
 
-interface ResponseHandler<T : Any> {
-	fun success(request: Request<T>, response: Element, value: T?)
-	fun error(request: Request<T>, response: Element?, error: ErrorCondition)
+interface IQResponseHandler<T : Any> {
+	fun success(request: IQRequest<T>, response: Element, value: T?)
+	fun error(request: IQRequest<T>, response: Element?, error: ErrorCondition)
 }
 
-typealias ResponseResultHandler<T> = (Request<T>, Element?, Result<T>) -> Unit
+typealias IQResponseResultHandler<T> = (IQRequest<T>, Element?, Result<T>) -> Unit
 
-class HandlerHelper<T : Any> {
+class IQHandlerHelper<T : Any> {
 
-	private var successHandler: ((Request<T>, Element, value: T?) -> Unit)? = null
-	private var errorHandler: ((Request<T>, Element?, ErrorCondition) -> Unit)? = null
+	private var successHandler: ((IQRequest<T>, Element, value: T?) -> Unit)? = null
+	private var errorHandler: ((IQRequest<T>, Element?, ErrorCondition) -> Unit)? = null
 
-	fun success(handler: (Request<T>, Element, result: T?) -> Unit) {
+	fun success(handler: (IQRequest<T>, Element, result: T?) -> Unit) {
 		this.successHandler = handler
 	}
 
-	fun error(handler: (Request<T>, Element?, ErrorCondition) -> Unit) {
+	fun error(handler: (IQRequest<T>, Element?, ErrorCondition) -> Unit) {
 		this.errorHandler = handler
 	}
 
-	internal fun responseHandler(): ResponseHandler<T> = object : ResponseHandler<T> {
-		override fun success(request: Request<T>, response: Element, value: T?) {
+	internal fun responseHandler(): IQResponseHandler<T> = object : IQResponseHandler<T> {
+		override fun success(request: IQRequest<T>, response: Element, value: T?) {
 			successHandler?.invoke(request, response, value)
 		}
 
-		override fun error(request: Request<T>, response: Element?, error: ErrorCondition) {
+		override fun error(request: IQRequest<T>, response: Element?, error: ErrorCondition) {
 			errorHandler?.invoke(request, response, error)
 		}
 
 	}
-
 }
+
+typealias MessageErrorHandler = (MessageRequest, Element?, ErrorCondition) -> Unit
+
+typealias PresenceErrorHandler = (PresenceRequest, Element?, ErrorCondition) -> Unit

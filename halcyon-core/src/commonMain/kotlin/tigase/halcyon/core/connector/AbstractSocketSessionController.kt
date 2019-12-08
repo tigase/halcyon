@@ -55,7 +55,7 @@ open abstract class AbstractSocketSessionController(
 					is Result.Success<BindModule.BindResult> -> processBindSuccess(result.get()!!)
 					else -> processBindError()
 				}
-			}
+			}.send()
 		}
 	}
 

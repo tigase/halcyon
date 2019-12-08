@@ -19,8 +19,7 @@ package tigase.halcyon.core
 
 import tigase.halcyon.core.eventbus.EventBus
 import tigase.halcyon.core.modules.ModulesManager
-import tigase.halcyon.core.requests.RequestBuilder
-import tigase.halcyon.core.xml.Element
+import tigase.halcyon.core.requests.RequestBuilderFactory
 
 interface Context {
 
@@ -32,5 +31,6 @@ interface Context {
 
 	val modules: ModulesManager
 
-	fun <T : Any> requestBuilder(stanza: Element): RequestBuilder<T>
+	val request: RequestBuilderFactory
+
 }

@@ -26,7 +26,7 @@ import tigase.halcyon.core.exceptions.HalcyonException
 import tigase.halcyon.core.logger.Logger
 import tigase.halcyon.core.modules.XmppModule
 import tigase.halcyon.core.requests.Request
-import tigase.halcyon.core.requests.RequestBuilder
+import tigase.halcyon.core.requests.RequestBuilderFactory
 import tigase.halcyon.core.requests.RequestsManager
 import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xml.element
@@ -38,6 +38,7 @@ import tigase.halcyon.core.xmpp.modules.auth.SASLModule
 import tigase.halcyon.core.xmpp.modules.presence.PresenceModule
 import tigase.halcyon.core.xmpp.modules.pubsub.PubSubModule
 import tigase.halcyon.core.xmpp.modules.sm.StreamManagementModule
+import tigase.halcyon.core.xmpp.stanzas.IQ
 
 data class HalcyonStateChangeEvent(val oldState: AbstractHalcyon.State, val newState: AbstractHalcyon.State) :
 	Event(TYPE) {
@@ -74,6 +75,8 @@ abstract class AbstractHalcyon : Context, PacketWriter {
 
 	var autoReconnect: Boolean = true
 
+	override val request = RequestBuilderFactory(this)
+
 	private var tickCounter: Long = 0
 
 	final override val sessionObject: SessionObject = SessionObject()
@@ -97,12 +100,13 @@ abstract class AbstractHalcyon : Context, PacketWriter {
 	init {
 		sessionObject.eventBus = eventBus
 		modules.context = this
-		eventBus.register<tigase.halcyon.core.connector.ReceivedXMLElementEvent>(tigase.halcyon.core.connector.ReceivedXMLElementEvent.TYPE,
-																				 handler = { _, event ->
-																					 processReceivedXmlElement(
-																						 event.element
-																					 )
-																				 })
+		eventBus.register<tigase.halcyon.core.connector.ReceivedXMLElementEvent>(
+			tigase.halcyon.core.connector.ReceivedXMLElementEvent.TYPE,
+			handler = { _, event ->
+				processReceivedXmlElement(
+					event.element
+				)
+			})
 
 		eventBus.register<SessionController.SessionControllerEvents>(
 			SessionController.SessionControllerEvents.TYPE
@@ -147,7 +151,7 @@ abstract class AbstractHalcyon : Context, PacketWriter {
 
 	protected fun processReceivedXmlElement(element: Element) {
 		val handled = requestsManager.findAndExecute(element)
-		if (handled) return
+		if (handled && element.name == IQ.NAME) return
 
 		val modules = modules.getModulesFor(element)
 		if (modules.isEmpty()) {
@@ -258,17 +262,14 @@ abstract class AbstractHalcyon : Context, PacketWriter {
 		eventBus.fire(SentXMLElementEvent(stanza, null))
 	}
 
-	override fun write(stanza: Element): Request<*> {
+	override fun write(request: Request<*, *>) {
 		val c = this.connector ?: throw HalcyonException("Connector is not initialized")
 		if (c.state != tigase.halcyon.core.connector.State.Connected) throw HalcyonException("Connector is not connected")
-		val builder = requestBuilder<Any>(stanza)
-		return builder.send()
-	}
-
-	internal fun write(request: Request<*>) {
-		val c = this.connector ?: throw HalcyonException("Connector is not initialized")
-		if (c.state != tigase.halcyon.core.connector.State.Connected) throw HalcyonException("Connector is not connected")
+		requestsManager.register(request)
 		c.send(request.requestStanza.getAsString())
+		if (!StreamManagementModule.isAckEnable(sessionObject)) {
+			request.isSent = true
+		}
 		eventBus.fire(SentXMLElementEvent(request.requestStanza, request))
 	}
 
@@ -368,8 +369,4 @@ abstract class AbstractHalcyon : Context, PacketWriter {
 			state = State.Stopped
 		}
 	}
-
-	override fun <T : Any> requestBuilder(stanza: Element): RequestBuilder<T> =
-		RequestBuilder<T>(this, stanza)
-
 }

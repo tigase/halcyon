@@ -20,7 +20,7 @@ package tigase.halcyon.core.xmpp.modules
 import tigase.halcyon.core.currentTimestamp
 import tigase.halcyon.core.modules.AbstractXmppIQModule
 import tigase.halcyon.core.modules.Criterion
-import tigase.halcyon.core.requests.Request
+import tigase.halcyon.core.requests.IQReqBuilder
 import tigase.halcyon.core.xml.response
 import tigase.halcyon.core.xmpp.ErrorCondition
 import tigase.halcyon.core.xmpp.JID
@@ -38,7 +38,7 @@ class PingModule : AbstractXmppIQModule(
 		const val TYPE = XMLNS
 	}
 
-	fun ping(jid: JID? = null): Request<Pong> {
+	fun ping(jid: JID? = null): IQReqBuilder<Pong> {
 		val stanza = iq {
 			type = IQType.Get
 			if (jid != null) to = jid
@@ -47,12 +47,11 @@ class PingModule : AbstractXmppIQModule(
 			}
 		}
 		val time0 = currentTimestamp()
-		return context.requestBuilder<Pong>(stanza)
-			.resultBuilder { element -> Pong(currentTimestamp() - time0) }.send()
+		return context.request.iq<Pong>(stanza).resultBuilder { _ -> Pong(currentTimestamp() - time0) }
 	}
 
 	override fun processGet(element: IQ) {
-		context.writer.write(response(element) { })
+		context.writer.writeDirectly(response(element) { })
 	}
 
 	override fun processSet(element: IQ) {

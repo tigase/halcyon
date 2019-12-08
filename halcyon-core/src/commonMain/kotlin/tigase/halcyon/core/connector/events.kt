@@ -56,7 +56,7 @@ data class ParseErrorEvent(val errorMessage: String) : Event(TYPE) {
 	}
 }
 
-data class SentXMLElementEvent(val element: Element, val request: Request<*>?) : Event(TYPE) {
+data class SentXMLElementEvent(val element: Element, val request: Request<*, *>?) : Event(TYPE) {
 
 	companion object {
 		const val TYPE = "tigase.halcyon.core.connector.SentXMLElementEvent"

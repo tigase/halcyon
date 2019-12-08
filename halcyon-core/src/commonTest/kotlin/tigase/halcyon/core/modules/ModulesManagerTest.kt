@@ -17,7 +17,7 @@
  */
 package tigase.halcyon.core.modules
 
-import tigase.halcyon.core.requests.RequestBuilder
+import tigase.halcyon.core.requests.RequestBuilderFactory
 import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xml.element
 import kotlin.test.Test
@@ -29,7 +29,8 @@ class ModulesManagerTest {
 	class Module01 : tigase.halcyon.core.modules.XmppModule {
 		override val type = "Module01"
 		override lateinit var context: tigase.halcyon.core.Context
-		override val criteria: tigase.halcyon.core.modules.Criteria = tigase.halcyon.core.modules.Criterion.name("iq")
+		override val criteria: tigase.halcyon.core.modules.Criteria =
+			tigase.halcyon.core.modules.Criterion.name("iq")
 		override val features: Array<String> = arrayOf("1", "2")
 
 		override fun initialize() {
@@ -56,9 +57,6 @@ class ModulesManagerTest {
 	fun test01() {
 		val mm = tigase.halcyon.core.modules.ModulesManager()
 		mm.context = object : tigase.halcyon.core.Context {
-			override fun <T : Any> requestBuilder(stanza: Element): RequestBuilder<T> {
-				TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-			}
 
 			override val eventBus: tigase.halcyon.core.eventbus.EventBus
 				get() = TODO("not implemented")
@@ -68,11 +66,20 @@ class ModulesManagerTest {
 				get() = TODO("not implemented")
 			override val modules: tigase.halcyon.core.modules.ModulesManager
 				get() = TODO("not implemented")
+			override val request: RequestBuilderFactory
+				get() = TODO("not implemented") //To change initializer of created properties use File | Settings | File Templates.
 		}
 		mm.register(Module01())
 		mm.register(Module02())
 
-		assertTrue(arrayOf("1", "2", "a", "b").sortedArray() contentDeepEquals mm.getAvailableFeatures().sortedArray())
+		assertTrue(
+			arrayOf(
+				"1",
+				"2",
+				"a",
+				"b"
+			).sortedArray() contentDeepEquals mm.getAvailableFeatures().sortedArray()
+		)
 
 		assertEquals(0, mm.getModulesFor(element("presence") {}).size)
 		assertEquals(1, mm.getModulesFor(element("iq") {}).size)

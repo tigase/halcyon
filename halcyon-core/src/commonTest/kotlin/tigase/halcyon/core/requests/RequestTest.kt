@@ -17,51 +17,41 @@
  */
 package tigase.halcyon.core.requests
 
+import tigase.halcyon.core.AbstractHalcyon
+import tigase.halcyon.core.connector.AbstractConnector
 import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xml.element
 import tigase.halcyon.core.xmpp.JID
+import tigase.halcyon.core.xmpp.stanzas.IQType
+import tigase.halcyon.core.xmpp.stanzas.iq
+import tigase.halcyon.core.xmpp.toJID
 import kotlin.test.*
 
 class RequestTest {
-
-	@Test
-	fun testLateCallbackInit() {
-		val req = Request<Any>(JID.parse("a@b.c"), "1", 1, element("iq") {
-			attribute("id", "123")
-			attribute("to", "a@b.c")
-			attribute("type", "set")
-		})
-
-		val response = element("iq") {
-			attribute("id", "123")
-			attribute("from", "a@b.c")
-			attribute("type", "result")
+	val halcyon = object : AbstractHalcyon() {
+		override fun reconnect(immediately: Boolean) {
+			TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
 		}
 
-		req.setResponseStanza(response)
-
-		var rr: Result<Any>? = null
-		req.response { request, element, result -> rr = result }
-
-		assertTrue(rr is Result.Success)
+		override fun createConnector(): AbstractConnector {
+			TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+		}
 	}
 
 	@Test
 	fun testEarlyCallbackInit() {
-		val req = Request<Any>(JID.parse("a@b.c"), "1", 1, element("iq") {
-			attribute("id", "123")
-			attribute("to", "a@b.c")
-			attribute("type", "set")
-		})
+		var rr: Result<Any>? = null
+
+		var req = halcyon.request.iq<Any>(iq {
+			type = IQType.Set
+			to = JID.parse("a@b.c")
+		}).response { request, element, result -> rr = result }.build()
 
 		val response = element("iq") {
-			attribute("id", "123")
+			attribute("id", req.id)
 			attribute("from", "a@b.c")
 			attribute("type", "result")
 		}
-		var rr: Result<Any>? = null
-		req.response { request, element, result -> rr = result }
-
 		req.setResponseStanza(response)
 
 		assertNotNull(rr, "Result cannot be null here!")
@@ -70,23 +60,21 @@ class RequestTest {
 
 	@Test
 	fun testResponseSuccess() {
-		val req = Request<Any>(JID.parse("a@b.c"), "1", 1, element("iq") {
-			attribute("id", "123")
-			attribute("to", "a@b.c")
-			attribute("type", "set")
-		})
-
-		val response = element("iq") {
-			attribute("id", "123")
-			attribute("from", "a@b.c")
-			attribute("type", "result")
-		}
-
 		var rr: Element? = null
-		req.handle {
+
+		var req = halcyon.request.iq<Any>(iq {
+			type = IQType.Set
+			to = "a@b.c".toJID()
+		}).handle {
 			success { request, element, _ ->
 				rr = element
 			}
+		}.build()
+
+		val response = element("iq") {
+			attribute("id", req.id)
+			attribute("from", "a@b.c")
+			attribute("type", "result")
 		}
 
 		req.setResponseStanza(response)
@@ -96,20 +84,17 @@ class RequestTest {
 
 	@Test
 	fun testResponseError() {
-		val req = Request<Any>(JID.parse("a@b.c"), "1", 1, element("iq") {
-			attribute("id", "123")
-			attribute("to", "a@b.c")
-			attribute("type", "set")
-		})
+		var rr: Result<Any>? = null
+		var req = halcyon.request.iq<Any>(iq {
+			type = IQType.Set
+			to = "a@b.c".toJID()
+		}).response { request, element, result -> rr = result }.build()
 
 		val response = element("iq") {
-			attribute("id", "123")
+			attribute("id", req.id)
 			attribute("from", "a@b.c")
 			attribute("type", "error")
 		}
-
-		var rr: Result<Any>? = null
-		req.response { request, element, result -> rr = result }
 
 		req.setResponseStanza(response)
 

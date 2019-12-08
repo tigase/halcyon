@@ -27,26 +27,32 @@ class RequestsManager {
 
 	private val executor = tigase.halcyon.core.excutor.Executor()
 
-	private val requests = HashMap<String, Request<*>>()
+	private val requests = HashMap<String, Request<*, *>>()
 
-	internal fun <T : Any> register(request: Request<T>): Request<T> {
-		requests[request.id] = request
-		return request
+	internal fun register(request: Request<*, *>) {
+		requests[key(request.requestStanza)] = request
 	}
 
-	fun getRequest(response: Element): Request<*>? {
-		val id = response.attributes["id"] ?: return null
-		val from = response.attributes["from"]
+	private inline fun key(element: Element): String {
+		return "${element.name}:${element.attributes["id"]}"
+	}
+
+	@Suppress("UNCHECKED_CAST")
+	fun getRequest(response: Element): Request<*, *>? {
+		val id = key(response)
+//		val from = response.attributes["from"]
 
 		val request = requests[id] ?: return null
 
-		if (!verify(request, response)) return null
-
-		requests.remove(id)
-		return request
+		if (verify(request, response)) {
+			requests.remove(id)
+			return request
+		} else {
+			return null
+		}
 	}
 
-	private fun verify(entry: Request<*>, response: Element): Boolean {
+	private fun verify(entry: Request<*, *>, response: Element): Boolean {
 		val jid = response.getFromAttr()
 
 		if (jid != null && entry.jid != null && jid.bareJID == entry.jid.bareJID) {
@@ -65,7 +71,7 @@ class RequestsManager {
 	}
 
 	fun findAndExecute(response: Element): Boolean {
-		var r = getRequest(response) ?: return false
+		val r: Request<*, *> = getRequest(response) ?: return false
 		executor.execute {
 			try {
 				r.setResponseStanza(response)
@@ -81,7 +87,9 @@ class RequestsManager {
 		val iterator = requests.entries.iterator()
 		while (iterator.hasNext()) {
 			val request = iterator.next().value
-			if (request.creationTimestamp + request.timeoutDelay <= now) {
+			if (request.isCompleted) {
+				iterator.remove()
+			} else if (request.creationTimestamp + request.timeoutDelay <= now) {
 				iterator.remove()
 				try {
 					request.setTimeout()
