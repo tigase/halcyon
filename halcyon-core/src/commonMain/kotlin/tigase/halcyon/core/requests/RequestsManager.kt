@@ -30,7 +30,7 @@ class RequestsManager {
 	private val requests = HashMap<String, Request<*, *>>()
 
 	internal fun register(request: Request<*, *>) {
-		requests[key(request.requestStanza)] = request
+		requests[key(request.stanza)] = request
 	}
 
 	private inline fun key(element: Element): String {
@@ -92,7 +92,7 @@ class RequestsManager {
 			} else if (request.creationTimestamp + request.timeoutDelay <= now) {
 				iterator.remove()
 				try {
-					request.setTimeout()
+					request.markTimeout()
 				} catch (e: Exception) {
 					log.log(
 						tigase.halcyon.core.logger.Level.WARNING,

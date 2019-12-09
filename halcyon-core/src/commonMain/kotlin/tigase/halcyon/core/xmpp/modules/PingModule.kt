@@ -47,7 +47,7 @@ class PingModule : AbstractXmppIQModule(
 			}
 		}
 		val time0 = currentTimestamp()
-		return context.request.iq<Pong>(stanza).resultBuilder { _ -> Pong(currentTimestamp() - time0) }
+		return context.request.iq<Pong>(stanza).resultBuilder { Pong(currentTimestamp() - time0) }
 	}
 
 	override fun processGet(element: IQ) {

@@ -17,6 +17,7 @@
  */
 package tigase.halcyon.core.requests
 
+import tigase.halcyon.core.xmpp.ErrorCondition
 import tigase.halcyon.core.xmpp.JID
 import tigase.halcyon.core.xmpp.stanzas.IQ
 
@@ -25,7 +26,7 @@ actual class IQRequest<V : Any> actual constructor(
 	id: String,
 	creationTimestamp: Long,
 	requestStanza: IQ,
-	handler: IQResponseHandler<V>?,
+	handler: IQResponseResultHandler<V>?,
 	resultConverter: ResultConverter<V>?,
 	timeoutDelay: Long
 ) : AbstractIQRequest<V>(jid, id, creationTimestamp, requestStanza, handler, resultConverter, timeoutDelay) {

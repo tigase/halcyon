@@ -26,7 +26,7 @@ import tigase.halcyon.core.xmpp.stanzas.*
 typealias ResultConverter<T> = (Element) -> T
 
 abstract class Request<V : Any, STT : Stanza<*>>(
-	val jid: JID?, val id: String, val creationTimestamp: Long, val requestStanza: STT, var timeoutDelay: Long
+	val jid: JID?, val id: String, val creationTimestamp: Long, val stanza: STT, var timeoutDelay: Long
 ) {
 
 	protected val data = HashMap<String, Any>()
@@ -40,18 +40,17 @@ abstract class Request<V : Any, STT : Stanza<*>>(
 		internal set
 
 	var isSent: Boolean = false
-		internal set(value) {
-			field = value
-			if (value && requestStanza.name != IQ.NAME) {
-				isCompleted = true
-			}
-		}
-
-	var responseStanza: STT? = null
 		private set
 
+	var response: STT? = null
+		private set
+
+	protected open fun markAsSent() {
+		this.isSent = true
+	}
+
 	internal fun setResponseStanza(response: Element) {
-		responseStanza = wrap(response)
+		this.response = wrap(response)
 		isCompleted = true
 		callHandlers()
 	}
@@ -62,13 +61,9 @@ abstract class Request<V : Any, STT : Stanza<*>>(
 		error: ErrorCondition, text: String? = null
 	): RequestErrorException
 
-	internal fun setTimeout() {
+	internal fun markTimeout() {
 		isCompleted = true
-
-		val stanzaType = requestStanza.attributes["type"]
-		if (stanzaType == "get" || stanzaType == "set") {
-			isTimeout = true
-		}
+		isTimeout = true
 		callHandlers()
 	}
 
@@ -105,7 +100,7 @@ abstract class Request<V : Any, STT : Stanza<*>>(
 	}
 
 	override fun toString(): String {
-		return "Request[to=$jid, id=$id: ${requestStanza.getAsString()}]"
+		return "Request[to=$jid, id=$id: ${stanza.getAsString()}]"
 	}
 
 }
@@ -115,18 +110,18 @@ abstract class AbstractIQRequest<V : Any>(
 	id: String,
 	creationTimestamp: Long,
 	requestStanza: IQ,
-	private val handler: IQResponseHandler<V>?,
-	private var resultConverter: ResultConverter<V>?,
+	protected val handler: IQResponseResultHandler<V>?,
+	protected var resultConverter: ResultConverter<V>?,
 	timeoutDelay: Long
 ) : Request<V, IQ>(jid, id, creationTimestamp, requestStanza, timeoutDelay) {
 
-	private var value: V? = null
+	protected var value: V? = null
 
 	fun getResult(): V? {
 		if (isTimeout) throw createRequestErrorException(ErrorCondition.RemoteServerTimeout, null)
 		if (!isCompleted) throw createRequestNotCompletedException()
-		if (responseStanza == null) return null
-		responseStanza?.let {
+		if (response == null) return null
+		response?.let {
 			if (it.attributes["type"] == "error") {
 				val e = findCondition(it)
 				throw createRequestErrorException(e.condition, e.message)
@@ -137,22 +132,26 @@ abstract class AbstractIQRequest<V : Any>(
 
 	override fun callHandlers() {
 		if (isTimeout) {
-			handler?.error(
-				this as IQRequest<V>, null, ErrorCondition.RemoteServerTimeout, null
+			handler?.invoke(
+				IQResult.Error(
+					this as IQRequest<V>, null, ErrorCondition.RemoteServerTimeout, null
+				)
 			)
-		} else responseStanza?.let { received ->
+		} else response?.let { received ->
+			value = resultConverter?.invoke(received)
 			handler?.let {
 				val type = received.attributes["type"]
 				if (type == "result") {
-					value = resultConverter?.invoke(received)
-					it.success(this as IQRequest<V>, received, getResult())
+					it.invoke(IQResult.Success(this as IQRequest<V>, received, value))
 				} else if (type == "error") {
 					val e = findCondition(received)
-					it.error(this as IQRequest<V>, received, e.condition, e.message)
+					it.invoke(IQResult.Error(this as IQRequest<V>, received, e.condition, e.message))
 				}
 			}
 		}
 	}
+
+	override fun markAsSent() {}
 
 	override fun createRequestNotCompletedException(): RequestNotCompletedException =
 		RequestNotCompletedException(this)
@@ -167,7 +166,7 @@ expect class IQRequest<V : Any>(
 	id: String,
 	creationTimestamp: Long,
 	requestStanza: IQ,
-	handler: IQResponseHandler<V>?,
+	handler: IQResponseResultHandler<V>?,
 	resultConverter: ResultConverter<V>?,
 	timeoutDelay: Long
 ) : AbstractIQRequest<V>
@@ -177,7 +176,7 @@ class PresenceRequest(
 	id: String,
 	creationTimestamp: Long,
 	requestStanza: Presence,
-	private val errorHandler: PresenceErrorHandler?,
+	private val stanzaHandler: StanzaStatusHandler<PresenceRequest>?,
 	timeoutDelay: Long
 ) : Request<Unit, Presence>(jid, id, creationTimestamp, requestStanza, timeoutDelay) {
 
@@ -188,12 +187,13 @@ class PresenceRequest(
 		error: ErrorCondition, text: String?
 	): RequestErrorException = RequestErrorException(this, error, text)
 
+	override fun markAsSent() {
+		super.markAsSent()
+		stanzaHandler?.invoke(StanzaResult.Sent(this))
+	}
+
 	override fun callHandlers() {
-		if (isTimeout) errorHandler?.invoke(this, null, ErrorCondition.RemoteServerTimeout, null)
-		else if (responseStanza != null && responseStanza!!.attributes["type"] == "error") {
-			val e = findCondition(responseStanza!!)
-			errorHandler?.invoke(this, responseStanza, e.condition, e.message)
-		}
+		if (isTimeout) stanzaHandler?.invoke(StanzaResult.NotSent(this))
 	}
 }
 
@@ -202,7 +202,7 @@ class MessageRequest(
 	id: String,
 	creationTimestamp: Long,
 	requestStanza: Message,
-	private val errorHandler: MessageErrorHandler?,
+	private val stanzaHandler: StanzaStatusHandler<MessageRequest>?,
 	timeoutDelay: Long
 ) : Request<Unit, Message>(jid, id, creationTimestamp, requestStanza, timeoutDelay) {
 
@@ -212,11 +212,12 @@ class MessageRequest(
 	override fun createRequestErrorException(error: ErrorCondition, text: String?): RequestErrorException =
 		RequestErrorException(this, error, text)
 
+	override fun markAsSent() {
+		super.markAsSent()
+		stanzaHandler?.invoke(StanzaResult.Sent(this))
+	}
+
 	override fun callHandlers() {
-		if (isTimeout) errorHandler?.invoke(this, null, ErrorCondition.RemoteServerTimeout, null)
-		else if (responseStanza != null && responseStanza!!.attributes["type"] == "error") {
-			val e = findCondition(responseStanza!!)
-			errorHandler?.invoke(this, responseStanza, e.condition, e.message)
-		}
+		if (isTimeout) stanzaHandler?.invoke(StanzaResult.NotSent(this))
 	}
 }

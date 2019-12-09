@@ -43,7 +43,7 @@ class RequestTest {
 
 	@Test
 	fun testEarlyCallbackInit() {
-		var rr: Result<Any>? = null
+		var rr: IQResult<Any>? = null
 
 		var req = halcyon.request.iq<Any>(iq {
 			type = IQType.Set
@@ -58,7 +58,7 @@ class RequestTest {
 		req.setResponseStanza(response)
 
 		assertNotNull(rr, "Result cannot be null here!")
-		assertTrue(rr is Result.Success, "Result isn't Success")
+		assertTrue(rr is IQResult.Success, "Result isn't Success")
 	}
 
 	@Test
@@ -87,7 +87,7 @@ class RequestTest {
 
 	@Test
 	fun testResponseError() {
-		var rr: Result<Any>? = null
+		var rr: IQResult<Any>? = null
 		var req = halcyon.request.iq<Any>(iq {
 			type = IQType.Set
 			to = "a@b.c".toJID()
@@ -102,7 +102,7 @@ class RequestTest {
 		req.setResponseStanza(response)
 
 		assertNotNull(rr, "Result cannot be null here!")
-		assertTrue(rr is Result.Error, "Result isn't Error")
+		assertTrue(rr is IQResult.Error, "Result isn't Error")
 	}
 
 }

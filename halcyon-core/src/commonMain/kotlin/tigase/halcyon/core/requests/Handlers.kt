@@ -17,11 +17,10 @@
  */
 package tigase.halcyon.core.requests
 
-import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xmpp.ErrorCondition
 import tigase.halcyon.core.xmpp.stanzas.IQ
 
-typealias IQResponseResultHandler<T> = (Result<T>) -> Unit
+typealias IQResponseResultHandler<T> = (IQResult<T>) -> Unit
 
 interface IQResponseHandler<T : Any> {
 	fun success(request: IQRequest<T>, response: IQ, value: T?)
@@ -55,6 +54,4 @@ class IQHandlerHelper<T : Any> {
 	}
 }
 
-typealias MessageErrorHandler = (MessageRequest, Element?, ErrorCondition, String?) -> Unit
-
-typealias PresenceErrorHandler = (PresenceRequest, Element?, ErrorCondition, String?) -> Unit
+typealias StanzaStatusHandler<T> = (StanzaResult<T>) -> Unit

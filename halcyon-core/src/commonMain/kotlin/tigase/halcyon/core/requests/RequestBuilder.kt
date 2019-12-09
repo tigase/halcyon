@@ -5,7 +5,6 @@ import tigase.halcyon.core.currentTimestamp
 import tigase.halcyon.core.exceptions.HalcyonException
 import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xml.ElementImpl
-import tigase.halcyon.core.xmpp.ErrorCondition
 import tigase.halcyon.core.xmpp.stanzas.*
 
 class RequestBuilderFactory(private val halcyon: AbstractHalcyon) {
@@ -52,36 +51,35 @@ class IQReqBuilder<V : Any>(private val halcyon: AbstractHalcyon, private val el
 		}
 	}
 
-	inner class ResponseResponseResult(private val handler: IQResponseResultHandler<V>) :
-		IQResponseHandler<V> {
-
-		override fun success(request: IQRequest<V>, response: IQ, value: V?) {
-			handler.invoke(Result.Success(request, response, value))
-		}
-
-		override fun error(
-			request: IQRequest<V>, response: IQ?, error: ErrorCondition, errorMessage: String?
-		) {
-			handler.invoke(Result.Error(request, response, error, errorMessage))
-		}
-	}
-
-	private var handler: IQResponseHandler<V>? = null
+	private var handler: IQResponseResultHandler<V>? = null
 
 	fun handle(init: IQHandlerHelper<V>.() -> Unit): IQReqBuilder<V> {
 		val callback = IQHandlerHelper<V>()
 		callback.init()
-		this.handler = callback.responseHandler()
+		this.handler = { result ->
+			val rh = callback.responseHandler();
+			when (result) {
+				is IQResult.Success<V> -> rh.success(result.request, result.response, result.value)
+				is IQResult.Error<V> -> rh.error(result.request, result.response, result.error, result.text)
+			}
+		}
 		return this
 	}
 
 	fun response(handler: IQResponseHandler<V>): IQReqBuilder<V> {
-		this.handler = handler
+		this.handler = { result ->
+			when (result) {
+				is IQResult.Success<V> -> handler.success(result.request, result.response, result.value)
+				is IQResult.Error<V> -> handler.error(
+					result.request, result.response, result.error, result.text
+				)
+			}
+		}
 		return this
 	}
 
 	fun response(handler: IQResponseResultHandler<V>): IQReqBuilder<V> {
-		this.handler = ResponseResponseResult(handler)
+		this.handler = handler
 		return this
 	}
 
@@ -120,7 +118,7 @@ class PresenceReqBuilder(private val halcyon: AbstractHalcyon, private val eleme
 
 	private var timeoutDelay: Long = 30000
 
-	private var errorHandler: PresenceErrorHandler? = null
+	private var stanzaHandler: StanzaStatusHandler<PresenceRequest>? = null
 
 	init {
 		if (element.name != Presence.NAME) {
@@ -133,15 +131,15 @@ class PresenceReqBuilder(private val halcyon: AbstractHalcyon, private val eleme
 		return this
 	}
 
-	fun error(handler: PresenceErrorHandler): PresenceReqBuilder {
-		this.errorHandler = handler
+	fun result(handler: StanzaStatusHandler<PresenceRequest>): PresenceReqBuilder {
+		this.stanzaHandler = handler
 		return this
 	}
 
 	fun build(): PresenceRequest {
 		val stanza = wrap<Presence>(element)
 		return PresenceRequest(
-			stanza.to, stanza.attributes["id"]!!, currentTimestamp(), stanza, errorHandler, timeoutDelay
+			stanza.to, stanza.attributes["id"]!!, currentTimestamp(), stanza, stanzaHandler, timeoutDelay
 		)
 	}
 
@@ -157,7 +155,7 @@ class MessageReqBuilder(private val halcyon: AbstractHalcyon, private val elemen
 
 	private var timeoutDelay: Long = 30000
 
-	private var errorHandler: MessageErrorHandler? = null
+	private var stanzaHandler: StanzaStatusHandler<MessageRequest>? = null
 
 	init {
 		if (element.name != Message.NAME) {
@@ -170,15 +168,15 @@ class MessageReqBuilder(private val halcyon: AbstractHalcyon, private val elemen
 		return this
 	}
 
-	fun error(handler: MessageErrorHandler): MessageReqBuilder {
-		this.errorHandler = handler
+	fun result(handler: StanzaStatusHandler<MessageRequest>): MessageReqBuilder {
+		this.stanzaHandler = handler
 		return this
 	}
 
 	fun build(): MessageRequest {
 		val stanza = wrap<Message>(element)
 		return MessageRequest(
-			stanza.to, stanza.attributes["id"]!!, currentTimestamp(), stanza, errorHandler, timeoutDelay
+			stanza.to, stanza.attributes["id"]!!, currentTimestamp(), stanza, stanzaHandler, timeoutDelay
 		)
 	}
 

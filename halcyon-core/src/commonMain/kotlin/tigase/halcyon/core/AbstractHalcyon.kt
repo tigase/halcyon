@@ -266,11 +266,11 @@ abstract class AbstractHalcyon : Context, PacketWriter {
 		val c = this.connector ?: throw HalcyonException("Connector is not initialized")
 		if (c.state != tigase.halcyon.core.connector.State.Connected) throw HalcyonException("Connector is not connected")
 		requestsManager.register(request)
-		c.send(request.requestStanza.getAsString())
+		c.send(request.stanza.getAsString())
 		if (!StreamManagementModule.isAckEnable(sessionObject)) {
 			request.isSent = true
 		}
-		eventBus.fire(SentXMLElementEvent(request.requestStanza, request))
+		eventBus.fire(SentXMLElementEvent(request.stanza, request))
 	}
 
 	protected open fun onConnecting() {}

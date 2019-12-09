@@ -22,7 +22,7 @@ import tigase.halcyon.core.connector.AbstractConnector
 import tigase.halcyon.core.requests.IQRequest
 import tigase.halcyon.core.requests.IQResponseHandler
 import tigase.halcyon.core.requests.RequestsManager
-import tigase.halcyon.core.requests.Result
+import tigase.halcyon.core.requests.IQResult
 import tigase.halcyon.core.xml.element
 import tigase.halcyon.core.xmpp.stanzas.IQ
 import tigase.halcyon.core.xmpp.stanzas.MessageType
@@ -124,7 +124,7 @@ class RequestManagerTest {
 
 		val req = halcyon.request.iq<Any>(e).response { result ->
 			when (result) {
-				is Result.Success ->{ ++successCounter}
+				is IQResult.Success ->{ ++successCounter}
 				else -> fail()
 			}
 		}.build()

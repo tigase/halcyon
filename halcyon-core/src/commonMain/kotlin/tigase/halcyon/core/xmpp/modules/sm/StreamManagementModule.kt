@@ -43,7 +43,6 @@ class StreamManagementModule : XmppModule {
 		/**
 		 * Delivered to server.
 		 */
-		const val Delivered = "$XMLNS#DeliveredToServer"
 		const val ACK_ENABLED_KEY = "$XMLNS#ACK_ENABLED"
 		const val OUTGOING_STREAM_H_KEY = "$XMLNS#OUTGOING_STREAM_H"
 		const val INCOMING_STREAM_H_KEY = "$XMLNS#INCOMING_STREAM_H"
@@ -171,7 +170,6 @@ class StreamManagementModule : XmppModule {
 				queue.remove(x)
 				if (x is Request<*, *>) {
 					x.isSent = true
-					x.setData(Delivered, true)
 					log.fine("Marked as 'delivered to server': $x")
 				}
 			}
@@ -209,7 +207,6 @@ class StreamManagementModule : XmppModule {
 			queue.remove(x)
 			if (x is Request<*, *>) {
 				x.isSent = true
-				x.setData(Delivered, true)
 				log.fine("Marked as 'delivered to server': $x")
 			}
 		}
@@ -223,7 +220,6 @@ class StreamManagementModule : XmppModule {
 				is Element -> context.writer.writeDirectly(it)
 			}
 		}
-
 	}
 
 	private fun increment(key: String): Long {
