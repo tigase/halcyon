@@ -19,34 +19,35 @@ package tigase.halcyon.core.requests
 
 import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xmpp.ErrorCondition
+import tigase.halcyon.core.xmpp.stanzas.IQ
+
+typealias IQResponseResultHandler<T> = (Result<T>) -> Unit
 
 interface IQResponseHandler<T : Any> {
-	fun success(request: IQRequest<T>, response: Element, value: T?)
-	fun error(request: IQRequest<T>, response: Element?, error: ErrorCondition, errorMessage: String?)
+	fun success(request: IQRequest<T>, response: IQ, value: T?)
+	fun error(request: IQRequest<T>, response: IQ?, error: ErrorCondition, errorMessage: String?)
 }
-
-typealias IQResponseResultHandler<T> = (IQRequest<T>, Element?, Result<T>) -> Unit
 
 class IQHandlerHelper<T : Any> {
 
-	private var successHandler: ((IQRequest<T>, Element, value: T?) -> Unit)? = null
-	private var errorHandler: ((IQRequest<T>, Element?, ErrorCondition, String?) -> Unit)? = null
+	private var successHandler: ((IQRequest<T>, IQ, value: T?) -> Unit)? = null
+	private var errorHandler: ((IQRequest<T>, IQ?, ErrorCondition, String?) -> Unit)? = null
 
-	fun success(handler: (IQRequest<T>, Element, result: T?) -> Unit) {
+	fun success(handler: (IQRequest<T>, IQ, result: T?) -> Unit) {
 		this.successHandler = handler
 	}
 
-	fun error(handler: (IQRequest<T>, Element?, ErrorCondition, String?) -> Unit) {
+	fun error(handler: (IQRequest<T>, IQ?, ErrorCondition, String?) -> Unit) {
 		this.errorHandler = handler
 	}
 
 	internal fun responseHandler(): IQResponseHandler<T> = object : IQResponseHandler<T> {
-		override fun success(request: IQRequest<T>, response: Element, value: T?) {
+		override fun success(request: IQRequest<T>, response: IQ, value: T?) {
 			successHandler?.invoke(request, response, value)
 		}
 
 		override fun error(
-			request: IQRequest<T>, response: Element?, error: ErrorCondition, errorMessage: String?
+			request: IQRequest<T>, response: IQ?, error: ErrorCondition, errorMessage: String?
 		) {
 			errorHandler?.invoke(request, response, error, errorMessage)
 		}

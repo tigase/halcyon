@@ -17,20 +17,22 @@
  */
 package tigase.halcyon.core.requests
 
-import tigase.halcyon.core.exceptions.HalcyonException
 import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xmpp.ErrorCondition
 import tigase.halcyon.core.xmpp.XMPPException
+import tigase.halcyon.core.xmpp.stanzas.IQ
 
 sealed class Result<out V : Any> {
 
 	abstract fun get(): V?
 
-	class Success<out V : Any>(val responseStanza: Element, val value: V?) : Result<V>() {
+	class Success< V : Any>(val request: IQRequest<V>, val response: IQ, val value: V?) : Result<V>() {
 		override fun get(): V? = value
 	}
 
-	class Error<out V : Any>(val responseStanza: Element?, val error: ErrorCondition) : Result<V>() {
+	class Error< V : Any>(val request: IQRequest<V>, val response: IQ?, val error: ErrorCondition, val text: String?) :
+		Result<V>() {
+
 		override fun get(): V = throw XMPPException(error)
 	}
 

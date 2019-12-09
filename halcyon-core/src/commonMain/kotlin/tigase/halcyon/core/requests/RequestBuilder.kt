@@ -55,12 +55,14 @@ class IQReqBuilder<V : Any>(private val halcyon: AbstractHalcyon, private val el
 	inner class ResponseResponseResult(private val handler: IQResponseResultHandler<V>) :
 		IQResponseHandler<V> {
 
-		override fun success(request: IQRequest<V>, response: Element, value: V?) {
-			handler.invoke(request, response, Result.Success(response, value))
+		override fun success(request: IQRequest<V>, response: IQ, value: V?) {
+			handler.invoke(Result.Success(request, response, value))
 		}
 
-		override fun error(request: IQRequest<V>, response: Element?, error: ErrorCondition, errorMessage: String?) {
-			handler.invoke(request, response, Result.Error(response, error))
+		override fun error(
+			request: IQRequest<V>, response: IQ?, error: ErrorCondition, errorMessage: String?
+		) {
+			handler.invoke(Result.Error(request, response, error, errorMessage))
 		}
 	}
 
@@ -139,12 +141,7 @@ class PresenceReqBuilder(private val halcyon: AbstractHalcyon, private val eleme
 	fun build(): PresenceRequest {
 		val stanza = wrap<Presence>(element)
 		return PresenceRequest(
-			stanza.to,
-			stanza.attributes["id"]!!,
-			currentTimestamp(),
-			stanza,
-			errorHandler,
-			timeoutDelay
+			stanza.to, stanza.attributes["id"]!!, currentTimestamp(), stanza, errorHandler, timeoutDelay
 		)
 	}
 
@@ -181,12 +178,7 @@ class MessageReqBuilder(private val halcyon: AbstractHalcyon, private val elemen
 	fun build(): MessageRequest {
 		val stanza = wrap<Message>(element)
 		return MessageRequest(
-			stanza.to,
-			stanza.attributes["id"]!!,
-			currentTimestamp(),
-			stanza,
-			errorHandler,
-			timeoutDelay
+			stanza.to, stanza.attributes["id"]!!, currentTimestamp(), stanza, errorHandler, timeoutDelay
 		)
 	}
 

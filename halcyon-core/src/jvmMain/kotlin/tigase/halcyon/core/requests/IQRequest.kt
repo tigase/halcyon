@@ -28,4 +28,23 @@ actual class IQRequest<V : Any> actual constructor(
 	handler: IQResponseHandler<V>?,
 	resultConverter: ResultConverter<V>?,
 	timeoutDelay: Long
-) : AbstractIQRequest<V>(jid, id, creationTimestamp, requestStanza, handler, resultConverter, timeoutDelay)
+) : AbstractIQRequest<V>(jid, id, creationTimestamp, requestStanza, handler, resultConverter, timeoutDelay) {
+
+	private val lock = Object()
+
+	fun getResultWait(): V? {
+		if (isCompleted) return getResult()
+		synchronized(lock) {
+			lock.wait()
+		}
+		return getResult()
+	}
+
+	override fun callHandlers() {
+		super.callHandlers()
+		synchronized(lock) {
+			lock.notify()
+		}
+	}
+
+}

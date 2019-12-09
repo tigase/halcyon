@@ -28,10 +28,20 @@ class RequestNotCompletedException(request: Request<*, *>) : RequestException(re
 	}
 }
 
-class RequestErrorException(request: Request<*, *>, val error: ErrorCondition) :
+class RequestErrorException(request: Request<*, *>, val error: ErrorCondition, val text: String?) :
 	RequestException(request) {
 
 	override fun toString(): String {
-		return "RequestErrorException(error=$error, request=$request)"
+		return buildString {
+			append("RequestErrorException(")
+			append("error=$error")
+			text?.let {
+				append(", ")
+				append("text=$it")
+			}
+			append(", ")
+			append("request=$request")
+			append(")")
+		}
 	}
 }

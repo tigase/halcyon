@@ -23,8 +23,8 @@ import tigase.halcyon.core.requests.IQRequest
 import tigase.halcyon.core.requests.IQResponseHandler
 import tigase.halcyon.core.requests.RequestsManager
 import tigase.halcyon.core.requests.Result
-import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xml.element
+import tigase.halcyon.core.xmpp.stanzas.IQ
 import tigase.halcyon.core.xmpp.stanzas.MessageType
 import kotlin.test.*
 
@@ -52,13 +52,13 @@ class RequestManagerTest {
 		var successCounter = 0
 
 		val rq = halcyon.request.iq<Any>(e).response(object : IQResponseHandler<Any> {
-			override fun success(request: IQRequest<Any>, responseStanza: Element, v: Any?) {
+			override fun success(request: IQRequest<Any>, responseStanza: IQ, v: Any?) {
 				++successCounter
 			}
 
 			override fun error(
 				request: IQRequest<Any>,
-				responseStanza: Element?,
+				responseStanza: IQ?,
 				errorCondition: ErrorCondition,
 				errorMessage: String?
 			) {
@@ -122,9 +122,9 @@ class RequestManagerTest {
 
 		var successCounter = 0
 
-		val req = halcyon.request.iq<Any>(e).response { request, element, result ->
+		val req = halcyon.request.iq<Any>(e).response { result ->
 			when (result) {
-				is Result.Success -> ++successCounter
+				is Result.Success ->{ ++successCounter}
 				else -> fail()
 			}
 		}.build()

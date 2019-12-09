@@ -21,10 +21,7 @@ import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xmpp.ErrorCondition
 import tigase.halcyon.core.xmpp.JID
 import tigase.halcyon.core.xmpp.XMPPException
-import tigase.halcyon.core.xmpp.stanzas.IQ
-import tigase.halcyon.core.xmpp.stanzas.Message
-import tigase.halcyon.core.xmpp.stanzas.Presence
-import tigase.halcyon.core.xmpp.stanzas.Stanza
+import tigase.halcyon.core.xmpp.stanzas.*
 
 typealias ResultConverter<T> = (Element) -> T
 
@@ -50,11 +47,11 @@ abstract class Request<V : Any, STT : Stanza<*>>(
 			}
 		}
 
-	var responseStanza: Element? = null
+	var responseStanza: STT? = null
 		private set
 
 	internal fun setResponseStanza(response: Element) {
-		responseStanza = response
+		responseStanza = wrap(response)
 		isCompleted = true
 		callHandlers()
 	}
@@ -75,8 +72,6 @@ abstract class Request<V : Any, STT : Stanza<*>>(
 		callHandlers()
 	}
 
-//	protected abstract fun callHandlers()
-
 	protected abstract fun callHandlers()
 
 	data class Error(val condition: ErrorCondition, val message: String?)
@@ -85,14 +80,15 @@ abstract class Request<V : Any, STT : Stanza<*>>(
 		val error = stanza.children.firstOrNull { element -> element.name == "error" } ?: return Error(
 			ErrorCondition.Unknown, null
 		)
+		// Condition Element
 		val cnd =
-			error.children.firstOrNull { element -> element.xmlns == XMPPException.XMLNS } ?: return Error(
-				ErrorCondition.Unknown, null
-			)
+			error.children.firstOrNull { element -> element.name != "text" && element.xmlns == XMPPException.XMLNS }
+				?: return Error(ErrorCondition.Unknown, null)
+		val txt =
+			error.children.firstOrNull { element -> element.name == "text" && element.xmlns == XMPPException.XMLNS }
 
 		val c = ErrorCondition.getByElementName(cnd.name)
-
-		return Error(c, null)
+		return Error(c, txt?.value)
 	}
 
 	fun isSet(param: String): Boolean {
@@ -144,14 +140,15 @@ abstract class AbstractIQRequest<V : Any>(
 			handler?.error(
 				this as IQRequest<V>, null, ErrorCondition.RemoteServerTimeout, null
 			)
-		} else if (responseStanza != null) {
+		} else responseStanza?.let { received ->
 			handler?.let {
-				val type = responseStanza!!.attributes["type"]
+				val type = received.attributes["type"]
 				if (type == "result") {
-					it.success(this as IQRequest<V>, responseStanza!!, getResult())
+					value = resultConverter?.invoke(received)
+					it.success(this as IQRequest<V>, received, getResult())
 				} else if (type == "error") {
-					val e = findCondition(responseStanza!!)
-					it.error(this as IQRequest<V>, responseStanza!!, e.condition, e.message)
+					val e = findCondition(received)
+					it.error(this as IQRequest<V>, received, e.condition, e.message)
 				}
 			}
 		}
@@ -160,9 +157,8 @@ abstract class AbstractIQRequest<V : Any>(
 	override fun createRequestNotCompletedException(): RequestNotCompletedException =
 		RequestNotCompletedException(this)
 
-	override fun createRequestErrorException(
-		error: ErrorCondition, text: String?
-	): RequestErrorException = RequestErrorException(this, error)
+	override fun createRequestErrorException(error: ErrorCondition, text: String?): RequestErrorException =
+		RequestErrorException(this, error, text)
 
 }
 
@@ -190,7 +186,7 @@ class PresenceRequest(
 
 	override fun createRequestErrorException(
 		error: ErrorCondition, text: String?
-	): RequestErrorException = RequestErrorException(this, error)
+	): RequestErrorException = RequestErrorException(this, error, text)
 
 	override fun callHandlers() {
 		if (isTimeout) errorHandler?.invoke(this, null, ErrorCondition.RemoteServerTimeout, null)
@@ -213,9 +209,8 @@ class MessageRequest(
 	override fun createRequestNotCompletedException(): RequestNotCompletedException =
 		RequestNotCompletedException(this)
 
-	override fun createRequestErrorException(
-		error: ErrorCondition, text: String?
-	): RequestErrorException = RequestErrorException(this, error)
+	override fun createRequestErrorException(error: ErrorCondition, text: String?): RequestErrorException =
+		RequestErrorException(this, error, text)
 
 	override fun callHandlers() {
 		if (isTimeout) errorHandler?.invoke(this, null, ErrorCondition.RemoteServerTimeout, null)

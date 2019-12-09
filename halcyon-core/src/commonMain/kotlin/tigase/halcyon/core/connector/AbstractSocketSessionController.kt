@@ -50,7 +50,7 @@ open abstract class AbstractSocketSessionController(
 		}
 		if (authState == SASLModule.State.Success) {
 			val resourse = context.sessionObject.getProperty<String>(SessionObject.RESOURCE)
-			context.modules.getModule<BindModule>(BindModule.TYPE).bind(resourse).response { _, _, result ->
+			context.modules.getModule<BindModule>(BindModule.TYPE).bind(resourse).response {  result ->
 				when (result) {
 					is Result.Success<BindModule.BindResult> -> processBindSuccess(result.get()!!)
 					else -> processBindError()

@@ -25,7 +25,10 @@ import tigase.halcyon.core.xmpp.JID
 import tigase.halcyon.core.xmpp.stanzas.IQType
 import tigase.halcyon.core.xmpp.stanzas.iq
 import tigase.halcyon.core.xmpp.toJID
-import kotlin.test.*
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
+import kotlin.test.assertTrue
 
 class RequestTest {
 	val halcyon = object : AbstractHalcyon() {
@@ -45,7 +48,7 @@ class RequestTest {
 		var req = halcyon.request.iq<Any>(iq {
 			type = IQType.Set
 			to = JID.parse("a@b.c")
-		}).response { request, element, result -> rr = result }.build()
+		}).response { result -> rr = result }.build()
 
 		val response = element("iq") {
 			attribute("id", req.id)
@@ -88,7 +91,7 @@ class RequestTest {
 		var req = halcyon.request.iq<Any>(iq {
 			type = IQType.Set
 			to = "a@b.c".toJID()
-		}).response { request, element, result -> rr = result }.build()
+		}).response { result -> rr = result }.build()
 
 		val response = element("iq") {
 			attribute("id", req.id)

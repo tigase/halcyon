@@ -43,7 +43,7 @@ fun main(args: Array<String>) {
 
 	val halcyon = Halcyon()
 
-	val module: PingModule = halcyon.modules[PingModule.TYPE]
+	val module = halcyon.getModule<PingModule>(PingModule.TYPE)
 
 	halcyon.eventBus.register<Event> { sessionObject, t -> if (t !is TickEvent) println("EVENT: $t") }
 	halcyon.eventBus.register<tigase.halcyon.core.connector.ConnectorStateChangeEvent>(
@@ -78,19 +78,19 @@ fun main(args: Array<String>) {
 			"x" -> {
 				val pingModule = halcyon.modules.getModule<PingModule>(PingModule.TYPE)
 				val req = pingModule.ping().send()
-				val result = req.getResult()
+				val result = req.getResultWait()
 				println("!+$result")
 			}
 			"z" -> {
 				val pingModule = halcyon.modules.getModule<PingModule>(PingModule.TYPE)
 				val req = pingModule.ping("bmalkow@malkowscy.net".toJID()).send()
-				val result = req.getResult()
+				val result = req.getResultWait()
 				println("!+$result")
 			}
 			"y" -> {
 				val pingModule = halcyon.modules.getModule<PingModule>(PingModule.TYPE)
 				val req = pingModule.ping().send()
-				val result = req.getResult()
+				val result = req.getResultWait()
 				println("!+$result")
 			}
 			"y1" -> {
@@ -116,13 +116,12 @@ fun main(args: Array<String>) {
 			"resume" -> halcyon.modules.getModule<StreamManagementModule>(StreamManagementModule.TYPE).resume()
 			"ping" -> {
 				val pingModule = halcyon.modules.getModule<PingModule>(PingModule.TYPE)
-				val request = pingModule.ping()
-				request.response { request, element, result ->
+				pingModule.ping().response { result ->
 					when (result) {
 						is Result.Success -> println("Pong: " + result.get()!!.time + " ms")
 						is Result.Error -> println("Pong error: ${result.error}")
 					}
-				}
+				}.send()
 
 //				request.response { request, element, result ->
 //					when (result) {
