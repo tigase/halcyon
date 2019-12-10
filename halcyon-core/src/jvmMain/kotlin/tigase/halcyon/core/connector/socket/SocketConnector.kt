@@ -76,7 +76,6 @@ class SocketConnector(context: Context) : AbstractConnector(context) {
 
 	private val parser = object : StreamParser() {
 		override fun onNextElement(element: Element) {
-			log.finest("Received element ${element.getAsString()}")
 			processReceivedElement(element)
 		}
 
@@ -97,6 +96,7 @@ class SocketConnector(context: Context) : AbstractConnector(context) {
 	}
 
 	private fun processReceivedElement(element: Element) {
+		log.finest("Received element ${element.getAsString()}")
 		when (element.xmlns) {
 			XMLNS_START_TLS -> processTLSStanza(element)
 			else -> context.eventBus.fire(ReceivedXMLElementEvent(element))

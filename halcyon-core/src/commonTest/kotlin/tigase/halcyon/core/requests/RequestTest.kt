@@ -45,7 +45,7 @@ class RequestTest {
 	fun testEarlyCallbackInit() {
 		var rr: IQResult<Any>? = null
 
-		var req = halcyon.request.iq<Any>(iq {
+		val req = halcyon.request.iq<Any>(iq {
 			type = IQType.Set
 			to = JID.parse("a@b.c")
 		}).response { result -> rr = result }.build()
@@ -65,11 +65,11 @@ class RequestTest {
 	fun testResponseSuccess() {
 		var rr: Element? = null
 
-		var req = halcyon.request.iq<Any>(iq {
+		val req = halcyon.request.iq<Any>(iq {
 			type = IQType.Set
 			to = "a@b.c".toJID()
 		}).handle {
-			success { request, element, _ ->
+			success { _, element, _ ->
 				rr = element
 			}
 		}.build()
@@ -82,13 +82,14 @@ class RequestTest {
 
 		req.setResponseStanza(response)
 
-		assertEquals(response, rr)
+		assertEquals(response,rr)
+		assertEquals(response.getAsString(), rr!!.getAsString())
 	}
 
 	@Test
 	fun testResponseError() {
 		var rr: IQResult<Any>? = null
-		var req = halcyon.request.iq<Any>(iq {
+		val req = halcyon.request.iq<Any>(iq {
 			type = IQType.Set
 			to = "a@b.c".toJID()
 		}).response { result -> rr = result }.build()

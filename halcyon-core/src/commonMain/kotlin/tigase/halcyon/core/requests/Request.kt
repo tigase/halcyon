@@ -40,7 +40,7 @@ abstract class Request<V : Any, STT : Stanza<*>>(
 		internal set
 
 	var isSent: Boolean = false
-		private set
+		internal set
 
 	var response: STT? = null
 		private set

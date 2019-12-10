@@ -26,7 +26,7 @@ enum class IQType(val value: String) {
 	Set("set")
 }
 
-class IQ(val wrappedElement: Element) : Stanza<IQType>(wrappedElement) {
+class IQ(wrappedElement: Element) : Stanza<IQType>(wrappedElement) {
 	companion object {
 		const val NAME = "iq"
 	}
@@ -35,4 +35,11 @@ class IQ(val wrappedElement: Element) : Stanza<IQType>(wrappedElement) {
 		set(value) = setAtt("type", value.value)
 		get() = IQType.values().first { te -> te.value == value }
 
+	override fun equals(other: Any?): Boolean {
+		return element.equals(other)
+	}
+
+	override fun hashCode(): Int {
+		return element.hashCode()
+	}
 }

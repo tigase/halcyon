@@ -1,4 +1,4 @@
-rootProject.name = 'Tigase Halcyon'
+rootProject.name = 'Tigase Halcyon XMPP Library'
 
 include 'halcyon-core'
 include 'halcyon-samples'

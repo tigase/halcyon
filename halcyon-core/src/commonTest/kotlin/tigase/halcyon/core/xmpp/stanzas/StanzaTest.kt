@@ -17,23 +17,48 @@
  */
 package tigase.halcyon.core.xmpp.stanzas
 
-import tigase.halcyon.core.xml.Element
+import tigase.halcyon.core.xml.element
+import tigase.halcyon.core.xmpp.toJID
+import kotlin.test.*
 
-enum class MessageType(val value: String) {
-	Chat("chat"),
-	Error("error"),
-	Groupchat("groupchat"),
-	Headline("headline"),
-	Normal("normal")
-}
+class StanzaTest {
 
-class Message(wrappedElement: Element) : Stanza<MessageType?>(wrappedElement) {
-	companion object {
-		const val NAME = "message"
+	@Test
+	fun equalsTestAndHashCode() {
+		val s1 = iq {
+			to = "a@b.c/d".toJID()
+			"x"{
+				xmlns = "1:2:3"
+			}
+		}
+		val e1 = element("iq") {
+			attribute("id", s1.attributes["id"]!!)
+			attribute("to", "a@b.c/d")
+			"x"{
+				xmlns = "1:2:3"
+			}
+		}
+
+		val e2 = element("iq") {
+			attribute("id", s1.attributes["id"]!!)
+			attribute("to", "a@b.c/d")
+			"x"{
+				xmlns = "1:2:3"
+				+"x"
+			}
+		}
+
+		assertTrue(s1.equals(e1))
+		assertTrue(e1.equals(s1))
+
+		assertNotSame(s1, e1)
+		assertEquals(s1, e1)
+
+		assertNotSame(s1, e2)
+		assertNotEquals(e1, e2)
+
+		assertEquals(s1.hashCode(), s1.hashCode())
+		assertEquals(s1.hashCode(), e1.hashCode())
 	}
-
-	override var type: MessageType?
-		set(value) = setAtt("type", value?.value)
-		get() = MessageType.values().firstOrNull { te -> te.value == value }
 
 }

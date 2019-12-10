@@ -19,10 +19,7 @@ package tigase.halcyon.core.xmpp
 
 import tigase.halcyon.core.AbstractHalcyon
 import tigase.halcyon.core.connector.AbstractConnector
-import tigase.halcyon.core.requests.IQRequest
-import tigase.halcyon.core.requests.IQResponseHandler
-import tigase.halcyon.core.requests.RequestsManager
-import tigase.halcyon.core.requests.IQResult
+import tigase.halcyon.core.requests.*
 import tigase.halcyon.core.xml.element
 import tigase.halcyon.core.xmpp.stanzas.IQ
 import tigase.halcyon.core.xmpp.stanzas.MessageType
@@ -124,7 +121,9 @@ class RequestManagerTest {
 
 		val req = halcyon.request.iq<Any>(e).response { result ->
 			when (result) {
-				is IQResult.Success ->{ ++successCounter}
+				is IQResult.Success -> {
+					++successCounter
+				}
 				else -> fail()
 			}
 		}.build()
@@ -139,39 +138,6 @@ class RequestManagerTest {
 		val handler = rm.findAndExecute(resp)
 		assertTrue(handler)
 		assertEquals(1, successCounter)
-	}
-
-	@Test
-	fun testErrorMessage() {
-		val rm = RequestsManager()
-
-		var handled = false
-
-		val req = halcyon.request.message {
-			to = "a@b.c".toJID()
-			"body"{
-				+"test"
-			}
-		}.error { messageRequest, element, errorCondition, errorMessage ->
-			if (errorCondition == ErrorCondition.NotAllowed) handled = true
-			else fail("Unexpected error type $errorCondition")
-		}.build()
-
-		rm.register(req)
-
-		val res = element("message") {
-			attribute("id", req.id)
-			attribute("type", MessageType.Error.value)
-			attribute("from", "a@b.c")
-			element("error") {
-				attribute("type", "cancel")
-				element("not-allowed") {
-					xmlns = "urn:ietf:params:xml:ns:xmpp-stanzas"
-				}
-			}
-		}
-		rm.findAndExecute(res)
-		assertTrue(handled)
 	}
 
 	@Test
@@ -215,6 +181,7 @@ class RequestManagerTest {
 
 		var counter = 0
 
+		// timout expected
 		val r1 = halcyon.request.iq<Any>(element("iq") {
 			attribute("id", "1")
 			attribute("type", "get")
@@ -224,6 +191,7 @@ class RequestManagerTest {
 			.build()
 		rm.register(r1)
 
+		// timout NOT expected
 		val r2 = halcyon.request.iq<Any>(element("iq") {
 			attribute("id", "2")
 			attribute("type", "get")
@@ -233,14 +201,15 @@ class RequestManagerTest {
 			.build()
 		rm.register(r2)
 
-		var r3 = halcyon.request.message { to = "a@b.c".toJID() }.timeToLive(0)
-			.error { messageRequest, element, errorCondition, _ -> if (errorCondition == ErrorCondition.RemoteServerTimeout) ++counter }
-			.build()
+		// timout expected
+		var r3 = halcyon.request.message { to = "a@b.c".toJID() }.timeToLive(0).result { result ->
+				if (result is StanzaResult.NotSent) ++counter
+			}.build()
 		rm.register(r3)
 
 		rm.findOutdated()
 
-		assertEquals(1, counter)
+		assertEquals(2, counter)
 
 		assertFalse(rm.findAndExecute(element("iq") {
 			attribute("id", "1")

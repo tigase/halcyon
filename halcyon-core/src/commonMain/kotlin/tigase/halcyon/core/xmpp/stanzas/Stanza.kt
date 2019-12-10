@@ -20,7 +20,8 @@ package tigase.halcyon.core.xmpp.stanzas
 import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xmpp.JID
 
-abstract class Stanza<STANZA_TYPE> protected constructor(private val element: Element) : Element by element {
+abstract class Stanza<STANZA_TYPE> protected constructor(protected val element: Element) :
+	Element by element {
 
 	private fun getJID(attName: String): JID? {
 		val att = element.attributes[attName]
@@ -45,7 +46,23 @@ abstract class Stanza<STANZA_TYPE> protected constructor(private val element: El
 
 	abstract var type: STANZA_TYPE
 
-//	var type: StanzaType?
-//		set(value) = setAtt("type", value?.name?.toLowerCase())
-//		get() = element.getTypeAttr()
+	override fun equals(other: Any?): Boolean {
+		return element.equals(other)
+	}
+
+	override fun hashCode(): Int {
+		return element.hashCode()
+	}
+
+	override fun toString(): String {
+		return buildString {
+			append(name.toUpperCase()).append("[")
+			attributes["type"]?.let { append("type=").append(it).append(" ") }
+			attributes["id"]?.let { append("id=").append(it).append(" ") }
+			attributes["to"]?.let { append("to=").append(it).append(" ") }
+			attributes["from"]?.let { append("from=").append(it).append(" ") }
+			append("]")
+		}
+	}
+
 }

@@ -61,7 +61,7 @@ enum class PresenceType(val value: String) {
 	Unsubscribed("unsubscribed"),
 }
 
-class Presence(private val wrappedElement: Element) : Stanza<PresenceType?>(wrappedElement) {
+class Presence(wrappedElement: Element) : Stanza<PresenceType?>(wrappedElement) {
 
 	companion object {
 		const val NAME = "presence"

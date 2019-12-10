@@ -89,9 +89,11 @@ class ElementImpl(override val name: String) : Element {
 		return children[index + 1]
 	}
 
-	override fun getChildren(name: String): List<Element> = children.filter { element -> element.name == name }
+	override fun getChildren(name: String): List<Element> =
+		children.filter { element -> element.name == name }
 
-	override fun getChildrenNS(xmlns: String): List<Element> = children.filter { element -> element.xmlns == xmlns }
+	override fun getChildrenNS(xmlns: String): List<Element> =
+		children.filter { element -> element.xmlns == xmlns }
 
 	override fun getChildrenNS(name: String, xmlns: String): Element? = children.firstOrNull { element ->
 		element.name == name && element.xmlns == xmlns
@@ -134,6 +136,26 @@ class ElementImpl(override val name: String) : Element {
 			builder.append('>')
 		}
 		return builder.toString()
+	}
+
+	override fun equals(other: Any?): Boolean {
+		if (other is Element) {
+			if (name != other.name) return false
+			if (value != other.value) return false
+			if (attributes != other.attributes) return false
+			if (children.size != other.children.size) return false
+
+			for (i in 0 until children.size) {
+				if (!children[i].equals(other.children[i])) {
+					return false
+				}
+			}
+			return true
+		} else return false
+	}
+
+	override fun hashCode(): Int {
+		return "$name::${attributes.size}::${children::size}::${attributes["id"]}".hashCode()
 	}
 
 	override fun toString(): String {
