@@ -55,7 +55,8 @@ abstract class AbstractEventBus(val sessionObject: tigase.halcyon.core.SessionOb
 	}
 
 	protected open fun fire(
-		event: tigase.halcyon.core.eventbus.Event, handlers: Collection<tigase.halcyon.core.eventbus.EventHandler<*>>
+		event: tigase.halcyon.core.eventbus.Event,
+		handlers: Collection<tigase.halcyon.core.eventbus.EventHandler<*>>
 	) {
 		if (log.isLoggable(tigase.halcyon.core.logger.Level.FINEST)) {
 			log.finest("Firing event $event with ${handlers.size} handlers")
@@ -77,14 +78,12 @@ abstract class AbstractEventBus(val sessionObject: tigase.halcyon.core.SessionOb
 		eventType: String = tigase.halcyon.core.eventbus.AbstractEventBus.Companion.ALL_EVENTS,
 		handler: tigase.halcyon.core.eventbus.EventHandler<T>
 	) {
-		synchronized(this) {
-			var handlers = handlersMap[eventType]
-			if (handlers == null) {
-				handlers = createHandlersSet()
-				handlersMap[eventType] = handlers
-			}
-			handlers.add(handler)
+		var handlers = handlersMap[eventType]
+		if (handlers == null) {
+			handlers = createHandlersSet()
+			handlersMap[eventType] = handlers
 		}
+		handlers.add(handler)
 	}
 
 	fun <T : tigase.halcyon.core.eventbus.Event> register(
@@ -102,22 +101,18 @@ abstract class AbstractEventBus(val sessionObject: tigase.halcyon.core.SessionOb
 		eventType: String = tigase.halcyon.core.eventbus.AbstractEventBus.Companion.ALL_EVENTS,
 		handler: tigase.halcyon.core.eventbus.EventHandler<*>
 	) {
-		synchronized(this) {
-			val handlers = handlersMap[eventType]
-			if (handlers != null) {
-				handlers.remove(handler)
+		val handlers = handlersMap[eventType]
+		if (handlers != null) {
+			handlers.remove(handler)
 //				if (handlers.isEmpty()) {
 //					handlersMap.remove(eventType)
 //				}
-			}
 		}
 	}
 
 	fun unregister(handler: tigase.halcyon.core.eventbus.EventHandler<*>) {
-		synchronized(this) {
-			for ((eventType, handlers) in handlersMap) {
-				handlers.remove(handler)
-			}
+		for ((eventType, handlers) in handlersMap) {
+			handlers.remove(handler)
 		}
 	}
 
