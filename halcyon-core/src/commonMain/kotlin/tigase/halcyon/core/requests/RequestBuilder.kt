@@ -26,36 +26,36 @@ import tigase.halcyon.core.xmpp.stanzas.*
 
 class RequestBuilderFactory(private val halcyon: AbstractHalcyon) {
 
-	fun <V : Any> iq(stanza: Element): IQReqBuilder<V> = IQReqBuilder(halcyon, stanza)
-	fun <V : Any> iq(init: IQNode.() -> Unit): IQReqBuilder<V> {
+	fun <V : Any> iq(stanza: Element): IQRequestBuilder<V> = IQRequestBuilder(halcyon, stanza)
+	fun <V : Any> iq(init: IQNode.() -> Unit): IQRequestBuilder<V> {
 		val n = IQNode(IQ(ElementImpl(IQ.NAME)))
 		n.init()
 		n.id()
 		val stanza = n.element as IQ
-		return IQReqBuilder(halcyon, stanza)
+		return IQRequestBuilder(halcyon, stanza)
 	}
 
-	fun presence(stanza: Element): PresenceReqBuilder = PresenceReqBuilder(halcyon, stanza)
-	fun presence(init: PresenceNode.() -> Unit): PresenceReqBuilder {
+	fun presence(stanza: Element): PresenceRequestBuilder = PresenceRequestBuilder(halcyon, stanza)
+	fun presence(init: PresenceNode.() -> Unit): PresenceRequestBuilder {
 		val n = PresenceNode(Presence(ElementImpl(Presence.NAME)))
 		n.init()
 		n.id()
 		val stanza = n.element as Presence
-		return PresenceReqBuilder(halcyon, stanza)
+		return PresenceRequestBuilder(halcyon, stanza)
 	}
 
-	fun message(stanza: Element): MessageReqBuilder = MessageReqBuilder(halcyon, stanza)
-	fun message(init: MessageNode.() -> Unit): MessageReqBuilder {
+	fun message(stanza: Element): MessageRequestBuilder = MessageRequestBuilder(halcyon, stanza)
+	fun message(init: MessageNode.() -> Unit): MessageRequestBuilder {
 		val n = MessageNode(Message(ElementImpl(Message.NAME)))
 		n.init()
 		n.id()
 		val stanza = n.element as Message
-		return MessageReqBuilder(halcyon, stanza)
+		return MessageRequestBuilder(halcyon, stanza)
 	}
 
 }
 
-class IQReqBuilder<V : Any>(private val halcyon: AbstractHalcyon, private val element: Element) {
+class IQRequestBuilder<V : Any>(private val halcyon: AbstractHalcyon, private val element: Element) {
 
 	private var resultConverter: ResultConverter<V>? = null
 	private var timeoutDelay: Long = 30000
@@ -70,7 +70,7 @@ class IQReqBuilder<V : Any>(private val halcyon: AbstractHalcyon, private val el
 
 	private var handler: IQResponseResultHandler<V>? = null
 
-	fun handle(init: IQHandlerHelper<V>.() -> Unit): IQReqBuilder<V> {
+	fun handle(init: IQHandlerHelper<V>.() -> Unit): IQRequestBuilder<V> {
 		val callback = IQHandlerHelper<V>()
 		callback.init()
 		this.handler = { result ->
@@ -83,7 +83,7 @@ class IQReqBuilder<V : Any>(private val halcyon: AbstractHalcyon, private val el
 		return this
 	}
 
-	fun response(handler: IQResponseHandler<V>): IQReqBuilder<V> {
+	fun response(handler: IQResponseHandler<V>): IQRequestBuilder<V> {
 		this.handler = { result ->
 			when (result) {
 				is IQResult.Success<V> -> handler.success(result.request, result.response, result.value)
@@ -95,17 +95,17 @@ class IQReqBuilder<V : Any>(private val halcyon: AbstractHalcyon, private val el
 		return this
 	}
 
-	fun response(handler: IQResponseResultHandler<V>): IQReqBuilder<V> {
+	fun response(handler: IQResponseResultHandler<V>): IQRequestBuilder<V> {
 		this.handler = handler
 		return this
 	}
 
-	fun timeToLive(time: Long): IQReqBuilder<V> {
+	fun timeToLive(time: Long): IQRequestBuilder<V> {
 		timeoutDelay = time
 		return this
 	}
 
-	fun resultBuilder(resultConverter: ResultConverter<V>): IQReqBuilder<V> {
+	fun resultBuilder(resultConverter: ResultConverter<V>): IQRequestBuilder<V> {
 		this.resultConverter = resultConverter
 		return this
 	}
@@ -131,7 +131,7 @@ class IQReqBuilder<V : Any>(private val halcyon: AbstractHalcyon, private val el
 
 }
 
-class PresenceReqBuilder(private val halcyon: AbstractHalcyon, private val element: Element) {
+class PresenceRequestBuilder(private val halcyon: AbstractHalcyon, private val element: Element) {
 
 	private var timeoutDelay: Long = 30000
 
@@ -143,12 +143,12 @@ class PresenceReqBuilder(private val halcyon: AbstractHalcyon, private val eleme
 		}
 	}
 
-	fun timeToLive(time: Long): PresenceReqBuilder {
+	fun timeToLive(time: Long): PresenceRequestBuilder {
 		timeoutDelay = time
 		return this
 	}
 
-	fun result(handler: StanzaStatusHandler<PresenceRequest>): PresenceReqBuilder {
+	fun result(handler: StanzaStatusHandler<PresenceRequest>): PresenceRequestBuilder {
 		this.stanzaHandler = handler
 		return this
 	}
@@ -168,7 +168,7 @@ class PresenceReqBuilder(private val halcyon: AbstractHalcyon, private val eleme
 
 }
 
-class MessageReqBuilder(private val halcyon: AbstractHalcyon, private val element: Element) {
+class MessageRequestBuilder(private val halcyon: AbstractHalcyon, private val element: Element) {
 
 	private var timeoutDelay: Long = 30000
 
@@ -180,12 +180,12 @@ class MessageReqBuilder(private val halcyon: AbstractHalcyon, private val elemen
 		}
 	}
 
-	fun timeToLive(time: Long): MessageReqBuilder {
+	fun timeToLive(time: Long): MessageRequestBuilder {
 		timeoutDelay = time
 		return this
 	}
 
-	fun result(handler: StanzaStatusHandler<MessageRequest>): MessageReqBuilder {
+	fun result(handler: StanzaStatusHandler<MessageRequest>): MessageRequestBuilder {
 		this.stanzaHandler = handler
 		return this
 	}

@@ -20,7 +20,7 @@ package tigase.halcyon.core.xmpp.modules
 import tigase.halcyon.core.currentTimestamp
 import tigase.halcyon.core.modules.AbstractXmppIQModule
 import tigase.halcyon.core.modules.Criterion
-import tigase.halcyon.core.requests.IQReqBuilder
+import tigase.halcyon.core.requests.IQRequestBuilder
 import tigase.halcyon.core.xml.response
 import tigase.halcyon.core.xmpp.ErrorCondition
 import tigase.halcyon.core.xmpp.JID
@@ -38,7 +38,7 @@ class PingModule : AbstractXmppIQModule(
 		const val TYPE = XMLNS
 	}
 
-	fun ping(jid: JID? = null): IQReqBuilder<Pong> {
+	fun ping(jid: JID? = null): IQRequestBuilder<Pong> {
 		val stanza = iq {
 			type = IQType.Get
 			if (jid != null) to = jid

@@ -22,7 +22,7 @@ import tigase.halcyon.core.eventbus.Event
 import tigase.halcyon.core.logger.Logger
 import tigase.halcyon.core.modules.Criterion
 import tigase.halcyon.core.modules.XmppModule
-import tigase.halcyon.core.requests.IQReqBuilder
+import tigase.halcyon.core.requests.IQRequestBuilder
 import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xmpp.ErrorCondition
 import tigase.halcyon.core.xmpp.JID
@@ -120,7 +120,7 @@ class PubSubModule : XmppModule {
 	 * @param pubSubJID JID of PubSub service.
 	 * @param node PubSub node name.
 	 */
-	fun subscribe(pubSubJID: JID, node: String, jid: JID): IQReqBuilder<Subscription> {
+	fun subscribe(pubSubJID: JID, node: String, jid: JID): IQRequestBuilder<Subscription> {
 		val iq = iq {
 			type = IQType.Set
 			to = pubSubJID
@@ -145,7 +145,7 @@ class PubSubModule : XmppModule {
 	 * @param pubSubJID JID of PubSub service.
 	 * @param node PubSub node name.
 	 */
-	fun purgeItems(pubSubJID: JID, node: String): IQReqBuilder<Unit> {
+	fun purgeItems(pubSubJID: JID, node: String): IQRequestBuilder<Unit> {
 		val iq = iq {
 			type = IQType.Set
 			to = pubSubJID
@@ -167,7 +167,7 @@ class PubSubModule : XmppModule {
 	 * @param node PubSub node name.
 	 * @return [Request] returning list of [subscriptions][Subscription].
 	 */
-	fun retrieveSubscriptions(pubSubJID: JID, node: String): IQReqBuilder<List<Subscription>> {
+	fun retrieveSubscriptions(pubSubJID: JID, node: String): IQRequestBuilder<List<Subscription>> {
 		val iq = iq {
 			type = IQType.Get
 			to = pubSubJID
@@ -215,7 +215,7 @@ class PubSubModule : XmppModule {
 	 */
 	fun modifySubscriptions(
 		pubSubJID: JID, node: String, subscriptions: List<Subscription>
-	): IQReqBuilder<Unit> {
+	): IQRequestBuilder<Unit> {
 		val iq = iq {
 			type = IQType.Set
 			to = pubSubJID
