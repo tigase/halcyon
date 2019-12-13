@@ -18,6 +18,8 @@
 package tigase.halcyon.core.xmpp.stanzas
 
 import tigase.halcyon.core.xml.Element
+import tigase.halcyon.core.xmpp.ErrorCondition
+import tigase.halcyon.core.xmpp.XMPPException
 
 enum class IQType(val value: String) {
 	Error("error"),
@@ -33,13 +35,11 @@ class IQ(wrappedElement: Element) : Stanza<IQType>(wrappedElement) {
 
 	override var type: IQType
 		set(value) = setAtt("type", value.value)
-		get() = IQType.values().first { te -> te.value == value }
+		get() {
+			val tp = attributes["type"]
+			return tp?.let {
+				IQType.values().firstOrNull { te -> te.value == it }
+			} ?: throw XMPPException(ErrorCondition.BadRequest, "Unknown stanza type '$tp'")
+		}
 
-	override fun equals(other: Any?): Boolean {
-		return element.equals(other)
-	}
-
-	override fun hashCode(): Int {
-		return element.hashCode()
-	}
 }

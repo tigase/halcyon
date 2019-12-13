@@ -18,6 +18,8 @@
 package tigase.halcyon.core.xmpp.stanzas
 
 import tigase.halcyon.core.xml.Element
+import tigase.halcyon.core.xmpp.ErrorCondition
+import tigase.halcyon.core.xmpp.XMPPException
 
 enum class MessageType(val value: String) {
 	Chat("chat"),
@@ -34,6 +36,8 @@ class Message(wrappedElement: Element) : Stanza<MessageType?>(wrappedElement) {
 
 	override var type: MessageType?
 		set(value) = setAtt("type", value?.value)
-		get() = MessageType.values().firstOrNull { te -> te.value == value }
-
+		get() = attributes["type"]?.let {
+			MessageType.values().firstOrNull { te -> te.value == it }
+				?: throw XMPPException(ErrorCondition.BadRequest, "Unknown stanza type '$it'")
+		}
 }

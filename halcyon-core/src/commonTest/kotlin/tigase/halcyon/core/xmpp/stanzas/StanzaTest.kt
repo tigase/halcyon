@@ -18,6 +18,7 @@
 package tigase.halcyon.core.xmpp.stanzas
 
 import tigase.halcyon.core.xml.element
+import tigase.halcyon.core.xmpp.JID
 import tigase.halcyon.core.xmpp.toJID
 import kotlin.test.*
 
@@ -59,6 +60,30 @@ class StanzaTest {
 
 		assertEquals(s1.hashCode(), s1.hashCode())
 		assertEquals(s1.hashCode(), e1.hashCode())
+	}
+
+	@Test
+	fun testTo() {
+		val e = element("message") {
+			attribute("to", "aaa@bb.c/d")
+		}
+		val s = wrap<Message>(e)
+		assertEquals(JID.parse("aaa@bb.c/d"), s.to)
+		s.to = "plll@qa.pl/sss".toJID()
+		assertEquals(JID.parse("plll@qa.pl/sss"), s.to)
+		assertEquals("plll@qa.pl/sss", s.attributes["to"])
+	}
+
+	@Test
+	fun testFrom() {
+		val e = element("message") {
+			attribute("from", "aaa@bb.c/d")
+		}
+		val s = wrap<Message>(e)
+		assertEquals(JID.parse("aaa@bb.c/d"), s.from)
+		s.from = "plll@qa.pl/sss".toJID()
+		assertEquals(JID.parse("plll@qa.pl/sss"), s.from)
+		assertEquals("plll@qa.pl/sss", s.attributes["from"])
 	}
 
 }
