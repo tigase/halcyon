@@ -17,6 +17,7 @@
  */
 package tigase.halcyon.core.eventbus
 
+import tigase.halcyon.core.logger.Level
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Executors
 
@@ -25,7 +26,8 @@ actual class EventBus actual constructor(sessionObject: tigase.halcyon.core.Sess
 
 	override fun createHandlersMap(): MutableMap<String, MutableSet<EventHandler<*>>> = ConcurrentHashMap()
 
-	override fun createHandlersSet(): MutableSet<EventHandler<*>> = ConcurrentHashMap.newKeySet<EventHandler<*>>()
+	override fun createHandlersSet(): MutableSet<EventHandler<*>> =
+		ConcurrentHashMap.newKeySet<EventHandler<*>>()
 
 	enum class Mode {
 		NoThread,
@@ -44,52 +46,47 @@ actual class EventBus actual constructor(sessionObject: tigase.halcyon.core.Sess
 		t
 	}
 
-	private fun fireNoThread(
-		event: Event, handlers: Collection<EventHandler<*>>
-	) {
+	@Suppress("UNCHECKED_CAST")
+	private fun fireNoThread(event: Event, handlers: Collection<EventHandler<*>>) {
 		handlers.forEach { eventHandler ->
 			try {
 				(eventHandler as EventHandler<Event>).onEvent(
-					sessionObject, event
+					event
 				)
 			} catch (e: Exception) {
-				if (log.isLoggable(tigase.halcyon.core.logger.Level.WARNING)) log.log(
-					tigase.halcyon.core.logger.Level.WARNING, "Problem on handling event", e
+				if (log.isLoggable(Level.WARNING)) log.log(
+					Level.WARNING, "Problem on handling event", e
 				)
 			}
 		}
 	}
 
-	private fun fireThreadPerEvent(
-		event: Event, handlers: Collection<EventHandler<*>>
-	) {
+	@Suppress("UNCHECKED_CAST")
+	private fun fireThreadPerEvent(event: Event, handlers: Collection<EventHandler<*>>) {
 		executor.execute {
 			handlers.forEach { eventHandler ->
 				try {
-					(eventHandler as EventHandler<Event>).onEvent(
-						sessionObject, event
-					)
+					(eventHandler as EventHandler<Event>).onEvent(event)
 				} catch (e: Exception) {
-					if (log.isLoggable(tigase.halcyon.core.logger.Level.WARNING)) log.log(
-						tigase.halcyon.core.logger.Level.WARNING, "Problem on handling event", e
+					if (log.isLoggable(Level.WARNING)) log.log(
+						Level.WARNING, "Problem on handling event", e
 					)
 				}
 			}
 		}
 	}
 
-	private fun fireThreadPerHandler(
-		event: Event, handlers: Collection<EventHandler<*>>
-	) {
+	@Suppress("UNCHECKED_CAST")
+	private fun fireThreadPerHandler(event: Event, handlers: Collection<EventHandler<*>>) {
 		handlers.forEach { eventHandler ->
 			executor.execute {
 				try {
 					(eventHandler as EventHandler<Event>).onEvent(
-						sessionObject, event
+						event
 					)
 				} catch (e: Exception) {
-					if (log.isLoggable(tigase.halcyon.core.logger.Level.WARNING)) log.log(
-						tigase.halcyon.core.logger.Level.WARNING, "Problem on handling event", e
+					if (log.isLoggable(Level.WARNING)) log.log(
+						Level.WARNING, "Problem on handling event", e
 					)
 				}
 			}
@@ -99,7 +96,7 @@ actual class EventBus actual constructor(sessionObject: tigase.halcyon.core.Sess
 	override fun fire(
 		event: Event, handlers: Collection<EventHandler<*>>
 	) {
-		if (log.isLoggable(tigase.halcyon.core.logger.Level.FINEST)) {
+		if (log.isLoggable(Level.FINEST)) {
 			log.finest("Firing event $event with ${handlers.size} handlers")
 		}
 

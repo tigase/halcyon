@@ -46,19 +46,19 @@ fun main(args: Array<String>) {
 
 	val module = halcyon.getModule<PingModule>(PingModule.TYPE)
 
-	halcyon.eventBus.register<Event> { sessionObject, t -> if (t !is TickEvent) println("EVENT: $t") }
+	halcyon.eventBus.register<Event> { t -> if (t !is TickEvent) println("EVENT: $t") }
 	halcyon.eventBus.register<tigase.halcyon.core.connector.ConnectorStateChangeEvent>(
 		tigase.halcyon.core.connector.ConnectorStateChangeEvent.TYPE
-	) { _, connectorStateChangeEvent ->
+	) { connectorStateChangeEvent ->
 		println("CONNECTOR STATE: ${connectorStateChangeEvent.oldState}->${connectorStateChangeEvent.newState}")
 	}
-	halcyon.eventBus.register<tigase.halcyon.core.HalcyonStateChangeEvent>(tigase.halcyon.core.HalcyonStateChangeEvent.TYPE) { _, stateChangeEvent ->
+	halcyon.eventBus.register<tigase.halcyon.core.HalcyonStateChangeEvent>(tigase.halcyon.core.HalcyonStateChangeEvent.TYPE) { stateChangeEvent ->
 		println("Halcyon STATE: ${stateChangeEvent.oldState}->${stateChangeEvent.newState}")
 	}
-	halcyon.eventBus.register<SentXMLElementEvent>(SentXMLElementEvent.TYPE) { _, event ->
+	halcyon.eventBus.register<SentXMLElementEvent>(SentXMLElementEvent.TYPE) { event ->
 		println(" <<< ${event.element.getAsString()}")
 	}
-	halcyon.eventBus.register<ReceivedXMLElementEvent>(ReceivedXMLElementEvent.TYPE) { _, event ->
+	halcyon.eventBus.register<ReceivedXMLElementEvent>(ReceivedXMLElementEvent.TYPE) { event ->
 		println(" >>> ${event.element.getAsString()}")
 	}
 

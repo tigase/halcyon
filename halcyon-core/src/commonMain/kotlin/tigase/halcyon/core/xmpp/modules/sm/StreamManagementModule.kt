@@ -87,14 +87,13 @@ class StreamManagementModule : XmppModule {
 	private val queue = ArrayList<Any>()
 
 	override fun initialize() {
-		context.eventBus.register<SentXMLElementEvent>(SentXMLElementEvent.TYPE, handler = { _, event ->
+		context.eventBus.register<SentXMLElementEvent>(SentXMLElementEvent.TYPE) { event ->
 			processElementSent(event.element, event.request)
-		})
-		context.eventBus.register<ReceivedXMLElementEvent>(ReceivedXMLElementEvent.TYPE,
-														   handler = { _, event ->
-															   processElementReceived(event.element)
-														   })
-		context.eventBus.register<TickEvent>(TickEvent.TYPE, handler = { _, event -> onTick() })
+		}
+		context.eventBus.register<ReceivedXMLElementEvent>(ReceivedXMLElementEvent.TYPE) { event ->
+			processElementReceived(event.element)
+		}
+		context.eventBus.register<TickEvent>(TickEvent.TYPE) { onTick() }
 	}
 
 	private fun onTick() {
@@ -260,8 +259,8 @@ class StreamManagementModule : XmppModule {
 	}
 
 	fun resume() {
-		var h = context.sessionObject.getProperty<Long>(INCOMING_STREAM_H_KEY) ?: 0
-		var id = context.sessionObject.getProperty<String>(RESUMPTION_ID_KEY)
+		val h = context.sessionObject.getProperty<Long>(INCOMING_STREAM_H_KEY) ?: 0
+		val id = context.sessionObject.getProperty<String>(RESUMPTION_ID_KEY)
 
 		context.writer.writeDirectly(element("resume") {
 			xmlns = XMLNS

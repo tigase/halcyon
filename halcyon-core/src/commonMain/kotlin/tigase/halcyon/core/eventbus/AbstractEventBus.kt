@@ -17,6 +17,8 @@
  */
 package tigase.halcyon.core.eventbus
 
+import tigase.halcyon.core.logger.Level
+
 abstract class AbstractEventBus(val sessionObject: tigase.halcyon.core.SessionObject) {
 
 	companion object {
@@ -25,17 +27,16 @@ abstract class AbstractEventBus(val sessionObject: tigase.halcyon.core.SessionOb
 
 	protected val log = tigase.halcyon.core.logger.Logger("tigase.halcyon.core.eventbus.EventBus")
 
-	protected var handlersMap: MutableMap<String, MutableSet<tigase.halcyon.core.eventbus.EventHandler<*>>> =
-		createHandlersMap()
+	protected var handlersMap: MutableMap<String, MutableSet<EventHandler<*>>> = createHandlersMap()
 
-	protected abstract fun createHandlersMap(): MutableMap<String, MutableSet<tigase.halcyon.core.eventbus.EventHandler<*>>>
+	protected abstract fun createHandlersMap(): MutableMap<String, MutableSet<EventHandler<*>>>
 
-	protected abstract fun createHandlersSet(): MutableSet<tigase.halcyon.core.eventbus.EventHandler<*>>
+	protected abstract fun createHandlersSet(): MutableSet<EventHandler<*>>
 
-	private fun getHandlers(eventType: String): Collection<tigase.halcyon.core.eventbus.EventHandler<*>> {
-		val result = HashSet<tigase.halcyon.core.eventbus.EventHandler<*>>()
+	private fun getHandlers(eventType: String): Collection<EventHandler<*>> {
+		val result = HashSet<EventHandler<*>>()
 
-		val a = handlersMap[tigase.halcyon.core.eventbus.AbstractEventBus.Companion.ALL_EVENTS]
+		val a = handlersMap[ALL_EVENTS]
 		if (a != null && a.isNotEmpty()) {
 			result.addAll(a)
 		}
@@ -48,36 +49,30 @@ abstract class AbstractEventBus(val sessionObject: tigase.halcyon.core.SessionOb
 		return result
 	}
 
-	fun fire(event: tigase.halcyon.core.eventbus.Event) {
+	fun fire(event: Event) {
 		val handlers = getHandlers(event.eventType)
 
 		fire(event, handlers)
 	}
 
-	protected open fun fire(
-		event: tigase.halcyon.core.eventbus.Event,
-		handlers: Collection<tigase.halcyon.core.eventbus.EventHandler<*>>
-	) {
-		if (log.isLoggable(tigase.halcyon.core.logger.Level.FINEST)) {
+	@Suppress("UNCHECKED_CAST")
+	protected open fun fire(event: Event, handlers: Collection<EventHandler<*>>) {
+		event.sessionObject = sessionObject
+		if (log.isLoggable(Level.FINEST)) {
 			log.finest("Firing event $event with ${handlers.size} handlers")
 		}
 		handlers.forEach { eventHandler ->
 			try {
-				(eventHandler as tigase.halcyon.core.eventbus.EventHandler<tigase.halcyon.core.eventbus.Event>).onEvent(
-					sessionObject, event
-				)
+				(eventHandler as EventHandler<Event>).onEvent(event)
 			} catch (e: Exception) {
-				if (log.isLoggable(tigase.halcyon.core.logger.Level.WARNING)) log.log(
-					tigase.halcyon.core.logger.Level.WARNING, "Problem on handling event", e
+				if (log.isLoggable(Level.WARNING)) log.log(
+					Level.WARNING, "Problem on handling event", e
 				)
 			}
 		}
 	}
 
-	fun <T : tigase.halcyon.core.eventbus.Event> register(
-		eventType: String = tigase.halcyon.core.eventbus.AbstractEventBus.Companion.ALL_EVENTS,
-		handler: tigase.halcyon.core.eventbus.EventHandler<T>
-	) {
+	fun <T : Event> register(eventType: String = ALL_EVENTS, handler: EventHandler<T>) {
 		var handlers = handlersMap[eventType]
 		if (handlers == null) {
 			handlers = createHandlersSet()
@@ -86,20 +81,16 @@ abstract class AbstractEventBus(val sessionObject: tigase.halcyon.core.SessionOb
 		handlers.add(handler)
 	}
 
-	fun <T : tigase.halcyon.core.eventbus.Event> register(
-		eventType: String = tigase.halcyon.core.eventbus.AbstractEventBus.Companion.ALL_EVENTS,
-		handler: (tigase.halcyon.core.SessionObject, T) -> Unit
-	) {
-		register(eventType, object : tigase.halcyon.core.eventbus.EventHandler<T> {
-			override fun onEvent(sessionObject: tigase.halcyon.core.SessionObject, event: T) {
-				handler.invoke(sessionObject, event)
+	fun <T : Event> register(eventType: String = ALL_EVENTS, handler: (T) -> Unit) {
+		register(eventType, object : EventHandler<T> {
+			override fun onEvent(event: T) {
+				handler.invoke(event)
 			}
 		})
 	}
 
 	fun unregister(
-		eventType: String = tigase.halcyon.core.eventbus.AbstractEventBus.Companion.ALL_EVENTS,
-		handler: tigase.halcyon.core.eventbus.EventHandler<*>
+		eventType: String = ALL_EVENTS, handler: EventHandler<*>
 	) {
 		val handlers = handlersMap[eventType]
 		if (handlers != null) {
@@ -110,8 +101,8 @@ abstract class AbstractEventBus(val sessionObject: tigase.halcyon.core.SessionOb
 		}
 	}
 
-	fun unregister(handler: tigase.halcyon.core.eventbus.EventHandler<*>) {
-		for ((eventType, handlers) in handlersMap) {
+	fun unregister(handler: EventHandler<*>) {
+		for ((_, handlers) in handlersMap) {
 			handlers.remove(handler)
 		}
 	}

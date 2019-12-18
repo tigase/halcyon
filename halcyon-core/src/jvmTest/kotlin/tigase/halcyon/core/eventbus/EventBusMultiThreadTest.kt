@@ -24,7 +24,7 @@ import java.util.concurrent.ConcurrentLinkedQueue
 
 class EventBusMultiThreadTest {
 
-	val sessionObject = SessionObject()
+	private val sessionObject = SessionObject()
 	val eventBus = EventBus(sessionObject)
 
 	init {
@@ -40,23 +40,23 @@ class EventBusMultiThreadTest {
 		val result1 = ConcurrentLinkedQueue<String>()
 		val result2 = ConcurrentLinkedQueue<String>()
 
-		eventBus.register<TestEvent>(TestEvent.TYPE) { _, _ -> }
+		eventBus.register<TestEvent>(TestEvent.TYPE) { }
 
-		eventBus.register<TestEvent>(tigase.halcyon.core.eventbus.AbstractEventBus.ALL_EVENTS) { _, event ->
+		eventBus.register<TestEvent>(AbstractEventBus.ALL_EVENTS) { event ->
 			try {
 				result0.add(event.value)
 			} catch (e: Exception) {
 				e.printStackTrace()
 			}
 		}
-		eventBus.register<TestEvent>(TestEvent.TYPE) { _, event ->
+		eventBus.register<TestEvent>(TestEvent.TYPE) { event ->
 			try {
 				result1.add(event.value)
 			} catch (e: Exception) {
 				e.printStackTrace()
 			}
 		}
-		eventBus.register<TestEvent>(TestEvent.TYPE) { _, event ->
+		eventBus.register<TestEvent>(TestEvent.TYPE) { event ->
 			try {
 				result2.add(event.value)
 			} catch (e: Exception) {
@@ -65,9 +65,9 @@ class EventBusMultiThreadTest {
 		}
 
 		val threads = mutableListOf<Thread>()
-		val ttt = object : tigase.halcyon.core.eventbus.EventHandler<TestEvent> {
+		val ttt = object : EventHandler<TestEvent> {
 			@Override
-			override fun onEvent(sessionObject: tigase.halcyon.core.SessionObject, event: TestEvent) {
+			override fun onEvent(event: TestEvent) {
 
 			}
 		}
@@ -78,7 +78,7 @@ class EventBusMultiThreadTest {
 					eventBus.register(TestEvent.TYPE, ttt)
 					eventBus.unregister(TestEvent.TYPE, ttt)
 				}
-				System.out.println("Stop")
+				println("Stop")
 			}
 		}
 

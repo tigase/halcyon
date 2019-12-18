@@ -17,4 +17,11 @@
  */
 package tigase.halcyon.core.eventbus
 
-abstract class Event(val eventType: String)
+import tigase.halcyon.core.SessionObject
+
+abstract class Event(val eventType: String) {
+
+	lateinit var sessionObject: SessionObject
+		internal set
+
+}

@@ -17,8 +17,8 @@
  */
 package tigase.halcyon.core.eventbus
 
-interface EventHandler<in T : tigase.halcyon.core.eventbus.Event> {
+interface EventHandler<in T : Event> {
 
-	fun onEvent(sessionObject: tigase.halcyon.core.SessionObject, event: T)
+	fun onEvent(event: T)
 
 }

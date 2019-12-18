@@ -19,6 +19,7 @@ package tigase.halcyon.core
 
 import tigase.halcyon.core.connector.AbstractConnector
 import tigase.halcyon.core.connector.ConnectorStateChangeEvent
+import tigase.halcyon.core.connector.ReceivedXMLElementEvent
 import tigase.halcyon.core.connector.SentXMLElementEvent
 import tigase.halcyon.core.eventbus.Event
 import tigase.halcyon.core.eventbus.EventHandler
@@ -100,19 +101,13 @@ abstract class AbstractHalcyon : Context, PacketWriter {
 	init {
 		sessionObject.eventBus = eventBus
 		modules.context = this
-		eventBus.register<tigase.halcyon.core.connector.ReceivedXMLElementEvent>(
-			tigase.halcyon.core.connector.ReceivedXMLElementEvent.TYPE,
-			handler = { _, event ->
-				processReceivedXmlElement(
-					event.element
-				)
-			})
+		eventBus.register<ReceivedXMLElementEvent>(tigase.halcyon.core.connector.ReceivedXMLElementEvent.TYPE) { event ->
+			processReceivedXmlElement(event.element)
+		}
 
-		eventBus.register<SessionController.SessionControllerEvents>(
-			SessionController.SessionControllerEvents.TYPE
-		) { sessionObject, event -> onSessionControllerEvent(sessionObject, event) }
+		eventBus.register(SessionController.SessionControllerEvents.TYPE, ::onSessionControllerEvent)
 
-		eventBus.register<TickEvent>(TickEvent.TYPE) { _, _ -> requestsManager.findOutdated() }
+		eventBus.register<TickEvent>(TickEvent.TYPE) { requestsManager.findOutdated() }
 
 		modules.register(PresenceModule())
 		modules.register(PubSubModule())
@@ -125,9 +120,7 @@ abstract class AbstractHalcyon : Context, PacketWriter {
 		modules.register(StreamFeaturesModule())
 	}
 
-	protected open fun onSessionControllerEvent(
-		sessionObject: SessionObject, event: SessionController.SessionControllerEvents
-	) {
+	protected open fun onSessionControllerEvent(event: SessionController.SessionControllerEvents) {
 		when (event) {
 			is SessionController.SessionControllerEvents.ErrorStop, is SessionController.SessionControllerEvents.ErrorReconnect -> processControllerErrorEvent(
 				event
@@ -313,7 +306,7 @@ abstract class AbstractHalcyon : Context, PacketWriter {
 			var fired = false
 			val h: EventHandler<ConnectorStateChangeEvent> =
 				object : EventHandler<ConnectorStateChangeEvent> {
-					override fun onEvent(sessionObject: SessionObject, event: ConnectorStateChangeEvent) {
+					override fun onEvent(event: ConnectorStateChangeEvent) {
 						if (!fired && event.newState == tigase.halcyon.core.connector.State.Disconnected) {
 							connector.context.eventBus.unregister(this)
 							fired = true

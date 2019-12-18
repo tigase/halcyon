@@ -17,4 +17,6 @@
  */
 package tigase.halcyon.core.eventbus
 
-expect class EventBus(sessionObject: tigase.halcyon.core.SessionObject) : tigase.halcyon.core.eventbus.AbstractEventBus
+import tigase.halcyon.core.SessionObject
+
+expect class EventBus(sessionObject: SessionObject) : AbstractEventBus

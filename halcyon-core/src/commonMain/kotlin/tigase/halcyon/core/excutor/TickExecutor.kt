@@ -17,16 +17,17 @@
  */
 package tigase.halcyon.core.excutor
 
-import tigase.halcyon.core.SessionObject
 import tigase.halcyon.core.TickEvent
 import tigase.halcyon.core.eventbus.AbstractEventBus
 import tigase.halcyon.core.eventbus.EventHandler
 
-class TickExecutor(private val eventBus: AbstractEventBus, val minimalTime: Long, private val runnable: () -> Unit) {
+class TickExecutor(
+	private val eventBus: AbstractEventBus, val minimalTime: Long, private val runnable: () -> Unit
+) {
 
 	private val handler: EventHandler<TickEvent> = object : EventHandler<TickEvent> {
-		override fun onEvent(sessionObject: SessionObject, event: TickEvent) {
-			onTick(sessionObject, event)
+		override fun onEvent(event: TickEvent) {
+			onTick(event)
 		}
 	}
 
@@ -36,7 +37,7 @@ class TickExecutor(private val eventBus: AbstractEventBus, val minimalTime: Long
 
 	private var lastCallTime = -1L
 
-	private fun onTick(sessionObject: SessionObject, event: TickEvent) {
+	private fun onTick(event: TickEvent) {
 		if (lastCallTime + minimalTime <= event.timestamp) {
 			lastCallTime = event.timestamp
 			runnable.invoke()

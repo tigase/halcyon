@@ -20,6 +20,7 @@ package tigase.halcyon.core.eventbus
 import org.junit.Assert
 import org.junit.Test
 import tigase.halcyon.core.SessionObject
+import tigase.halcyon.core.eventbus.AbstractEventBus.Companion.ALL_EVENTS
 
 class EventBusJvmTest {
 
@@ -32,7 +33,7 @@ class EventBusJvmTest {
 
 		val handler = object : EventHandler<TestEvent> {
 			@Override
-			override fun onEvent(sessionObject: tigase.halcyon.core.SessionObject, event: TestEvent) {
+			override fun onEvent(event: TestEvent) {
 				responses.add(event.value!!)
 			}
 		}
@@ -57,17 +58,16 @@ class EventBusJvmTest {
 		eventBus.fire(TestEvent("06"))
 		Assert.assertFalse(responses.contains("06"))
 
-		eventBus.register(tigase.halcyon.core.eventbus.AbstractEventBus.ALL_EVENTS, handler)
+		eventBus.register(ALL_EVENTS, handler)
 
 		eventBus.fire(TestEvent("07"))
 		Assert.assertTrue(responses.contains("07"))
 
 	}
 
-	internal class TestEvent(val value: String?) : tigase.halcyon.core.eventbus.Event(TYPE) {
+	internal class TestEvent(val value: String?) : Event(TYPE) {
 		companion object {
-
-			val TYPE = "test"
+			const val TYPE = "test"
 		}
 
 	}

@@ -31,14 +31,13 @@ import tigase.halcyon.core.xmpp.modules.auth.SASLModule
 import tigase.halcyon.core.xmpp.modules.presence.PresenceModule
 import tigase.halcyon.core.xmpp.modules.sm.StreamManagementModule
 
-open abstract class AbstractSocketSessionController(
-	private val context: Context, private val loggerName: String
-) : SessionController {
+abstract class AbstractSocketSessionController(private val context: Context, private val loggerName: String) :
+	SessionController {
 
 	protected val log = tigase.halcyon.core.logger.Logger(loggerName)
 
 	private val eventsHandler: EventHandler<Event> = object : EventHandler<Event> {
-		override fun onEvent(sessionObject: SessionObject, event: Event) {
+		override fun onEvent(event: Event) {
 			processEvent(event)
 		}
 	}
@@ -50,7 +49,7 @@ open abstract class AbstractSocketSessionController(
 		}
 		if (authState == SASLModule.State.Success) {
 			val resourse = context.sessionObject.getProperty<String>(SessionObject.RESOURCE)
-			context.modules.getModule<BindModule>(BindModule.TYPE).bind(resourse).response {  result ->
+			context.modules.getModule<BindModule>(BindModule.TYPE).bind(resourse).response { result ->
 				when (result) {
 					is IQResult.Success<BindModule.BindResult> -> processBindSuccess(result.get()!!)
 					else -> processBindError()

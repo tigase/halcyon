@@ -71,7 +71,7 @@ actual class Halcyon actual constructor() : AbstractHalcyon() {
 
 	fun connectAndWait() {
 		val handler = object : EventHandler<HalcyonStateChangeEvent> {
-			override fun onEvent(sessionObject: SessionObject, event: HalcyonStateChangeEvent) {
+			override fun onEvent(event: HalcyonStateChangeEvent) {
 				if (event.newState == State.Connected || event.newState == State.Stopped) {
 					synchronized(lock) {
 						lock.notify()
