@@ -18,42 +18,39 @@
 package tigase.halcyon.core
 
 import tigase.halcyon.core.eventbus.Event
-import tigase.halcyon.core.eventbus.EventBus
 import tigase.halcyon.core.logger.Logger
 import tigase.halcyon.core.xmpp.BareJID
 
 class SessionObject {
 
 	enum class Scope {
+		/**
+		 * Properties in this scope are cleared when server sends new stream.
+		 */
 		Stream,
+		/**
+		 * Properties in this scope are cleared when connector is disconnected.
+		 */
 		Connection,
+		/**
+		 * Properties in this scope are cleared when client is manually stopped.
+		 */
 		Session,
+		/**
+		 * User property, as password, username etc. Not cleared.
+		 */
 		User,
 	}
 
 	data class ClearedEvent(val scopes: Array<Scope>) : Event(TYPE) {
-
 		companion object {
 			const val TYPE = "SessionObject::ClearedEvent"
 		}
-
-		override fun equals(other: Any?): Boolean {
-			if (this === other) return true
-			if (other !is ClearedEvent) return false
-
-			if (!scopes.contentEquals(other.scopes)) return false
-
-			return true
-		}
-
-		override fun hashCode(): Int {
-			return scopes.contentHashCode()
-		}
 	}
 
-	lateinit var eventBus: EventBus
-
 	private val log = Logger("tigase.halcyon.core.SessionObject")
+
+	var clearHandler: ((Array<Scope>) -> Unit)? = null
 
 	private val properties: MutableMap<String, Entry> = HashMap()
 
@@ -75,8 +72,7 @@ class SessionObject {
 				iterator.remove()
 			}
 		}
-		val event = ClearedEvent(scopes)
-		eventBus.fire(event)
+		clearHandler?.invoke(scopes)
 	}
 
 	@Suppress("UNCHECKED_CAST")
@@ -91,25 +87,13 @@ class SessionObject {
 		}
 	}
 
-	/**
-	 * {@inheritDoc}
-	 */
 	fun <T> getProperty(key: String): T? {
 		return getProperty<T>(null, key)
 	}
 
-	/**
-	 * {@inheritDoc}
-	 */
+	@Deprecated("Will be moved to configuration")
 	fun getUserBareJid(): BareJID? {
 		return this.getProperty(USER_BARE_JID) as BareJID?
-	}
-
-	/**
-	 * {@inheritDoc}
-	 */
-	fun <T> getUserProperty(key: String): T? {
-		return getProperty<T>(Scope.User, key)
 	}
 
 	fun setProperty(scope: Scope, key: String, value: Any?): SessionObject {
@@ -119,14 +103,6 @@ class SessionObject {
 			this.properties[key] = Entry(scope, value)
 		}
 		return this
-	}
-
-	fun setProperty(key: String, value: Any?): SessionObject {
-		return setProperty(Scope.Connection, key, value)
-	}
-
-	fun setUserProperty(key: String, value: Any?): SessionObject {
-		return setProperty(Scope.User, key, value)
 	}
 
 	override fun toString(): String {

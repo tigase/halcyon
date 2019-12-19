@@ -34,18 +34,19 @@ abstract class Request<V : Any, STT : Stanza<*>>(
 	/**
 	 * `true` when no response for IQ or when stanza is not delivered to server (StreamManagement must be enabled)
 	 */
-	protected var isTimeout: Boolean = false
+	var isTimeout: Boolean = false
+		protected set
 
 	var isCompleted: Boolean = false
-		internal set
+		private set
 
 	var isSent: Boolean = false
-		internal set
+		private set
 
 	var response: STT? = null
 		private set
 
-	protected open fun markAsSent() {
+	internal open fun markAsSent() {
 		this.isSent = true
 	}
 
@@ -55,17 +56,17 @@ abstract class Request<V : Any, STT : Stanza<*>>(
 		callHandlers()
 	}
 
-	protected abstract fun createRequestNotCompletedException(): RequestNotCompletedException
-
-	protected abstract fun createRequestErrorException(
-		error: ErrorCondition, text: String? = null
-	): RequestErrorException
-
 	internal fun markTimeout() {
 		isCompleted = true
 		isTimeout = true
 		callHandlers()
 	}
+
+	protected abstract fun createRequestNotCompletedException(): RequestNotCompletedException
+
+	protected abstract fun createRequestErrorException(
+		error: ErrorCondition, text: String? = null
+	): RequestErrorException
 
 	protected abstract fun callHandlers()
 

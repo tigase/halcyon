@@ -50,7 +50,7 @@ data class HalcyonStateChangeEvent(val oldState: AbstractHalcyon.State, val newS
 	}
 }
 
-data class TickEvent(val counter: Long, val timestamp: Long) : Event(TYPE) {
+data class TickEvent(val counter: Long) : Event(TYPE) {
 
 	companion object {
 		const val TYPE = "tigase.halcyon.core.TickEvent"
@@ -100,14 +100,11 @@ abstract class AbstractHalcyon : Context, PacketWriter {
 		}
 
 	init {
-		sessionObject.eventBus = eventBus
+		sessionObject.clearHandler = { scopes -> eventBus.fire(SessionObject.ClearedEvent(scopes)) }
 		modules.context = this
-		eventBus.register<ReceivedXMLElementEvent>(tigase.halcyon.core.connector.ReceivedXMLElementEvent.TYPE) { event ->
-			processReceivedXmlElement(event.element)
-		}
+		eventBus.register(ReceivedXMLElementEvent.TYPE, ::processReceivedXmlElement)
 
 		eventBus.register(SessionController.SessionControllerEvents.TYPE, ::onSessionControllerEvent)
-
 		eventBus.register<TickEvent>(TickEvent.TYPE) { requestsManager.findOutdated() }
 
 		modules.register(PresenceModule())
@@ -143,7 +140,8 @@ abstract class AbstractHalcyon : Context, PacketWriter {
 
 	abstract fun reconnect(immediately: Boolean = false)
 
-	protected fun processReceivedXmlElement(element: Element) {
+	protected fun processReceivedXmlElement(event: ReceivedXMLElementEvent) {
+		val element = event.element
 		val handled = requestsManager.findAndExecute(element)
 		if (element.name == IQ.NAME && (handled || (element.attributes["type"] == IQType.Result.value || element.attributes["type"] == IQType.Error.value))) return
 
@@ -243,7 +241,7 @@ abstract class AbstractHalcyon : Context, PacketWriter {
 	protected abstract fun createConnector(): AbstractConnector
 
 	protected fun tick() {
-		eventBus.fire(tigase.halcyon.core.TickEvent(++tickCounter, tigase.halcyon.core.currentTimestamp()))
+		eventBus.fire(TickEvent(++tickCounter))
 	}
 
 	protected fun getConnectorState(): tigase.halcyon.core.connector.State =
@@ -262,7 +260,7 @@ abstract class AbstractHalcyon : Context, PacketWriter {
 		requestsManager.register(request)
 		c.send(request.stanza.getAsString())
 		if (!StreamManagementModule.isAckEnable(sessionObject)) {
-			request.isSent = true
+			request.markAsSent()
 		}
 		eventBus.fire(SentXMLElementEvent(request.stanza, request))
 	}
@@ -311,7 +309,7 @@ abstract class AbstractHalcyon : Context, PacketWriter {
 				object : EventHandler<ConnectorStateChangeEvent> {
 					override fun onEvent(event: ConnectorStateChangeEvent) {
 						if (!fired && event.newState == tigase.halcyon.core.connector.State.Disconnected) {
-							connector.context.eventBus.unregister(this)
+							connector.halcyon.eventBus.unregister(this)
 							fired = true
 							log.finest("State changed. Calling handler.")
 							handler.invoke()
@@ -319,9 +317,9 @@ abstract class AbstractHalcyon : Context, PacketWriter {
 					}
 				}
 			try {
-				connector.context.eventBus.register(ConnectorStateChangeEvent.TYPE, h)
+				connector.halcyon.eventBus.register(ConnectorStateChangeEvent.TYPE, h)
 				if (!fired && connector.state == tigase.halcyon.core.connector.State.Disconnected) {
-					connector.context.eventBus.unregister(h)
+					connector.halcyon.eventBus.unregister(h)
 					fired = true
 					log.finest("State is Disconnected already. Calling handler.")
 					handler.invoke()
@@ -341,6 +339,7 @@ abstract class AbstractHalcyon : Context, PacketWriter {
 		try {
 			startConnector()
 		} catch (e: Exception) {
+			requestsManager.timeoutAll()
 			state = State.Stopped
 			throw e
 		}
@@ -362,6 +361,7 @@ abstract class AbstractHalcyon : Context, PacketWriter {
 			stopConnector()
 		} finally {
 			sessionObject.clear(SessionObject.Scope.Session)
+			requestsManager.timeoutAll()
 			state = State.Stopped
 		}
 	}

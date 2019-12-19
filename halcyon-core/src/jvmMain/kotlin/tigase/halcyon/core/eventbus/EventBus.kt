@@ -94,7 +94,6 @@ actual class EventBus actual constructor(sessionObject: tigase.halcyon.core.Sess
 	}
 
 	override fun fire(event: Event, handlers: Collection<EventHandler<*>>) {
-		event.sessionObject = sessionObject
 		if (log.isLoggable(Level.FINEST)) {
 			log.finest("Firing event $event with ${handlers.size} handlers")
 		}

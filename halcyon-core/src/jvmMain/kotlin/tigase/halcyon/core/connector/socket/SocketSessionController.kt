@@ -17,6 +17,7 @@
  */
 package tigase.halcyon.core.connector.socket
 
+import tigase.halcyon.core.Halcyon
 import tigase.halcyon.core.SessionObject
 import tigase.halcyon.core.connector.AbstractSocketSessionController
 import tigase.halcyon.core.connector.ConnectionErrorEvent
@@ -31,9 +32,8 @@ import tigase.halcyon.core.xmpp.modules.StreamFeaturesEvent
 import tigase.halcyon.core.xmpp.modules.auth.SASLEvent
 import tigase.halcyon.core.xmpp.modules.auth.SASLModule
 
-class SocketSessionController(
-	private val context: tigase.halcyon.core.Context, private val connector: SocketConnector
-) : AbstractSocketSessionController(context, "tigase.halcyon.core.connector.socket.SocketSessionController") {
+class SocketSessionController(halcyon: Halcyon, private val connector: SocketConnector) :
+	AbstractSocketSessionController(halcyon, "tigase.halcyon.core.connector.socket.SocketSessionController") {
 
 	override fun processAuthSuccessfull(event: SASLEvent.SASLSuccess) {
 		connector.restartStream()
@@ -45,7 +45,7 @@ class SocketSessionController(
 	override fun processConnectionError(event: ConnectionErrorEvent) {
 		log.log(Level.FINE, "Received connector exception: $event")
 
-		context.sessionObject.clear(SessionObject.Scope.Connection)
+		halcyon.sessionObject.clear(SessionObject.Scope.Connection)
 
 //		context.modules.getModuleOrNull<StreamManagementModule>(StreamManagementModule.TYPE)?.reset()
 //		context.modules.getModuleOrNull<SASLModule>(SASLModule.TYPE)?.clear()
@@ -53,20 +53,20 @@ class SocketSessionController(
 		when (event) {
 			is SocketConnectionErrorEvent.HostNotFount -> {
 				log.info("Cannot find server in DNS")
-				context.eventBus.fire(
+				halcyon.eventBus.fire(
 					SessionController.SessionControllerEvents.ErrorStop(
 						"Cannot find server in DNS"
 					)
 				)
 			}
 			else -> {
-				context.eventBus.fire(SessionController.SessionControllerEvents.ErrorReconnect("Connection error"))
+				halcyon.eventBus.fire(SessionController.SessionControllerEvents.ErrorReconnect("Connection error"))
 			}
 		}
 	}
 
 	override fun processStreamFeaturesEvent(event: StreamFeaturesEvent) {
-		val authState = SASLModule.getAuthState(context.sessionObject)
+		val authState = SASLModule.getAuthState(halcyon.sessionObject)
 		val connectionSecured = connector.secured
 		val tlsAvailable: Boolean = isTLSAvailable(event.features)
 
@@ -84,9 +84,9 @@ class SocketSessionController(
 
 	private fun processSeeOtherHost(event: StreamErrorEvent) {
 		val url = event.errorElement.value
-		context.sessionObject.setProperty(SessionObject.Scope.Session, SEE_OTHER_HOST_KEY, url)
+		halcyon.sessionObject.setProperty(SessionObject.Scope.Session, SEE_OTHER_HOST_KEY, url)
 
-		context.eventBus.fire(
+		halcyon.eventBus.fire(
 			SessionController.SessionControllerEvents.ErrorReconnect(
 				"see-other-host: $url", immediately = true, force = true
 			)

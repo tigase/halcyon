@@ -17,6 +17,7 @@
  */
 package tigase.halcyon.core.eventbus
 
+import tigase.halcyon.core.currentTimestamp
 import tigase.halcyon.core.logger.Level
 
 abstract class AbstractEventBus(val sessionObject: tigase.halcyon.core.SessionObject) {
@@ -50,14 +51,14 @@ abstract class AbstractEventBus(val sessionObject: tigase.halcyon.core.SessionOb
 	}
 
 	fun fire(event: Event) {
+		event.timestamp = currentTimestamp()
+		event.sessionObject = sessionObject
 		val handlers = getHandlers(event.eventType)
-
 		fire(event, handlers)
 	}
 
 	@Suppress("UNCHECKED_CAST")
 	protected open fun fire(event: Event, handlers: Collection<EventHandler<*>>) {
-		event.sessionObject = sessionObject
 		if (log.isLoggable(Level.FINEST)) {
 			log.finest("Firing event $event with ${handlers.size} handlers")
 		}

@@ -27,10 +27,6 @@ class EventBusMultiThreadTest {
 	private val sessionObject = SessionObject()
 	val eventBus = EventBus(sessionObject)
 
-	init {
-		sessionObject.eventBus = eventBus
-	}
-
 	private var working: Boolean = false
 
 	@Test

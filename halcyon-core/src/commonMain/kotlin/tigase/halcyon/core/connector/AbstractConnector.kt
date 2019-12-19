@@ -17,15 +17,16 @@
  */
 package tigase.halcyon.core.connector
 
+import tigase.halcyon.core.Halcyon
 import tigase.halcyon.core.xmpp.SessionController
 
-abstract class AbstractConnector(val context: tigase.halcyon.core.Context) {
+abstract class AbstractConnector(val halcyon: Halcyon) {
 
 	var state: State = State.Disconnected
 		protected set(value) {
 			val old = field
 			field = value
-			if (old != field) context.eventBus.fire(ConnectorStateChangeEvent(old, field))
+			if (old != field) halcyon.eventBus.fire(ConnectorStateChangeEvent(old, field))
 		}
 
 	abstract fun createSessionController(): SessionController

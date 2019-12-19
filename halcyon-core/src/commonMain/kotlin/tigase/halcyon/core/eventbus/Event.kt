@@ -24,4 +24,7 @@ abstract class Event(val eventType: String) {
 	lateinit var sessionObject: SessionObject
 		internal set
 
+	var timestamp: Long = Long.MIN_VALUE
+		internal set
+
 }

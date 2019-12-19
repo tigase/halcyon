@@ -39,8 +39,7 @@ class StreamManagementModule : XmppModule {
 
 	class ResumptionContext {
 
-		var isActive: Boolean = false
-			internal set
+		internal var isActive: Boolean = false
 
 		var resumptionTime: Long = 0
 			internal set
@@ -60,7 +59,7 @@ class StreamManagementModule : XmppModule {
 		var resID: String? = null
 			internal set
 
-		var isResume: Boolean = false
+		var isResumeEnabled: Boolean = false
 			internal set
 
 		var location: String? = null
@@ -86,7 +85,7 @@ class StreamManagementModule : XmppModule {
 		fun isAckEnable(sessionObject: SessionObject) = getContext(sessionObject).isAckEnabled
 
 		fun isResumptionAvailable(sessionObject: SessionObject) =
-			getContext(sessionObject).let { ctx -> ctx.resID != null && ctx.isResume }
+			getContext(sessionObject).let { ctx -> ctx.resID != null && ctx.isResumeEnabled }
 
 		fun getLocationAddress(sessionObject: SessionObject) = getContext(sessionObject).location
 	}
@@ -155,6 +154,7 @@ class StreamManagementModule : XmppModule {
 
 	fun reset() {
 		context.sessionObject.setProperty(SessionObject.Scope.Session, STREAM_CONTEXT, null)
+		queue.clear()
 	}
 
 	private fun processFailed(element: Element) {
@@ -172,7 +172,7 @@ class StreamManagementModule : XmppModule {
 
 		getContext(context.sessionObject).let { ctx ->
 			ctx.resID = id
-			ctx.isResume = resume
+			ctx.isResumeEnabled = resume
 			ctx.location = location
 			ctx.resumptionTime = mx
 			ctx.isAckEnabled = true
@@ -223,7 +223,7 @@ class StreamManagementModule : XmppModule {
 			val x = queue.get(0)
 			queue.remove(x)
 			if (x is Request<*, *>) {
-				x.isSent = true
+				x.markAsSent()
 				log.fine("Marked as 'delivered to server': $x")
 			}
 		}
@@ -287,7 +287,7 @@ class StreamManagementModule : XmppModule {
 		context.writer.writeDirectly(element("resume") {
 			xmlns = XMLNS
 			attribute("h", h.toString())
-			attribute("previd", id)
+			attribute("previd", id+"1")
 		})
 	}
 

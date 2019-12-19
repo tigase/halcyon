@@ -34,9 +34,7 @@ class RequestsManager {
 		requests[key(request.stanza)] = request
 	}
 
-	private inline fun key(element: Element): String {
-		return "${element.name}:${element.attributes["id"]}"
-	}
+	private fun key(element: Element): String = "${element.name}:${element.attributes["id"]}"
 
 	@Suppress("UNCHECKED_CAST")
 	fun getRequest(response: Element): Request<*, *>? {
@@ -87,12 +85,15 @@ class RequestsManager {
 		}
 	}
 
-	fun timeoutAll() {
+	fun timeoutAll(maxCreationTimestamp: Long = Long.MAX_VALUE) {
+		log.info("Timeout all waiting requests")
 		val iterator = requests.entries.iterator()
 		while (iterator.hasNext()) {
 			val request = iterator.next().value
-			iterator.remove()
-			if (!request.isCompleted) execute { request.markTimeout() }
+			if (request.creationTimestamp < maxCreationTimestamp) {
+				iterator.remove()
+				if (!request.isCompleted) execute { request.markTimeout() }
+			}
 		}
 	}
 

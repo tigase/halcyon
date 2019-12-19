@@ -20,7 +20,7 @@ package tigase.halcyon.core.connector
 import org.w3c.dom.MessageEvent
 import org.w3c.dom.WebSocket
 import org.w3c.dom.events.Event
-import tigase.halcyon.core.Context
+import tigase.halcyon.core.Halcyon
 import tigase.halcyon.core.SessionObject
 import tigase.halcyon.core.exceptions.HalcyonException
 import tigase.halcyon.core.excutor.TickExecutor
@@ -33,37 +33,37 @@ import tigase.halcyon.core.xmpp.SessionController
 
 class WebSocketConnectionErrorEvent(description: String) : ConnectionErrorEvent()
 
-class WebSocketConnector(context: Context) : AbstractConnector(context) {
+class WebSocketConnector(halcyon: Halcyon) : AbstractConnector(halcyon) {
 
 	private val log = Logger("tigase.halcyon.core.connector.WebSocketConnector")
 
-	private val whitespacePingExecutor = TickExecutor(context.eventBus, 25000) { onTick() }
+	private val whitespacePingExecutor = TickExecutor(halcyon.eventBus, 25000) { onTick() }
 
 	private val parser = object : StreamParser() {
 		override fun onNextElement(element: Element) {
 			log.finest("Received element ${element.getAsString()}")
-			context.eventBus.fire(ReceivedXMLElementEvent(element))
+			halcyon.eventBus.fire(ReceivedXMLElementEvent(element))
 		}
 
 		override fun onStreamClosed() {
 			log.finest("Stream closed")
-			context.eventBus.fire(StreamTerminatedEvent())
+			halcyon.eventBus.fire(StreamTerminatedEvent())
 		}
 
 		override fun onStreamStarted(attrs: Map<String, String>) {
 			log.finest("Stream started: $attrs")
-			context.eventBus.fire(StreamStartedEvent(attrs))
+			halcyon.eventBus.fire(StreamStartedEvent(attrs))
 		}
 
 		override fun onParseError(errorMessage: String) {
 			log.finest("Parse error: $errorMessage")
-			context.eventBus.fire(ParseErrorEvent(errorMessage))
+			halcyon.eventBus.fire(ParseErrorEvent(errorMessage))
 		}
 	}
 
 	private lateinit var ws: WebSocket
 
-	override fun createSessionController(): SessionController = WebSocketSessionController(context, this)
+	override fun createSessionController(): SessionController = WebSocketSessionController(halcyon, this)
 
 	override fun send(data: CharSequence) {
 		if (log.isLoggable(Level.FINEST)) log.log(Level.FINEST, "Sending: $data")
@@ -71,15 +71,15 @@ class WebSocketConnector(context: Context) : AbstractConnector(context) {
 			this.ws.send(data.toString())
 		} catch (e: Throwable) {
 			log.log(Level.WARNING, "Cannot send data.", e)
-			context.eventBus.fire(WebSocketConnectionErrorEvent("Cannot send data"))
+			halcyon.eventBus.fire(WebSocketConnectionErrorEvent("Cannot send data"))
 			throw e
 		}
 	}
 
 	private fun getDomain(): String {
-		val userJid = context.sessionObject.getProperty<BareJID>(SessionObject.USER_BARE_JID)
+		val userJid = halcyon.sessionObject.getProperty<BareJID>(SessionObject.USER_BARE_JID)
 
-		return context.sessionObject.getProperty<String>(SessionObject.DOMAIN_NAME) ?: (userJid?.domain
+		return halcyon.sessionObject.getProperty<String>(SessionObject.DOMAIN_NAME) ?: (userJid?.domain
 			?: throw HalcyonException("No domain is specified"))
 	}
 
@@ -106,7 +106,7 @@ class WebSocketConnector(context: Context) : AbstractConnector(context) {
 		log.fine("Socket is closed: $event")
 		var oldState = state
 		state = State.Disconnected
-		if (oldState == State.Connected) context.eventBus.fire(WebSocketConnectionErrorEvent("Socket unexpectedly disconnected."))
+		if (oldState == State.Connected) halcyon.eventBus.fire(WebSocketConnectionErrorEvent("Socket unexpectedly disconnected."))
 		return true
 	}
 
@@ -124,7 +124,7 @@ class WebSocketConnector(context: Context) : AbstractConnector(context) {
 		log.warning("Socket error: $event")
 		state = State.Disconnected
 
-		context.eventBus.fire(WebSocketConnectionErrorEvent("Unknown error"))
+		halcyon.eventBus.fire(WebSocketConnectionErrorEvent("Unknown error"))
 		return true
 	}
 
@@ -149,7 +149,7 @@ class WebSocketConnector(context: Context) : AbstractConnector(context) {
 
 	fun restartStream() {
 		log.finest("Send new stream")
-		val userJid = context.sessionObject.getProperty<BareJID>(SessionObject.USER_BARE_JID)
+		val userJid = halcyon.sessionObject.getProperty<BareJID>(SessionObject.USER_BARE_JID)
 
 		val sb = buildString {
 			append("<stream:stream ")

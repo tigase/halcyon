@@ -32,7 +32,6 @@ class EventBusTest {
 	fun testEventBus() {
 		val sessionObject = SessionObject()
 		val eventBus = EventBus(sessionObject)
-		sessionObject.eventBus = eventBus
 
 		eventBus.register(Event01.TYPE, object : EventHandler<Event01> {
 			override fun onEvent(event: Event01) {

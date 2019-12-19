@@ -20,11 +20,9 @@ package tigase.halcyon.core.connector.socket
 import org.minidns.dnssec.DnssecValidationFailedException
 import org.minidns.hla.DnssecResolverApi
 import org.minidns.hla.SrvType
-import tigase.halcyon.core.Context
+import tigase.halcyon.core.Halcyon
 import tigase.halcyon.core.SessionObject
 import tigase.halcyon.core.connector.*
-import tigase.halcyon.core.eventbus.Event
-import tigase.halcyon.core.eventbus.EventHandler
 import tigase.halcyon.core.excutor.TickExecutor
 import tigase.halcyon.core.logger.Level
 import tigase.halcyon.core.logger.Logger
@@ -54,7 +52,7 @@ sealed class SocketConnectionErrorEvent : ConnectionErrorEvent() {
 
 }
 
-class SocketConnector(context: Context) : AbstractConnector(context) {
+class SocketConnector(halcyon: Halcyon) : AbstractConnector(halcyon) {
 
 	companion object {
 		const val SERVER_HOST = "tigase.halcyon.core.connector.socket.SocketConnector#serverHost"
@@ -73,7 +71,7 @@ class SocketConnector(context: Context) : AbstractConnector(context) {
 
 	private lateinit var worker: SocketWorker
 
-	private val whitespacePingExecutor = TickExecutor(context.eventBus, 30000) { onTick() }
+	private val whitespacePingExecutor = TickExecutor(halcyon.eventBus, 30000) { onTick() }
 
 	private var whiteSpaceEnabled: Boolean = true
 
@@ -84,17 +82,17 @@ class SocketConnector(context: Context) : AbstractConnector(context) {
 
 		override fun onStreamClosed() {
 			log.finest("Stream closed")
-			context.eventBus.fire(StreamTerminatedEvent())
+			halcyon.eventBus.fire(StreamTerminatedEvent())
 		}
 
 		override fun onStreamStarted(attrs: Map<String, String>) {
 			log.finest("Stream started: $attrs")
-			context.eventBus.fire(StreamStartedEvent(attrs))
+			halcyon.eventBus.fire(StreamStartedEvent(attrs))
 		}
 
 		override fun onParseError(errorMessage: String) {
 			log.finest("Parse error: $errorMessage")
-			context.eventBus.fire(ParseErrorEvent(errorMessage))
+			halcyon.eventBus.fire(ParseErrorEvent(errorMessage))
 		}
 	}
 
@@ -102,7 +100,7 @@ class SocketConnector(context: Context) : AbstractConnector(context) {
 		log.finest("Received element ${element.getAsString()}")
 		when (element.xmlns) {
 			XMLNS_START_TLS -> processTLSStanza(element)
-			else -> context.eventBus.fire(ReceivedXMLElementEvent(element))
+			else -> halcyon.eventBus.fire(ReceivedXMLElementEvent(element))
 		}
 	}
 
@@ -113,7 +111,7 @@ class SocketConnector(context: Context) : AbstractConnector(context) {
 			}
 			"failure" -> {
 				log.warning("Cannot establish TLS connection!")
-				context.eventBus.fire(SocketConnectionErrorEvent.TLSFailureEvent())
+				halcyon.eventBus.fire(SocketConnectionErrorEvent.TLSFailureEvent())
 			}
 			else -> throw XMPPException(ErrorCondition.BadRequest)
 		}
@@ -141,7 +139,7 @@ class SocketConnector(context: Context) : AbstractConnector(context) {
 	private fun proceedTLS() {
 		log.info("Proceeding TLS")
 		try {
-			val userJid = context.sessionObject.getProperty<BareJID>(SessionObject.USER_BARE_JID)!!
+			val userJid = halcyon.sessionObject.getProperty<BareJID>(SessionObject.USER_BARE_JID)!!
 			log.finest("Disabling whitespace ping")
 			whiteSpaceEnabled = false
 
@@ -164,32 +162,32 @@ class SocketConnector(context: Context) : AbstractConnector(context) {
 			restartStream()
 		} catch (e: Throwable) {
 			state = State.Disconnecting
-			context.eventBus.fire(createSocketConnectionErrorEvent(e))
+			halcyon.eventBus.fire(createSocketConnectionErrorEvent(e))
 		} finally {
 			log.finest("Enabling whitespace ping")
 			whiteSpaceEnabled = true
 		}
 	}
 
-	override fun createSessionController(): SessionController = SocketSessionController(context, this)
+	override fun createSessionController(): SessionController = SocketSessionController(halcyon, this)
 
 	private fun createSocket(): Socket {
-		val location = StreamManagementModule.getLocationAddress(context.sessionObject)
+		val location = StreamManagementModule.getLocationAddress(halcyon.sessionObject)
 		if (location != null) {
 			return Socket(InetAddress.getByName(location), 5222)
 		}
 
-		val seeOther = context.sessionObject.getProperty<String>(SEE_OTHER_HOST_KEY)
+		val seeOther = halcyon.sessionObject.getProperty<String>(SEE_OTHER_HOST_KEY)
 		if (seeOther != null) {
 			return Socket(InetAddress.getByName(seeOther), 5222)
 		}
 
-		val forcedHost = context.sessionObject.getProperty<String>(SERVER_HOST)
+		val forcedHost = halcyon.sessionObject.getProperty<String>(SERVER_HOST)
 		if (forcedHost != null) {
 			return Socket(InetAddress.getByName(forcedHost), 5222)
 		}
 
-		val userJid = context.sessionObject.getProperty<BareJID>(SessionObject.USER_BARE_JID)!!
+		val userJid = halcyon.sessionObject.getProperty<BareJID>(SessionObject.USER_BARE_JID)!!
 
 		val result = DnssecResolverApi.INSTANCE.resolveSrv(SrvType.xmpp_client, userJid.domain)
 
@@ -214,7 +212,7 @@ class SocketConnector(context: Context) : AbstractConnector(context) {
 	override fun start() {
 		state = State.Connecting
 
-		val userJid = context.sessionObject.getProperty<BareJID>(SessionObject.USER_BARE_JID)!!
+		val userJid = halcyon.sessionObject.getProperty<BareJID>(SessionObject.USER_BARE_JID)!!
 
 		try {
 			this.socket = createSocket()
@@ -239,14 +237,14 @@ class SocketConnector(context: Context) : AbstractConnector(context) {
 			whitespacePingExecutor.start()
 		} catch (e: Exception) {
 			state = State.Disconnected
-			context.eventBus.fire(createSocketConnectionErrorEvent(e))
+			halcyon.eventBus.fire(createSocketConnectionErrorEvent(e))
 		}
 	}
 
 	private fun onWorkerException(cause: Exception) {
 		cause.printStackTrace()
 		state = State.Disconnecting
-		context.eventBus.fire(createSocketConnectionErrorEvent(cause))
+		halcyon.eventBus.fire(createSocketConnectionErrorEvent(cause))
 	}
 
 	private fun createSocketConnectionErrorEvent(cause: Throwable): SocketConnectionErrorEvent =
@@ -292,13 +290,13 @@ class SocketConnector(context: Context) : AbstractConnector(context) {
 		} catch (e: Exception) {
 			log.log(Level.WARNING, "Cannot send data to server", e)
 			state = State.Disconnecting
-			context.eventBus.fire(createSocketConnectionErrorEvent(e))
+			halcyon.eventBus.fire(createSocketConnectionErrorEvent(e))
 			throw e
 		}
 	}
 
 	fun restartStream() {
-		val userJid = context.sessionObject.getProperty<BareJID>(SessionObject.USER_BARE_JID)!!
+		val userJid = halcyon.sessionObject.getProperty<BareJID>(SessionObject.USER_BARE_JID)!!
 
 		val sb = buildString {
 			append("<stream:stream xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams' ")
@@ -323,7 +321,7 @@ class SocketConnector(context: Context) : AbstractConnector(context) {
 		val element = element("starttls") {
 			xmlns = XMLNS_START_TLS
 		}
-		context.writer.writeDirectly(element)
+		halcyon.writer.writeDirectly(element)
 	}
 
 }

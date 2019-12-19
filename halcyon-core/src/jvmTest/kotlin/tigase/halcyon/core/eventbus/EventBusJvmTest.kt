@@ -28,7 +28,6 @@ class EventBusJvmTest {
 	fun testBasic() {
 		val sessionObject = SessionObject()
 		val eventBus = EventBus(sessionObject)
-		sessionObject.eventBus = eventBus
 		val responses = mutableListOf<Any>()
 
 		val handler = object : EventHandler<TestEvent> {

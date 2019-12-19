@@ -17,7 +17,7 @@
  */
 package tigase.halcyon.core.connector
 
-import tigase.halcyon.core.Context
+import tigase.halcyon.core.Halcyon
 import tigase.halcyon.core.SessionObject
 import tigase.halcyon.core.eventbus.Event
 import tigase.halcyon.core.eventbus.EventHandler
@@ -31,7 +31,7 @@ import tigase.halcyon.core.xmpp.modules.auth.SASLModule
 import tigase.halcyon.core.xmpp.modules.presence.PresenceModule
 import tigase.halcyon.core.xmpp.modules.sm.StreamManagementModule
 
-abstract class AbstractSocketSessionController(private val context: Context, private val loggerName: String) :
+abstract class AbstractSocketSessionController(protected val halcyon: Halcyon, loggerName: String) :
 	SessionController {
 
 	protected val log = tigase.halcyon.core.logger.Logger(loggerName)
@@ -43,16 +43,16 @@ abstract class AbstractSocketSessionController(private val context: Context, pri
 	}
 
 	protected open fun processStreamFeaturesEvent(event: StreamFeaturesEvent) {
-		val authState = SASLModule.getAuthState(context.sessionObject)
+		val authState = SASLModule.getAuthState(halcyon.sessionObject)
 		if (authState == SASLModule.State.Unknown) {
-			if (!StreamManagementModule.isResumptionAvailable(context.sessionObject)) {
-				context.modules.getModuleOrNull<StreamManagementModule>(StreamManagementModule.TYPE)?.reset()
+			if (!StreamManagementModule.isResumptionAvailable(halcyon.sessionObject)) {
+				halcyon.modules.getModuleOrNull<StreamManagementModule>(StreamManagementModule.TYPE)?.reset()
 			}
-			context.modules.getModule<SASLModule>(SASLModule.TYPE).startAuth()
+			halcyon.modules.getModule<SASLModule>(SASLModule.TYPE).startAuth()
 		}
 		if (authState == SASLModule.State.Success) {
-			if (StreamManagementModule.isResumptionAvailable(context.sessionObject)) {
-				context.modules.getModule<StreamManagementModule>(StreamManagementModule.TYPE).resume()
+			if (StreamManagementModule.isResumptionAvailable(halcyon.sessionObject)) {
+				halcyon.modules.getModule<StreamManagementModule>(StreamManagementModule.TYPE).resume()
 			} else {
 				bindResource()
 			}
@@ -60,8 +60,8 @@ abstract class AbstractSocketSessionController(private val context: Context, pri
 	}
 
 	private fun bindResource() {
-		val resource = context.sessionObject.getProperty<String>(SessionObject.RESOURCE)
-		context.modules.getModule<BindModule>(BindModule.TYPE).bind(resource).response { result ->
+		val resource = halcyon.sessionObject.getProperty<String>(SessionObject.RESOURCE)
+		halcyon.modules.getModule<BindModule>(BindModule.TYPE).bind(resource).response { result ->
 			when (result) {
 				is IQResult.Success<BindModule.BindResult> -> processBindSuccess(result.get()!!)
 				else -> processBindError()
@@ -78,20 +78,33 @@ abstract class AbstractSocketSessionController(private val context: Context, pri
 			is StreamFeaturesEvent -> processStreamFeaturesEvent(event)
 			is SASLEvent.SASLSuccess -> processAuthSuccessfull(event)
 			is StreamManagementModule.StreamManagementEvent -> processStreamManagementEvent(event)
+			is ConnectorStateChangeEvent -> processConnectorStateChangeEvent(event)
+		}
+	}
+
+	private fun processConnectorStateChangeEvent(event: ConnectorStateChangeEvent) {
+		if (event.oldState == State.Connected && (event.newState == State.Disconnected || event.newState == State.Disconnecting)) {
+			log.fine("Checking conditions to force timeout")
+			if (!StreamManagementModule.isResumptionAvailable(halcyon.sessionObject)) {
+				halcyon.requestsManager.timeoutAll()
+			}
 		}
 	}
 
 	private fun processStreamManagementEvent(event: StreamManagementModule.StreamManagementEvent) {
 		when (event) {
-			is StreamManagementModule.StreamManagementEvent.Resumed -> context.eventBus.fire(SessionController.SessionControllerEvents.Successful())
-			is StreamManagementModule.StreamManagementEvent.Failed -> bindResource()
+			is StreamManagementModule.StreamManagementEvent.Resumed -> halcyon.eventBus.fire(SessionController.SessionControllerEvents.Successful())
+			is StreamManagementModule.StreamManagementEvent.Failed -> {
+				halcyon.requestsManager.timeoutAll()
+				bindResource()
+			}
 		}
 	}
 
 	private fun processBindSuccess(event: BindModule.BindResult) {
-		context.eventBus.fire(SessionController.SessionControllerEvents.Successful())
-		context.modules.getModuleOrNull<PresenceModule>(PresenceModule.TYPE)?.sendInitialPresence()
-		context.modules.getModuleOrNull<StreamManagementModule>(StreamManagementModule.TYPE)?.enable()
+		halcyon.eventBus.fire(SessionController.SessionControllerEvents.Successful())
+		halcyon.modules.getModuleOrNull<PresenceModule>(PresenceModule.TYPE)?.sendInitialPresence()
+		halcyon.modules.getModuleOrNull<StreamManagementModule>(StreamManagementModule.TYPE)?.enable()
 	}
 
 	protected abstract fun processAuthSuccessfull(event: SASLEvent.SASLSuccess)
@@ -99,21 +112,21 @@ abstract class AbstractSocketSessionController(private val context: Context, pri
 	protected abstract fun processConnectionError(event: ConnectionErrorEvent)
 
 	protected open fun processParseError(event: ParseErrorEvent) {
-		context.eventBus.fire(SessionController.SessionControllerEvents.ErrorReconnect("Parse error"))
+		halcyon.eventBus.fire(SessionController.SessionControllerEvents.ErrorReconnect("Parse error"))
 	}
 
 	protected open fun processBindError() {
-		context.eventBus.fire(SessionController.SessionControllerEvents.ErrorReconnect("Session bind error"))
+		halcyon.eventBus.fire(SessionController.SessionControllerEvents.ErrorReconnect("Session bind error"))
 	}
 
 	protected open fun processAuthError(event: SASLEvent.SASLError) {
-		context.eventBus.fire(SessionController.SessionControllerEvents.ErrorStop("Authentication error."))
+		halcyon.eventBus.fire(SessionController.SessionControllerEvents.ErrorStop("Authentication error."))
 	}
 
 	protected open fun processStreamError(event: StreamErrorEvent) {
-		context.sessionObject.clear(SessionObject.Scope.Connection)
+		halcyon.sessionObject.clear(SessionObject.Scope.Connection)
 		when (event.errorElement.name) {
-			else -> context.eventBus.fire(
+			else -> halcyon.eventBus.fire(
 				SessionController.SessionControllerEvents.ErrorReconnect(
 					"Stream error: ${event.condition}"
 				)
@@ -122,10 +135,10 @@ abstract class AbstractSocketSessionController(private val context: Context, pri
 	}
 
 	override fun start() {
-		context.eventBus.register(handler = eventsHandler)
+		halcyon.eventBus.register(handler = eventsHandler)
 	}
 
 	override fun stop() {
-		context.eventBus.unregister(eventsHandler)
+		halcyon.eventBus.unregister(eventsHandler)
 	}
 }
