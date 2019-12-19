@@ -45,17 +45,28 @@ abstract class AbstractSocketSessionController(private val context: Context, pri
 	protected open fun processStreamFeaturesEvent(event: StreamFeaturesEvent) {
 		val authState = SASLModule.getAuthState(context.sessionObject)
 		if (authState == SASLModule.State.Unknown) {
+			if (!StreamManagementModule.isResumptionAvailable(context.sessionObject)) {
+				context.modules.getModuleOrNull<StreamManagementModule>(StreamManagementModule.TYPE)?.reset()
+			}
 			context.modules.getModule<SASLModule>(SASLModule.TYPE).startAuth()
 		}
 		if (authState == SASLModule.State.Success) {
-			val resourse = context.sessionObject.getProperty<String>(SessionObject.RESOURCE)
-			context.modules.getModule<BindModule>(BindModule.TYPE).bind(resourse).response { result ->
-				when (result) {
-					is IQResult.Success<BindModule.BindResult> -> processBindSuccess(result.get()!!)
-					else -> processBindError()
-				}
-			}.send()
+			if (StreamManagementModule.isResumptionAvailable(context.sessionObject)) {
+				context.modules.getModule<StreamManagementModule>(StreamManagementModule.TYPE).resume()
+			} else {
+				bindResource()
+			}
 		}
+	}
+
+	private fun bindResource() {
+		val resource = context.sessionObject.getProperty<String>(SessionObject.RESOURCE)
+		context.modules.getModule<BindModule>(BindModule.TYPE).bind(resource).response { result ->
+			when (result) {
+				is IQResult.Success<BindModule.BindResult> -> processBindSuccess(result.get()!!)
+				else -> processBindError()
+			}
+		}.send()
 	}
 
 	private fun processEvent(event: Event) {
@@ -66,6 +77,14 @@ abstract class AbstractSocketSessionController(private val context: Context, pri
 			is ConnectionErrorEvent -> processConnectionError(event)
 			is StreamFeaturesEvent -> processStreamFeaturesEvent(event)
 			is SASLEvent.SASLSuccess -> processAuthSuccessfull(event)
+			is StreamManagementModule.StreamManagementEvent -> processStreamManagementEvent(event)
+		}
+	}
+
+	private fun processStreamManagementEvent(event: StreamManagementModule.StreamManagementEvent) {
+		when (event) {
+			is StreamManagementModule.StreamManagementEvent.Resumed -> context.eventBus.fire(SessionController.SessionControllerEvents.Successful())
+			is StreamManagementModule.StreamManagementEvent.Failed -> bindResource()
 		}
 	}
 
@@ -92,7 +111,7 @@ abstract class AbstractSocketSessionController(private val context: Context, pri
 	}
 
 	protected open fun processStreamError(event: StreamErrorEvent) {
-		context.sessionObject.clear(SessionObject.Scope.Session)
+		context.sessionObject.clear(SessionObject.Scope.Connection)
 		when (event.errorElement.name) {
 			else -> context.eventBus.fire(
 				SessionController.SessionControllerEvents.ErrorReconnect(

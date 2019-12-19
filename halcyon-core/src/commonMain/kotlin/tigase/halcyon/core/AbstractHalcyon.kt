@@ -40,6 +40,7 @@ import tigase.halcyon.core.xmpp.modules.presence.PresenceModule
 import tigase.halcyon.core.xmpp.modules.pubsub.PubSubModule
 import tigase.halcyon.core.xmpp.modules.sm.StreamManagementModule
 import tigase.halcyon.core.xmpp.stanzas.IQ
+import tigase.halcyon.core.xmpp.stanzas.IQType
 
 data class HalcyonStateChangeEvent(val oldState: AbstractHalcyon.State, val newState: AbstractHalcyon.State) :
 	Event(TYPE) {
@@ -144,7 +145,7 @@ abstract class AbstractHalcyon : Context, PacketWriter {
 
 	protected fun processReceivedXmlElement(element: Element) {
 		val handled = requestsManager.findAndExecute(element)
-		if (handled && element.name == IQ.NAME) return
+		if (element.name == IQ.NAME && (handled || (element.attributes["type"] == IQType.Result.value || element.attributes["type"] == IQType.Error.value))) return
 
 		val modules = modules.getModulesFor(element)
 		if (modules.isEmpty()) {
@@ -287,14 +288,16 @@ abstract class AbstractHalcyon : Context, PacketWriter {
 	}
 
 	protected fun stopConnector(doAfterDisconnected: (() -> Unit)? = null) {
-		log.fine("Stopping connector${if (doAfterDisconnected != null) " (with action after disconnect)" else ""}")
-		if (doAfterDisconnected != null) connector?.let {
-			waitForDisconnect(it, doAfterDisconnected)
+		if (connector != null || sessionController != null) {
+			log.fine("Stopping connector${if (doAfterDisconnected != null) " (with action after disconnect)" else ""}")
+			if (doAfterDisconnected != null) connector?.let {
+				waitForDisconnect(it, doAfterDisconnected)
+			}
+			sessionController?.stop()
+			sessionController = null
+			connector?.stop()
+			connector = null
 		}
-		sessionController?.stop()
-		sessionController = null
-		connector?.stop()
-		connector = null
 	}
 
 	protected fun waitForDisconnect(connector: AbstractConnector?, handler: () -> Unit) {

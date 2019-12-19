@@ -32,7 +32,7 @@ class WebSocketSessionController(
 
 	override fun processConnectionError(event: ConnectionErrorEvent) {
 		log.log(Level.FINE, "Received connector exception: $event")
-		context.sessionObject.clear(SessionObject.Scope.Session)
+		context.sessionObject.clear(SessionObject.Scope.Connection)
 		context.eventBus.fire(SessionController.SessionControllerEvents.ErrorReconnect("Connection error"))
 	}
 

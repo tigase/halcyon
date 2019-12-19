@@ -23,6 +23,8 @@ import org.minidns.hla.SrvType
 import tigase.halcyon.core.Context
 import tigase.halcyon.core.SessionObject
 import tigase.halcyon.core.connector.*
+import tigase.halcyon.core.eventbus.Event
+import tigase.halcyon.core.eventbus.EventHandler
 import tigase.halcyon.core.excutor.TickExecutor
 import tigase.halcyon.core.logger.Level
 import tigase.halcyon.core.logger.Logger
@@ -33,6 +35,7 @@ import tigase.halcyon.core.xmpp.BareJID
 import tigase.halcyon.core.xmpp.ErrorCondition
 import tigase.halcyon.core.xmpp.SessionController
 import tigase.halcyon.core.xmpp.XMPPException
+import tigase.halcyon.core.xmpp.modules.sm.StreamManagementModule
 import java.net.InetAddress
 import java.net.Socket
 import java.net.UnknownHostException
@@ -171,6 +174,11 @@ class SocketConnector(context: Context) : AbstractConnector(context) {
 	override fun createSessionController(): SessionController = SocketSessionController(context, this)
 
 	private fun createSocket(): Socket {
+		val location = StreamManagementModule.getLocationAddress(context.sessionObject)
+		if (location != null) {
+			return Socket(InetAddress.getByName(location), 5222)
+		}
+
 		val seeOther = context.sessionObject.getProperty<String>(SEE_OTHER_HOST_KEY)
 		if (seeOther != null) {
 			return Socket(InetAddress.getByName(seeOther), 5222)
@@ -311,6 +319,7 @@ class SocketConnector(context: Context) : AbstractConnector(context) {
 
 	fun startTLS() {
 		log.info("Running StartTLS")
+		whiteSpaceEnabled = false
 		val element = element("starttls") {
 			xmlns = XMLNS_START_TLS
 		}

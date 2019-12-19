@@ -26,6 +26,7 @@ class SessionObject {
 
 	enum class Scope {
 		Stream,
+		Connection,
 		Session,
 		User,
 	}
@@ -67,7 +68,7 @@ class SessionObject {
 	private fun clear(ordinal: Int) {
 		val scopes = Scope.values().filter { s -> s.ordinal <= ordinal }.toTypedArray()
 		val iterator = this.properties.entries.iterator()
-		log.fine("Clearing $scopes")
+		log.fine("Clearing ${scopes.asList()}")
 		while (iterator.hasNext()) {
 			val entry = iterator.next()
 			if (scopes.contains(entry.value.scope)) {
@@ -121,7 +122,7 @@ class SessionObject {
 	}
 
 	fun setProperty(key: String, value: Any?): SessionObject {
-		return setProperty(Scope.Session, key, value)
+		return setProperty(Scope.Connection, key, value)
 	}
 
 	fun setUserProperty(key: String, value: Any?): SessionObject {

@@ -17,6 +17,8 @@
  */
 package tigase.halcyon.core.connector.socket
 
+import tigase.halcyon.core.connector.ConnectorException
+import tigase.halcyon.core.logger.Level
 import tigase.halcyon.core.logger.Logger
 import tigase.halcyon.core.xml.parser.StreamParser
 import java.io.InputStreamReader
@@ -73,10 +75,14 @@ class SocketWorker(s: Socket, private val parser: StreamParser) : Thread() {
 
 				parser.parse(buffer, 0, len - 1)
 			}
+			if (isActive) {
+				log.log(Level.WARNING, "Unexpected stop!")
+				onError?.invoke(ConnectorException("Unexpected stop!"))
+			}
 		} catch (e: Exception) {
 			log.fine("Exception in worker: isActive=$isActive interrupted=${!interrupted()} socket=${!socket.isClosed}")
 			if (isActive) {
-				log.log(tigase.halcyon.core.logger.Level.FINE, "Exception in Socket Worker", e)
+				log.log(Level.FINE, "Exception in Socket Worker", e)
 				onError?.invoke(e)
 			}
 		} finally {

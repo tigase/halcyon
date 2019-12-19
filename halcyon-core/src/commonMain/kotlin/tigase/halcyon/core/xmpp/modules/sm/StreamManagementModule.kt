@@ -23,6 +23,7 @@ import tigase.halcyon.core.TickEvent
 import tigase.halcyon.core.connector.ReceivedXMLElementEvent
 import tigase.halcyon.core.connector.SentXMLElementEvent
 import tigase.halcyon.core.eventbus.Event
+import tigase.halcyon.core.exceptions.HalcyonException
 import tigase.halcyon.core.logger.Level
 import tigase.halcyon.core.logger.Logger
 import tigase.halcyon.core.modules.Criterion
@@ -36,45 +37,69 @@ import tigase.halcyon.core.xmpp.modules.StreamFeaturesModule
 
 class StreamManagementModule : XmppModule {
 
+	class ResumptionContext {
+
+		var isActive: Boolean = false
+			internal set
+
+		var resumptionTime: Long = 0
+			internal set
+
+		var incomingH: Long = 0L
+			internal set
+
+		var outgoingH: Long = 0L
+			internal set
+
+		var incomingLastSentH: Long = 0L
+			internal set
+
+		var isAckEnabled: Boolean = false
+			internal set
+
+		var resID: String? = null
+			internal set
+
+		var isResume: Boolean = false
+			internal set
+
+		var location: String? = null
+			internal set
+	}
+
 	companion object {
 		const val XMLNS = "urn:xmpp:sm:3"
 		const val TYPE = XMLNS
+		private const val STREAM_CONTEXT = "${StreamManagementModule.TYPE}#Context"
 
-		/**
-		 * Delivered to server.
-		 */
-		const val ACK_ENABLED_KEY = "$XMLNS#ACK_ENABLED"
-		const val OUTGOING_STREAM_H_KEY = "$XMLNS#OUTGOING_STREAM_H"
-		const val INCOMING_STREAM_H_KEY = "$XMLNS#INCOMING_STREAM_H"
-		const val INCOMING_STREAM_H_LAST_SENT_KEY = "$XMLNS#INCOMING_STREAM_H_LAST_SENT"
-		const val TURNED_ON_KEY = "$XMLNS#TURNED_ON"
-		const val RESUME_KEY = "$XMLNS#RESUME"
-		const val RESUMPTION_ID_KEY = "$XMLNS#RESUMPTION_ID"
-		const val RESUMPTION_TIME_KEY = "$XMLNS#RESUMPTION_TIME"
+		fun getContext(sessionObject: SessionObject): ResumptionContext {
+			var ctx = sessionObject.getProperty<ResumptionContext>(
+				SessionObject.Scope.Session, STREAM_CONTEXT
+			)
+			if (ctx == null) {
+				ctx = ResumptionContext()
+				sessionObject.setProperty(SessionObject.Scope.Session, STREAM_CONTEXT, ctx)
+			}
+			return ctx
+		}
 
-		fun isAckEnable(sessionObject: SessionObject) =
-			sessionObject.getProperty<Boolean>(ACK_ENABLED_KEY) ?: false
+		fun isAckEnable(sessionObject: SessionObject) = getContext(sessionObject).isAckEnabled
+
+		fun isResumptionAvailable(sessionObject: SessionObject) =
+			getContext(sessionObject).let { ctx -> ctx.resID != null && ctx.isResume }
+
+		fun getLocationAddress(sessionObject: SessionObject) = getContext(sessionObject).location
 	}
 
-	class StreamManagementEnabledEvent(val id: String, val resume: Boolean, val mx: Long?) : Event(TYPE) {
-
+	sealed class StreamManagementEvent : Event(TYPE) {
 		companion object {
 			const val TYPE =
-				"tigase.halcyon.core.xmpp.modules.sm.StreamManagementModule.StreamManagementEnabledEvent"
+				"tigase.halcyon.core.xmpp.modules.sm.StreamManagementModule.StreamManagementEvent"
 		}
-	}
 
-	class StreamManagementFailedEvent(val error: ErrorCondition) : Event(TYPE) {
-		companion object {
-			const val TYPE =
-				"tigase.halcyon.core.xmpp.modules.sm.StreamManagementModule.StreamManagementFailedEvent"
-		}
-	}
-
-	class StreamResumedEvent(val h: Long, val prevId: String) : Event(TYPE) {
-		companion object {
-			const val TYPE = "tigase.halcyon.core.xmpp.modules.sm.StreamManagementModule.StreamResumedEvent"
-		}
+		class Enabled(val id: String, val resume: Boolean, val mx: Long?) : StreamManagementEvent()
+		class Failed(val error: ErrorCondition) : StreamManagementEvent()
+		class Resumed(val h: Long, val prevId: String) : StreamManagementEvent()
 	}
 
 	override val type = TYPE
@@ -93,24 +118,31 @@ class StreamManagementModule : XmppModule {
 		context.eventBus.register<ReceivedXMLElementEvent>(ReceivedXMLElementEvent.TYPE) { event ->
 			processElementReceived(event.element)
 		}
+		context.eventBus.register<SessionObject.ClearedEvent>(SessionObject.ClearedEvent.TYPE) {
+			if (it.scopes.contains(SessionObject.Scope.Connection)) {
+				log.fine("Disabling ACK")
+				getContext(it.sessionObject).isActive = false
+			}
+		}
 		context.eventBus.register<TickEvent>(TickEvent.TYPE) { onTick() }
 	}
 
 	private fun onTick() {
-		if (isAckEnable(context.sessionObject)) {
+		if (getContext(context.sessionObject).let { ctx -> ctx.isAckEnabled && ctx.isActive }) {
 			if (queue.size > 0) request()
 			sendAck(false)
 		}
 	}
 
 	private fun processElementReceived(element: Element) {
-		if (!isAckEnable(context.sessionObject)) return
+		if (!getContext(context.sessionObject).let { ctx -> ctx.isAckEnabled && ctx.isActive }) return
 		if (element.xmlns == XMLNS) return
-		increment(INCOMING_STREAM_H_KEY)
+
+		++getContext(context.sessionObject).incomingH
 	}
 
 	private fun processElementSent(element: Element, request: Request<*, *>?) {
-		if (!isAckEnable(context.sessionObject)) return
+		if (!getContext(context.sessionObject).let { ctx -> ctx.isAckEnabled && ctx.isActive }) return
 		if (element.xmlns == XMLNS) return
 
 		if (request != null) {
@@ -118,38 +150,36 @@ class StreamManagementModule : XmppModule {
 		} else {
 			queue.add(element)
 		}
-		increment(OUTGOING_STREAM_H_KEY)
+		++getContext(context.sessionObject).outgoingH
 	}
 
 	fun reset() {
-		context.sessionObject.setProperty(TURNED_ON_KEY, false)
-		context.sessionObject.setProperty(ACK_ENABLED_KEY, false)
-		context.sessionObject.setProperty(RESUME_KEY, null)
-		context.sessionObject.setProperty(RESUMPTION_ID_KEY, null)
-		context.sessionObject.setProperty(INCOMING_STREAM_H_KEY, null)
-		context.sessionObject.setProperty(OUTGOING_STREAM_H_KEY, null)
+		context.sessionObject.setProperty(SessionObject.Scope.Session, STREAM_CONTEXT, null)
 	}
 
 	private fun processFailed(element: Element) {
 		reset()
-
 		val e = ErrorCondition.getByElementName(element.getChildrenNS(XMPPException.XMLNS).first().name)
-		context.eventBus.fire(StreamManagementFailedEvent(e))
+		context.eventBus.fire(StreamManagementEvent.Failed(e))
 	}
 
 	private fun processEnabled(element: Element) {
 		val id = element.attributes["id"]!!
+		val location = element.attributes["location"]
 		val resume = element.attributes["resume"]?.toBoolean() ?: false
-		val mx = element.attributes["max"]?.toLong()
+		// server's preferred maximum resumption time
+		val mx = element.attributes["max"]?.toLong() ?: 0
 
+		getContext(context.sessionObject).let { ctx ->
+			ctx.resID = id
+			ctx.isResume = resume
+			ctx.location = location
+			ctx.resumptionTime = mx
+			ctx.isAckEnabled = true
+			ctx.isActive = true
+		}
 
-		context.sessionObject.setProperty(ACK_ENABLED_KEY, true)
-		context.sessionObject.setProperty(TURNED_ON_KEY, true)
-		context.sessionObject.setProperty(RESUME_KEY, resume)
-		context.sessionObject.setProperty(RESUMPTION_ID_KEY, id)
-		if (mx != null) context.sessionObject.setProperty(RESUMPTION_TIME_KEY, mx)
-
-		context.eventBus.fire(StreamManagementEnabledEvent(id, resume, mx))
+		context.eventBus.fire(StreamManagementEvent.Enabled(id, resume, mx))
 	}
 
 	/**
@@ -157,21 +187,14 @@ class StreamManagementModule : XmppModule {
 	 */
 	private fun processAckResponse(element: Element) {
 		val h = element.attributes["h"]?.toLong() ?: 0
-		var lh = context.sessionObject.getProperty<Long>(OUTGOING_STREAM_H_KEY) ?: 0
+		var lh = getContext(context.sessionObject).outgoingH
 
-		if (log.isLoggable(Level.FINE)) log.fine("Expected h=$lh, received h=$h")
+		if (log.isLoggable(Level.FINE)) log.fine("Expected h=$lh, received h=$h, queue=${queue.size}")
 
 		if (lh >= h) {
-			lh = context.sessionObject.getProperty<Long>(OUTGOING_STREAM_H_KEY) ?: 0
+			lh = getContext(context.sessionObject).outgoingH
 			val left = lh - h
-			while (queue.size > left) {
-				val x = queue.get(0)
-				queue.remove(x)
-				if (x is Request<*, *>) {
-					x.isSent = true
-					log.fine("Marked as 'delivered to server': $x")
-				}
-			}
+			markAsDeliveredAndRemoveFromQueue(left)
 		}
 	}
 
@@ -183,25 +206,20 @@ class StreamManagementModule : XmppModule {
 	 * Process ACK request from server.
 	 */
 	fun sendAck(force: Boolean) {
-		var h = context.sessionObject.getProperty<Long>(INCOMING_STREAM_H_KEY) ?: 0
-		var lastH = context.sessionObject.getProperty<Long>(INCOMING_STREAM_H_LAST_SENT_KEY) ?: 0
+		val h = getContext(context.sessionObject).incomingH
+		val lastH = getContext(context.sessionObject).incomingLastSentH
 
 		if (!force && h == lastH) return
 
-		context.sessionObject.setProperty(INCOMING_STREAM_H_LAST_SENT_KEY, h)
+		getContext(context.sessionObject).incomingLastSentH = h
 		context.writer.writeDirectly(element("a") {
 			xmlns = XMLNS
 			attribute("h", h.toString())
 		})
 	}
 
-	private fun processResumed(element: Element) {
-		val h = element.attributes["h"]?.toLong() ?: 0
-
-		val unacked = mutableListOf<Any>()
-		var lh = context.sessionObject.getProperty<Long>(OUTGOING_STREAM_H_KEY) ?: 0
-		val left = lh - h
-		if (left > 0) while (queue.size > left) {
+	private fun markAsDeliveredAndRemoveFromQueue(left: Long) {
+		while (queue.size > left) {
 			val x = queue.get(0)
 			queue.remove(x)
 			if (x is Request<*, *>) {
@@ -209,7 +227,18 @@ class StreamManagementModule : XmppModule {
 				log.fine("Marked as 'delivered to server': $x")
 			}
 		}
-		context.sessionObject.setProperty(OUTGOING_STREAM_H_KEY, h)
+	}
+
+	private fun processResumed(element: Element) {
+		val ctx = getContext(context.sessionObject)
+		val h = element.attributes["h"]?.toLong() ?: 0
+		val id = element.attributes["previd"] ?: ""
+
+		val unacked = mutableListOf<Any>()
+		val lh = ctx.outgoingH
+		val left = lh - h
+		if (left > 0) markAsDeliveredAndRemoveFromQueue(left)
+		ctx.outgoingH = h
 		unacked.addAll(queue)
 		queue.clear()
 
@@ -219,27 +248,17 @@ class StreamManagementModule : XmppModule {
 				is Element -> context.writer.writeDirectly(it)
 			}
 		}
-	}
-
-	private fun increment(key: String): Long {
-		var v = context.sessionObject.getProperty<Long>(key)
-		if (v == null) {
-			v = 0
-		}
-		++v
-		context.sessionObject.setProperty(key, v)
-		return v
+		ctx.isActive = true
+		context.eventBus.fire(StreamManagementEvent.Resumed(h, id))
 	}
 
 	fun isSupported(): Boolean = StreamFeaturesModule.isFeatureAvailable(context.sessionObject, "sm", XMLNS)
 
 	fun enable() {
-		if (isSupported()) {
-			context.writer.writeDirectly(element("enable") {
-				xmlns = XMLNS
-				attribute("resume", "false")
-			})
-		}
+		context.writer.writeDirectly(element("enable") {
+			xmlns = XMLNS
+			attribute("resume", "true")
+		})
 	}
 
 	override fun process(element: Element) {
@@ -254,40 +273,22 @@ class StreamManagementModule : XmppModule {
 	}
 
 	fun request() {
-		log.fine("Sending ACK request")
-		context.writer.writeDirectly(element("r") { xmlns = XMLNS })
+		if (getContext(context.sessionObject).let { ctx -> ctx.isAckEnabled && ctx.isActive }) {
+			log.fine("Sending ACK request")
+			context.writer.writeDirectly(element("r") { xmlns = XMLNS })
+		}
 	}
 
 	fun resume() {
-		val h = context.sessionObject.getProperty<Long>(INCOMING_STREAM_H_KEY) ?: 0
-		val id = context.sessionObject.getProperty<String>(RESUMPTION_ID_KEY)
+		val h = getContext(context.sessionObject).incomingH
+		val id = getContext(context.sessionObject).resID
+			?: throw HalcyonException("Cannot resume session: no resumption ID")
 
 		context.writer.writeDirectly(element("resume") {
 			xmlns = XMLNS
 			attribute("h", h.toString())
-			if (id != null) attribute("id", id)
+			attribute("previd", id)
 		})
-	}
-
-	fun report() {
-		println(
-			"""
-			SM Report
-			---------
-			
-			Enabled: ${isAckEnable(context.sessionObject)}
-			Outgoing stream H: ${context.sessionObject.getProperty<Long>(OUTGOING_STREAM_H_KEY)}
-			Incoming stream H: ${context.sessionObject.getProperty<Long>(INCOMING_STREAM_H_KEY)}
-			Incoming stream LAST KEY: ${context.sessionObject.getProperty<Long>(
-				INCOMING_STREAM_H_LAST_SENT_KEY
-			)}
-			 
-			Queue size: ${queue.size}
-			Queue: ${queue}
-			
-			---------
-		""".trimIndent()
-		)
 	}
 
 }

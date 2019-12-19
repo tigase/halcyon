@@ -45,7 +45,7 @@ class SocketSessionController(
 	override fun processConnectionError(event: ConnectionErrorEvent) {
 		log.log(Level.FINE, "Received connector exception: $event")
 
-		context.sessionObject.clear(SessionObject.Scope.Session)
+		context.sessionObject.clear(SessionObject.Scope.Connection)
 
 //		context.modules.getModuleOrNull<StreamManagementModule>(StreamManagementModule.TYPE)?.reset()
 //		context.modules.getModuleOrNull<SASLModule>(SASLModule.TYPE)?.clear()
@@ -84,7 +84,7 @@ class SocketSessionController(
 
 	private fun processSeeOtherHost(event: StreamErrorEvent) {
 		val url = event.errorElement.value
-		context.sessionObject.setProperty(SEE_OTHER_HOST_KEY, url)
+		context.sessionObject.setProperty(SessionObject.Scope.Session, SEE_OTHER_HOST_KEY, url)
 
 		context.eventBus.fire(
 			SessionController.SessionControllerEvents.ErrorReconnect(

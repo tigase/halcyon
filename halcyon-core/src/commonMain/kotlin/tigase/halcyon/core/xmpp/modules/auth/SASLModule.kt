@@ -125,11 +125,11 @@ class SASLModule : XmppModule {
 
 		fun getContext(sessionObject: SessionObject): SASLContext {
 			var ctx = sessionObject.getProperty<SASLContext>(
-				SessionObject.Scope.Session, SASL_CONTEXT
+				SessionObject.Scope.Connection, SASL_CONTEXT
 			)
 			if (ctx == null) {
 				ctx = SASLContext()
-				sessionObject.setProperty(SessionObject.Scope.Session, SASL_CONTEXT, ctx)
+				sessionObject.setProperty(SessionObject.Scope.Connection, SASL_CONTEXT, ctx)
 			}
 			return ctx
 		}
@@ -218,6 +218,6 @@ class SASLModule : XmppModule {
 	}
 
 	fun clear() {
-		context.sessionObject.setProperty(SessionObject.Scope.Session, SASL_CONTEXT, null)
+		context.sessionObject.setProperty(SessionObject.Scope.Connection, SASL_CONTEXT, null)
 	}
 }

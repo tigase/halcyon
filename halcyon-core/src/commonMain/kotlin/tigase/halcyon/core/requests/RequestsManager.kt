@@ -19,6 +19,7 @@ package tigase.halcyon.core.requests
 
 import getFromAttr
 import tigase.halcyon.core.currentTimestamp
+import tigase.halcyon.core.logger.Level
 import tigase.halcyon.core.xml.Element
 
 class RequestsManager {
@@ -72,14 +73,27 @@ class RequestsManager {
 
 	fun findAndExecute(response: Element): Boolean {
 		val r: Request<*, *> = getRequest(response) ?: return false
+		execute { r.setResponseStanza(response) }
+		return true
+	}
+
+	private fun execute(runnable: () -> Unit) {
 		executor.execute {
 			try {
-				r.setResponseStanza(response)
+				runnable.invoke()
 			} catch (e: Throwable) {
-				log.log(tigase.halcyon.core.logger.Level.WARNING, "Error on processing response", e)
+				log.log(Level.WARNING, "Error on processing response", e)
 			}
 		}
-		return true
+	}
+
+	fun timeoutAll() {
+		val iterator = requests.entries.iterator()
+		while (iterator.hasNext()) {
+			val request = iterator.next().value
+			iterator.remove()
+			if (!request.isCompleted) execute { request.markTimeout() }
+		}
 	}
 
 	fun findOutdated() {
@@ -91,14 +105,8 @@ class RequestsManager {
 				iterator.remove()
 			} else if (request.creationTimestamp + request.timeoutDelay <= now) {
 				iterator.remove()
-				try {
+				execute {
 					request.markTimeout()
-				} catch (e: Exception) {
-					log.log(
-						tigase.halcyon.core.logger.Level.WARNING,
-						"Problem on calling timeout on request " + request.id,
-						e
-					)
 				}
 			}
 		}
