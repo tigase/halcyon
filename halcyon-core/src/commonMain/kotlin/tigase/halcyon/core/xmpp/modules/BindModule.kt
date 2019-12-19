@@ -64,7 +64,7 @@ class BindModule : XmppModule {
 		val bind = element.getChildrenNS("bind", XMLNS)!!
 		val jidElement = bind.getFirstChild("jid")!!
 		val jid = JID.parse(jidElement.value!!)
-		context.sessionObject.setProperty(SessionObject.Scope.Session,XMLNS, jid)
+		context.sessionObject.setProperty(SessionObject.Scope.Session, XMLNS, jid)
 		return BindResult(jid)
 	}
 

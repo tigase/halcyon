@@ -287,7 +287,7 @@ class StreamManagementModule : XmppModule {
 		context.writer.writeDirectly(element("resume") {
 			xmlns = XMLNS
 			attribute("h", h.toString())
-			attribute("previd", id+"1")
+			attribute("previd", id + "1")
 		})
 	}
 

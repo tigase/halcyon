@@ -52,7 +52,9 @@ open class ElementNode(internal val element: Element) {
 		return n
 	}
 
-	operator fun String.invoke(vararg attributes: Pair<String, Any>, init: (ElementNode.() -> Unit)? = null): Element {
+	operator fun String.invoke(
+		vararg attributes: Pair<String, Any>, init: (ElementNode.() -> Unit)? = null
+	): Element {
 		return element(this, init)
 	}
 

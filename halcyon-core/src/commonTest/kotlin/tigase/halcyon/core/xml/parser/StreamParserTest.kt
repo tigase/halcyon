@@ -111,7 +111,8 @@ class StreamParserTest {
 		e = parse("<message from=\"test@example.com\"><body>Test</body1></message>")
 		assertTrue(e.error)
 
-		e = parse("<message to=\"test@zeus\" type=\"chat\" id=\"t&amp;t<\"><body>Test &amp; done</body></message>")
+		e =
+			parse("<message to=\"test@zeus\" type=\"chat\" id=\"t&amp;t<\"><body>Test &amp; done</body></message>")
 		assertTrue(e.error)
 
 	}

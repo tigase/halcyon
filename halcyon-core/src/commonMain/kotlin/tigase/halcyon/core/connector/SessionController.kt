@@ -28,7 +28,10 @@ interface SessionController {
 		}
 
 		class ErrorStop(val message: String) : SessionControllerEvents()
-		class ErrorReconnect(val message: String, val immediately: Boolean = false, val force: Boolean = false) : SessionControllerEvents()
+		class ErrorReconnect(
+			val message: String, val immediately: Boolean = false, val force: Boolean = false
+		) : SessionControllerEvents()
+
 		class Successful : SessionControllerEvents()
 	}
 

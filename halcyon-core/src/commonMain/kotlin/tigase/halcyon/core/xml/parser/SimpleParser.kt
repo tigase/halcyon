@@ -296,8 +296,10 @@ class SimpleParser {
 								} else {
 									val new_size = parser_state.attrib_names!!.size + MAX_ATTRIBS_NUMBER
 
-									parser_state.attrib_names = resizeArray(parser_state.attrib_names, new_size)
-									parser_state.attrib_values = resizeArray(parser_state.attrib_values, new_size)
+									parser_state.attrib_names =
+										resizeArray(parser_state.attrib_names, new_size)
+									parser_state.attrib_values =
+										resizeArray(parser_state.attrib_values, new_size)
 								}
 							}
 						}    // end of else
@@ -552,7 +554,8 @@ class SimpleParser {
 		return res
 	}
 
-	private fun resizeArray(src: Array<StringBuilder?>?, size: Int): Array<StringBuilder?> = src!!.copyOf(size)
+	private fun resizeArray(src: Array<StringBuilder?>?, size: Int): Array<StringBuilder?> =
+		src!!.copyOf(size)
 
 	protected enum class EntityType {
 		UNKNOWN,

@@ -90,7 +90,8 @@ class XMPPDomHandler(
 					// avoid potential
 					// DOS by exhausting permgen
 					namespaces.put(
-						attr_names[i]!!.substring("xmlns:".length, attr_names[i]!!.length), attr_values!![i].toString()
+						attr_names[i]!!.substring("xmlns:".length, attr_names[i]!!.length),
+						attr_values!![i].toString()
 					)
 
 					if (log.isLoggable(tigase.halcyon.core.logger.Level.FINEST)) {

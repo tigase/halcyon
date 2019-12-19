@@ -17,6 +17,5 @@
  */
 package tigase.halcyon.core
 
-actual class ConfigurationBuilder actual constructor(halcyon: AbstractHalcyon) : AbstractConfigurationBuilder(halcyon) {
-
-}
+actual class ConfigurationBuilder actual constructor(halcyon: AbstractHalcyon) :
+	AbstractConfigurationBuilder(halcyon)

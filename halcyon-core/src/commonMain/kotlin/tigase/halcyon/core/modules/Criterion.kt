@@ -28,10 +28,11 @@ class Criterion private constructor() {
 					crits.firstOrNull(predicate = { criteria -> criteria.match(element) }) != null
 			}
 
-		fun and(vararg crits: tigase.halcyon.core.modules.Criteria) = object : tigase.halcyon.core.modules.Criteria {
-			override fun match(element: Element): Boolean =
-				crits.filter(predicate = { criteria -> criteria.match(element) }).size == crits.size
-		}
+		fun and(vararg crits: tigase.halcyon.core.modules.Criteria) =
+			object : tigase.halcyon.core.modules.Criteria {
+				override fun match(element: Element): Boolean =
+					crits.filter(predicate = { criteria -> criteria.match(element) }).size == crits.size
+			}
 
 		fun not(crit: tigase.halcyon.core.modules.Criteria) = object : tigase.halcyon.core.modules.Criteria {
 			override fun match(element: Element): Boolean = !crit.match(element)

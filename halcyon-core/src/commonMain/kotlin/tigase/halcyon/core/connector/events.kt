@@ -63,7 +63,7 @@ data class SentXMLElementEvent(val element: Element, val request: Request<*, *>?
 	}
 }
 
-abstract class ConnectionErrorEvent() : Event(TYPE) {
+abstract class ConnectionErrorEvent : Event(TYPE) {
 
 	companion object {
 		const val TYPE = "tigase.halcyon.core.connector.ConnectionErrorEvent"

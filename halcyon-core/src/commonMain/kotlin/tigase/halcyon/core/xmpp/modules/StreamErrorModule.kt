@@ -31,7 +31,8 @@ import tigase.halcyon.core.xmpp.StreamError
  * @property condition parsed stream error enum to easy check kind of error.
  * @property errorElement error condition element.
  */
-data class StreamErrorEvent(val element: Element, val condition: StreamError, val errorElement: Element) : Event(TYPE) {
+data class StreamErrorEvent(val element: Element, val condition: StreamError, val errorElement: Element) :
+	Event(TYPE) {
 
 	companion object {
 		const val TYPE = "tigase.halcyon.core.xmpp.modules.StreamErrorEvent"
@@ -67,6 +68,6 @@ class StreamErrorModule : XmppModule {
 		val c = element.getChildrenNS(XMLNS).first()
 		val e = getByElementName(c.name)
 
-		context.eventBus.fire(StreamErrorEvent(element, e,c))
+		context.eventBus.fire(StreamErrorEvent(element, e, c))
 	}
 }

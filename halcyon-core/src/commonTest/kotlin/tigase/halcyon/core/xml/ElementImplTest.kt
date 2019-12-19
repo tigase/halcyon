@@ -212,7 +212,7 @@ class ElementImplTest {
 
 		val c = element.findChild("message", "body")
 		assertNotNull(c)
-		assertEquals("body", c!!.name)
+		assertEquals("body", c.name)
 		assertEquals("Wherefore art thou, Romeo?", c.value)
 	}
 
@@ -221,7 +221,7 @@ class ElementImplTest {
 		val element = createElement()
 		val c = element.findChild("message", "body")
 		assertNotNull(c)
-		assertEquals("body", c!!.name)
+		assertEquals("body", c.name)
 		assertEquals("thread", c.getNextSibling()!!.name)
 	}
 

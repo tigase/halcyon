@@ -74,10 +74,7 @@ class ModulesManagerTest {
 
 		assertTrue(
 			arrayOf(
-				"1",
-				"2",
-				"a",
-				"b"
+				"1", "2", "a", "b"
 			).sortedArray() contentDeepEquals mm.getAvailableFeatures().sortedArray()
 		)
 

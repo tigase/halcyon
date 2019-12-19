@@ -22,7 +22,6 @@ import tigase.halcyon.core.connector.AbstractConnector
 import tigase.halcyon.core.requests.*
 import tigase.halcyon.core.xml.element
 import tigase.halcyon.core.xmpp.stanzas.IQ
-import tigase.halcyon.core.xmpp.stanzas.MessageType
 import kotlin.test.*
 
 class RequestManagerTest {
@@ -93,7 +92,7 @@ class RequestManagerTest {
 		val req = halcyon.request.iq<Any>(e).handle {
 			success { request, element, any -> ++successCounter }
 			error { _, _, _, _ -> fail() }
-		}.build();
+		}.build()
 
 		rm.register(req)
 
@@ -203,8 +202,8 @@ class RequestManagerTest {
 
 		// timout expected
 		var r3 = halcyon.request.message { to = "a@b.c".toJID() }.timeToLive(0).result { result ->
-				if (result is StanzaResult.NotSent) ++counter
-			}.build()
+			if (result is StanzaResult.NotSent) ++counter
+		}.build()
 		rm.register(r3)
 
 		rm.findOutdated()

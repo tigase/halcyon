@@ -82,7 +82,7 @@ class RequestTest {
 
 		req.setResponseStanza(response)
 
-		assertEquals(response,rr)
+		assertEquals(response, rr)
 		assertEquals(response.getAsString(), rr!!.getAsString())
 	}
 

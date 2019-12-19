@@ -74,7 +74,7 @@ class IQRequestBuilder<V : Any>(private val halcyon: AbstractHalcyon, private va
 		val callback = IQHandlerHelper<V>()
 		callback.init()
 		this.handler = { result ->
-			val rh = callback.responseHandler();
+			val rh = callback.responseHandler()
 			when (result) {
 				is IQResult.Success<V> -> rh.success(result.request, result.response, result.value)
 				is IQResult.Error<V> -> rh.error(result.request, result.response, result.error, result.text)
