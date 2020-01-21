@@ -17,12 +17,13 @@
  */
 package tigase.halcyon.core.eventbus
 
-actual class EventBus actual constructor(sessionObject: tigase.halcyon.core.SessionObject) :
-	tigase.halcyon.core.eventbus.AbstractEventBus(sessionObject) {
+import tigase.halcyon.core.AbstractHalcyon
+import tigase.halcyon.core.Halcyon
 
-	override fun createHandlersMap(): MutableMap<String, MutableSet<tigase.halcyon.core.eventbus.EventHandler<*>>> =
-		HashMap()
+actual class EventBus actual constructor(context: AbstractHalcyon) : AbstractEventBus(context) {
 
-	override fun createHandlersSet(): MutableSet<tigase.halcyon.core.eventbus.EventHandler<*>> = HashSet()
+	override fun createHandlersMap(): MutableMap<String, MutableSet<EventHandler<*>>> = HashMap()
+
+	override fun createHandlersSet(): MutableSet<EventHandler<*>> = HashSet()
 
 }

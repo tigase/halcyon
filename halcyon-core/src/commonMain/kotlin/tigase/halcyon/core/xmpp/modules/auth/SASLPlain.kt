@@ -17,27 +17,24 @@
  */
 package tigase.halcyon.core.xmpp.modules.auth
 
-import tigase.halcyon.core.SessionObject
+import tigase.halcyon.core.configuration.Configuration
 
 class SASLPlain : SASLMechanism {
 
 	override val name = "PLAIN"
 
-	override fun evaluateChallenge(input: String?, sessionObject: SessionObject): String? {
-		val ctx = SASLModule.getContext(sessionObject)
-		if (ctx.complete) return null
+	override fun evaluateChallenge(input: String?, config: Configuration, saslContext: SASLContext): String? {
+		if (saslContext.complete) return null
 
-		val username = sessionObject.getUserBareJid()?.localpart!!
-		val password = sessionObject.getProperty<String>(SessionObject.PASSWORD)!!
+		val username = config.userJID?.localpart!!
+		val password = config.passwordCallback!!.invoke()
 
-		setComplete(sessionObject)
+		saslContext.complete = true
 		return tigase.halcyon.core.Base64.encode('\u0000' + username + '\u0000' + password)
 	}
 
-	override fun isAllowedToUse(sessionObject: SessionObject): Boolean {
-		val username = sessionObject.getUserBareJid()?.localpart
-		val password = sessionObject.getProperty<String>(SessionObject.PASSWORD)
-		return username != null && password != null
+	override fun isAllowedToUse(config: Configuration, saslContext: SASLContext): Boolean {
+		return config.userJID != null && config.passwordCallback != null
 	}
 
 }

@@ -17,14 +17,17 @@
  */
 package tigase.halcyon.core
 
+import tigase.halcyon.core.configuration.Configuration
 import tigase.halcyon.core.connector.AbstractConnector
 import tigase.halcyon.core.connector.ConnectorStateChangeEvent
 import tigase.halcyon.core.connector.ReceivedXMLElementEvent
 import tigase.halcyon.core.connector.SentXMLElementEvent
 import tigase.halcyon.core.eventbus.Event
+import tigase.halcyon.core.eventbus.EventBus
 import tigase.halcyon.core.eventbus.EventHandler
 import tigase.halcyon.core.exceptions.HalcyonException
 import tigase.halcyon.core.logger.Logger
+import tigase.halcyon.core.modules.ModulesManager
 import tigase.halcyon.core.modules.XmppModule
 import tigase.halcyon.core.requests.Request
 import tigase.halcyon.core.requests.RequestBuilderFactory
@@ -38,6 +41,7 @@ import tigase.halcyon.core.xmpp.modules.*
 import tigase.halcyon.core.xmpp.modules.auth.SASLModule
 import tigase.halcyon.core.xmpp.modules.presence.PresenceModule
 import tigase.halcyon.core.xmpp.modules.pubsub.PubSubModule
+import tigase.halcyon.core.xmpp.modules.roster.RosterModule
 import tigase.halcyon.core.xmpp.modules.sm.StreamManagementModule
 import tigase.halcyon.core.xmpp.stanzas.IQ
 import tigase.halcyon.core.xmpp.stanzas.IQType
@@ -81,13 +85,12 @@ abstract class AbstractHalcyon : Context, PacketWriter {
 
 	private var tickCounter: Long = 0
 
-	final override val sessionObject: SessionObject = SessionObject()
-	final override val eventBus: tigase.halcyon.core.eventbus.EventBus =
-		tigase.halcyon.core.eventbus.EventBus(sessionObject)
+	final override val eventBus: EventBus = EventBus(this)
+	override val config = Configuration()
 	override val writer: PacketWriter
 		get() = this
-	final override val modules: tigase.halcyon.core.modules.ModulesManager =
-		tigase.halcyon.core.modules.ModulesManager()
+	final override val modules: ModulesManager = ModulesManager()
+	val internalDataStore = InternalDataStore()
 	val requestsManager: RequestsManager = RequestsManager()
 	val configuration: ConfigurationBuilder = ConfigurationBuilder(this)
 	private val executor = tigase.halcyon.core.excutor.Executor()
@@ -100,22 +103,22 @@ abstract class AbstractHalcyon : Context, PacketWriter {
 		}
 
 	init {
-		sessionObject.clearHandler = { scopes -> eventBus.fire(SessionObject.ClearedEvent(scopes)) }
 		modules.context = this
 		eventBus.register(ReceivedXMLElementEvent.TYPE, ::processReceivedXmlElement)
 
 		eventBus.register(SessionController.SessionControllerEvents.TYPE, ::onSessionControllerEvent)
 		eventBus.register<TickEvent>(TickEvent.TYPE) { requestsManager.findOutdated() }
 
-		modules.register(PresenceModule())
-		modules.register(PubSubModule())
-		modules.register(MessageModule())
-		modules.register(StreamManagementModule())
-		modules.register(SASLModule())
-		modules.register(BindModule())
-		modules.register(PingModule())
-		modules.register(StreamErrorModule())
-		modules.register(StreamFeaturesModule())
+		modules.register(RosterModule(this))
+		modules.register(PresenceModule(this))
+		modules.register(PubSubModule(this))
+		modules.register(MessageModule(this))
+		modules.register(StreamManagementModule(this))
+		modules.register(SASLModule(this))
+		modules.register(BindModule(this))
+		modules.register(PingModule(this))
+		modules.register(StreamErrorModule(this))
+		modules.register(StreamFeaturesModule(this))
 	}
 
 	protected open fun onSessionControllerEvent(event: SessionController.SessionControllerEvents) {
@@ -259,7 +262,7 @@ abstract class AbstractHalcyon : Context, PacketWriter {
 		if (c.state != tigase.halcyon.core.connector.State.Connected) throw HalcyonException("Connector is not connected")
 		requestsManager.register(request)
 		c.send(request.stanza.getAsString())
-		if (!StreamManagementModule.isAckEnable(sessionObject)) {
+		if (getModule<StreamManagementModule>(StreamManagementModule.TYPE)?.resumptionContext?.isAckEnabled != true) {
 			request.markAsSent()
 		}
 		eventBus.fire(SentXMLElementEvent(request.stanza, request))
@@ -330,7 +333,7 @@ abstract class AbstractHalcyon : Context, PacketWriter {
 	}
 
 	fun connect() {
-		sessionObject.clear(SessionObject.Scope.Session)
+		clear(Scope.Session)
 		this.running = true
 		modules.initModules()
 		log.info("Connecting")
@@ -351,7 +354,10 @@ abstract class AbstractHalcyon : Context, PacketWriter {
 			log.info("Disconnecting")
 
 			modules.getModuleOrNull<StreamManagementModule>(StreamManagementModule.TYPE)?.let {
-				if (StreamManagementModule.isAckEnable(sessionObject) && getConnectorState() == tigase.halcyon.core.connector.State.Connected) {
+				val ackEnabled =
+					getModule<StreamManagementModule>(StreamManagementModule.TYPE)?.resumptionContext?.isAckEnabled
+						?: false
+				if (ackEnabled && getConnectorState() == tigase.halcyon.core.connector.State.Connected) {
 					it.sendAck(true)
 				}
 			}
@@ -360,9 +366,15 @@ abstract class AbstractHalcyon : Context, PacketWriter {
 			onDisconnecting()
 			stopConnector()
 		} finally {
-			sessionObject.clear(SessionObject.Scope.Session)
+			clear(Scope.Session)
 			requestsManager.timeoutAll()
 			state = State.Stopped
 		}
+	}
+
+	internal fun clear(scope: Scope) {
+		internalDataStore.clear(scope)
+		val scopes = Scope.values().filter { s -> s.ordinal <= scope.ordinal }.toTypedArray()
+		eventBus.fire(ClearedEvent(scopes))
 	}
 }

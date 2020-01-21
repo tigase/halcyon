@@ -19,15 +19,16 @@ package tigase.halcyon.core.eventbus
 
 import org.junit.Assert
 import org.junit.Test
-import tigase.halcyon.core.SessionObject
+import tigase.halcyon.core.Halcyon
+import tigase.halcyon.core.InternalDataStore
 import tigase.halcyon.core.eventbus.AbstractEventBus.Companion.ALL_EVENTS
 
 class EventBusJvmTest {
 
 	@Test
 	fun testBasic() {
-		val sessionObject = SessionObject()
-		val eventBus = EventBus(sessionObject)
+		 val halcyon = Halcyon()
+		val eventBus = EventBus(halcyon)
 		val responses = mutableListOf<Any>()
 
 		val handler = object : EventHandler<TestEvent> {

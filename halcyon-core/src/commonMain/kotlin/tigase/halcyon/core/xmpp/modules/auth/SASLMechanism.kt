@@ -17,46 +17,43 @@
  */
 package tigase.halcyon.core.xmpp.modules.auth
 
-import tigase.halcyon.core.SessionObject
+import tigase.halcyon.core.InternalDataStore
+import tigase.halcyon.core.configuration.Configuration
 
 interface SASLMechanism {
 	/**
 	 * Evaluating challenge received from server.
 	 *
 	 * @param input received data
-	 * @param sessionObject current [SessionObject]
+	 * @param saslContext current [SASLContext]
 	 *
 	 * @return calculated response
 	 */
-	fun evaluateChallenge(input: String?, sessionObject: SessionObject): String?
+	fun evaluateChallenge(input: String?,config: Configuration, saslContext: SASLContext): String?
 
 	/**
 	 * This method is used to check if mechanism can be used with current
 	 * session. For example if no username and passowrd is stored in
 	 * sessionObject, then PlainMechanism can't be used.
 	 *
-	 * @param sessionObject current [SessionObject]
+	 * @param config current [Configuration]
 	 *
 	 * @return `true` if mechanism can be used it current XMPP session.
 	 */
-	fun isAllowedToUse(sessionObject: SessionObject): Boolean
+	fun isAllowedToUse(config: Configuration, saslContext: SASLContext): Boolean
 
 	/**
 	 * Determines whether the authentication exchange has completed.
 	 *
-	 * @param sessionObject current [SessionObject]
+	 * @param saslContext current [SASLContext]
 	 *
 	 * @return `true` if exchange is complete.
 	 */
-	fun isComplete(sessionObject: SessionObject): Boolean = SASLModule.getContext(sessionObject).complete
+	fun isComplete(saslContext: SASLContext): Boolean = saslContext.complete
 
 	/**
 	 * Mechanism name.
 	 */
 	val name: String
-
-	fun setComplete(sessionObject: SessionObject) {
-		SASLModule.getContext(sessionObject).complete = true
-	}
 
 }

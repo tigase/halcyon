@@ -17,6 +17,7 @@
  */
 package tigase.halcyon.core
 
+import tigase.halcyon.core.configuration.Configuration
 import tigase.halcyon.core.eventbus.EventBus
 import tigase.halcyon.core.modules.ModulesManager
 import tigase.halcyon.core.requests.RequestBuilderFactory
@@ -25,7 +26,7 @@ interface Context {
 
 	val eventBus: EventBus
 
-	val sessionObject: SessionObject
+	val config: Configuration
 
 	val writer: PacketWriter
 

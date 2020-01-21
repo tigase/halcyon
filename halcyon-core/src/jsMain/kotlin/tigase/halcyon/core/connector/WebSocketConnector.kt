@@ -21,14 +21,12 @@ import org.w3c.dom.MessageEvent
 import org.w3c.dom.WebSocket
 import org.w3c.dom.events.Event
 import tigase.halcyon.core.Halcyon
-import tigase.halcyon.core.SessionObject
 import tigase.halcyon.core.exceptions.HalcyonException
 import tigase.halcyon.core.excutor.TickExecutor
 import tigase.halcyon.core.logger.Level
 import tigase.halcyon.core.logger.Logger
 import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xml.parser.StreamParser
-import tigase.halcyon.core.xmpp.BareJID
 import tigase.halcyon.core.xmpp.SessionController
 
 class WebSocketConnectionErrorEvent(description: String) : ConnectionErrorEvent()
@@ -77,10 +75,9 @@ class WebSocketConnector(halcyon: Halcyon) : AbstractConnector(halcyon) {
 	}
 
 	private fun getDomain(): String {
-		val userJid = halcyon.sessionObject.getProperty<BareJID>(SessionObject.USER_BARE_JID)
-
-		return halcyon.sessionObject.getProperty<String>(SessionObject.DOMAIN_NAME) ?: (userJid?.domain
-			?: throw HalcyonException("No domain is specified"))
+		val userJid = halcyon.config.userJID
+		val domain = halcyon.config.domain
+		return domain ?: userJid?.domain ?: throw HalcyonException("No domain is specified")
 	}
 
 	override fun start() {
@@ -149,7 +146,7 @@ class WebSocketConnector(halcyon: Halcyon) : AbstractConnector(halcyon) {
 
 	fun restartStream() {
 		log.finest("Send new stream")
-		val userJid = halcyon.sessionObject.getProperty<BareJID>(SessionObject.USER_BARE_JID)
+		val userJid = halcyon.config.userJID
 
 		val sb = buildString {
 			append("<stream:stream ")

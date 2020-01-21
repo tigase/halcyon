@@ -28,7 +28,6 @@ class ModulesManager {
 	private val modulesToInitialize = mutableListOf<XmppModule>()
 
 	fun register(module: XmppModule) {
-		module.context = context
 		modules[module.type] = module
 		modulesToInitialize.add(module)
 	}

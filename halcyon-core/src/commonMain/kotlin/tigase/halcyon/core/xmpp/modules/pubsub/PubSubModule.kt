@@ -91,12 +91,11 @@ data class Subscription(
 	val node: String, val jid: JID, var state: SubscriptionState, var subid: String? = null
 )
 
-class PubSubModule : XmppModule {
+class PubSubModule(override val context: Context) : XmppModule {
 
 	private val log = Logger("tigase.halcyon.core.xmpp.modules.pubsub.PubSubModule")
 
 	override val type = TYPE
-	override lateinit var context: Context
 	override val criteria = Criterion.chain(
 		Criterion.name(Message.NAME), Criterion.nameAndXmlns(
 			"event", XMLNS_EVENT

@@ -17,12 +17,12 @@
  */
 package tigase.halcyon.core.eventbus
 
+import tigase.halcyon.core.AbstractHalcyon
 import tigase.halcyon.core.logger.Level
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Executors
 
-actual class EventBus actual constructor(sessionObject: tigase.halcyon.core.SessionObject) :
-	tigase.halcyon.core.eventbus.AbstractEventBus(sessionObject) {
+actual class EventBus actual constructor(context: AbstractHalcyon) : AbstractEventBus(context) {
 
 	override fun createHandlersMap(): MutableMap<String, MutableSet<EventHandler<*>>> = ConcurrentHashMap()
 

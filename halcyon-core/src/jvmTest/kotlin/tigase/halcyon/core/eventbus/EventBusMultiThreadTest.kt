@@ -19,13 +19,14 @@ package tigase.halcyon.core.eventbus
 
 import org.junit.Assert
 import org.junit.Test
-import tigase.halcyon.core.SessionObject
+import tigase.halcyon.core.Halcyon
+import tigase.halcyon.core.InternalDataStore
 import java.util.concurrent.ConcurrentLinkedQueue
 
 class EventBusMultiThreadTest {
 
-	private val sessionObject = SessionObject()
-	val eventBus = EventBus(sessionObject)
+	private val halcyon = Halcyon()
+	val eventBus = EventBus(halcyon)
 
 	private var working: Boolean = false
 

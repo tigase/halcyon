@@ -21,7 +21,7 @@ import org.minidns.dnssec.DnssecValidationFailedException
 import org.minidns.hla.DnssecResolverApi
 import org.minidns.hla.SrvType
 import tigase.halcyon.core.Halcyon
-import tigase.halcyon.core.SessionObject
+import tigase.halcyon.core.InternalDataStore
 import tigase.halcyon.core.connector.*
 import tigase.halcyon.core.excutor.TickExecutor
 import tigase.halcyon.core.logger.Level
@@ -139,7 +139,7 @@ class SocketConnector(halcyon: Halcyon) : AbstractConnector(halcyon) {
 	private fun proceedTLS() {
 		log.info("Proceeding TLS")
 		try {
-			val userJid = halcyon.sessionObject.getProperty<BareJID>(SessionObject.USER_BARE_JID)!!
+			val userJid = halcyon.config.userJID!!
 			log.finest("Disabling whitespace ping")
 			whiteSpaceEnabled = false
 
@@ -172,22 +172,23 @@ class SocketConnector(halcyon: Halcyon) : AbstractConnector(halcyon) {
 	override fun createSessionController(): SessionController = SocketSessionController(halcyon, this)
 
 	private fun createSocket(): Socket {
-		val location = StreamManagementModule.getLocationAddress(halcyon.sessionObject)
+		val location = halcyon.getModule<StreamManagementModule>(StreamManagementModule.TYPE)
+			?.resumptionContext?.location
 		if (location != null) {
 			return Socket(InetAddress.getByName(location), 5222)
 		}
 
-		val seeOther = halcyon.sessionObject.getProperty<String>(SEE_OTHER_HOST_KEY)
+		val seeOther = halcyon.internalDataStore.getData<String>(SEE_OTHER_HOST_KEY)
 		if (seeOther != null) {
 			return Socket(InetAddress.getByName(seeOther), 5222)
 		}
 
-		val forcedHost = halcyon.sessionObject.getProperty<String>(SERVER_HOST)
-		if (forcedHost != null) {
-			return Socket(InetAddress.getByName(forcedHost), 5222)
-		}
+//		val forcedHost = halcyon.sessionObject.getProperty<String>(SERVER_HOST)
+//		if (forcedHost != null) {
+//			return Socket(InetAddress.getByName(forcedHost), 5222)
+//		}
 
-		val userJid = halcyon.sessionObject.getProperty<BareJID>(SessionObject.USER_BARE_JID)!!
+		val userJid = halcyon.config.userJID!!
 
 		val result = DnssecResolverApi.INSTANCE.resolveSrv(SrvType.xmpp_client, userJid.domain)
 
@@ -212,7 +213,7 @@ class SocketConnector(halcyon: Halcyon) : AbstractConnector(halcyon) {
 	override fun start() {
 		state = State.Connecting
 
-		val userJid = halcyon.sessionObject.getProperty<BareJID>(SessionObject.USER_BARE_JID)!!
+		val userJid = halcyon.config.userJID!!
 
 		try {
 			this.socket = createSocket()
@@ -296,7 +297,7 @@ class SocketConnector(halcyon: Halcyon) : AbstractConnector(halcyon) {
 	}
 
 	fun restartStream() {
-		val userJid = halcyon.sessionObject.getProperty<BareJID>(SessionObject.USER_BARE_JID)!!
+		val userJid = halcyon.config.userJID!!
 
 		val sb = buildString {
 			append("<stream:stream xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams' ")

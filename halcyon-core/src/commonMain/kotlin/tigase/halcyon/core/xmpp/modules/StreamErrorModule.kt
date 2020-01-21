@@ -39,7 +39,7 @@ data class StreamErrorEvent(val element: Element, val condition: StreamError, va
 	}
 }
 
-class StreamErrorModule : XmppModule {
+class StreamErrorModule(override val context: Context) : XmppModule {
 
 	companion object {
 		const val TYPE = "StreamErrorModule"
@@ -47,7 +47,6 @@ class StreamErrorModule : XmppModule {
 	}
 
 	override val type = TYPE
-	override lateinit var context: Context
 	override val criteria = Criterion.and(
 		Criterion.name("error"), Criterion.xmlns("http://etherx.jabber.org/streams")
 	)

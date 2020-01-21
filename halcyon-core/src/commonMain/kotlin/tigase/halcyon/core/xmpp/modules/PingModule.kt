@@ -17,6 +17,7 @@
  */
 package tigase.halcyon.core.xmpp.modules
 
+import tigase.halcyon.core.Context
 import tigase.halcyon.core.currentTimestamp
 import tigase.halcyon.core.modules.AbstractXmppIQModule
 import tigase.halcyon.core.modules.Criterion
@@ -29,8 +30,8 @@ import tigase.halcyon.core.xmpp.stanzas.IQ
 import tigase.halcyon.core.xmpp.stanzas.IQType
 import tigase.halcyon.core.xmpp.stanzas.iq
 
-class PingModule : AbstractXmppIQModule(
-	TYPE, arrayOf(XMLNS), Criterion.chain(Criterion.name(IQ.NAME), Criterion.xmlns(XMLNS))
+class PingModule(context: Context) : AbstractXmppIQModule(
+	context, TYPE, arrayOf(XMLNS), Criterion.chain(Criterion.name(IQ.NAME), Criterion.xmlns(XMLNS))
 ) {
 
 	companion object {

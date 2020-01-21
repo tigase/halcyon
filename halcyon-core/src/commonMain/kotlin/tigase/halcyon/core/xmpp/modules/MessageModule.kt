@@ -17,6 +17,7 @@
  */
 package tigase.halcyon.core.xmpp.modules
 
+import tigase.halcyon.core.Context
 import tigase.halcyon.core.eventbus.Event
 import tigase.halcyon.core.logger.Logger
 import tigase.halcyon.core.modules.Criterion
@@ -32,12 +33,11 @@ data class MessageReceivedEvent(val fromJID: JID?, val stanza: Message) : Event(
 	}
 }
 
-class MessageModule : XmppModule {
+class MessageModule(override val context: Context) : XmppModule {
 
 	private val log = Logger("tigase.halcyon.core.xmpp.modules.MessageModule")
 
 	override val type = TYPE
-	override lateinit var context: tigase.halcyon.core.Context
 	override val criteria = Criterion.name(Message.NAME)
 	override val features: Array<String>? = null
 

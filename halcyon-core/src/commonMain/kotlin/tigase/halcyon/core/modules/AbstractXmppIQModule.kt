@@ -17,6 +17,7 @@
  */
 package tigase.halcyon.core.modules
 
+import tigase.halcyon.core.Context
 import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xmpp.ErrorCondition
 import tigase.halcyon.core.xmpp.XMPPException
@@ -24,8 +25,12 @@ import tigase.halcyon.core.xmpp.stanzas.IQ
 import tigase.halcyon.core.xmpp.stanzas.IQType
 import tigase.halcyon.core.xmpp.stanzas.wrap
 
-abstract class AbstractXmppIQModule(type: String, features: Array<String>, criteria: Criteria) :
-	AbstractXmppModule(type, features, criteria) {
+abstract class AbstractXmppIQModule(
+	context: Context,
+	type: String,
+	features: Array<String>,
+	criteria: Criteria
+) : AbstractXmppModule(context, type, features, criteria) {
 
 	final override fun process(element: Element) {
 		val iq: IQ = wrap(element)

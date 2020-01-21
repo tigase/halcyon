@@ -18,6 +18,7 @@
 package tigase.halcyon.core.xmpp.modules.presence
 
 import getFromAttr
+import tigase.halcyon.core.Context
 import tigase.halcyon.core.eventbus.Event
 import tigase.halcyon.core.logger.Logger
 import tigase.halcyon.core.modules.Criterion
@@ -37,12 +38,11 @@ data class PresenceReceivedEvent(val jid: JID, val stanzaType: PresenceType?, va
 	}
 }
 
-class PresenceModule : XmppModule {
+class PresenceModule(override val context: Context) : XmppModule {
 
 	private val log = Logger("tigase.halcyon.core.xmpp.modules.presence.PresenceModule")
 
 	override val type = TYPE
-	override lateinit var context: tigase.halcyon.core.Context
 	override val criteria = Criterion.name(Presence.NAME)
 	override val features: Array<String>? = null
 

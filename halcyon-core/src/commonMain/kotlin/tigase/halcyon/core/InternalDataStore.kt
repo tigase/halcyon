@@ -17,40 +17,11 @@
  */
 package tigase.halcyon.core
 
-import tigase.halcyon.core.eventbus.Event
 import tigase.halcyon.core.logger.Logger
-import tigase.halcyon.core.xmpp.BareJID
 
-class SessionObject {
-
-	enum class Scope {
-		/**
-		 * Properties in this scope are cleared when server sends new stream.
-		 */
-		Stream,
-		/**
-		 * Properties in this scope are cleared when connector is disconnected.
-		 */
-		Connection,
-		/**
-		 * Properties in this scope are cleared when client is manually stopped.
-		 */
-		Session,
-		/**
-		 * User property, as password, username etc. Not cleared.
-		 */
-		User,
-	}
-
-	data class ClearedEvent(val scopes: Array<Scope>) : Event(TYPE) {
-		companion object {
-			const val TYPE = "SessionObject::ClearedEvent"
-		}
-	}
+class InternalDataStore {
 
 	private val log = Logger("tigase.halcyon.core.SessionObject")
-
-	var clearHandler: ((Array<Scope>) -> Unit)? = null
 
 	private val properties: MutableMap<String, Entry> = HashMap()
 
@@ -72,11 +43,10 @@ class SessionObject {
 				iterator.remove()
 			}
 		}
-		clearHandler?.invoke(scopes)
 	}
 
 	@Suppress("UNCHECKED_CAST")
-	fun <T> getProperty(scope: Scope?, key: String): T? {
+	fun <T> getData(scope: Scope?, key: String): T? {
 		val entry = this.properties[key]
 		return if (entry == null) {
 			null
@@ -87,16 +57,11 @@ class SessionObject {
 		}
 	}
 
-	fun <T> getProperty(key: String): T? {
-		return getProperty<T>(null, key)
+	fun <T> getData(key: String): T? {
+		return getData<T>(null, key)
 	}
 
-	@Deprecated("Will be moved to configuration")
-	fun getUserBareJid(): BareJID? {
-		return this.getProperty(USER_BARE_JID) as BareJID?
-	}
-
-	fun setProperty(scope: Scope, key: String, value: Any?): SessionObject {
+	fun setData(scope: Scope, key: String, value: Any?): InternalDataStore {
 		if (value == null) {
 			this.properties.remove(key)
 		} else {
@@ -110,34 +75,5 @@ class SessionObject {
 	}
 
 	private data class Entry(val scope: Scope, val value: Any?)
-
-	companion object {
-		/**
-		 * Name of property used to keep logical name of XMPP server. Usually it is
-		 * equals to hostname of users JID.
-		 */
-		const val DOMAIN_NAME = "domainName"
-
-		/**
-		 * Name of property used to keep users nickname
-		 */
-		const val NICKNAME = "nickname"
-
-		/**
-		 * Name of property used to keep users password
-		 */
-		const val PASSWORD = "password"
-
-		/**
-		 * Name of property used to keep XMPP resource
-		 */
-		const val RESOURCE = "resource"
-
-		/**
-		 * Name of property used to keep users JID
-		 */
-		const val USER_BARE_JID = "userBareJid"
-
-	}
 
 }

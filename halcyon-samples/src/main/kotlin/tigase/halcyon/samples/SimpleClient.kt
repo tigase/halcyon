@@ -21,6 +21,7 @@ import tigase.halcyon.core.Halcyon
 import tigase.halcyon.core.TickEvent
 import tigase.halcyon.core.connector.ReceivedXMLElementEvent
 import tigase.halcyon.core.connector.SentXMLElementEvent
+import tigase.halcyon.core.connector.socket.SocketConnector
 import tigase.halcyon.core.eventbus.Event
 import tigase.halcyon.core.requests.IQResult
 import tigase.halcyon.core.requests.StanzaResult
@@ -76,6 +77,16 @@ fun main(args: Array<String>) {
 		val line = readLine() ?: break
 
 		when (line) {
+//			"break" -> {
+//				val pingModule = halcyon.modules.getModule<PingModule>(PingModule.TYPE)
+//				val req = pingModule.ping("jajcus.net".toJID()).response { resp ->
+//					when (resp) {
+//						is IQResult.Success -> println("PONG ${resp.request.stanza.to}: time=${resp.value}")
+//						is IQResult.Error -> println("PONG ${resp.request.stanza.to}: error=${resp.error}")
+//					}
+//				}.send()
+//				(halcyon.connector as SocketConnector).socket.close()
+//			}
 			"x" -> {
 				val pingModule = halcyon.modules.getModule<PingModule>(PingModule.TYPE)
 				val req = pingModule.ping().send()
@@ -114,7 +125,6 @@ fun main(args: Array<String>) {
 				})
 			}
 			"quit" -> break@loop
-			"?" -> halcyon.modules.getModule<StreamManagementModule>(StreamManagementModule.TYPE).report()
 			"r" -> halcyon.modules.getModule<StreamManagementModule>(StreamManagementModule.TYPE).request()
 			"a" -> halcyon.modules.getModule<StreamManagementModule>(StreamManagementModule.TYPE).sendAck(true)
 			"resume" -> halcyon.modules.getModule<StreamManagementModule>(StreamManagementModule.TYPE).resume()

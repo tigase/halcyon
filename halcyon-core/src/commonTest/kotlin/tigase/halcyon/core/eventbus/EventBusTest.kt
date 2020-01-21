@@ -17,7 +17,8 @@
  */
 package tigase.halcyon.core.eventbus
 
-import tigase.halcyon.core.SessionObject
+import tigase.halcyon.core.Halcyon
+import tigase.halcyon.core.InternalDataStore
 import kotlin.test.Test
 
 class EventBusTest {
@@ -30,8 +31,8 @@ class EventBusTest {
 
 	@Test
 	fun testEventBus() {
-		val sessionObject = SessionObject()
-		val eventBus = EventBus(sessionObject)
+		val halcyon = Halcyon()
+		val eventBus = EventBus(halcyon)
 
 		eventBus.register(Event01.TYPE, object : EventHandler<Event01> {
 			override fun onEvent(event: Event01) {
@@ -41,7 +42,6 @@ class EventBusTest {
 		eventBus.register<Event> { println() }
 
 //		eventBus.register("1") { event -> println(event) }
-
 	}
 
 }

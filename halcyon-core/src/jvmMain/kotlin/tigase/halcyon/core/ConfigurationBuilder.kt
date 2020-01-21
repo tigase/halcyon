@@ -23,7 +23,8 @@ actual class ConfigurationBuilder actual constructor(halcyon: AbstractHalcyon) :
 	AbstractConfigurationBuilder(halcyon) {
 
 	fun setServerHost(host: String): ConfigurationBuilder {
-		setProperty(SocketConnector.SERVER_HOST, host)
+		TODO()
+//		setProperty(SocketConnector.SERVER_HOST, host)
 		return this
 	}
 }

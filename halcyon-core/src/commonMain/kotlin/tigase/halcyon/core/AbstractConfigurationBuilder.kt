@@ -21,9 +21,6 @@ import tigase.halcyon.core.xmpp.BareJID
 
 abstract class AbstractConfigurationBuilder internal constructor(val halcyon: AbstractHalcyon) {
 
-	protected fun setProperty(key: String, value: Any?) {
-		halcyon.sessionObject.setProperty(SessionObject.Scope.User, key, value)
-	}
 
 	fun setAutoReconnect(value: Boolean): ConfigurationBuilder {
 		halcyon.autoReconnect = value
@@ -31,22 +28,22 @@ abstract class AbstractConfigurationBuilder internal constructor(val halcyon: Ab
 	}
 
 	fun setJID(value: BareJID): ConfigurationBuilder {
-		setProperty(SessionObject.USER_BARE_JID, value)
+		halcyon.config.userJID = value
 		return this as ConfigurationBuilder
 	}
 
 	fun setPassword(value: String): ConfigurationBuilder {
-		setProperty(SessionObject.PASSWORD, value)
+		halcyon.config.passwordCallback = { value }
 		return this as ConfigurationBuilder
 	}
 
 	fun setResource(value: String): ConfigurationBuilder {
-		setProperty(SessionObject.RESOURCE, value)
+		halcyon.config.resource = value
 		return this as ConfigurationBuilder
 	}
 
 	fun setDomain(value: String): ConfigurationBuilder {
-		setProperty(SessionObject.DOMAIN_NAME, value)
+		halcyon.config.domain = value
 		return this as ConfigurationBuilder
 	}
 

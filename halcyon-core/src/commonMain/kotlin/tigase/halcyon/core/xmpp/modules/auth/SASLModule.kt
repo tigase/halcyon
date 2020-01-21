@@ -18,7 +18,7 @@
 package tigase.halcyon.core.xmpp.modules.auth
 
 import tigase.halcyon.core.Context
-import tigase.halcyon.core.SessionObject
+import tigase.halcyon.core.Scope
 import tigase.halcyon.core.eventbus.Event
 import tigase.halcyon.core.exceptions.HalcyonException
 import tigase.halcyon.core.logger.Logger
@@ -49,9 +49,13 @@ class SASLContext {
 	var complete = false
 		internal set
 
+	override fun toString(): String {
+		return "SASLContext(mechanism=$mechanism, state=$state, complete=$complete)"
+	}
+
 }
 
-class SASLModule : XmppModule {
+class SASLModule(override val context: Context) : XmppModule {
 
 	enum class SASLError(val elementName: String) {
 
@@ -123,29 +127,19 @@ class SASLModule : XmppModule {
 		const val TYPE = "tigase.halcyon.core.xmpp.modules.auth.SASLModule"
 		private const val SASL_CONTEXT = "$TYPE#Context"
 
-		fun getContext(sessionObject: SessionObject): SASLContext {
-			var ctx = sessionObject.getProperty<SASLContext>(
-				SessionObject.Scope.Connection, SASL_CONTEXT
-			)
-			if (ctx == null) {
-				ctx = SASLContext()
-				sessionObject.setProperty(SessionObject.Scope.Connection, SASL_CONTEXT, ctx)
-			}
-			return ctx
-		}
-
-		fun getAuthState(sessionObject: SessionObject): State = getContext(sessionObject).state
 	}
 
 	private val log = Logger("tigase.halcyon.core.xmpp.modules.auth.SASLModule")
 	override val type = TYPE
-	override lateinit var context: Context
 	override val criteria = Criterion.or(
 		Criterion.nameAndXmlns("success", XMLNS),
 		Criterion.nameAndXmlns("failure", XMLNS),
 		Criterion.nameAndXmlns("challenge", XMLNS)
 	)
 	override val features: Array<String>? = null
+
+	var saslContext: SASLContext by property(Scope.Connection){SASLContext()}
+		private set
 
 	private val mechanisms: MutableList<SASLMechanism> = mutableListOf()
 
@@ -154,10 +148,10 @@ class SASLModule : XmppModule {
 		mechanisms.add(SASLAnonymous())
 	}
 
-	private fun selectMechanism(sessionObject: SessionObject): SASLMechanism {
+	private fun selectMechanism(): SASLMechanism {
 		for (mechanism in mechanisms) {
 			log.finest("Checking mechanism ${mechanism.name}")
-			if (mechanism.isAllowedToUse(sessionObject)) {
+			if (mechanism.isAllowedToUse(context.config, saslContext)) {
 				log.fine("Selected mechanism: ${mechanism.name}")
 				return mechanism
 			}
@@ -166,25 +160,24 @@ class SASLModule : XmppModule {
 	}
 
 	fun startAuth() {
-		val mechanism = selectMechanism(context.sessionObject)
+		val mechanism = selectMechanism()
 
-		val authData = mechanism.evaluateChallenge(null, context.sessionObject)
+		val authData = mechanism.evaluateChallenge(null, context.config, saslContext)
 		val authElement = element("auth") {
 			xmlns = XMLNS
 			attribute("mechanism", mechanism.name)
 			if (authData != null) +authData
 		}
 		context.writer.writeDirectly(authElement)
-		getContext(context.sessionObject).mechanism = mechanism
-		getContext(context.sessionObject).state = State.InProgress
+		saslContext.mechanism = mechanism
+		saslContext.state = State.InProgress
 		context.eventBus.fire(SASLEvent.SASLStarted(mechanism.name))
 	}
 
 	override fun process(element: Element) {
-		val saslCtx = getContext(context.sessionObject)
 		when (element.name) {
 			"success" -> {
-				getContext(context.sessionObject).state = State.Success
+				saslContext.state = State.Success
 				context.eventBus.fire(SASLEvent.SASLSuccess())
 			}
 			"failure" -> {
@@ -196,19 +189,19 @@ class SASLModule : XmppModule {
 					errorText = this.value
 				}
 
-				getContext(context.sessionObject).state = State.Failed
+				saslContext.state = State.Failed
 				context.eventBus.fire(SASLEvent.SASLError(saslError, errorText))
 			}
-			"challenge" -> processChallenge(saslCtx, element)
+			"challenge" -> processChallenge(saslContext, element)
 			else -> throw XMPPException(ErrorCondition.BadRequest, "Unsupported element")
 		}
 	}
 
 	private fun processChallenge(ctx: SASLContext, element: Element) {
 		val mech = ctx.mechanism!!
-		if (mech.isComplete(context.sessionObject)) throw HalcyonException("Mechanism ${mech.name} is finished but Server sent challenge.")
+		if (saslContext.complete) throw HalcyonException("Mechanism ${mech.name} is finished but Server sent challenge.")
 		val v = element.value
-		val r = mech.evaluateChallenge(v, context.sessionObject)
+		val r = mech.evaluateChallenge(v, context.config, saslContext)
 
 		val authElement = element("response") {
 			xmlns = XMLNS
@@ -218,6 +211,6 @@ class SASLModule : XmppModule {
 	}
 
 	fun clear() {
-		context.sessionObject.setProperty(SessionObject.Scope.Connection, SASL_CONTEXT, null)
+		saslContext = SASLContext()
 	}
 }

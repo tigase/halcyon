@@ -18,7 +18,7 @@
 package tigase.halcyon.core.xmpp.modules
 
 import tigase.halcyon.core.Context
-import tigase.halcyon.core.SessionObject
+import tigase.halcyon.core.Scope
 import tigase.halcyon.core.modules.Criteria
 import tigase.halcyon.core.modules.XmppModule
 import tigase.halcyon.core.requests.IQRequestBuilder
@@ -29,19 +29,19 @@ import tigase.halcyon.core.xmpp.XMPPException
 import tigase.halcyon.core.xmpp.stanzas.IQType
 import tigase.halcyon.core.xmpp.stanzas.iq
 
-class BindModule : XmppModule {
+class BindModule(override val context: Context) : XmppModule {
 
 	companion object {
 		const val XMLNS = "urn:ietf:params:xml:ns:xmpp-bind"
 		const val TYPE = XMLNS
-
-		fun getBindedJID(sessionObject: SessionObject): JID? = sessionObject.getProperty(XMLNS)
 	}
 
 	override val type = TYPE
-	override lateinit var context: Context
 	override val criteria: Criteria? = null
 	override val features = arrayOf(XMLNS)
+
+	var boundJID: JID? by propertySimple(Scope.Session, null)
+		private set
 
 	override fun initialize() {}
 
@@ -64,7 +64,7 @@ class BindModule : XmppModule {
 		val bind = element.getChildrenNS("bind", XMLNS)!!
 		val jidElement = bind.getFirstChild("jid")!!
 		val jid = JID.parse(jidElement.value!!)
-		context.sessionObject.setProperty(SessionObject.Scope.Session, XMLNS, jid)
+		boundJID = jid
 		return BindResult(jid)
 	}
 

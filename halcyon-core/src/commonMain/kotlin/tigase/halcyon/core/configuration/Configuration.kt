@@ -15,18 +15,19 @@
  * along with this program. Look for COPYING file in the top folder.
  * If not, see http://www.gnu.org/licenses/.
  */
-package tigase.halcyon.core.modules
+package tigase.halcyon.core.configuration
 
-import tigase.halcyon.core.Context
+import tigase.halcyon.core.xmpp.BareJID
 
-abstract class AbstractXmppModule(
-	override val context: Context,
-	final override val type: String,
-	final override val features: Array<String>,
-	final override val criteria: Criteria
-) : XmppModule {
+class Configuration {
 
-	override fun initialize() {
-	}
+
+	var userJID: BareJID? = null
+
+	var resource: String? = null
+
+	var passwordCallback: (() -> String)? = null
+
+	var domain: String? = null
 
 }

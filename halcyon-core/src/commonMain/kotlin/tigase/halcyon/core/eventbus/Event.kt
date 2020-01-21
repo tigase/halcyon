@@ -17,11 +17,11 @@
  */
 package tigase.halcyon.core.eventbus
 
-import tigase.halcyon.core.SessionObject
+import tigase.halcyon.core.AbstractHalcyon
 
 abstract class Event(val eventType: String) {
 
-	lateinit var sessionObject: SessionObject
+	lateinit var context: AbstractHalcyon
 		internal set
 
 	var timestamp: Long = Long.MIN_VALUE

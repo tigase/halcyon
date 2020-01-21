@@ -17,6 +17,9 @@
  */
 package tigase.halcyon.core.modules
 
+import tigase.halcyon.core.Context
+import tigase.halcyon.core.InternalDataStore
+import tigase.halcyon.core.configuration.Configuration
 import tigase.halcyon.core.requests.RequestBuilderFactory
 import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xml.element
@@ -26,9 +29,8 @@ import kotlin.test.assertTrue
 
 class ModulesManagerTest {
 
-	class Module01 : tigase.halcyon.core.modules.XmppModule {
+	class Module01(override val context: Context) : tigase.halcyon.core.modules.XmppModule {
 		override val type = "Module01"
-		override lateinit var context: tigase.halcyon.core.Context
 		override val criteria: tigase.halcyon.core.modules.Criteria =
 			tigase.halcyon.core.modules.Criterion.name("iq")
 		override val features: Array<String> = arrayOf("1", "2")
@@ -40,9 +42,8 @@ class ModulesManagerTest {
 		}
 	}
 
-	class Module02 : tigase.halcyon.core.modules.XmppModule {
+	class Module02(override val context: Context) : tigase.halcyon.core.modules.XmppModule {
 		override val type = "Module02"
-		override lateinit var context: tigase.halcyon.core.Context
 		override val criteria = tigase.halcyon.core.modules.Criterion.name("msg")
 		override val features = arrayOf("a", "b")
 
@@ -60,8 +61,8 @@ class ModulesManagerTest {
 
 			override val eventBus: tigase.halcyon.core.eventbus.EventBus
 				get() = TODO("not implemented")
-			override val sessionObject: tigase.halcyon.core.SessionObject
-				get() = TODO("not implemented")
+			override val config: Configuration
+				get() = TODO("not implemented") //To change initializer of created properties use File | Settings | File Templates.
 			override val writer: tigase.halcyon.core.PacketWriter
 				get() = TODO("not implemented")
 			override val modules: tigase.halcyon.core.modules.ModulesManager
@@ -69,8 +70,8 @@ class ModulesManagerTest {
 			override val request: RequestBuilderFactory
 				get() = TODO("not implemented") //To change initializer of created properties use File | Settings | File Templates.
 		}
-		mm.register(Module01())
-		mm.register(Module02())
+		mm.register(Module01(mm.context))
+		mm.register(Module02(mm.context))
 
 		assertTrue(
 			arrayOf(

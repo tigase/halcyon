@@ -17,10 +17,12 @@
  */
 package tigase.halcyon.core.eventbus
 
+import tigase.halcyon.core.AbstractHalcyon
+import tigase.halcyon.core.Halcyon
 import tigase.halcyon.core.currentTimestamp
 import tigase.halcyon.core.logger.Level
 
-abstract class AbstractEventBus(val sessionObject: tigase.halcyon.core.SessionObject) {
+abstract class AbstractEventBus(val context: AbstractHalcyon) {
 
 	companion object {
 		const val ALL_EVENTS = "EventBus#ALL_EVENTS"
@@ -52,7 +54,7 @@ abstract class AbstractEventBus(val sessionObject: tigase.halcyon.core.SessionOb
 
 	fun fire(event: Event) {
 		event.timestamp = currentTimestamp()
-		event.sessionObject = sessionObject
+		event.context = context
 		val handlers = getHandlers(event.eventType)
 		fire(event, handlers)
 	}

@@ -17,45 +17,42 @@
  */
 package tigase.halcyon.core.xmpp.modules
 
+import tigase.halcyon.core.Context
+import tigase.halcyon.core.Scope
+import tigase.halcyon.core.eventbus.Event
+import tigase.halcyon.core.modules.XmppModule
 import tigase.halcyon.core.xml.Element
 
-data class StreamFeaturesEvent(val features: Element) : tigase.halcyon.core.eventbus.Event(TYPE) {
+data class StreamFeaturesEvent(val features: Element) : Event(TYPE) {
 
 	companion object {
 		const val TYPE = "tigase.halcyon.core.xmpp.modules.StreamFeaturesEvent"
 	}
 }
 
-class StreamFeaturesModule : tigase.halcyon.core.modules.XmppModule {
+class StreamFeaturesModule(override val context: Context) : XmppModule {
 
 	companion object {
 		const val TYPE = "StreamFeaturesModule"
-		const val FEATURES_KEY = "StreamFeaturesModule.Features"
-
-		fun getFeatures(sessionObject: tigase.halcyon.core.SessionObject): Element? =
-			sessionObject.getProperty<Element>(FEATURES_KEY)
-
-		fun isFeatureAvailable(
-			sessionObject: tigase.halcyon.core.SessionObject, name: String, xmlns: String
-		): Boolean = getFeatures(
-			sessionObject
-		)?.getChildrenNS(name, xmlns) != null
 	}
 
 	override val type = TYPE
-	override lateinit var context: tigase.halcyon.core.Context
 	override val criteria = tigase.halcyon.core.modules.Criterion.and(
 		tigase.halcyon.core.modules.Criterion.name("features"),
 		tigase.halcyon.core.modules.Criterion.xmlns("http://etherx.jabber.org/streams")
 	)
+
+	var streamFeatures: Element? by propertySimple(Scope.Stream, null)
+
 	override val features: Array<String>? = null
 
 	override fun initialize() {}
 
+	fun isFeatureAvailable(name: String, xmlns: String): Boolean =
+		streamFeatures?.getChildrenNS(name, xmlns) != null
+
 	override fun process(element: Element) {
-		context.sessionObject.setProperty(
-			tigase.halcyon.core.SessionObject.Scope.Stream, FEATURES_KEY, element
-		)
+		streamFeatures = element
 		context.eventBus.fire(StreamFeaturesEvent(element))
 	}
 }

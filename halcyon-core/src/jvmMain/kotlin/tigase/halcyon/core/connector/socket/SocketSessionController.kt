@@ -18,7 +18,7 @@
 package tigase.halcyon.core.connector.socket
 
 import tigase.halcyon.core.Halcyon
-import tigase.halcyon.core.SessionObject
+import tigase.halcyon.core.Scope
 import tigase.halcyon.core.connector.AbstractSocketSessionController
 import tigase.halcyon.core.connector.ConnectionErrorEvent
 import tigase.halcyon.core.connector.socket.SocketConnector.Companion.SEE_OTHER_HOST_KEY
@@ -30,10 +30,12 @@ import tigase.halcyon.core.xmpp.StreamError
 import tigase.halcyon.core.xmpp.modules.StreamErrorEvent
 import tigase.halcyon.core.xmpp.modules.StreamFeaturesEvent
 import tigase.halcyon.core.xmpp.modules.auth.SASLEvent
-import tigase.halcyon.core.xmpp.modules.auth.SASLModule
 
 class SocketSessionController(halcyon: Halcyon, private val connector: SocketConnector) :
 	AbstractSocketSessionController(halcyon, "tigase.halcyon.core.connector.socket.SocketSessionController") {
+
+	var seeOtherHostUrl: String? = null
+		private set
 
 	override fun processAuthSuccessfull(event: SASLEvent.SASLSuccess) {
 		connector.restartStream()
@@ -45,7 +47,7 @@ class SocketSessionController(halcyon: Halcyon, private val connector: SocketCon
 	override fun processConnectionError(event: ConnectionErrorEvent) {
 		log.log(Level.FINE, "Received connector exception: $event")
 
-		halcyon.sessionObject.clear(SessionObject.Scope.Connection)
+		halcyon.clear(Scope.Connection)
 
 //		context.modules.getModuleOrNull<StreamManagementModule>(StreamManagementModule.TYPE)?.reset()
 //		context.modules.getModuleOrNull<SASLModule>(SASLModule.TYPE)?.clear()
@@ -66,7 +68,6 @@ class SocketSessionController(halcyon: Halcyon, private val connector: SocketCon
 	}
 
 	override fun processStreamFeaturesEvent(event: StreamFeaturesEvent) {
-		val authState = SASLModule.getAuthState(halcyon.sessionObject)
 		val connectionSecured = connector.secured
 		val tlsAvailable: Boolean = isTLSAvailable(event.features)
 
@@ -84,7 +85,7 @@ class SocketSessionController(halcyon: Halcyon, private val connector: SocketCon
 
 	private fun processSeeOtherHost(event: StreamErrorEvent) {
 		val url = event.errorElement.value
-		halcyon.sessionObject.setProperty(SessionObject.Scope.Session, SEE_OTHER_HOST_KEY, url)
+		halcyon.internalDataStore.setData(Scope.Session, SEE_OTHER_HOST_KEY, url)
 
 		halcyon.eventBus.fire(
 			SessionController.SessionControllerEvents.ErrorReconnect(

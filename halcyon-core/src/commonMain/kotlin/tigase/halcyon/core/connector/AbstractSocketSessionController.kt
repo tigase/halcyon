@@ -18,7 +18,7 @@
 package tigase.halcyon.core.connector
 
 import tigase.halcyon.core.Halcyon
-import tigase.halcyon.core.SessionObject
+import tigase.halcyon.core.Scope
 import tigase.halcyon.core.eventbus.Event
 import tigase.halcyon.core.eventbus.EventHandler
 import tigase.halcyon.core.requests.IQResult
@@ -43,15 +43,20 @@ abstract class AbstractSocketSessionController(protected val halcyon: Halcyon, l
 	}
 
 	protected open fun processStreamFeaturesEvent(event: StreamFeaturesEvent) {
-		val authState = SASLModule.getAuthState(halcyon.sessionObject)
+		val authState =
+			halcyon.getModule<SASLModule>(SASLModule.TYPE)?.saslContext?.state ?: SASLModule.State.Unknown
+		val isResumptionAvailable =
+			halcyon.getModule<StreamManagementModule>(StreamManagementModule.TYPE)?.resumptionContext?.isResumptionAvailable()
+				?: false
+		log.fine("authState=$authState; isResumptionAvailable=$isResumptionAvailable")
 		if (authState == SASLModule.State.Unknown) {
-			if (!StreamManagementModule.isResumptionAvailable(halcyon.sessionObject)) {
+			if (!isResumptionAvailable) {
 				halcyon.modules.getModuleOrNull<StreamManagementModule>(StreamManagementModule.TYPE)?.reset()
 			}
 			halcyon.modules.getModule<SASLModule>(SASLModule.TYPE).startAuth()
 		}
 		if (authState == SASLModule.State.Success) {
-			if (StreamManagementModule.isResumptionAvailable(halcyon.sessionObject)) {
+			if (isResumptionAvailable) {
 				halcyon.modules.getModule<StreamManagementModule>(StreamManagementModule.TYPE).resume()
 			} else {
 				bindResource()
@@ -60,7 +65,7 @@ abstract class AbstractSocketSessionController(protected val halcyon: Halcyon, l
 	}
 
 	private fun bindResource() {
-		val resource = halcyon.sessionObject.getProperty<String>(SessionObject.RESOURCE)
+		val resource = halcyon.config.resource
 		halcyon.modules.getModule<BindModule>(BindModule.TYPE).bind(resource).response { result ->
 			when (result) {
 				is IQResult.Success<BindModule.BindResult> -> processBindSuccess(result.get()!!)
@@ -85,7 +90,10 @@ abstract class AbstractSocketSessionController(protected val halcyon: Halcyon, l
 	private fun processConnectorStateChangeEvent(event: ConnectorStateChangeEvent) {
 		if (event.oldState == State.Connected && (event.newState == State.Disconnected || event.newState == State.Disconnecting)) {
 			log.fine("Checking conditions to force timeout")
-			if (!StreamManagementModule.isResumptionAvailable(halcyon.sessionObject)) {
+			val isResumptionAvailable =
+				halcyon.getModule<StreamManagementModule>(StreamManagementModule.TYPE)?.resumptionContext?.isResumptionAvailable()
+					?: false
+			if (!isResumptionAvailable) {
 				halcyon.requestsManager.timeoutAll()
 			}
 		}
@@ -124,7 +132,7 @@ abstract class AbstractSocketSessionController(protected val halcyon: Halcyon, l
 	}
 
 	protected open fun processStreamError(event: StreamErrorEvent) {
-		halcyon.sessionObject.clear(SessionObject.Scope.Connection)
+		halcyon.clear(Scope.Connection)
 		when (event.errorElement.name) {
 			else -> halcyon.eventBus.fire(
 				SessionController.SessionControllerEvents.ErrorReconnect(
