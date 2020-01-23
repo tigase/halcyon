@@ -23,18 +23,26 @@ import tigase.halcyon.core.eventbus.Event
 import tigase.halcyon.core.logger.Logger
 import tigase.halcyon.core.modules.Criterion
 import tigase.halcyon.core.modules.XmppModule
+import tigase.halcyon.core.requests.PresenceRequestBuilder
 import tigase.halcyon.core.xml.Element
+import tigase.halcyon.core.xmpp.BareJID
 import tigase.halcyon.core.xmpp.JID
-import tigase.halcyon.core.xmpp.stanzas.Presence
-import tigase.halcyon.core.xmpp.stanzas.PresenceType
-import tigase.halcyon.core.xmpp.stanzas.presence
-import tigase.halcyon.core.xmpp.stanzas.wrap
+import tigase.halcyon.core.xmpp.stanzas.*
 
 data class PresenceReceivedEvent(val jid: JID, val stanzaType: PresenceType?, val stanza: Presence) :
 	Event(TYPE) {
 
 	companion object {
 		const val TYPE = "tigase.halcyon.core.xmpp.modules.presence.PresenceReceivedEvent"
+	}
+}
+
+data class ContactChangeStatusEvent(
+	val jid: BareJID, val status: String?, val presence: Presence, val lastReceivedPresence: Presence
+) : Event(TYPE) {
+
+	companion object {
+		const val TYPE = "tigase.halcyon.core.xmpp.modules.presence.ContactChangeStatusEvent"
 	}
 }
 
@@ -45,6 +53,8 @@ class PresenceModule(override val context: Context) : XmppModule {
 	override val type = TYPE
 	override val criteria = Criterion.name(Presence.NAME)
 	override val features: Array<String>? = null
+
+	var store: PresenceStore = DefaultPresenceStore()
 
 	companion object {
 		const val TYPE = "PresenceModule"
@@ -60,12 +70,82 @@ class PresenceModule(override val context: Context) : XmppModule {
 		if (fromJID == null) {
 			return
 		}
+
+		if (presence.type == PresenceType.Unavailable) {
+			store.removePresence(fromJID)
+		} else if (presence.type == null) {
+			store.setPresence(presence)
+		}
 		context.eventBus.fire(PresenceReceivedEvent(fromJID, presence.type, presence))
+
+		val bestPresence = getBestPresenceOf(fromJID.bareJID)
+		val bestShow = bestPresence?.show
+
+		context.eventBus.fire(
+			ContactChangeStatusEvent(
+				fromJID.bareJID, bestPresence?.status, bestPresence ?: presence, presence
+			)
+		)
 	}
 
 	fun sendInitialPresence() {
 		val presence = presence { }
 		context.writer.writeDirectly(presence)
+	}
+
+	fun sendPresence(
+		jid: JID? = null, type: PresenceType? = null, show: Show? = null, status: String? = null
+	): PresenceRequestBuilder {
+		val presence = presence {
+			if (jid != null) this.to = jid
+			this.type = type
+			if (show != null) this.show = show
+			if (status != null) {
+				this.status = status
+			}
+		}
+
+		return context.request.presence(presence)
+	}
+
+	fun sendSubscriptionSet(jid: JID, presenceType: PresenceType): PresenceRequestBuilder {
+		return context.request.presence {
+			to = jid
+			type = presenceType
+		}
+	}
+
+	fun getBestPresenceOf(jid: BareJID): Presence? {
+		data class Envelope(val presence: Presence) {
+			val comp: String by lazy {
+				val weight = when (presence.type) {
+					null -> {
+						when (presence.show) {
+							Show.Chat -> 1
+							null -> 2
+							Show.DnD -> 3
+							Show.Away -> 4
+							Show.XA -> 5
+						}
+					}
+					PresenceType.Unavailable -> 10
+					else -> 19
+				}
+
+				"${(500 - presence.priority)}:${100 + weight}"
+			}
+		}
+
+		return store.getPresences(jid).filter { presence -> presence.type == null }
+			.map { presence -> Envelope(presence) }.minBy { envelope -> envelope.comp }?.presence
+	}
+
+	fun getPresenceOf(jid: JID): Presence? {
+		return store.getPresence(jid)
+	}
+
+	fun getResources(jid: BareJID): List<JID> {
+		return store.getPresences(jid).mapNotNull { p -> p.from }
 	}
 
 }

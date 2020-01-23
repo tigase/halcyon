@@ -55,10 +55,34 @@ abstract class StanzaNode<STANZA_TYPE>(element: Element) : ElementNode(element) 
 
 }
 
-class PresenceNode(element: Presence) : StanzaNode<PresenceType?>(element) {
+class PresenceNode(private val presence: Presence) : StanzaNode<PresenceType?>(presence) {
 	override var type: PresenceType?
 		set(value) = setAtt("type", value?.value)
 		get() = PresenceType.values().firstOrNull { te -> te.value == value }
+
+	private fun intSetShow(show: Show?) {
+		presence.show = show
+	}
+
+	private fun intSetPriority(value: Int) {
+		presence.priority = value
+	}
+
+	private fun intSetStatus(value: String?) {
+		presence.status = value
+	}
+
+	var show: Show?
+		set(value) = intSetShow(value)
+		get() = presence.show
+
+	var priority: Int
+		set(value) = intSetPriority(value)
+		get() = presence.priority
+
+	var status: String?
+		set(value) = intSetStatus(value)
+		get() = presence.status
 
 }
 

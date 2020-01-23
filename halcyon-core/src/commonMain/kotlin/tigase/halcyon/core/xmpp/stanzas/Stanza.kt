@@ -18,6 +18,7 @@
 package tigase.halcyon.core.xmpp.stanzas
 
 import tigase.halcyon.core.xml.Element
+import tigase.halcyon.core.xml.ElementImpl
 import tigase.halcyon.core.xmpp.JID
 
 abstract class Stanza<STANZA_TYPE> protected constructor(protected val element: Element) :
@@ -28,11 +29,28 @@ abstract class Stanza<STANZA_TYPE> protected constructor(protected val element: 
 		return if (att == null) null else JID.parse(att)
 	}
 
-	protected open fun setAtt(attName: String, value: String?) {
+	protected fun setAtt(attName: String, value: String?) {
 		if (value == null) {
 			element.attributes.remove(attName)
 		} else {
 			element.attributes[attName] = value
+		}
+	}
+
+	protected fun getChildContent(childName: String, defaultValue: String? = null): String? {
+		return getFirstChild(childName)?.value ?: defaultValue
+	}
+
+	protected fun setChildContent(childName: String, value: String?) {
+		var c = getFirstChild(childName)
+		if (value == null && c != null) {
+			remove(c)
+		} else if (value != null && c != null) {
+			c.value = value
+		} else if (value != null && c == null) {
+			c = ElementImpl(childName)
+			c.value = value
+			add(c)
 		}
 	}
 

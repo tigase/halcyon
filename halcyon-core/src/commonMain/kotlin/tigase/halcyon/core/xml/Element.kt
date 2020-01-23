@@ -31,6 +31,8 @@ interface Element {
 	fun getAsString(): String
 	fun findChild(vararg elemPath: String): Element?
 	fun getNextSibling(): Element?
+	fun remove(child: Element)
+	fun add(child: Element)
 	val children: MutableList<Element>
 	val attributes: MutableMap<String, String>
 }
@@ -100,6 +102,23 @@ class ElementImpl(override val name: String) : Element {
 	}
 
 	override fun getNextSibling(): Element? = parent?.getChildAfter(this)
+
+	override fun remove(child: Element) {
+		child.parent = null
+		children.remove(child)
+	}
+
+	override fun add(child: Element) {
+		child.parent = this
+		children.add(child)
+	}
+
+	fun detach() {
+		parent?.let {
+			it.remove(this)
+			parent = null
+		}
+	}
 
 	override fun getAsString(): String {
 		val builder = StringBuilder()

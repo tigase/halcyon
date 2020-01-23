@@ -34,14 +34,14 @@ import tigase.halcyon.core.xmpp.stanzas.IQ
 import tigase.halcyon.core.xmpp.stanzas.IQType
 import tigase.halcyon.core.xmpp.toBareJID
 
-sealed class RosterEvent : Event(TYPE) {
+sealed class RosterEvent(val item: RosterItem) : Event(TYPE) {
 	companion object {
 		const val TYPE = "com.example.modules.roster.RosterEvent"
 	}
 
-	data class ItemAdded(val item: RosterItem) : RosterEvent()
-	data class ItemUpdated(val oldItem: RosterItem, val item: RosterItem) : RosterEvent()
-	data class ItemRemoved(val item: RosterItem) : RosterEvent()
+	class ItemAdded(item: RosterItem) : RosterEvent(item)
+	class ItemUpdated(val oldItem: RosterItem, item: RosterItem) : RosterEvent(item)
+	class ItemRemoved(item: RosterItem) : RosterEvent(item)
 }
 
 enum class Subscription(val value: String) {

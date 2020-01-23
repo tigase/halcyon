@@ -49,6 +49,17 @@ class PresenceTest {
 	}
 
 	@Test
+	fun testPrioritySet() {
+		val p = presence {}
+		p.priority = 17
+
+		println(p.getAsString())
+
+		assertEquals("17", p.getFirstChild("priority")?.value)
+
+	}
+
+	@Test
 	fun testTypeNull() {
 		val e = element("presence") { }
 		val p = wrap<Presence>(e)

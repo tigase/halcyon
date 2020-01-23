@@ -24,33 +24,26 @@ import tigase.halcyon.core.xmpp.XMPPException
 /**
  * Availability sub-state
  */
-enum class Show(val weight: Int) {
+enum class Show(val weight: Int, val value: String) {
 
-	/**
-	 * The entity or resource is temporarily away.
-	 */
-	away(3),
 	/**
 	 * The entity or resource is actively interested in chatting.
 	 */
-	chat(5),
+	Chat(5, "chat"),
 	/**
-	 * The entity or resource is busy (dnd = "Do Not Disturb").
+	 * The entity or resource is temporarily away.
 	 */
-	dnd(1),
-	/**
-	 * The entity or resource is online and available.
-	 */
-	online(4),
-	/**
-	 * The entity or resource is offline and unavailable.
-	 */
-	offline(0),
+	Away(3, "away"),
 	/**
 	 * The entity or resource is away for an extended period (xa =
 	 * "eXtended Away").
 	 */
-	xa(2);
+	XA(2, "xa"),
+	/**
+	 * The entity or resource is busy (dnd = "Do Not Disturb").
+	 */
+	DnD(1, "dnd"),
+
 }
 
 enum class PresenceType(val value: String) {
@@ -75,5 +68,26 @@ class Presence(wrappedElement: Element) : Stanza<PresenceType?>(wrappedElement) 
 			PresenceType.values().firstOrNull { te -> te.value == it }
 				?: throw XMPPException(ErrorCondition.BadRequest, "Unknown stanza type '$it'")
 		}
+
+	private fun getShowValue(): Show? {
+		return getChildContent("show")?.let {
+			Show.values().firstOrNull { s -> s.value == it } ?: throw XMPPException(
+				ErrorCondition.BadRequest,
+				"Unknown show value: '$it'"
+			)
+		}
+	}
+
+	var show: Show?
+		set(value) = setChildContent("show", value?.value)
+		get() = getShowValue()
+
+	var priority: Int
+		set(value) = setChildContent("priority", value.toString())
+		get() = getChildContent("priority", "0")!!.toInt()
+
+	var status: String?
+		set(value) = setChildContent("status", value)
+		get() = getChildContent("status")
 
 }
