@@ -51,7 +51,8 @@ Jar file will be stored in `./halcyon-core/build/libs/`, JavaScript files - in `
 
 # License
 
-<img alt="Tigase Tigase Logo" src="https://github.com/tigaseinc/website-assets/raw/master/tigase/images/tigase-logo.png?raw=true" width="25"/> This is official <a href="https://tigase.net/">Tigase</a> Repository.
-Copyright (c) 2013-2019 Tigase, Inc.
+<img alt="Tigase Tigase Logo" src="https://github.com/tigase/website-assets/blob/master/tigase/images/tigase-logo.png?raw=true" width="25"/> Official <a href="https://tigase.net/">Tigase</a> repository is available at: https://github.com/tigase/halcyon/.
+
+Copyright (c) 2004 Tigase, Inc.
 
 Licensed under AGPL License Version 3. Other licensing options available upon request.
