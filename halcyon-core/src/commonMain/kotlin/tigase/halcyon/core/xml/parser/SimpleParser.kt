@@ -23,22 +23,22 @@ package tigase.halcyon.core.xml.parser
  * parser designed especially to be light and parse *XML* streams like jabber *XML* stream. It is very
  * efficient, capable of parsing parts of *XML* document received from the network connection as well as handling
  * a few *XML* documents in one buffer. This is especially useful when parsing data received from the network.
- * Packets received from the network can contain non-comlete *XML* document as well as a few complete
- * *XML* documents. It doesn't support *XML* comments, processing instructions, document inclussions.
+ * Packets received from the network can contain non-complete *XML* document as well as a few complete
+ * *XML* documents. It doesn't support *XML* comments, processing instructions, document inclusions.
  * Actually it supports only:   * Start element event (with all attributes found).  * End element even.
  *  * Character data event.  * 'OtherXML' data event - everything between '&#60;' and '&#62;' if after &#60; is
  * '?' or '!'. So it can 'catch' doctype declaration, processing instructions but it can't process correctly commented
- * blocks.  Although very simple this imlementation is sufficient for Jabber protocol needs and is even used
+ * blocks.  Although very simple this implementation is sufficient for Jabber protocol needs and is even used
  * by some other packages of this server like implementation of `UserRepository` based on *XML* file
  * or server configuration.
  *
- *It is worth to note also that this class is fully thread safe. It means that one instance
- * of this class can be simultanously used by many threads. This is to improve resources usage when processing many
+ * It is worth to note also that this class is fully thread safe. It means that one instance
+ * of this class can be simultaneously used by many threads. This is to improve resources usage when processing many
  * client connections at the same time.
  *
  * Created: Fri Oct  1 23:02:15 2004
  *
- * @author [Artur Hefczyc](mailto:artur.hefczyc@tigase.org)
+ * @author [Artur Hefczyc](mailto:artur.hefczyc@tigase.net)
  * @version $Rev$
  */
 class SimpleParser {
@@ -47,7 +47,7 @@ class SimpleParser {
 	/**
 	 * Variable constant `MAX_ATTRIBS_NUMBER` keeps value of maximum possible attributes number. Real XML
 	 * parser shouldn't have such limit but in most cases XML elements don't have too many attributes. For efficiency it
-	 * is better to use fixed number of attributes and operate on arrays than on lists. Data structures will automaticly
+	 * is better to use fixed number of attributes and operate on arrays than on lists. Data structures will automatically
 	 * grow if real attributes number is bigger so there should be no problem with processing XML streams different than
 	 * expected.
 	 */
