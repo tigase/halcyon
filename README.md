@@ -10,6 +10,8 @@
 >
 > You can use it at your own risk.
 
+<img src="https://tc.tigase.net/app/rest/builds/buildType:(id:Halcyon_BuildArtur)/statusIcon" width="100"/>
+
 # What it is
 
 Halcyon is an [XMPP](https://xmpp.org) client library written in a [Kotlin](https://kotlinlang.org/) programming language. 
