@@ -99,7 +99,7 @@ class MessageNode(element: Message) : StanzaNode<MessageType?>(element) {
 }
 
 @Suppress("UNCHECKED_CAST")
-fun <ST : Stanza<*>> wrap(element: Element): ST {
+fun < ST : Stanza<*>> wrap(element: Element): ST {
 	return if (element is Stanza<*>) element as ST
 	else when (element.name) {
 		Presence.NAME -> Presence(element) as ST

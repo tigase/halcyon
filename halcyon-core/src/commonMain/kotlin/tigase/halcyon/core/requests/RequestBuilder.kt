@@ -111,7 +111,7 @@ class IQRequestBuilder<V : Any>(private val halcyon: AbstractHalcyon, private va
 	}
 
 	fun build(): IQRequest<V> {
-		val stanza = wrap<IQ>(element)
+		val stanza = wrap<IQ>(halcyon.modules.processSendInterceptors(element))
 		return IQRequest(
 			stanza.to,
 			stanza.attributes["id"]!!,
@@ -154,7 +154,7 @@ class PresenceRequestBuilder(private val halcyon: AbstractHalcyon, private val e
 	}
 
 	fun build(): PresenceRequest {
-		val stanza = wrap<Presence>(element)
+		val stanza = wrap<Presence>(halcyon.modules.processSendInterceptors(element))
 		return PresenceRequest(
 			stanza.to, stanza.attributes["id"]!!, currentTimestamp(), stanza, stanzaHandler, timeoutDelay
 		)
@@ -191,7 +191,7 @@ class MessageRequestBuilder(private val halcyon: AbstractHalcyon, private val el
 	}
 
 	fun build(): MessageRequest {
-		val stanza = wrap<Message>(element)
+		val stanza = wrap<Message>(halcyon.modules.processSendInterceptors(element))
 		return MessageRequest(
 			stanza.to, stanza.attributes["id"]!!, currentTimestamp(), stanza, stanzaHandler, timeoutDelay
 		)

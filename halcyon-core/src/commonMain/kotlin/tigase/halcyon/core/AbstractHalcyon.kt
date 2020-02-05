@@ -26,6 +26,7 @@ import tigase.halcyon.core.eventbus.Event
 import tigase.halcyon.core.eventbus.EventBus
 import tigase.halcyon.core.eventbus.EventHandler
 import tigase.halcyon.core.exceptions.HalcyonException
+import tigase.halcyon.core.logger.Level
 import tigase.halcyon.core.logger.Logger
 import tigase.halcyon.core.modules.ModulesManager
 import tigase.halcyon.core.modules.XmppModule
@@ -144,37 +145,45 @@ abstract class AbstractHalcyon : Context, PacketWriter {
 	abstract fun reconnect(immediately: Boolean = false)
 
 	protected fun processReceivedXmlElement(event: ReceivedXMLElementEvent) {
-		val element = event.element
-		val handled = requestsManager.findAndExecute(element)
-		if (element.name == IQ.NAME && (handled || (element.attributes["type"] == IQType.Result.value || element.attributes["type"] == IQType.Error.value))) return
+		var element = event.element
+		try {
+			val handled = requestsManager.findAndExecute(element)
+			if (element.name == IQ.NAME && (handled || (element.attributes["type"] == IQType.Result.value || element.attributes["type"] == IQType.Error.value))) return
 
-		val modules = modules.getModulesFor(element)
-		if (modules.isEmpty()) {
-			log.fine("Unsupported stanza: " + element.getAsString())
-			sendErrorBack(element, XMPPException(ErrorCondition.FeatureNotImplemented))
-			return
-		}
+			element = modules.processReceiveInterceptors(element) ?: return
 
-		executor.execute {
-			try {
-				modules.forEach {
-					it.process(element)
-				}
-			} catch (e: XMPPException) {
-				if (log.isLoggable(tigase.halcyon.core.logger.Level.FINEST)) log.log(
-					tigase.halcyon.core.logger.Level.FINEST,
-					"Error ${e.condition} during processing stanza " + element.getAsString(),
-					e
-				)
-				sendErrorBack(element, e)
-			} catch (e: Exception) {
-				if (log.isLoggable(tigase.halcyon.core.logger.Level.FINEST)) log.log(
-					tigase.halcyon.core.logger.Level.FINEST,
-					"Problem on processing element " + element.getAsString(),
-					e
-				)
-				sendErrorBack(element, e)
+			val modules = modules.getModulesFor(element)
+			if (modules.isEmpty()) {
+				log.fine("Unsupported stanza: " + element.getAsString())
+				sendErrorBack(element, XMPPException(ErrorCondition.FeatureNotImplemented))
+				return
 			}
+
+			executor.execute {
+				try {
+					modules.forEach {
+						it.process(element)
+					}
+				} catch (e: XMPPException) {
+					if (log.isLoggable(Level.FINEST)) log.log(
+						Level.FINEST,
+						"Error ${e.condition} during processing stanza " + element.getAsString(),
+						e
+					)
+					sendErrorBack(element, e)
+				} catch (e: Exception) {
+					if (log.isLoggable(Level.FINEST)) log.log(
+						Level.FINEST, "Problem on processing element " + element.getAsString(), e
+					)
+					sendErrorBack(element, e)
+				}
+			}
+
+		} catch (e: Exception) {
+			if (log.isLoggable(Level.INFO)) log.log(
+				Level.INFO, "Problem on processing element " + element.getAsString(), e
+			)
+			sendErrorBack(element, e)
 		}
 	}
 
@@ -253,8 +262,9 @@ abstract class AbstractHalcyon : Context, PacketWriter {
 	override fun writeDirectly(stanza: Element) {
 		val c = this.connector ?: throw HalcyonException("Connector is not initialized")
 		if (c.state != tigase.halcyon.core.connector.State.Connected) throw HalcyonException("Connector is not connected")
-		c.send(stanza.getAsString())
-		eventBus.fire(SentXMLElementEvent(stanza, null))
+		val toSend = modules.processSendInterceptors(stanza)
+		c.send(toSend.getAsString())
+		eventBus.fire(SentXMLElementEvent(toSend, null))
 	}
 
 	override fun write(request: Request<*, *>) {

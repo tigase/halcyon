@@ -25,6 +25,8 @@ class ModulesManager {
 
 	private val modules: MutableMap<String, XmppModule> = HashMap()
 
+	private val interceptors = mutableListOf<StanzaInterceptor>()
+
 	private val modulesToInitialize = mutableListOf<XmppModule>()
 
 	fun register(module: XmppModule) {
@@ -33,8 +35,15 @@ class ModulesManager {
 	}
 
 	fun initModules() {
-		modulesToInitialize.forEach { xmppModule -> xmppModule.initialize() }
+		modulesToInitialize.forEach(this::initModule)
 		modulesToInitialize.clear()
+	}
+
+	private fun initModule(module: XmppModule) {
+		module.initialize()
+		if (module is HasInterceptors) {
+			interceptors.addAll(module.stanzaInterceptors)
+		}
 	}
 
 	fun getAvailableFeatures(): Array<String> {
@@ -68,6 +77,21 @@ class ModulesManager {
 		}.toTypedArray()
 	}
 
-	operator fun <T : XmppModule> get(type: String): T = getModule(type)
+	internal fun processReceiveInterceptors(element: Element): Element? {
+		var tmp = element
+		for (interceptor in interceptors) {
+			tmp = interceptor.afterReceive(tmp) ?: return null
+		}
+		return tmp
+	}
 
+	internal fun processSendInterceptors(element: Element): Element {
+		var tmp = element
+		for (interceptor in interceptors) {
+			tmp = interceptor.beforeSend(tmp)
+		}
+		return tmp
+	}
+
+	operator fun <T : XmppModule> get(type: String): T = getModule(type)
 }
