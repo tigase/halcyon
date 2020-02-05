@@ -24,24 +24,27 @@ class Base64Test {
 
 	@Test
 	fun decode() {
-		assertEquals("", tigase.halcyon.core.Base64.decodeToString(""))
-		assertEquals("f", tigase.halcyon.core.Base64.decodeToString("Zg=="))
-		assertEquals("fo", tigase.halcyon.core.Base64.decodeToString("Zm8="))
-		assertEquals("foo", tigase.halcyon.core.Base64.decodeToString("Zm9v"))
-		assertEquals("foob", tigase.halcyon.core.Base64.decodeToString("Zm9vYg=="))
-		assertEquals("fooba", tigase.halcyon.core.Base64.decodeToString("Zm9vYmE="))
-		assertEquals("foobar", tigase.halcyon.core.Base64.decodeToString("Zm9vYmFy"))
+		assertEquals("", Base64.decodeToString(""))
+		assertEquals("f", Base64.decodeToString("Zg=="))
+		assertEquals("fo", Base64.decodeToString("Zm8="))
+		assertEquals("foo", Base64.decodeToString("Zm9v"))
+		assertEquals("foob", Base64.decodeToString("Zm9vYg=="))
+		assertEquals("fooba", Base64.decodeToString("Zm9vYmE="))
+		assertEquals("foobar", Base64.decodeToString("Zm9vYmFy"))
 	}
 
+	@ExperimentalStdlibApi
 	@Test
 	fun encode() {
-		assertEquals("", tigase.halcyon.core.Base64.encode(""))
-		assertEquals("Zg==", tigase.halcyon.core.Base64.encode("f"))
-		assertEquals("Zm8=", tigase.halcyon.core.Base64.encode("fo"))
-		assertEquals("Zm9v", tigase.halcyon.core.Base64.encode("foo"))
-		assertEquals("Zm9vYg==", tigase.halcyon.core.Base64.encode("foob"))
-		assertEquals("Zm9vYmE=", tigase.halcyon.core.Base64.encode("fooba"))
-		assertEquals("Zm9vYmFy", tigase.halcyon.core.Base64.encode("foobar"))
+		assertEquals("", Base64.encode(""))
+		assertEquals("Zg==", Base64.encode("f"))
+		assertEquals("Zm8=", Base64.encode("fo"))
+		assertEquals("Zm9v", Base64.encode("foo"))
+		assertEquals("Zm9vYg==", Base64.encode("foob"))
+		assertEquals("Zm9vYmE=", Base64.encode("fooba"))
+		assertEquals("Zm9vYmFy", Base64.encode("foobar"))
+
+		assertEquals("Zm9vYmFy", Base64.encode("foobar".encodeToByteArray()))
 
 	}
 

@@ -157,6 +157,33 @@ object Base64 {
 		return String(output)
 	}
 
+	fun encode(buf: ByteArray): String {
+		val size = buf.size
+		val outputSize = (size + 2) / 3 * 4
+		val output = CharArray(outputSize)
+		var a = 0
+		var i = 0
+		while (i < size) {
+			val b0 = buf[i++].toInt()
+			val b1 = if (i < size) buf[i++].toInt() else 0
+			val b2 = if (i < size) buf[i++].toInt() else 0
+
+			val mask = 0x3F
+			output[a++] = tigase.halcyon.core.Base64.ALPHABET[b0 shr 2 and mask]
+			output[a++] = tigase.halcyon.core.Base64.ALPHABET[b0 shl 4 or (b1 and 0xFF shr 4) and mask]
+			output[a++] = tigase.halcyon.core.Base64.ALPHABET[b1 shl 2 or (b2 and 0xFF shr 6) and mask]
+			output[a++] = tigase.halcyon.core.Base64.ALPHABET[b2 and mask]
+		}
+		when (size % 3) {
+			1 -> {
+				output[--a] = '='
+				output[--a] = '='
+			}
+			2 -> output[--a] = '='
+		}
+		return String(output)
+	}
+
 	private fun findNexIt(s: String, idx: Int): Int {
 		var i = idx
 		val sl = s.length - 1

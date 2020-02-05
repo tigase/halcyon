@@ -17,6 +17,7 @@
  */
 package tigase.halcyon.core
 
+import kotlinx.serialization.toUtf8Bytes
 import tigase.halcyon.core.configuration.Configuration
 import tigase.halcyon.core.connector.AbstractConnector
 import tigase.halcyon.core.connector.ConnectorStateChangeEvent
@@ -123,6 +124,7 @@ abstract class AbstractHalcyon : Context, PacketWriter {
 		modules.register(PingModule(this))
 		modules.register(StreamErrorModule(this))
 		modules.register(StreamFeaturesModule(this))
+		modules.register(EntityCapabilitiesModule(this))
 	}
 
 	protected open fun onSessionControllerEvent(event: SessionController.SessionControllerEvents) {

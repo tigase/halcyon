@@ -43,6 +43,7 @@ class StreamFeaturesModule(override val context: Context) : XmppModule {
 	)
 
 	var streamFeatures: Element? by propertySimple(Scope.Stream, null)
+		private set
 
 	override val features: Array<String>? = null
 
