@@ -58,25 +58,25 @@ class EntityCapabilitiesModule(override val context: Context) : XmppModule, HasI
 	private lateinit var streamFeaturesModule: StreamFeaturesModule
 	private lateinit var bindModule: BindModule
 
-	var node: String = "https://github.com/tigase/halcyon"
+	var node: String = "http://tigase.org/TigaseHalcyon"
 	var cache: EntityCapabilitiesCache = DefaultEntityCapabilitiesCache()
 
 	private var verificationStringCache: String? by propertySimple(Scope.Session, null)
 
 	inner class CapsNodeDetailsProvider : NodeDetailsProvider {
 
-		override fun getIdentities(requestedNode: String?): List<DiscoveryModule.Identity> {
+		override fun getIdentities(node: String?): List<DiscoveryModule.Identity> {
 			val ver = getVerificationString()
-			return if (requestedNode == "$node#$ver") {
+			return if (node == "${this@EntityCapabilitiesModule.node}#$ver") {
 				listOf(discoModule.getClientIdentity())
 			} else {
 				emptyList()
 			}
 		}
 
-		override fun getFeatures(requestedNode: String?): List<String> {
+		override fun getFeatures(node: String?): List<String> {
 			val ver = getVerificationString()
-			return if (requestedNode == "$node#$ver") context.modules.getAvailableFeatures().toList() else emptyList()
+			return if (node == "${this@EntityCapabilitiesModule.node}#$ver") context.modules.getAvailableFeatures().toList() else emptyList()
 		}
 
 		override fun getItems(node: String?): List<DiscoveryModule.Item> = emptyList()
