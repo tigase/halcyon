@@ -171,7 +171,7 @@ class DiscoveryModule(override val context: Context) : XmppModule {
 				}
 			}
 		}
-		return context.request.iq<Info>(stanza).resultBuilder(this@DiscoveryModule::buildInfo)
+		return context.request.iq(stanza).resultBuilder(this@DiscoveryModule::buildInfo)
 	}
 
 	private fun buildInfo(response: Element): Info {
@@ -200,7 +200,7 @@ class DiscoveryModule(override val context: Context) : XmppModule {
 				}
 			}
 		}
-		return context.request.iq<Items>(stanza).resultBuilder(this@DiscoveryModule::buildItems)
+		return context.request.iq(stanza).resultBuilder(this@DiscoveryModule::buildItems)
 	}
 
 	private fun buildItems(response: Element): Items {

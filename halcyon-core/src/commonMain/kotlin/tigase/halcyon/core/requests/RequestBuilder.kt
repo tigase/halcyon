@@ -26,13 +26,13 @@ import tigase.halcyon.core.xmpp.stanzas.*
 
 class RequestBuilderFactory(private val halcyon: AbstractHalcyon) {
 
-	fun <V : Any> iq(stanza: Element): IQRequestBuilder<V> = IQRequestBuilder(halcyon, stanza)
-	fun <V : Any> iq(init: IQNode.() -> Unit): IQRequestBuilder<V> {
+	fun iq(stanza: Element): IQRequestBuilder<Unit> = IQRequestBuilder(halcyon, stanza) { Unit }
+	fun iq(init: IQNode.() -> Unit): IQRequestBuilder<Unit> {
 		val n = IQNode(IQ(ElementImpl(IQ.NAME)))
 		n.init()
 		n.id()
 		val stanza = n.element as IQ
-		return IQRequestBuilder(halcyon, stanza)
+		return IQRequestBuilder(halcyon, stanza) { Unit }
 	}
 
 	fun presence(stanza: Element): PresenceRequestBuilder = PresenceRequestBuilder(halcyon, stanza)
@@ -55,10 +55,14 @@ class RequestBuilderFactory(private val halcyon: AbstractHalcyon) {
 
 }
 
-class IQRequestBuilder<V : Any>(private val halcyon: AbstractHalcyon, private val element: Element) {
+class IQRequestBuilder<V : Any>(
+	private val halcyon: AbstractHalcyon,
+	private val element: Element,
+	private var resultConverter: ResultConverter<V>
+) {
 
-	private var resultConverter: ResultConverter<V>? = null
 	private var timeoutDelay: Long = 30000
+	private var handler: IQResponseResultHandler<V>? = null
 
 	init {
 		if (element.name != IQ.NAME) {
@@ -67,8 +71,6 @@ class IQRequestBuilder<V : Any>(private val halcyon: AbstractHalcyon, private va
 			throw HalcyonException("Stanza MUST have 'id' attribute.")
 		}
 	}
-
-	private var handler: IQResponseResultHandler<V>? = null
 
 	fun handle(init: IQHandlerHelper<V>.() -> Unit): IQRequestBuilder<V> {
 		val callback = IQHandlerHelper<V>()
@@ -105,19 +107,17 @@ class IQRequestBuilder<V : Any>(private val halcyon: AbstractHalcyon, private va
 		return this
 	}
 
-	fun resultBuilder(resultConverter: ResultConverter<V>): IQRequestBuilder<V> {
-		this.resultConverter = resultConverter
-		return this
+	fun <R : Any> resultBuilder(resultConverter: ResultConverter<R>): IQRequestBuilder<R> {
+		val result = IQRequestBuilder<R>(halcyon, element, resultConverter)
+		result.timeoutDelay = this.timeoutDelay
+		result.handler = null
+		return result
 	}
 
 	fun build(): IQRequest<V> {
 		val stanza = wrap<IQ>(halcyon.modules.processSendInterceptors(element))
 		return IQRequest(
-			stanza.to,
-			stanza.attributes["id"]!!,
-			currentTimestamp(),
-			stanza,
-			handler,
+			stanza.to, stanza.attributes["id"]!!, currentTimestamp(), stanza, handler,
 			resultConverter,
 			timeoutDelay
 		)

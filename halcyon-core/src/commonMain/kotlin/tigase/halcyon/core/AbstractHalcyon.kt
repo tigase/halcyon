@@ -17,7 +17,6 @@
  */
 package tigase.halcyon.core
 
-import kotlinx.serialization.toUtf8Bytes
 import tigase.halcyon.core.configuration.Configuration
 import tigase.halcyon.core.connector.AbstractConnector
 import tigase.halcyon.core.connector.ConnectorStateChangeEvent
@@ -41,6 +40,7 @@ import tigase.halcyon.core.xmpp.SessionController
 import tigase.halcyon.core.xmpp.XMPPException
 import tigase.halcyon.core.xmpp.modules.*
 import tigase.halcyon.core.xmpp.modules.auth.SASLModule
+import tigase.halcyon.core.xmpp.modules.avatar.UserAvatarModule
 import tigase.halcyon.core.xmpp.modules.caps.EntityCapabilitiesModule
 import tigase.halcyon.core.xmpp.modules.discovery.DiscoveryModule
 import tigase.halcyon.core.xmpp.modules.presence.PresenceModule
@@ -125,6 +125,7 @@ abstract class AbstractHalcyon : Context, PacketWriter {
 		modules.register(StreamErrorModule(this))
 		modules.register(StreamFeaturesModule(this))
 		modules.register(EntityCapabilitiesModule(this))
+		modules.register(UserAvatarModule(this))
 	}
 
 	protected open fun onSessionControllerEvent(event: SessionController.SessionControllerEvents) {

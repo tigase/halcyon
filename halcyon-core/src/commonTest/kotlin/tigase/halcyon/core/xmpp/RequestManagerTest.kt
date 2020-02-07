@@ -47,13 +47,13 @@ class RequestManagerTest {
 
 		var successCounter = 0
 
-		val rq = halcyon.request.iq<Any>(e).response(object : IQResponseHandler<Any> {
-			override fun success(request: IQRequest<Any>, responseStanza: IQ, v: Any?) {
+		val rq = halcyon.request.iq(e).response(object : IQResponseHandler<Unit> {
+			override fun success(request: IQRequest<Unit>, responseStanza: IQ, v: Unit?) {
 				++successCounter
 			}
 
 			override fun error(
-				request: IQRequest<Any>,
+				request: IQRequest<Unit>,
 				responseStanza: IQ?,
 				errorCondition: ErrorCondition,
 				errorMessage: String?
@@ -89,7 +89,7 @@ class RequestManagerTest {
 
 		var successCounter = 0
 
-		val req = halcyon.request.iq<Any>(e).handle {
+		val req = halcyon.request.iq(e).handle {
 			success { request, element, any -> ++successCounter }
 			error { _, _, _, _ -> fail() }
 		}.build()
@@ -118,7 +118,7 @@ class RequestManagerTest {
 
 		var successCounter = 0
 
-		val req = halcyon.request.iq<Any>(e).response { result ->
+		val req = halcyon.request.iq(e).response { result ->
 			when (result) {
 				is IQResult.Success -> {
 					++successCounter
@@ -149,7 +149,7 @@ class RequestManagerTest {
 			attribute("type", "get")
 			attribute("to", "a@b.c")
 		}
-		val req = halcyon.request.iq<Any>(e).handle {
+		val req = halcyon.request.iq(e).handle {
 			error { request, element, errorCondition, _ ->
 				++errorCounter
 				assertEquals(ErrorCondition.NotAllowed, errorCondition)
@@ -181,7 +181,7 @@ class RequestManagerTest {
 		var counter = 0
 
 		// timout expected
-		val r1 = halcyon.request.iq<Any>(element("iq") {
+		val r1 = halcyon.request.iq(element("iq") {
 			attribute("id", "1")
 			attribute("type", "get")
 			attribute("to", "a@b.c")
@@ -191,7 +191,7 @@ class RequestManagerTest {
 		rm.register(r1)
 
 		// timout NOT expected
-		val r2 = halcyon.request.iq<Any>(element("iq") {
+		val r2 = halcyon.request.iq(element("iq") {
 			attribute("id", "2")
 			attribute("type", "get")
 			attribute("to", "a@b.c")

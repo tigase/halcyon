@@ -85,7 +85,7 @@ class RosterModule(context: Context) : AbstractXmppIQModule(
 	var store: RosterStore = DefaultRosterStore()
 
 	fun rosterGet(): IQRequestBuilder<RosterResponse> {
-		return context.request.iq<RosterResponse> {
+		return context.request.iq {
 			type = IQType.Get
 			"query"{
 				xmlns = XMLNS

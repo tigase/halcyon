@@ -17,6 +17,7 @@
  */
 package tigase.halcyon.core.xmpp.modules.pubsub
 
+import kotlinx.serialization.Serializable
 import tigase.halcyon.core.Context
 import tigase.halcyon.core.eventbus.Event
 import tigase.halcyon.core.logger.Logger
@@ -131,7 +132,7 @@ class PubSubModule(override val context: Context) : XmppModule {
 				}
 			}
 		}
-		return context.request.iq<Subscription>(iq).resultBuilder { element ->
+		return context.request.iq(iq).resultBuilder { element ->
 			val s = element.findChild("iq", "pubsub", "subscription")
 				?: throw XMPPException(ErrorCondition.BadRequest)
 			parseSubscriptionElement(s)
@@ -156,7 +157,7 @@ class PubSubModule(override val context: Context) : XmppModule {
 			}
 		}
 
-		return context.request.iq<Unit>(iq)
+		return context.request.iq(iq)
 	}
 
 	/**
@@ -177,7 +178,7 @@ class PubSubModule(override val context: Context) : XmppModule {
 				}
 			}
 		}
-		return context.request.iq<List<Subscription>>(iq).resultBuilder { element: Element ->
+		return context.request.iq(iq).resultBuilder { element: Element ->
 			val subscriptions = element.findChild("iq", "pubsub", "subscriptions") ?: throw XMPPException(
 				ErrorCondition.BadRequest
 			)
@@ -231,7 +232,7 @@ class PubSubModule(override val context: Context) : XmppModule {
 				}
 			}
 		}
-		return context.request.iq<Unit>(iq)
+		return context.request.iq(iq)
 	}
 
 	override fun process(element: Element) {
@@ -249,5 +250,50 @@ class PubSubModule(override val context: Context) : XmppModule {
 			)
 		)
 	}
+
+	fun retrieveItem(jid: JID, node: String, itemId: String): IQRequestBuilder<Unit> {
+		val iq = iq {
+			to = jid
+			type = IQType.Get
+			"pubsub"{
+				xmlns = XMLNS
+				"items"{
+					attribute("node", node)
+					"item"{
+						attribute("id", itemId)
+					}
+				}
+			}
+		}
+		return context.request.iq(iq)
+	}
+
+	@Serializable
+	data class PublishingInfo(val pubSubJID: JID?, val node: String, val id: String)
+
+	fun publish(jid: JID?, node: String, itemId: String, payload: Element): IQRequestBuilder<PublishingInfo> {
+		val iq = iq {
+			type = IQType.Set
+			jid?.let {
+				to = it
+			}
+			"pubsub"{
+				xmlns = XMLNS
+				"publish"{
+					attribute("node", node)
+					"item"{
+						addChild(payload)
+					}
+				}
+			}
+		}
+		return context.request.iq(iq).resultBuilder {
+			val publish = it.getChildrenNS("pubsub", XMLNS)?.getFirstChild("publish")!!
+			val item = publish.findChild("item")!!
+			val j = it.attributes["from"]?.let { JID.parse(it) }!!
+			PublishingInfo(j, publish.attributes["node"]!!, item.attributes["id"]!!)
+		}
+	}
+
 }
 
