@@ -25,7 +25,7 @@ import tigase.halcyon.core.xmpp.stanzas.*
 
 typealias ResultConverter<T> = (Element) -> T
 
-abstract class Request<V : Any, STT : Stanza<*>>(
+abstract class Request<V, STT : Stanza<*>>(
 	val jid: JID?, val id: String, val creationTimestamp: Long, val stanza: STT, var timeoutDelay: Long
 ) {
 
@@ -106,7 +106,7 @@ abstract class Request<V : Any, STT : Stanza<*>>(
 
 }
 
-abstract class AbstractIQRequest<V : Any>(
+abstract class AbstractIQRequest<V>(
 	jid: JID?,
 	id: String,
 	creationTimestamp: Long,
@@ -154,15 +154,14 @@ abstract class AbstractIQRequest<V : Any>(
 
 	override fun markAsSent() {}
 
-	override fun createRequestNotCompletedException(): RequestNotCompletedException =
-		RequestNotCompletedException(this)
+	override fun createRequestNotCompletedException(): RequestNotCompletedException = RequestNotCompletedException(this)
 
 	override fun createRequestErrorException(error: ErrorCondition, text: String?): RequestErrorException =
 		RequestErrorException(this, error, text)
 
 }
 
-expect class IQRequest<V : Any>(
+expect class IQRequest<V>(
 	jid: JID?,
 	id: String,
 	creationTimestamp: Long,
@@ -181,8 +180,7 @@ class PresenceRequest(
 	timeoutDelay: Long
 ) : Request<Unit, Presence>(jid, id, creationTimestamp, requestStanza, timeoutDelay) {
 
-	override fun createRequestNotCompletedException(): RequestNotCompletedException =
-		RequestNotCompletedException(this)
+	override fun createRequestNotCompletedException(): RequestNotCompletedException = RequestNotCompletedException(this)
 
 	override fun createRequestErrorException(
 		error: ErrorCondition, text: String?
@@ -207,8 +205,7 @@ class MessageRequest(
 	timeoutDelay: Long
 ) : Request<Unit, Message>(jid, id, creationTimestamp, requestStanza, timeoutDelay) {
 
-	override fun createRequestNotCompletedException(): RequestNotCompletedException =
-		RequestNotCompletedException(this)
+	override fun createRequestNotCompletedException(): RequestNotCompletedException = RequestNotCompletedException(this)
 
 	override fun createRequestErrorException(error: ErrorCondition, text: String?): RequestErrorException =
 		RequestErrorException(this, error, text)

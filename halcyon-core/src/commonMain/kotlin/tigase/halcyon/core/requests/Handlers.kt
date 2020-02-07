@@ -22,12 +22,12 @@ import tigase.halcyon.core.xmpp.stanzas.IQ
 
 typealias IQResponseResultHandler<T> = (IQResult<T>) -> Unit
 
-interface IQResponseHandler<T : Any> {
+interface IQResponseHandler<T> {
 	fun success(request: IQRequest<T>, response: IQ, value: T?)
 	fun error(request: IQRequest<T>, response: IQ?, error: ErrorCondition, errorMessage: String?)
 }
 
-class IQHandlerHelper<T : Any> {
+class IQHandlerHelper<T> {
 
 	private var successHandler: ((IQRequest<T>, IQ, value: T?) -> Unit)? = null
 	private var errorHandler: ((IQRequest<T>, IQ?, ErrorCondition, String?) -> Unit)? = null

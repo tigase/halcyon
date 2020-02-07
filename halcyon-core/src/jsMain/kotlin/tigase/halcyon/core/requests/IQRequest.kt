@@ -20,7 +20,7 @@ package tigase.halcyon.core.requests
 import tigase.halcyon.core.xmpp.JID
 import tigase.halcyon.core.xmpp.stanzas.IQ
 
-actual class IQRequest<V : Any> actual constructor(
+actual class IQRequest<V> actual constructor(
 	jid: JID?,
 	id: String,
 	creationTimestamp: Long,

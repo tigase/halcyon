@@ -21,15 +21,15 @@ import tigase.halcyon.core.xmpp.ErrorCondition
 import tigase.halcyon.core.xmpp.XMPPException
 import tigase.halcyon.core.xmpp.stanzas.IQ
 
-sealed class IQResult<out V : Any> {
+sealed class IQResult<V> {
 
 	abstract fun get(): V?
 
-	class Success<V : Any>(val request: IQRequest<V>, val response: IQ, val value: V?) : IQResult<V>() {
+	class Success<V>(val request: IQRequest<V>, val response: IQ, val value: V?) : IQResult<V>() {
 		override fun get(): V? = value
 	}
 
-	class Error<V : Any>(
+	class Error<V>(
 		val request: IQRequest<V>, val response: IQ?, val error: ErrorCondition, val text: String?
 	) : IQResult<V>() {
 

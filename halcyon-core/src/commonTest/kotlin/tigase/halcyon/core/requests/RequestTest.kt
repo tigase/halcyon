@@ -43,7 +43,7 @@ class RequestTest {
 
 	@Test
 	fun testEarlyCallbackInit() {
-		var rr: IQResult<Any>? = null
+		var rr: IQResult<Unit>? = null
 
 		val req = halcyon.request.iq(iq {
 			type = IQType.Set
@@ -88,7 +88,7 @@ class RequestTest {
 
 	@Test
 	fun testResponseError() {
-		var rr: IQResult<Any>? = null
+		var rr: IQResult<Unit>? = null
 		val req = halcyon.request.iq(iq {
 			type = IQType.Set
 			to = "a@b.c".toJID()

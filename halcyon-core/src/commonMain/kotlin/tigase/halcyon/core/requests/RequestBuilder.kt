@@ -55,10 +55,8 @@ class RequestBuilderFactory(private val halcyon: AbstractHalcyon) {
 
 }
 
-class IQRequestBuilder<V : Any>(
-	private val halcyon: AbstractHalcyon,
-	private val element: Element,
-	private var resultConverter: ResultConverter<V>
+class IQRequestBuilder<V>(
+	private val halcyon: AbstractHalcyon, private val element: Element, private var resultConverter: ResultConverter<V>
 ) {
 
 	private var timeoutDelay: Long = 30000
@@ -117,9 +115,7 @@ class IQRequestBuilder<V : Any>(
 	fun build(): IQRequest<V> {
 		val stanza = wrap<IQ>(halcyon.modules.processSendInterceptors(element))
 		return IQRequest(
-			stanza.to, stanza.attributes["id"]!!, currentTimestamp(), stanza, handler,
-			resultConverter,
-			timeoutDelay
+			stanza.to, stanza.attributes["id"]!!, currentTimestamp(), stanza, handler, resultConverter, timeoutDelay
 		)
 	}
 
