@@ -32,6 +32,29 @@ Halcyon implements support for [RFC 6120: Extensible Messaging and Presence Prot
 
 Halcyon is under active development, so list of features is changing very often.
 
+#Quickstart
+## Simplest client
+
+Here is example of simplest client sending single message.
+
+```kotlin
+val halcyon = Halcyon()
+halcyon.configuration.let {
+    it.setJID("client@tigase.net".toBareJID())
+    it.setPassword("secret")
+}
+halcyon.connectAndWait()
+
+halcyon.request.message {
+    to = "romeo@example.net".toJID()
+    "body"{
+        +"Art thou not Romeo, and a Montague?"
+    }
+}.send()
+
+halcyon.disconnect()
+``` 
+
 # Support
 
 When looking for support, please first search for answers to your question in the available online channels:

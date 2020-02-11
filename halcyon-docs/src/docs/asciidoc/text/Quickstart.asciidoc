@@ -4,3 +4,28 @@
 :numbered:
 :website: http://www.tigase.net
 
+=== Simplest client
+
+Here is example of simplest client sending one message.
+
+.SimplestClient.kt
+[source,kotlin]
+----
+val halcyon = Halcyon()
+halcyon.configuration.let {
+    it.setJID("client@tigase.net".toBareJID())
+    it.setPassword("secret")
+}
+halcyon.connectAndWait()
+
+halcyon.request.message {
+    to = "romeo@example.net".toJID()
+    "body"{
+        +"Art thou not Romeo, and a Montague?"
+    }
+}.send()
+
+halcyon.disconnect()
+
+
+----
