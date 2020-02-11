@@ -32,7 +32,8 @@ Halcyon implements support for [RFC 6120: Extensible Messaging and Presence Prot
 
 Halcyon is under active development, so list of features is changing very often.
 
-#Quickstart
+# Quickstart
+
 ## Simplest client
 
 Here is example of simplest client sending single message.
