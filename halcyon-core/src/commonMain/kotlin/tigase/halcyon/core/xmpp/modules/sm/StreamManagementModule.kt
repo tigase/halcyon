@@ -17,7 +17,11 @@
  */
 package tigase.halcyon.core.xmpp.modules.sm
 
-import tigase.halcyon.core.*
+import kotlinx.serialization.Serializable
+import tigase.halcyon.core.ClearedEvent
+import tigase.halcyon.core.Context
+import tigase.halcyon.core.Scope
+import tigase.halcyon.core.TickEvent
 import tigase.halcyon.core.connector.ReceivedXMLElementEvent
 import tigase.halcyon.core.connector.SentXMLElementEvent
 import tigase.halcyon.core.eventbus.Event
@@ -34,6 +38,7 @@ import tigase.halcyon.core.xmpp.XMPPException
 
 class StreamManagementModule(override val context: Context) : XmppModule {
 
+	@Serializable
 	class ResumptionContext {
 
 		internal var isActive: Boolean = false
@@ -64,6 +69,12 @@ class StreamManagementModule(override val context: Context) : XmppModule {
 
 		fun isResumptionAvailable() = resID != null && isResumeEnabled
 
+		/**
+		 * Returns ```true``` if ACK is enabled and currently active.
+		 */
+		val isAckActive: Boolean
+			get() = isAckEnabled && isActive
+
 	}
 
 	companion object {
@@ -89,12 +100,11 @@ class StreamManagementModule(override val context: Context) : XmppModule {
 //		fun getLocationAddress(sessionObject: SessionObject) = getContext(sessionObject).location
 	}
 
-	var resumptionContext: ResumptionContext by property(Scope.Session) {ResumptionContext()}
+	var resumptionContext: ResumptionContext by property(Scope.Session) { ResumptionContext() }
 
 	sealed class StreamManagementEvent : Event(TYPE) {
 		companion object {
-			const val TYPE =
-				"tigase.halcyon.core.xmpp.modules.sm.StreamManagementModule.StreamManagementEvent"
+			const val TYPE = "tigase.halcyon.core.xmpp.modules.sm.StreamManagementModule.StreamManagementEvent"
 		}
 
 		class Enabled(val id: String, val resume: Boolean, val mx: Long?) : StreamManagementEvent()
@@ -127,21 +137,21 @@ class StreamManagementModule(override val context: Context) : XmppModule {
 	}
 
 	private fun onTick() {
-		if (resumptionContext.let { ctx -> ctx.isAckEnabled && ctx.isActive }) {
+		if (resumptionContext.isAckActive) {
 			if (queue.size > 0) request()
 			sendAck(false)
 		}
 	}
 
 	private fun processElementReceived(element: Element) {
-		if (!resumptionContext.let { ctx -> ctx.isAckEnabled && ctx.isActive }) return
+		if (!resumptionContext.isAckActive) return
 		if (element.xmlns == XMLNS) return
 
 		++resumptionContext.incomingH
 	}
 
 	private fun processElementSent(element: Element, request: Request<*, *>?) {
-		if (!resumptionContext.let { ctx -> ctx.isAckEnabled && ctx.isActive }) return
+		if (!resumptionContext.isAckActive) return
 		if (element.xmlns == XMLNS) return
 
 		if (request != null) {
@@ -270,7 +280,7 @@ class StreamManagementModule(override val context: Context) : XmppModule {
 	}
 
 	fun request() {
-		if (resumptionContext.let { ctx -> ctx.isAckEnabled && ctx.isActive }) {
+		if (resumptionContext.isAckActive) {
 			log.fine("Sending ACK request")
 			context.writer.writeDirectly(element("r") { xmlns = XMLNS })
 		}

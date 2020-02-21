@@ -152,8 +152,6 @@ abstract class AbstractIQRequest<V>(
 		}
 	}
 
-	override fun markAsSent() {}
-
 	override fun createRequestNotCompletedException(): RequestNotCompletedException = RequestNotCompletedException(this)
 
 	override fun createRequestErrorException(error: ErrorCondition, text: String?): RequestErrorException =

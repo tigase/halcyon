@@ -45,6 +45,7 @@ import tigase.halcyon.core.xmpp.modules.caps.EntityCapabilitiesModule
 import tigase.halcyon.core.xmpp.modules.discovery.DiscoveryModule
 import tigase.halcyon.core.xmpp.modules.presence.PresenceModule
 import tigase.halcyon.core.xmpp.modules.pubsub.PubSubModule
+import tigase.halcyon.core.xmpp.modules.receipts.DeliveryReceiptsModule
 import tigase.halcyon.core.xmpp.modules.roster.RosterModule
 import tigase.halcyon.core.xmpp.modules.sm.StreamManagementModule
 import tigase.halcyon.core.xmpp.stanzas.IQ
@@ -278,7 +279,9 @@ abstract class AbstractHalcyon : Context, PacketWriter {
 		if (c.state != tigase.halcyon.core.connector.State.Connected) throw HalcyonException("Connector is not connected")
 		requestsManager.register(request)
 		c.send(request.stanza.getAsString())
-		if (getModule<StreamManagementModule>(StreamManagementModule.TYPE)?.resumptionContext?.isAckEnabled != true) {
+
+
+		if (getModule<StreamManagementModule>(StreamManagementModule.TYPE)?.resumptionContext?.isAckActive != true) {
 			request.markAsSent()
 		}
 		eventBus.fire(SentXMLElementEvent(request.stanza, request))
@@ -371,7 +374,7 @@ abstract class AbstractHalcyon : Context, PacketWriter {
 
 			modules.getModuleOrNull<StreamManagementModule>(StreamManagementModule.TYPE)?.let {
 				val ackEnabled =
-					getModule<StreamManagementModule>(StreamManagementModule.TYPE)?.resumptionContext?.isAckEnabled
+					getModule<StreamManagementModule>(StreamManagementModule.TYPE)?.resumptionContext?.isAckActive
 						?: false
 				if (ackEnabled && getConnectorState() == tigase.halcyon.core.connector.State.Connected) {
 					it.sendAck(true)
