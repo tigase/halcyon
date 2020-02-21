@@ -33,7 +33,7 @@ class XMPPDomHandler(
 
 	}
 
-	private val log = tigase.halcyon.core.logger.Logger("tigase.halcyon.core.xml.parser.XMPPDomHandler")
+	private val log = tigase.halcyon.core.logger.Logger("tigase.halcyon.core.xml.parser.XMPPDomHandler", false)
 
 	private val namespaces = HashMap<String, String>()
 
@@ -90,8 +90,7 @@ class XMPPDomHandler(
 					// avoid potential
 					// DOS by exhausting permgen
 					namespaces.put(
-						attr_names[i]!!.substring("xmlns:".length, attr_names[i]!!.length),
-						attr_values!![i].toString()
+						attr_names[i]!!.substring("xmlns:".length, attr_names[i]!!.length), attr_values!![i].toString()
 					)
 
 					if (log.isLoggable(tigase.halcyon.core.logger.Level.FINEST)) {

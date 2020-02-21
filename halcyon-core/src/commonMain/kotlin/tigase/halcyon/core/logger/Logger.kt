@@ -17,12 +17,12 @@
  */
 package tigase.halcyon.core.logger
 
-expect class Logger(name: String) {
+expect class Logger(name: String, enabled: Boolean = true) {
 
-	fun isLoggable(level: tigase.halcyon.core.logger.Level): Boolean
+	fun isLoggable(level: Level): Boolean
 
-	fun log(level: tigase.halcyon.core.logger.Level, msg: String)
-	fun log(level: tigase.halcyon.core.logger.Level, msg: String, caught: Throwable)
+	fun log(level: Level, msg: String)
+	fun log(level: Level, msg: String, caught: Throwable)
 
 	fun fine(msg: String)
 	fun finer(msg: String)

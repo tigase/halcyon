@@ -20,27 +20,28 @@ package tigase.halcyon.core.logger
 import java.util.logging.LogRecord
 
 @Suppress("NOTHING_TO_INLINE")
-actual class Logger actual constructor(name: String) {
+actual class Logger actual constructor(name: String, val enabled: Boolean) {
 
 	private val log = java.util.logging.Logger.getLogger(name)
 
-	private inline fun cnv(level: tigase.halcyon.core.logger.Level): java.util.logging.Level = when (level) {
-		tigase.halcyon.core.logger.Level.OFF -> java.util.logging.Level.OFF
-		tigase.halcyon.core.logger.Level.SEVERE -> java.util.logging.Level.SEVERE
-		tigase.halcyon.core.logger.Level.WARNING -> java.util.logging.Level.WARNING
-		tigase.halcyon.core.logger.Level.INFO -> java.util.logging.Level.INFO
-		tigase.halcyon.core.logger.Level.CONFIG -> java.util.logging.Level.CONFIG
-		tigase.halcyon.core.logger.Level.FINE -> java.util.logging.Level.FINE
-		tigase.halcyon.core.logger.Level.FINER -> java.util.logging.Level.FINER
-		tigase.halcyon.core.logger.Level.FINEST -> java.util.logging.Level.FINEST
-		tigase.halcyon.core.logger.Level.ALL -> java.util.logging.Level.ALL
+	private inline fun cnv(level: Level): java.util.logging.Level = when (level) {
+		Level.OFF -> java.util.logging.Level.OFF
+		Level.SEVERE -> java.util.logging.Level.SEVERE
+		Level.WARNING -> java.util.logging.Level.WARNING
+		Level.INFO -> java.util.logging.Level.INFO
+		Level.CONFIG -> java.util.logging.Level.CONFIG
+		Level.FINE -> java.util.logging.Level.FINE
+		Level.FINER -> java.util.logging.Level.FINER
+		Level.FINEST -> java.util.logging.Level.FINEST
+		Level.ALL -> java.util.logging.Level.ALL
 	}
 
-	actual fun isLoggable(level: tigase.halcyon.core.logger.Level): Boolean {
+	actual fun isLoggable(level: Level): Boolean {
 		return log.isLoggable(cnv(level))
 	}
 
-	private inline fun doLog(level: tigase.halcyon.core.logger.Level, msg: String, caught: Throwable?) {
+	private inline fun doLog(level: Level, msg: String, caught: Throwable?) {
+		if (!enabled) return
 		val lr = LogRecord(cnv(level), msg)
 		if (caught != null) lr.thrown = caught
 
@@ -65,40 +66,40 @@ actual class Logger actual constructor(name: String) {
 		}
 	}
 
-	actual fun log(level: tigase.halcyon.core.logger.Level, msg: String) {
+	actual fun log(level: Level, msg: String) {
 		doLog(level, msg, null)
 	}
 
-	actual fun log(level: tigase.halcyon.core.logger.Level, msg: String, caught: Throwable) {
+	actual fun log(level: Level, msg: String, caught: Throwable) {
 		doLog(level, msg, caught)
 	}
 
 	actual fun fine(msg: String) {
-		doLog(tigase.halcyon.core.logger.Level.FINE, msg, null)
+		doLog(Level.FINE, msg, null)
 	}
 
 	actual fun finer(msg: String) {
-		doLog(tigase.halcyon.core.logger.Level.FINER, msg, null)
+		doLog(Level.FINER, msg, null)
 	}
 
 	actual fun finest(msg: String) {
-		doLog(tigase.halcyon.core.logger.Level.FINEST, msg, null)
+		doLog(Level.FINEST, msg, null)
 	}
 
 	actual fun config(msg: String) {
-		doLog(tigase.halcyon.core.logger.Level.CONFIG, msg, null)
+		doLog(Level.CONFIG, msg, null)
 	}
 
 	actual fun info(msg: String) {
-		doLog(tigase.halcyon.core.logger.Level.INFO, msg, null)
+		doLog(Level.INFO, msg, null)
 	}
 
 	actual fun warning(msg: String) {
-		doLog(tigase.halcyon.core.logger.Level.WARNING, msg, null)
+		doLog(Level.WARNING, msg, null)
 	}
 
 	actual fun severe(msg: String) {
-		doLog(tigase.halcyon.core.logger.Level.SEVERE, msg, null)
+		doLog(Level.SEVERE, msg, null)
 	}
 
 }

@@ -19,7 +19,7 @@ package tigase.halcyon.core.logger
 
 import kotlin.js.Date
 
-actual class Logger actual constructor(val name: String) {
+actual class Logger actual constructor(val name: String, val enabled: Boolean) {
 
 	companion object {
 		var levelFilter: Level = Level.INFO
@@ -32,6 +32,7 @@ actual class Logger actual constructor(val name: String) {
 //		if (nameFilter != null && !name.matches(nameFilter!!)) {
 //			return
 //		}
+		if (!enabled) return
 		val dt = Date()
 		val formattedMsg = "${dt.toUTCString()} [$level] $name: $msg"
 
