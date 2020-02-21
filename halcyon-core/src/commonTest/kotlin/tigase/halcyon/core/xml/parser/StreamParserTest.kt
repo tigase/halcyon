@@ -20,35 +20,37 @@ package tigase.halcyon.core.xml.parser
 import tigase.halcyon.core.xml.Element
 import kotlin.test.*
 
+fun parseXML(data: String): StreamParserTest.Result {
+	var r: StreamParserTest.Result? = null
+	val parser = object : StreamParser() {
+		override fun onParseError(errorMessage: String) {
+			println(errorMessage)
+			r = StreamParserTest.Result(null, true)
+		}
+
+		override fun onNextElement(element: Element) {
+			r = StreamParserTest.Result(element, false)
+		}
+
+		override fun onStreamClosed() {
+			fail("Nothing to close")
+		}
+
+		override fun onStreamStarted(attrs: Map<String, String>) {
+			fail("Nothing to start")
+		}
+	}
+
+	parser.parse(data)
+
+	return r ?: fail("It cannot be null")
+}
+
 class StreamParserTest {
 
 	data class Result(val element: Element?, val error: Boolean)
 
-	private fun parse(data: String): Result {
-		var r: Result? = null
-		val parser = object : StreamParser() {
-			override fun onParseError(errorMessage: String) {
-				println(errorMessage)
-				r = Result(null, true)
-			}
-
-			override fun onNextElement(element: Element) {
-				r = Result(element, false)
-			}
-
-			override fun onStreamClosed() {
-				fail("Nothing to close")
-			}
-
-			override fun onStreamStarted(attrs: Map<String, String>) {
-				fail("Nothing to start")
-			}
-		}
-
-		parser.parse(data)
-
-		return r ?: fail("It cannot be null")
-	}
+	private fun parse(data: String): Result = parseXML(data)
 
 	@Test
 	fun testParse0() {
@@ -59,8 +61,7 @@ class StreamParserTest {
 
 	@Test
 	fun testParse() {
-		val input =
-			"<message><body>body</body><html><body><p><em>Wow</em>*, I&apos;m* <span>green</span>with <strong>envy</strong>!</p></body></html></message>"
+		val input = "<message><body>body</body><html><body><p><em>Wow</em>*, I&apos;m* <span>green</span>with <strong>envy</strong>!</p></body></html></message>"
 		var tmp = parse(input)
 		assertNotEquals(input, tmp.element!!.getAsString())
 	}
@@ -111,8 +112,7 @@ class StreamParserTest {
 		e = parse("<message from=\"test@example.com\"><body>Test</body1></message>")
 		assertTrue(e.error)
 
-		e =
-			parse("<message to=\"test@zeus\" type=\"chat\" id=\"t&amp;t<\"><body>Test &amp; done</body></message>")
+		e = parse("<message to=\"test@zeus\" type=\"chat\" id=\"t&amp;t<\"><body>Test &amp; done</body></message>")
 		assertTrue(e.error)
 
 	}

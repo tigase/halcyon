@@ -21,11 +21,12 @@ import tigase.halcyon.core.Halcyon
 import tigase.halcyon.core.TickEvent
 import tigase.halcyon.core.connector.ReceivedXMLElementEvent
 import tigase.halcyon.core.connector.SentXMLElementEvent
-import tigase.halcyon.core.connector.socket.SocketConnector
 import tigase.halcyon.core.eventbus.Event
 import tigase.halcyon.core.requests.IQResult
 import tigase.halcyon.core.requests.StanzaResult
+import tigase.halcyon.core.xml.element
 import tigase.halcyon.core.xmpp.modules.PingModule
+import tigase.halcyon.core.xmpp.modules.pubsub.PubSubModule
 import tigase.halcyon.core.xmpp.modules.sm.StreamManagementModule
 import tigase.halcyon.core.xmpp.stanzas.message
 import tigase.halcyon.core.xmpp.toBareJID
@@ -103,7 +104,7 @@ fun main(args: Array<String>) {
 				val pingModule = halcyon.modules.getModule<PingModule>(PingModule.TYPE)
 				val req = pingModule.ping().response { resp ->
 					when (resp) {
-						is IQResult.Success -> println("PING ${resp.request.stanza.to}: time=${resp.value}")
+						is IQResult.Success -> println("PING ${resp.request.stanza.to}: time=${resp.get()}")
 						is IQResult.Error -> println("PING ${resp.request.stanza.to}: error=${resp.error}")
 					}
 				}.send()

@@ -76,7 +76,7 @@ class IQRequestBuilder<V>(
 		this.handler = { result ->
 			val rh = callback.responseHandler()
 			when (result) {
-				is IQResult.Success<V> -> rh.success(result.request, result.response, result.value)
+				is IQResult.Success<V> -> rh.success(result.request, result.response, result.get())
 				is IQResult.Error<V> -> rh.error(result.request, result.response, result.error, result.text)
 			}
 		}
@@ -86,7 +86,7 @@ class IQRequestBuilder<V>(
 	fun response(handler: IQResponseHandler<V>): IQRequestBuilder<V> {
 		this.handler = { result ->
 			when (result) {
-				is IQResult.Success<V> -> handler.success(result.request, result.response, result.value)
+				is IQResult.Success<V> -> handler.success(result.request, result.response, result.get())
 				is IQResult.Error<V> -> handler.error(
 					result.request, result.response, result.error, result.text
 				)

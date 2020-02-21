@@ -36,6 +36,10 @@ abstract class Stanza<STANZA_TYPE> protected constructor(protected val element: 
 		get() = getJID("from")
 		set(value) = setAtt("from", value?.toString())
 
+	var id: String?
+		get() = attributes["id"]
+		set(value) = setAtt("id", value)
+
 	abstract var type: STANZA_TYPE
 
 	override fun equals(other: Any?): Boolean {

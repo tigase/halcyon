@@ -25,7 +25,7 @@ sealed class IQResult<V> {
 
 	abstract fun get(): V?
 
-	class Success<V>(val request: IQRequest<V>, val response: IQ, val value: V?) : IQResult<V>() {
+	class Success<V>(val request: IQRequest<V>, val response: IQ, private val value: V?) : IQResult<V>() {
 		override fun get(): V? = value
 	}
 

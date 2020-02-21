@@ -18,7 +18,9 @@
 package tigase.halcyon.core.xmpp.stanzas
 
 import tigase.halcyon.core.xml.Element
+import tigase.halcyon.core.xml.getChildContent
 import tigase.halcyon.core.xml.setAtt
+import tigase.halcyon.core.xml.setChildContent
 import tigase.halcyon.core.xmpp.ErrorCondition
 import tigase.halcyon.core.xmpp.XMPPException
 
@@ -38,7 +40,13 @@ class Message(wrappedElement: Element) : Stanza<MessageType?>(wrappedElement) {
 	override var type: MessageType?
 		set(value) = setAtt("type", value?.value)
 		get() = attributes["type"]?.let {
-			MessageType.values().firstOrNull { te -> te.value == it }
-				?: throw XMPPException(ErrorCondition.BadRequest, "Unknown stanza type '$it'")
+			MessageType.values().firstOrNull { te -> te.value == it } ?: throw XMPPException(
+				ErrorCondition.BadRequest, "Unknown stanza type '$it'"
+			)
 		}
+
+	var body: String?
+		set(value) = setChildContent("body", value)
+		get() = getChildContent("body")
+
 }

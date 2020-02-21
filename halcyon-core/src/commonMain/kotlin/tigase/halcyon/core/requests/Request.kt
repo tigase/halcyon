@@ -111,7 +111,7 @@ abstract class AbstractIQRequest<V>(
 	id: String,
 	creationTimestamp: Long,
 	requestStanza: IQ,
-	protected val handler: IQResponseResultHandler<V>?,
+	protected var handler: IQResponseResultHandler<V>?,
 	protected var resultConverter: ResultConverter<V>?,
 	timeoutDelay: Long
 ) : Request<V, IQ>(jid, id, creationTimestamp, requestStanza, timeoutDelay) {
@@ -174,7 +174,7 @@ class PresenceRequest(
 	id: String,
 	creationTimestamp: Long,
 	requestStanza: Presence,
-	private val stanzaHandler: StanzaStatusHandler<PresenceRequest>?,
+	var stanzaHandler: StanzaStatusHandler<PresenceRequest>?,
 	timeoutDelay: Long
 ) : Request<Unit, Presence>(jid, id, creationTimestamp, requestStanza, timeoutDelay) {
 
@@ -199,7 +199,7 @@ class MessageRequest(
 	id: String,
 	creationTimestamp: Long,
 	requestStanza: Message,
-	private val stanzaHandler: StanzaStatusHandler<MessageRequest>?,
+	var stanzaHandler: StanzaStatusHandler<MessageRequest>?,
 	timeoutDelay: Long
 ) : Request<Unit, Message>(jid, id, creationTimestamp, requestStanza, timeoutDelay) {
 

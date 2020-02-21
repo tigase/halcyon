@@ -48,6 +48,7 @@ import tigase.halcyon.core.xmpp.modules.pubsub.PubSubModule
 import tigase.halcyon.core.xmpp.modules.receipts.DeliveryReceiptsModule
 import tigase.halcyon.core.xmpp.modules.roster.RosterModule
 import tigase.halcyon.core.xmpp.modules.sm.StreamManagementModule
+import tigase.halcyon.core.xmpp.modules.vcard.VCardModule
 import tigase.halcyon.core.xmpp.stanzas.IQ
 import tigase.halcyon.core.xmpp.stanzas.IQType
 
@@ -127,6 +128,8 @@ abstract class AbstractHalcyon : Context, PacketWriter {
 		modules.register(StreamFeaturesModule(this))
 		modules.register(EntityCapabilitiesModule(this))
 		modules.register(UserAvatarModule(this))
+		modules.register(VCardModule(this))
+		modules.register(DeliveryReceiptsModule(this))
 	}
 
 	protected open fun onSessionControllerEvent(event: SessionController.SessionControllerEvents) {
@@ -173,9 +176,7 @@ abstract class AbstractHalcyon : Context, PacketWriter {
 					}
 				} catch (e: XMPPException) {
 					if (log.isLoggable(Level.FINEST)) log.log(
-						Level.FINEST,
-						"Error ${e.condition} during processing stanza " + element.getAsString(),
-						e
+						Level.FINEST, "Error ${e.condition} during processing stanza " + element.getAsString(), e
 					)
 					sendErrorBack(element, e)
 				} catch (e: Exception) {
@@ -327,17 +328,16 @@ abstract class AbstractHalcyon : Context, PacketWriter {
 			handler.invoke()
 		} else {
 			var fired = false
-			val h: EventHandler<ConnectorStateChangeEvent> =
-				object : EventHandler<ConnectorStateChangeEvent> {
-					override fun onEvent(event: ConnectorStateChangeEvent) {
-						if (!fired && event.newState == tigase.halcyon.core.connector.State.Disconnected) {
-							connector.halcyon.eventBus.unregister(this)
-							fired = true
-							log.finest("State changed. Calling handler.")
-							handler.invoke()
-						}
+			val h: EventHandler<ConnectorStateChangeEvent> = object : EventHandler<ConnectorStateChangeEvent> {
+				override fun onEvent(event: ConnectorStateChangeEvent) {
+					if (!fired && event.newState == tigase.halcyon.core.connector.State.Disconnected) {
+						connector.halcyon.eventBus.unregister(this)
+						fired = true
+						log.finest("State changed. Calling handler.")
+						handler.invoke()
 					}
 				}
+			}
 			try {
 				connector.halcyon.eventBus.register(ConnectorStateChangeEvent.TYPE, h)
 				if (!fired && connector.state == tigase.halcyon.core.connector.State.Disconnected) {
