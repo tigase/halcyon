@@ -42,6 +42,7 @@ import tigase.halcyon.core.xmpp.modules.*
 import tigase.halcyon.core.xmpp.modules.auth.SASLModule
 import tigase.halcyon.core.xmpp.modules.avatar.UserAvatarModule
 import tigase.halcyon.core.xmpp.modules.caps.EntityCapabilitiesModule
+import tigase.halcyon.core.xmpp.modules.carbons.MessageCarbonsModule
 import tigase.halcyon.core.xmpp.modules.discovery.DiscoveryModule
 import tigase.halcyon.core.xmpp.modules.presence.PresenceModule
 import tigase.halcyon.core.xmpp.modules.pubsub.PubSubModule
@@ -119,6 +120,7 @@ abstract class AbstractHalcyon : Context, PacketWriter {
 		modules.register(RosterModule(this))
 		modules.register(PresenceModule(this))
 		modules.register(PubSubModule(this))
+		modules.register(MessageCarbonsModule(this))
 		modules.register(MessageModule(this))
 		modules.register(StreamManagementModule(this))
 		modules.register(SASLModule(this))

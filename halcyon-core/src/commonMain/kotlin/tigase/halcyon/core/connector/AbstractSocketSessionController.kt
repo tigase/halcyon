@@ -28,11 +28,11 @@ import tigase.halcyon.core.xmpp.modules.StreamErrorEvent
 import tigase.halcyon.core.xmpp.modules.StreamFeaturesEvent
 import tigase.halcyon.core.xmpp.modules.auth.SASLEvent
 import tigase.halcyon.core.xmpp.modules.auth.SASLModule
+import tigase.halcyon.core.xmpp.modules.discovery.DiscoveryModule
 import tigase.halcyon.core.xmpp.modules.presence.PresenceModule
 import tigase.halcyon.core.xmpp.modules.sm.StreamManagementModule
 
-abstract class AbstractSocketSessionController(protected val halcyon: Halcyon, loggerName: String) :
-	SessionController {
+abstract class AbstractSocketSessionController(protected val halcyon: Halcyon, loggerName: String) : SessionController {
 
 	protected val log = tigase.halcyon.core.logger.Logger(loggerName)
 
@@ -43,8 +43,7 @@ abstract class AbstractSocketSessionController(protected val halcyon: Halcyon, l
 	}
 
 	protected open fun processStreamFeaturesEvent(event: StreamFeaturesEvent) {
-		val authState =
-			halcyon.getModule<SASLModule>(SASLModule.TYPE)?.saslContext?.state ?: SASLModule.State.Unknown
+		val authState = halcyon.getModule<SASLModule>(SASLModule.TYPE)?.saslContext?.state ?: SASLModule.State.Unknown
 		val isResumptionAvailable =
 			halcyon.getModule<StreamManagementModule>(StreamManagementModule.TYPE)?.resumptionContext?.isResumptionAvailable()
 				?: false
@@ -113,6 +112,10 @@ abstract class AbstractSocketSessionController(protected val halcyon: Halcyon, l
 		halcyon.eventBus.fire(SessionController.SessionControllerEvents.Successful())
 		halcyon.modules.getModuleOrNull<PresenceModule>(PresenceModule.TYPE)?.sendInitialPresence()
 		halcyon.modules.getModuleOrNull<StreamManagementModule>(StreamManagementModule.TYPE)?.enable()
+		halcyon.modules.getModuleOrNull<DiscoveryModule>(DiscoveryModule.TYPE)?.let {
+			it.discoverServerFeatures()
+			it.discoverAccountFeatures()
+		}
 	}
 
 	protected abstract fun processAuthSuccessfull(event: SASLEvent.SASLSuccess)

@@ -36,8 +36,7 @@ import tigase.halcyon.core.xmpp.modules.discovery.NodeDetailsProvider
 import tigase.halcyon.core.xmpp.stanzas.Presence
 import tigase.halcyon.core.xmpp.stanzas.wrap
 
-class EntityCapabilitiesModule(override val context: Context) : XmppModule, HasInterceptors,
-																StanzaInterceptor {
+class EntityCapabilitiesModule(override val context: Context) : XmppModule, HasInterceptors, StanzaInterceptor {
 
 	@Serializable
 	data class Caps(

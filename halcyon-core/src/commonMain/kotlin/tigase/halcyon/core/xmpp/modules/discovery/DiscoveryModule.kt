@@ -19,15 +19,19 @@ package tigase.halcyon.core.xmpp.modules.discovery
 
 import kotlinx.serialization.Serializable
 import tigase.halcyon.core.Context
+import tigase.halcyon.core.eventbus.Event
 import tigase.halcyon.core.modules.Criteria
 import tigase.halcyon.core.modules.Criterion
 import tigase.halcyon.core.modules.XmppModule
 import tigase.halcyon.core.requests.IQRequestBuilder
+import tigase.halcyon.core.requests.IQResult
 import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xml.response
 import tigase.halcyon.core.xmpp.ErrorCondition
 import tigase.halcyon.core.xmpp.JID
 import tigase.halcyon.core.xmpp.XMPPException
+import tigase.halcyon.core.xmpp.modules.BindModule
+import tigase.halcyon.core.xmpp.modules.caps.EntityCapabilitiesModule
 import tigase.halcyon.core.xmpp.stanzas.IQ
 import tigase.halcyon.core.xmpp.stanzas.IQType
 import tigase.halcyon.core.xmpp.stanzas.iq
@@ -216,4 +220,48 @@ class DiscoveryModule(override val context: Context) : XmppModule {
 	}
 
 	fun getClientIdentity(): Identity = Identity(clientCategory, clientType, "$clientName $clientVersion")
+
+	internal fun discoverAccountFeatures() {
+		val ownJid = context.modules.getModuleOrNull<BindModule>(BindModule.TYPE)?.boundJID?.bareJID ?: return
+		info(JID.parse(ownJid.toString())).response {
+			if (it is IQResult.Success) {
+				it.get()?.let { info ->
+					context.eventBus.fire(AccountFeaturesReceivedEvent(info.identities, info.features))
+				}
+			}
+		}.send()
+	}
+
+	internal fun discoverServerFeatures() {
+		val caps = context.modules.getModuleOrNull<EntityCapabilitiesModule>(EntityCapabilitiesModule.TYPE)
+			?.getServerCapabilities()
+		if (caps != null) {
+			context.eventBus.fire(ServerFeaturesReceivedEvent(caps.identities, caps.features))
+		} else {
+			val ownJid = context.modules.getModuleOrNull<BindModule>(BindModule.TYPE)?.boundJID?.bareJID ?: return
+			info(JID.parse(ownJid.domain)).response {
+				if (it is IQResult.Success) {
+					it.get()?.let { info ->
+						context.eventBus.fire(ServerFeaturesReceivedEvent(info.identities, info.features))
+					}
+				}
+			}.send()
+		}
+	}
+}
+
+data class AccountFeaturesReceivedEvent(val identities: List<DiscoveryModule.Identity>, val features: List<String>) :
+	Event(TYPE) {
+
+	companion object {
+		const val TYPE = "tigase.halcyon.core.xmpp.modules.discovery.AccountFeaturesReceivedEvent"
+	}
+}
+
+data class ServerFeaturesReceivedEvent(val identities: List<DiscoveryModule.Identity>, val features: List<String>) :
+	Event(TYPE) {
+
+	companion object {
+		const val TYPE = "tigase.halcyon.core.xmpp.modules.discovery.ServerFeaturesReceivedEvent"
+	}
 }
