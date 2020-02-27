@@ -43,10 +43,9 @@ sealed class CarbonEvent(val fromJID: JID?, val stanza: Message) : Event(TYPE) {
 	class Received(fromJID: JID?, stanza: Message) : CarbonEvent(fromJID, stanza)
 }
 
-class MessageCarbonsModule(override val context: Context) : XmppModule {
+class MessageCarbonsModule(override val context: Context, private val forwardHandler: (Message) -> Unit) : XmppModule {
 
 	private var messageModule: MessageModule? = null
-
 	private val log = Logger("tigase.halcyon.core.xmpp.modules.carbons.MessageCarbonsModule")
 
 	override val type = TYPE
@@ -60,7 +59,7 @@ class MessageCarbonsModule(override val context: Context) : XmppModule {
 	}
 
 	override fun initialize() {
-		this.messageModule = context.modules.getModuleOrNull<MessageModule>(MessageModule.TYPE)
+		this.messageModule = context.modules.getModuleOrNull(MessageModule.TYPE)
 	}
 
 	override fun process(element: Element) {
@@ -96,6 +95,7 @@ class MessageCarbonsModule(override val context: Context) : XmppModule {
 		)?.getChildren(Message.NAME)?.firstOrNull()?.asStanza<Message>() ?: return
 
 		messageModule?.process(msg)
+//		forwardHandler?.invoke(msg)
 		context.eventBus.fire(CarbonEvent.Sent(msg.from, msg))
 	}
 
@@ -104,7 +104,7 @@ class MessageCarbonsModule(override val context: Context) : XmppModule {
 			"forwarded", FORWARD_XMLNS
 		)?.getChildren(Message.NAME)?.firstOrNull()?.asStanza<Message>() ?: return
 
-		messageModule?.process(msg)
+		forwardHandler?.invoke(msg)
 		context.eventBus.fire(CarbonEvent.Received(msg.from, msg))
 	}
 

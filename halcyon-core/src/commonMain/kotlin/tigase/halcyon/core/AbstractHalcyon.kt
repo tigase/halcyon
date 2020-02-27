@@ -111,7 +111,7 @@ abstract class AbstractHalcyon : Context, PacketWriter {
 
 	init {
 		modules.context = this
-		eventBus.register(ReceivedXMLElementEvent.TYPE, ::processReceivedXmlElement)
+		eventBus.register(ReceivedXMLElementEvent.TYPE, ::processReceivedXmlElementEvent)
 
 		eventBus.register(SessionController.SessionControllerEvents.TYPE, ::onSessionControllerEvent)
 		eventBus.register<TickEvent>(TickEvent.TYPE) { requestsManager.findOutdated() }
@@ -120,7 +120,7 @@ abstract class AbstractHalcyon : Context, PacketWriter {
 		modules.register(RosterModule(this))
 		modules.register(PresenceModule(this))
 		modules.register(PubSubModule(this))
-		modules.register(MessageCarbonsModule(this))
+		modules.register(MessageCarbonsModule(this, ::processReceivedXmlElement))
 		modules.register(MessageModule(this))
 		modules.register(StreamManagementModule(this))
 		modules.register(SASLModule(this))
@@ -156,8 +156,12 @@ abstract class AbstractHalcyon : Context, PacketWriter {
 
 	abstract fun reconnect(immediately: Boolean = false)
 
-	protected fun processReceivedXmlElement(event: ReceivedXMLElementEvent) {
-		var element = event.element
+	protected fun processReceivedXmlElementEvent(event: ReceivedXMLElementEvent) {
+		processReceivedXmlElement(event.element)
+	}
+
+	private fun processReceivedXmlElement(receivedElement: Element) {
+		var element = receivedElement
 		try {
 			val handled = requestsManager.findAndExecute(element)
 			if (element.name == IQ.NAME && (handled || (element.attributes["type"] == IQType.Result.value || element.attributes["type"] == IQType.Error.value))) return
