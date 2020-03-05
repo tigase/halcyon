@@ -31,6 +31,8 @@ data class BareJID constructor(val localpart: String? = null, val domain: String
 		})
 	}
 
+	fun toJID(): JID = JID(this, null)
+
 	@Serializer(forClass = BareJID::class)
 	companion object : KSerializer<BareJID> {
 
