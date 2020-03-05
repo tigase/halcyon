@@ -109,13 +109,13 @@ abstract class AbstractSocketSessionController(protected val halcyon: Halcyon, l
 	}
 
 	private fun processBindSuccess(event: BindModule.BindResult) {
-		halcyon.eventBus.fire(SessionController.SessionControllerEvents.Successful())
-		halcyon.modules.getModuleOrNull<PresenceModule>(PresenceModule.TYPE)?.sendInitialPresence()
-		halcyon.modules.getModuleOrNull<StreamManagementModule>(StreamManagementModule.TYPE)?.enable()
 		halcyon.modules.getModuleOrNull<DiscoveryModule>(DiscoveryModule.TYPE)?.let {
 			it.discoverServerFeatures()
 			it.discoverAccountFeatures()
 		}
+		halcyon.eventBus.fire(SessionController.SessionControllerEvents.Successful())
+		halcyon.modules.getModuleOrNull<PresenceModule>(PresenceModule.TYPE)?.sendInitialPresence()
+		halcyon.modules.getModuleOrNull<StreamManagementModule>(StreamManagementModule.TYPE)?.enable()
 	}
 
 	protected abstract fun processAuthSuccessfull(event: SASLEvent.SASLSuccess)
