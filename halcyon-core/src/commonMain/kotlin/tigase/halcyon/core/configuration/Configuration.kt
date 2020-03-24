@@ -17,17 +17,23 @@
  */
 package tigase.halcyon.core.configuration
 
+import tigase.halcyon.core.connector.ConnectorConfig
 import tigase.halcyon.core.xmpp.BareJID
 
-class Configuration {
+interface PasswordCallback {
+	fun getPassword(): String
+}
 
+class Configuration {
 
 	var userJID: BareJID? = null
 
 	var resource: String? = null
 
-	var passwordCallback: (() -> String)? = null
+	var passwordCallback: PasswordCallback? = null
 
 	var domain: String? = null
+
+	lateinit var connectorConfig: ConnectorConfig
 
 }

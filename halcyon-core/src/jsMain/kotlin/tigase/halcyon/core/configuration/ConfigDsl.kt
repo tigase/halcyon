@@ -15,26 +15,23 @@
  * along with this program. Look for COPYING file in the top folder.
  * If not, see http://www.gnu.org/licenses/.
  */
-package tigase.halcyon.core.xmpp.modules.auth
+package tigase.halcyon.core.configuration
 
-import tigase.halcyon.core.configuration.Configuration
+import tigase.halcyon.core.connector.WebSocketConnectorConfig
 
-class SASLPlain : SASLMechanism {
+class WebSocketConnectorConfigDsl(private val socketConfig: WebSocketConnectorConfig) {
 
-	override val name = "PLAIN"
+	var webSocketUrl: String? by Alias(socketConfig::webSocketUrl)
 
-	override fun evaluateChallenge(input: String?, config: Configuration, saslContext: SASLContext): String? {
-		if (saslContext.complete) return null
+}
 
-		val username = config.userJID?.localpart!!
-		val password = config.passwordCallback!!.getPassword()
+actual class ConfigDsl actual constructor(configuration: Configuration) : AbstractConfigDsl(configuration) {
 
-		saslContext.complete = true
-		return tigase.halcyon.core.Base64.encode('\u0000' + username + '\u0000' + password)
-	}
-
-	override fun isAllowedToUse(config: Configuration, saslContext: SASLContext): Boolean {
-		return config.userJID != null && config.passwordCallback != null
+	fun webSocketConnector(block: WebSocketConnectorConfigDsl.() -> Unit) {
+		val cf = WebSocketConnectorConfig()
+		configuration.connectorConfig = cf
+		val cfg = WebSocketConnectorConfigDsl(cf)
+		cfg.block()
 	}
 
 }

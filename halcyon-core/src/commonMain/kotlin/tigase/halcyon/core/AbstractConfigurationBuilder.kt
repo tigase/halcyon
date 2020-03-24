@@ -17,6 +17,7 @@
  */
 package tigase.halcyon.core
 
+import tigase.halcyon.core.configuration.PasswordCallback
 import tigase.halcyon.core.xmpp.BareJID
 
 abstract class AbstractConfigurationBuilder internal constructor(val halcyon: AbstractHalcyon) {
@@ -33,7 +34,9 @@ abstract class AbstractConfigurationBuilder internal constructor(val halcyon: Ab
 	}
 
 	fun setPassword(value: String): ConfigurationBuilder {
-		halcyon.config.passwordCallback = { value }
+		halcyon.config.passwordCallback = object : PasswordCallback {
+			override fun getPassword(): String = value
+		}
 		return this as ConfigurationBuilder
 	}
 

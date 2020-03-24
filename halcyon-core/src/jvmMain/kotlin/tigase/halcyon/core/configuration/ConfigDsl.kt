@@ -15,26 +15,26 @@
  * along with this program. Look for COPYING file in the top folder.
  * If not, see http://www.gnu.org/licenses/.
  */
-package tigase.halcyon.core.xmpp.modules.auth
+package tigase.halcyon.core.configuration
 
-import tigase.halcyon.core.configuration.Configuration
+import tigase.halcyon.core.connector.socket.SocketConnectorConfig
+import javax.net.ssl.TrustManager
 
-class SASLPlain : SASLMechanism {
+class SocketConnectorConfigDsl(private val socketConfig: SocketConnectorConfig) {
 
-	override val name = "PLAIN"
+	var port: Int by Alias(socketConfig::port)
 
-	override fun evaluateChallenge(input: String?, config: Configuration, saslContext: SASLContext): String? {
-		if (saslContext.complete) return null
+	var trustManager: TrustManager by Alias(socketConfig::trustManager)
 
-		val username = config.userJID?.localpart!!
-		val password = config.passwordCallback!!.getPassword()
+}
 
-		saslContext.complete = true
-		return tigase.halcyon.core.Base64.encode('\u0000' + username + '\u0000' + password)
-	}
+actual class ConfigDsl actual constructor(configuration: Configuration) : AbstractConfigDsl(configuration) {
 
-	override fun isAllowedToUse(config: Configuration, saslContext: SASLContext): Boolean {
-		return config.userJID != null && config.passwordCallback != null
+	fun socketConnector(block: SocketConnectorConfigDsl.() -> Unit) {
+		val cf = SocketConnectorConfig()
+		configuration.connectorConfig = cf
+		val cfg = SocketConnectorConfigDsl(cf)
+		cfg.block()
 	}
 
 }

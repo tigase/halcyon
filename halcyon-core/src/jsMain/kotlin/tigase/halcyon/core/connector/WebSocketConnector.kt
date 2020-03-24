@@ -35,6 +35,8 @@ class WebSocketConnector(halcyon: Halcyon) : AbstractConnector(halcyon) {
 
 	private val log = Logger("tigase.halcyon.core.connector.WebSocketConnector")
 
+	private var config: WebSocketConnectorConfig = halcyon.config.connectorConfig as WebSocketConnectorConfig
+
 	private val whitespacePingExecutor = TickExecutor(halcyon.eventBus, 25000) { onTick() }
 
 	private val parser = object : StreamParser() {
@@ -84,7 +86,7 @@ class WebSocketConnector(halcyon: Halcyon) : AbstractConnector(halcyon) {
 		log.log(Level.FINE, "Starting WebSocket connector")
 		state = State.Connecting
 
-		val url = "ws://${getDomain()}:5290/"
+		val url = config.webSocketUrl ?: "ws://${getDomain()}:5290/"
 
 		log.log(Level.FINER, "Connecting to $url")
 

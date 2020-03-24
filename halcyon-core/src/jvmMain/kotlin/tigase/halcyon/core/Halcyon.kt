@@ -19,6 +19,7 @@ package tigase.halcyon.core
 
 import tigase.halcyon.core.connector.AbstractConnector
 import tigase.halcyon.core.connector.socket.SocketConnector
+import tigase.halcyon.core.connector.socket.SocketConnectorConfig
 import tigase.halcyon.core.eventbus.EventBus
 import tigase.halcyon.core.eventbus.EventHandler
 import tigase.halcyon.core.exceptions.HalcyonException
@@ -44,6 +45,7 @@ actual class Halcyon actual constructor() : AbstractHalcyon() {
 
 	init {
 		eventBus.mode = EventBus.Mode.ThreadPerHandler
+		this.config.connectorConfig = SocketConnectorConfig()
 	}
 
 	override fun onConnecting() {

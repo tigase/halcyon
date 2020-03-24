@@ -15,26 +15,25 @@
  * along with this program. Look for COPYING file in the top folder.
  * If not, see http://www.gnu.org/licenses/.
  */
-package tigase.halcyon.core.xmpp.modules.auth
+package tigase.halcyon.core.connector.socket
 
-import tigase.halcyon.core.configuration.Configuration
+import tigase.halcyon.core.connector.ConnectorConfig
+import java.security.cert.X509Certificate
+import javax.net.ssl.TrustManager
+import javax.net.ssl.X509TrustManager
 
-class SASLPlain : SASLMechanism {
+class SocketConnectorConfig : ConnectorConfig {
 
-	override val name = "PLAIN"
+	var port: Int = 5222
 
-	override fun evaluateChallenge(input: String?, config: Configuration, saslContext: SASLContext): String? {
-		if (saslContext.complete) return null
+	var trustManager: TrustManager = object : X509TrustManager {
+		override fun checkClientTrusted(p0: Array<out X509Certificate>?, p1: String?) {
+		}
 
-		val username = config.userJID?.localpart!!
-		val password = config.passwordCallback!!.getPassword()
+		override fun checkServerTrusted(p0: Array<out X509Certificate>?, p1: String?) {
+		}
 
-		saslContext.complete = true
-		return tigase.halcyon.core.Base64.encode('\u0000' + username + '\u0000' + password)
-	}
-
-	override fun isAllowedToUse(config: Configuration, saslContext: SASLContext): Boolean {
-		return config.userJID != null && config.passwordCallback != null
+		override fun getAcceptedIssuers(): Array<X509Certificate> = emptyArray()
 	}
 
 }

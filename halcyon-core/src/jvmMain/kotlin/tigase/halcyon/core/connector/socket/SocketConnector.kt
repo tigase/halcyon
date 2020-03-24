@@ -21,7 +21,6 @@ import org.minidns.dnssec.DnssecValidationFailedException
 import org.minidns.hla.DnssecResolverApi
 import org.minidns.hla.SrvType
 import tigase.halcyon.core.Halcyon
-import tigase.halcyon.core.InternalDataStore
 import tigase.halcyon.core.connector.*
 import tigase.halcyon.core.excutor.TickExecutor
 import tigase.halcyon.core.logger.Level
@@ -29,7 +28,6 @@ import tigase.halcyon.core.logger.Logger
 import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xml.element
 import tigase.halcyon.core.xml.parser.StreamParser
-import tigase.halcyon.core.xmpp.BareJID
 import tigase.halcyon.core.xmpp.ErrorCondition
 import tigase.halcyon.core.xmpp.SessionController
 import tigase.halcyon.core.xmpp.XMPPException
@@ -38,11 +36,9 @@ import java.net.InetAddress
 import java.net.Socket
 import java.net.UnknownHostException
 import java.security.SecureRandom
-import java.security.cert.X509Certificate
 import javax.net.ssl.SSLContext
 import javax.net.ssl.SSLSocket
 import javax.net.ssl.SSLSocketFactory
-import javax.net.ssl.X509TrustManager
 
 sealed class SocketConnectionErrorEvent : ConnectionErrorEvent() {
 
@@ -74,6 +70,8 @@ class SocketConnector(halcyon: Halcyon) : AbstractConnector(halcyon) {
 	private val whitespacePingExecutor = TickExecutor(halcyon.eventBus, 30000) { onTick() }
 
 	private var whiteSpaceEnabled: Boolean = true
+
+	private var config: SocketConnectorConfig = halcyon.config.connectorConfig as SocketConnectorConfig
 
 	private val parser = object : StreamParser() {
 		override fun onNextElement(element: Element) {
@@ -120,18 +118,7 @@ class SocketConnector(halcyon: Halcyon) : AbstractConnector(halcyon) {
 	private fun getSocketFactory(): SSLSocketFactory {
 		val ctx = SSLContext.getInstance("TLS")
 
-		val trustManagers = arrayOf(object : X509TrustManager {
-			override fun checkClientTrusted(p0: Array<out X509Certificate>?, p1: String?) {
-				log.finest("Trusted!")
-			}
-
-			override fun checkServerTrusted(p0: Array<out X509Certificate>?, p1: String?) {
-				log.finest("Trusted!")
-			}
-
-			override fun getAcceptedIssuers(): Array<X509Certificate> = emptyArray()
-		})
-		ctx.init(emptyArray(), trustManagers, SecureRandom())
+		ctx.init(emptyArray(), arrayOf(config.trustManager), SecureRandom())
 
 		return ctx.socketFactory
 	}
@@ -172,20 +159,20 @@ class SocketConnector(halcyon: Halcyon) : AbstractConnector(halcyon) {
 	override fun createSessionController(): SessionController = SocketSessionController(halcyon, this)
 
 	private fun createSocket(): Socket {
-		val location = halcyon.getModule<StreamManagementModule>(StreamManagementModule.TYPE)
-			?.resumptionContext?.location
+		val location =
+			halcyon.getModule<StreamManagementModule>(StreamManagementModule.TYPE)?.resumptionContext?.location
 		if (location != null) {
-			return Socket(InetAddress.getByName(location), 5222)
+			return Socket(InetAddress.getByName(location), config.port)
 		}
 
 		val seeOther = halcyon.internalDataStore.getData<String>(SEE_OTHER_HOST_KEY)
 		if (seeOther != null) {
-			return Socket(InetAddress.getByName(seeOther), 5222)
+			return Socket(InetAddress.getByName(seeOther), config.port)
 		}
 
 //		val forcedHost = halcyon.sessionObject.getProperty<String>(SERVER_HOST)
 //		if (forcedHost != null) {
-//			return Socket(InetAddress.getByName(forcedHost), 5222)
+//			return Socket(InetAddress.getByName(forcedHost), config.port)
 //		}
 
 		val userJid = halcyon.config.userJID!!
@@ -193,7 +180,7 @@ class SocketConnector(halcyon: Halcyon) : AbstractConnector(halcyon) {
 		val result = DnssecResolverApi.INSTANCE.resolveSrv(SrvType.xmpp_client, userJid.domain)
 
 		if (!result.wasSuccessful() || result.answers.isEmpty()) {
-			return Socket(InetAddress.getByName(userJid.domain), 5222)
+			return Socket(InetAddress.getByName(userJid.domain), config.port)
 		}
 
 		val srvRecords = result.answers
@@ -248,11 +235,10 @@ class SocketConnector(halcyon: Halcyon) : AbstractConnector(halcyon) {
 		halcyon.eventBus.fire(createSocketConnectionErrorEvent(cause))
 	}
 
-	private fun createSocketConnectionErrorEvent(cause: Throwable): SocketConnectionErrorEvent =
-		when (cause) {
-			is UnknownHostException, is DnssecValidationFailedException -> SocketConnectionErrorEvent.HostNotFount()
-			else -> SocketConnectionErrorEvent.Unknown(cause)
-		}
+	private fun createSocketConnectionErrorEvent(cause: Throwable): SocketConnectionErrorEvent = when (cause) {
+		is UnknownHostException, is DnssecValidationFailedException -> SocketConnectionErrorEvent.HostNotFount()
+		else -> SocketConnectionErrorEvent.Unknown(cause)
+	}
 
 	override fun stop() {
 		if ((state != State.Disconnected)) {
@@ -283,8 +269,7 @@ class SocketConnector(halcyon: Halcyon) : AbstractConnector(halcyon) {
 	override fun send(data: CharSequence) {
 		try {
 			if (log.isLoggable(Level.FINEST)) log.log(
-				Level.FINEST,
-				"Sending (${worker.socket.isConnected}, ${!worker.socket.isOutputShutdown}): $data"
+				Level.FINEST, "Sending (${worker.socket.isConnected}, ${!worker.socket.isOutputShutdown}): $data"
 			)
 			worker.writer.write(data.toString())
 			worker.writer.flush()

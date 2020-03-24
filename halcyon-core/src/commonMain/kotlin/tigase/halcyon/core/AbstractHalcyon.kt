@@ -17,6 +17,7 @@
  */
 package tigase.halcyon.core
 
+import tigase.halcyon.core.configuration.ConfigDsl
 import tigase.halcyon.core.configuration.Configuration
 import tigase.halcyon.core.connector.AbstractConnector
 import tigase.halcyon.core.connector.ConnectorStateChangeEvent
@@ -100,7 +101,6 @@ abstract class AbstractHalcyon : Context, PacketWriter {
 	final override val modules: ModulesManager = ModulesManager()
 	val internalDataStore = InternalDataStore()
 	val requestsManager: RequestsManager = RequestsManager()
-	val configuration: ConfigurationBuilder = ConfigurationBuilder(this)
 	private val executor = tigase.halcyon.core.excutor.Executor()
 
 	var state = State.Stopped
@@ -134,6 +134,11 @@ abstract class AbstractHalcyon : Context, PacketWriter {
 		modules.register(VCardModule(this))
 		modules.register(DeliveryReceiptsModule(this))
 		modules.register(ChatStateModule(this))
+	}
+
+	fun configure(cfg: ConfigDsl.() -> Unit) {
+		val c = ConfigDsl(config)
+		c.cfg()
 	}
 
 	protected open fun onSessionControllerEvent(event: SessionController.SessionControllerEvents) {

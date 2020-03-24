@@ -64,9 +64,12 @@ fun main(args: Array<String>) {
 		println(" >>> ${event.element.getAsString()}")
 	}
 
-	halcyon.configuration.run {
-		setJID(args[0].toBareJID())
-		setPassword(args[1])
+	halcyon.configure {
+		userJID = args[0].toBareJID()
+		password = args[1]
+		socketConnector {
+
+		}
 	}
 
 //	halcyon.configurator.userJID = BareJID.parse(args[0])
