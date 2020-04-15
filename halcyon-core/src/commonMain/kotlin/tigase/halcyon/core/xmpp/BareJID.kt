@@ -18,7 +18,6 @@
 package tigase.halcyon.core.xmpp
 
 import kotlinx.serialization.*
-import kotlinx.serialization.internal.StringDescriptor
 import kotlin.jvm.JvmStatic
 
 @Serializable
@@ -42,7 +41,7 @@ data class BareJID constructor(val localpart: String? = null, val domain: String
 			return BareJID(x[0], x[1]!!)
 		}
 
-		override val descriptor: SerialDescriptor = StringDescriptor.withName("BareJID")
+		override val descriptor: SerialDescriptor = PrimitiveDescriptor("BareJID", PrimitiveKind.STRING)
 		override fun serialize(encoder: Encoder, obj: BareJID) = encoder.encodeString(obj.toString())
 		override fun deserialize(decoder: Decoder): BareJID = parse(decoder.decodeString())
 	}
