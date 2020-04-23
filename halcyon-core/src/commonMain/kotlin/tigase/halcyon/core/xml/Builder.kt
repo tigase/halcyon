@@ -17,19 +17,28 @@
  */
 package tigase.halcyon.core.xml
 
+class ElementAttributes(private val element: Element) {
+	operator fun set(name: String, value: String?) {
+		if (value == null) element.attributes.remove(name)
+		else element.attributes[name] = value
+	}
+
+	operator fun get(name: String): String? {
+		return element.attributes[name]
+	}
+}
+
 open class ElementNode(internal val element: Element) {
 
 	fun attribute(name: String, value: String) {
 		element.attributes[name] = value
 	}
 
+	val attributes = ElementAttributes(element)
+
 	var xmlns: String?
 		set(value) {
-			if (value == null) {
-				element.attributes.remove("xmlns")
-			} else {
-				element.attributes["xmlns"] = value
-			}
+			attributes["xmlns"] = value
 		}
 		get() = element.xmlns
 

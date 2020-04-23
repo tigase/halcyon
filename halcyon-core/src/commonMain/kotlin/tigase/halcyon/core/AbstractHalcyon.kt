@@ -46,11 +46,14 @@ import tigase.halcyon.core.xmpp.modules.caps.EntityCapabilitiesModule
 import tigase.halcyon.core.xmpp.modules.carbons.MessageCarbonsModule
 import tigase.halcyon.core.xmpp.modules.chatstates.ChatStateModule
 import tigase.halcyon.core.xmpp.modules.discovery.DiscoveryModule
+import tigase.halcyon.core.xmpp.modules.mam.MAMModule
+import tigase.halcyon.core.xmpp.modules.mix.MIXModule
 import tigase.halcyon.core.xmpp.modules.presence.PresenceModule
 import tigase.halcyon.core.xmpp.modules.pubsub.PubSubModule
 import tigase.halcyon.core.xmpp.modules.receipts.DeliveryReceiptsModule
 import tigase.halcyon.core.xmpp.modules.roster.RosterModule
 import tigase.halcyon.core.xmpp.modules.sm.StreamManagementModule
+import tigase.halcyon.core.xmpp.modules.uniqueId.UniqueStableStanzaIdModule
 import tigase.halcyon.core.xmpp.modules.vcard.VCardModule
 import tigase.halcyon.core.xmpp.stanzas.IQ
 import tigase.halcyon.core.xmpp.stanzas.IQType
@@ -120,6 +123,8 @@ abstract class AbstractHalcyon : Context, PacketWriter {
 		modules.register(DiscoveryModule(this))
 		modules.register(RosterModule(this))
 		modules.register(PresenceModule(this))
+		modules.register(MIXModule(this))
+		modules.register(MAMModule(this))
 		modules.register(PubSubModule(this))
 		modules.register(MessageCarbonsModule(this, ::processReceivedXmlElement))
 		modules.register(MessageModule(this))
@@ -134,6 +139,7 @@ abstract class AbstractHalcyon : Context, PacketWriter {
 		modules.register(VCardModule(this))
 		modules.register(DeliveryReceiptsModule(this))
 		modules.register(ChatStateModule(this))
+		modules.register(UniqueStableStanzaIdModule(this))
 	}
 
 	fun configure(cfg: ConfigDsl.() -> Unit) {

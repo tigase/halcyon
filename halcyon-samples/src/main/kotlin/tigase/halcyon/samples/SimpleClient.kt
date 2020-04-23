@@ -21,12 +21,13 @@ import tigase.halcyon.core.Halcyon
 import tigase.halcyon.core.TickEvent
 import tigase.halcyon.core.connector.ReceivedXMLElementEvent
 import tigase.halcyon.core.connector.SentXMLElementEvent
+import tigase.halcyon.core.currentTimestamp
 import tigase.halcyon.core.eventbus.Event
 import tigase.halcyon.core.requests.IQResult
 import tigase.halcyon.core.requests.StanzaResult
-import tigase.halcyon.core.xml.element
 import tigase.halcyon.core.xmpp.modules.PingModule
-import tigase.halcyon.core.xmpp.modules.pubsub.PubSubModule
+import tigase.halcyon.core.xmpp.modules.mam.MAMModule
+import tigase.halcyon.core.xmpp.modules.mix.MIXModule
 import tigase.halcyon.core.xmpp.modules.sm.StreamManagementModule
 import tigase.halcyon.core.xmpp.stanzas.message
 import tigase.halcyon.core.xmpp.toBareJID
@@ -34,6 +35,7 @@ import tigase.halcyon.core.xmpp.toJID
 import java.util.logging.ConsoleHandler
 import java.util.logging.Level
 import java.util.logging.Logger
+
 
 fun main(args: Array<String>) {
 	val handler = ConsoleHandler()
@@ -75,12 +77,40 @@ fun main(args: Array<String>) {
 //	halcyon.configurator.userJID = BareJID.parse(args[0])
 //	halcyon.configurator.userPassword = args[1]
 
+	halcyon.getModule<StreamManagementModule>(StreamManagementModule.TYPE)?.resumptionContext
+
 	halcyon.connect()
 
 	loop@ while (true) {
 		val line = readLine() ?: break
 
 		when (line) {
+			"mix_message" -> {
+				halcyon.getModule<MIXModule>(MIXModule.TYPE)?.let { module ->
+					module.message(
+						"Kanalik-Testowy@mix.tigase.org".toBareJID(), "Random message ${currentTimestamp()}"
+					).send()
+				}
+			}
+			"mix_join" -> {
+				println("::$line")
+				halcyon.getModule<MIXModule>(MIXModule.TYPE)?.let { module ->
+					val req = module.join("Kanalik-Testowy@mix.tigase.org".toBareJID(), "Bocik").send()
+					val result = req.getResultWait()
+					println(
+						"""	
+						-----
+						$result
+						-----
+						""".trimIndent()
+					)
+				}
+
+			}
+			"mam" -> {
+				val mam = halcyon.getModule<MAMModule>(MAMModule.TYPE)!!
+				mam.query(with = "Kanalik-Testowy@mix.tigase.org").send()
+			}
 //			"break" -> {
 //				val pingModule = halcyon.modules.getModule<PingModule>(PingModule.TYPE)
 //				val req = pingModule.ping("jajcus.net".toJID()).response { resp ->

@@ -17,6 +17,39 @@
  */
 package tigase.halcyon.core
 
+import tigase.halcyon.core.exceptions.HalcyonException
+import java.text.DateFormat
+import java.text.SimpleDateFormat
+import java.util.*
+
 actual fun currentTimestamp(): Long {
 	return System.currentTimeMillis()
+}
+
+actual fun timestampToISO8601(timestamp: Long, utc: Boolean): String {
+	val c = Calendar.getInstance()!!.also { it.timeInMillis = timestamp }
+	val df: DateFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
+	df.timeZone = TimeZone.getTimeZone("UTC")
+	return df.format(c.time)
+}
+
+actual fun parseISO8601(date: String): Long {
+	val r =
+		"^(\\d\\d\\d\\d)-(\\d\\d)-(\\d\\d)T(\\d\\d):(\\d\\d):(\\d\\d)(\\.(\\d+))?(([+-]\\d\\d:?\\d\\d)|Z)?$".toRegex()
+	val mr = r.find(date) ?: throw HalcyonException("Invalid ISO-8601 date.")
+	val yyyy: Int = mr.groupValues[1].toInt()
+	val MM: Int = mr.groupValues[2].toInt()
+	val dd: Int = mr.groupValues[3].toInt()
+	val hh: Int = mr.groupValues[4].toInt()
+	val mm: Int = mr.groupValues[5].toInt()
+	val ss: Int = mr.groupValues[6].toInt()
+	val ms: Int = mr.groupValues[8].let { if (it.isNotEmpty()) it.toInt() else 0 }
+	val tzValue: String = mr.groupValues[9]
+
+	return Calendar.getInstance(if (tzValue == "Z") TimeZone.getTimeZone("UTC") else TimeZone.getTimeZone("GMT$tzValue"))
+		.also {
+			it.clear()
+			it.set(yyyy, MM - 1, dd, hh, mm, ss)
+			it.set(Calendar.MILLISECOND, ms)
+		}.timeInMillis
 }

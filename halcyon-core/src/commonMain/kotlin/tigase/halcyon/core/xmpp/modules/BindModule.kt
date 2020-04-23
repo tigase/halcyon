@@ -57,7 +57,7 @@ class BindModule(override val context: Context) : XmppModule {
 				}
 			}
 		}
-		return context.request.iq(stanza).resultBuilder { element -> createBindResult(element) }
+		return context.request.iq(stanza).resultBuilder(this@BindModule::createBindResult)
 	}
 
 	private fun createBindResult(element: Element): BindResult {

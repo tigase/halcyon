@@ -18,9 +18,7 @@
 package tigase.halcyon.core.xmpp.stanzas
 
 import tigase.halcyon.core.exceptions.HalcyonException
-import tigase.halcyon.core.xml.Element
-import tigase.halcyon.core.xml.ElementImpl
-import tigase.halcyon.core.xml.ElementNode
+import tigase.halcyon.core.xml.*
 import tigase.halcyon.core.xmpp.IdGenerator
 import tigase.halcyon.core.xmpp.JID
 
@@ -90,12 +88,30 @@ class IQNode(element: IQ) : StanzaNode<IQType>(element) {
 	override var type: IQType
 		set(value) = setAtt("type", value.value)
 		get() = IQType.values().first { te -> te.value == value }
+
+	fun query(xmlns: String, init: (ElementNode.() -> Unit)): Element {
+		val e = element("query", init)
+		e.attributes["xmlns"] = xmlns
+		return e
+//		val element = ElementImpl("query")
+//		element.attributes["xmlns"] = xmlns
+//		val e = ElementNode(element)
+//		if (init != null) e.init()
+//		e.element.parent = element
+//		element.children.add(e.element)
+//		return e.element
+	}
+
 }
 
 class MessageNode(element: Message) : StanzaNode<MessageType?>(element) {
 	override var type: MessageType?
 		set(value) = setAtt("type", value?.value)
 		get() = MessageType.values().firstOrNull { te -> te.value == value }
+
+	var body: String?
+		set(value) = element.setChildContent("body", value)
+		get() = element.getChildContent("body")
 }
 
 @Suppress("UNCHECKED_CAST")

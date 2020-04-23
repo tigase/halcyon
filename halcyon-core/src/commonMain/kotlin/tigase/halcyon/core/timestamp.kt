@@ -18,3 +18,7 @@
 package tigase.halcyon.core
 
 expect fun currentTimestamp(): Long
+
+expect fun timestampToISO8601(timestamp: Long, utc: Boolean = true): String
+
+expect fun parseISO8601(date: String): Long

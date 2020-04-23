@@ -18,7 +18,6 @@
 package tigase.halcyon.core.eventbus
 
 import tigase.halcyon.core.AbstractHalcyon
-import tigase.halcyon.core.Halcyon
 import tigase.halcyon.core.currentTimestamp
 import tigase.halcyon.core.logger.Level
 
@@ -53,7 +52,7 @@ abstract class AbstractEventBus(val context: AbstractHalcyon) {
 	}
 
 	fun fire(event: Event) {
-		event.timestamp = currentTimestamp()
+		event.eventTime = currentTimestamp()
 		event.context = context
 		val handlers = getHandlers(event.eventType)
 		fire(event, handlers)

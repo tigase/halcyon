@@ -30,6 +30,7 @@ import tigase.halcyon.core.xmpp.modules.auth.SASLEvent
 import tigase.halcyon.core.xmpp.modules.auth.SASLModule
 import tigase.halcyon.core.xmpp.modules.discovery.DiscoveryModule
 import tigase.halcyon.core.xmpp.modules.presence.PresenceModule
+import tigase.halcyon.core.xmpp.modules.roster.RosterModule
 import tigase.halcyon.core.xmpp.modules.sm.StreamManagementModule
 
 abstract class AbstractSocketSessionController(protected val halcyon: Halcyon, loggerName: String) : SessionController {
@@ -115,7 +116,8 @@ abstract class AbstractSocketSessionController(protected val halcyon: Halcyon, l
 		}
 		halcyon.eventBus.fire(SessionController.SessionControllerEvents.Successful())
 		halcyon.modules.getModuleOrNull<PresenceModule>(PresenceModule.TYPE)?.sendInitialPresence()
-		halcyon.modules.getModuleOrNull<StreamManagementModule>(StreamManagementModule.TYPE)?.enable()
+		halcyon.modules.getModuleOrNull<RosterModule>(RosterModule.TYPE)?.rosterGet()?.send()
+//		halcyon.modules.getModuleOrNull<StreamManagementModule>(StreamManagementModule.TYPE)?.enable()
 	}
 
 	protected abstract fun processAuthSuccessfull(event: SASLEvent.SASLSuccess)

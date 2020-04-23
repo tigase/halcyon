@@ -25,11 +25,14 @@ class ModulesManager {
 
 	private val modules: MutableMap<String, XmppModule> = HashMap()
 
+	private val modulesOrdered = mutableListOf<XmppModule>()
+
 	private val interceptors = mutableListOf<StanzaInterceptor>()
 
 	private val modulesToInitialize = mutableListOf<XmppModule>()
 
 	fun register(module: XmppModule) {
+		modulesOrdered.add(module)
 		modules[module.type] = module
 		modulesToInitialize.add(module)
 	}
@@ -66,13 +69,15 @@ class ModulesManager {
 		return module as T
 	}
 
+	fun getModules(): Collection<XmppModule> = this.modules.values.toList()
+
 	@Suppress("UNCHECKED_CAST")
 	fun <T : XmppModule> getModuleOrNull(type: String): T? {
 		return this.modules[type] as T?
 	}
 
 	fun getModulesFor(element: Element): Array<XmppModule> {
-		return modules.values.filter { xmppModule ->
+		return modulesOrdered.filter { xmppModule ->
 			(xmppModule.criteria != null && xmppModule.criteria!!.match(element))
 		}.toTypedArray()
 	}

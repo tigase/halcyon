@@ -29,6 +29,7 @@ import tigase.halcyon.core.xmpp.ErrorCondition
 import tigase.halcyon.core.xmpp.JID
 import tigase.halcyon.core.xmpp.XMPPException
 import tigase.halcyon.core.xmpp.stanzas.Message
+import tigase.halcyon.core.xmpp.stanzas.MessageType
 import tigase.halcyon.core.xmpp.stanzas.message
 import tigase.halcyon.core.xmpp.toJID
 
@@ -57,13 +58,10 @@ class DeliveryReceiptsModule(override val context: Context) : XmppModule, HasInt
 
 	override fun afterReceive(element: Element): Element? {
 		if (element.name != Message.NAME) return element
+		if (element.attributes["type"] == MessageType.Error.value) return element
 		val from = element.attributes["from"]?.toJID() ?: return element
 
-		element.getChildrenNS("received", XMLNS)?.let {
-			it.attributes["id"]?.let { id ->
-				context.eventBus.fire(MessageDeliveryReceiptEvent(from, id))
-			}
-		}
+		element.getReceiptReceivedID()?.let { id -> context.eventBus.fire(MessageDeliveryReceiptEvent(from, id)) }
 
 		element.getChildrenNS("request", XMLNS)?.let {
 			element.attributes["id"]?.let { id ->
@@ -89,6 +87,7 @@ class DeliveryReceiptsModule(override val context: Context) : XmppModule, HasInt
 
 	override fun beforeSend(element: Element): Element {
 		if (element.name != Message.NAME) return element
+		if (element.attributes["type"] == MessageType.Groupchat.value) return element
 		if (element.attributes["id"] == null) return element
 		if (element.getChildrenNS("request", XMLNS) != null) return element
 		if (element.getChildrenNS("received", XMLNS) != null) return element
@@ -100,4 +99,8 @@ class DeliveryReceiptsModule(override val context: Context) : XmppModule, HasInt
 		return element
 	}
 
+}
+
+fun Element.getReceiptReceivedID(): String? {
+	return this.getChildrenNS("received", DeliveryReceiptsModule.XMLNS)?.let { it.attributes["id"] }
 }

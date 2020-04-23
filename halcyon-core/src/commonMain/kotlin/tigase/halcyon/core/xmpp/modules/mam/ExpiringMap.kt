@@ -15,41 +15,51 @@
  * along with this program. Look for COPYING file in the top folder.
  * If not, see http://www.gnu.org/licenses/.
  */
-package tigase.halcyon.core.excutor
+package tigase.halcyon.core.xmpp.modules.mam
 
 import tigase.halcyon.core.TickEvent
-import tigase.halcyon.core.eventbus.AbstractEventBus
+import tigase.halcyon.core.eventbus.EventBus
 import tigase.halcyon.core.eventbus.EventHandler
 
-class TickExecutor(
-	private val eventBus: AbstractEventBus, val minimalTime: Long, private val runnable: () -> Unit
-) {
+class ExpiringMap<K, V>(private val map: MutableMap<K, V> = mutableMapOf(), private val minimalTime: Long = 30000) :
+	MutableMap<K, V> by map {
 
-	private val handler: EventHandler<TickEvent> = object : EventHandler<TickEvent> {
+	var expirationChecker: ((V) -> Boolean)? = null
+
+	val tickHandler = object : EventHandler<TickEvent> {
 		override fun onEvent(event: TickEvent) {
 			onTick(event)
 		}
 	}
 
-	init {
-		start()
-	}
-
 	private var lastCallTime = -1L
+
+	var eventBus: EventBus? = null
+		set(value) {
+			field?.unregister(tickHandler)
+			field = value
+			field?.register(TickEvent.TYPE, tickHandler)
+		}
 
 	private fun onTick(event: TickEvent) {
 		if (lastCallTime + minimalTime <= event.eventTime) {
 			lastCallTime = event.eventTime
-			runnable.invoke()
+			clearOutdated()
 		}
 	}
 
-	fun start() {
-		eventBus.register(TickEvent.TYPE, handler)
+	fun clearOutdated() {
+		map.filter { (key, value) -> expirationChecker?.invoke(value) ?: false }.map { (key, value) -> key }
+			.forEach { map.remove(it) }
 	}
 
-	fun stop() {
-		eventBus.unregister(TickEvent.TYPE, handler)
+	override fun get(key: K): V? {
+		val result = map.get(key) ?: return null
+		if (expirationChecker?.invoke(result) == true) {
+			map.remove(key)
+			return null
+		}
+		return result
 	}
 
 }
