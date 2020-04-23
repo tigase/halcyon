@@ -17,6 +17,7 @@
  */
 package tigase.halcyon.core.xmpp.modules.roster
 
+import kotlinx.serialization.Serializable
 import tigase.halcyon.core.Context
 import tigase.halcyon.core.eventbus.Event
 import tigase.halcyon.core.exceptions.HalcyonException
@@ -32,16 +33,17 @@ import tigase.halcyon.core.xmpp.XMPPException
 import tigase.halcyon.core.xmpp.modules.BindModule
 import tigase.halcyon.core.xmpp.stanzas.IQ
 import tigase.halcyon.core.xmpp.stanzas.IQType
+import tigase.halcyon.core.xmpp.stanzas.iq
 import tigase.halcyon.core.xmpp.toBareJID
 
-sealed class RosterEvent(val item: RosterItem) : Event(TYPE) {
+sealed class RosterEvent(val itemElement: Element, val item: RosterItem) : Event(TYPE) {
 	companion object {
 		const val TYPE = "com.example.modules.roster.RosterEvent"
 	}
 
-	class ItemAdded(item: RosterItem) : RosterEvent(item)
-	class ItemUpdated(val oldItem: RosterItem, item: RosterItem) : RosterEvent(item)
-	class ItemRemoved(item: RosterItem) : RosterEvent(item)
+	class ItemAdded(element: Element, item: RosterItem) : RosterEvent(element, item)
+	class ItemUpdated(element: Element, val oldItem: RosterItem, item: RosterItem) : RosterEvent(element, item)
+	class ItemRemoved(element: Element, item: RosterItem) : RosterEvent(element, item)
 }
 
 enum class Subscription(val value: String) {
@@ -56,16 +58,28 @@ enum class Ask(val value: String) {
 	Subscribe("subscribe")
 }
 
+interface RosterItemAnnotationProcessor {
+
+	fun prepareRosterGetRequest(stanza: IQ)
+
+	fun processRosterItem(item: Element): RosterItemAnnotation?
+
+}
+
+interface RosterItemAnnotation
+
+@Serializable
 data class RosterItem(
 	val jid: BareJID,
 	val name: String?,
 	val groups: List<String> = emptyList(),
 	val ask: Ask? = null,
 	val subscription: Subscription? = null,
-	val approved: Boolean? = null
+	val approved: Boolean? = null,
+	val annotations: Array<RosterItemAnnotation> = emptyArray()
 )
 
-data class RosterResponse(val version: String?, val items: List<RosterItem>)
+data class RosterResponse(val version: String?)
 
 class RosterModule(context: Context) : AbstractXmppIQModule(
 	context, TYPE, emptyArray(), Criterion.chain(
@@ -85,7 +99,7 @@ class RosterModule(context: Context) : AbstractXmppIQModule(
 	var store: RosterStore = DefaultRosterStore()
 
 	fun rosterGet(): IQRequestBuilder<RosterResponse> {
-		return context.request.iq {
+		val iq = iq {
 			type = IQType.Get
 			"query"{
 				xmlns = XMLNS
@@ -93,12 +107,16 @@ class RosterModule(context: Context) : AbstractXmppIQModule(
 					attribute("ver", it)
 				}
 			}
-		}.resultBuilder {
-			it.getChildrenNS(
-				"query", XMLNS
-			)?.let(this@RosterModule::processQueryResponse) ?: RosterResponse(
-				null, emptyList()
-			)
+		}
+		updateRequest(iq)
+		return context.request.iq(iq).resultBuilder {
+			it.getChildrenNS("query", XMLNS)?.let(this@RosterModule::processQueryResponse) ?: RosterResponse(null)
+		}
+	}
+
+	private fun updateRequest(iq: IQ) {
+		context.modules.getModules().filter { it is RosterItemAnnotationProcessor }.forEach {
+			(it as RosterItemAnnotationProcessor).prepareRosterGetRequest(iq)
 		}
 	}
 
@@ -126,38 +144,28 @@ class RosterModule(context: Context) : AbstractXmppIQModule(
 	private fun processQueryResponse(query: Element): RosterResponse {
 		log.fine("Processing roster data")
 		val ver = query.attributes["ver"]
-		val items = query.getChildren("item").map { item -> parseItem(item) }
-		items.forEach(::processRosterItem)
+		query.getChildren("item").map { item ->
+			val ri = parseItem(item)
+			processRosterItem(item, ri)
+		}
 		ver?.let { store.setVersion(it) }
-		return RosterResponse(ver, items)
+		return RosterResponse(ver)
 	}
 
-	private fun processRosterItem(item: RosterItem) {
+	private fun processRosterItem(itemElement: Element, item: RosterItem) {
 		val oldItem: RosterItem? = store.getItem(item.jid)
 		if (oldItem != null && item.subscription == Subscription.Remove) {
 			log.fine("Remove item ${item.jid}")
 			store.removeItem(item.jid)
-			context.eventBus.fire(
-				RosterEvent.ItemRemoved(
-					item
-				)
-			)
+			context.eventBus.fire(RosterEvent.ItemRemoved(itemElement, item))
 		} else if (oldItem == null && item.subscription != Subscription.Remove) {
 			log.fine("Add item ${item.jid}")
 			store.addItem(item.jid, item)
-			context.eventBus.fire(
-				RosterEvent.ItemAdded(
-					item
-				)
-			)
+			context.eventBus.fire(RosterEvent.ItemAdded(itemElement, item))
 		} else if (oldItem != null && item.subscription != Subscription.Remove) {
 			log.fine("Update item ${item.jid}")
 			store.updateItem(item.jid, item)
-			context.eventBus.fire(
-				RosterEvent.ItemUpdated(
-					oldItem, item
-				)
-			)
+			context.eventBus.fire(RosterEvent.ItemUpdated(itemElement, oldItem, item))
 		} else {
 			log.fine("Ignore item ${item.jid}")
 		}
@@ -173,8 +181,7 @@ class RosterModule(context: Context) : AbstractXmppIQModule(
 				?: throw XMPPException(ErrorCondition.BadRequest)
 		}
 		val ask = item.attributes["ask"]?.let { sname ->
-			Ask.values().firstOrNull { s -> s.value == sname }
-				?: throw XMPPException(ErrorCondition.BadRequest)
+			Ask.values().firstOrNull { s -> s.value == sname } ?: throw XMPPException(ErrorCondition.BadRequest)
 		}
 		val approved = when (item.attributes["approved"]) {
 			"1", "true" -> true
@@ -184,9 +191,14 @@ class RosterModule(context: Context) : AbstractXmppIQModule(
 		}
 		val groups = item.getChildren("group").map { it.value ?: "" }
 
-		return RosterItem(
-			jid, name, groups, ask, subscription, approved
-		)
+		val annotations = createAnnotations(item)
+
+		return RosterItem(jid, name, groups, ask, subscription, approved, annotations)
+	}
+
+	private fun createAnnotations(item: Element): Array<RosterItemAnnotation> {
+		return context.modules.getModules().filter { it is RosterItemAnnotationProcessor }
+			.mapNotNull { (it as RosterItemAnnotationProcessor).processRosterItem(item) }.toTypedArray()
 	}
 
 	override fun processGet(element: IQ) = throw XMPPException(ErrorCondition.NotAllowed)
