@@ -36,6 +36,7 @@ import tigase.halcyon.core.xmpp.stanzas.IQ
 import tigase.halcyon.core.xmpp.stanzas.IQType
 import tigase.halcyon.core.xmpp.stanzas.iq
 import tigase.halcyon.core.xmpp.stanzas.wrap
+import tigase.halcyon.core.xmpp.toJID
 
 class DiscoveryModule(override val context: Context) : XmppModule {
 
@@ -191,6 +192,27 @@ class DiscoveryModule(override val context: Context) : XmppModule {
 		}.toList()
 
 		return Info(jid, node, identities, features)
+	}
+
+	fun findComponent(predicate: (Info) -> Boolean, consumer: (Info) -> Unit) {
+		val domain = context.modules.getModuleOrNull<BindModule>(BindModule.TYPE)?.boundJID?.bareJID?.domain!!
+		var found: Boolean = false
+		items(domain.toJID()).response {
+			if (it is IQResult.Success) {
+				val items = it.get()!!
+				items.items.forEach {
+					info(it.jid).response {
+						if (it is IQResult.Success) {
+							val inf = it.get()!!
+							if (!found && predicate.invoke(inf)) {
+								found = true
+								consumer.invoke(inf)
+							}
+						}
+					}.send()
+				}
+			}
+		}.send()
 	}
 
 	fun items(jid: JID, node: String? = null): IQRequestBuilder<Items> {

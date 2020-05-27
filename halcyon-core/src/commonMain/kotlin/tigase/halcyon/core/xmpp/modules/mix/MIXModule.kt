@@ -35,6 +35,7 @@ import tigase.halcyon.core.xmpp.JID
 import tigase.halcyon.core.xmpp.modules.BindModule
 import tigase.halcyon.core.xmpp.modules.mam.MAMMessageEvent
 import tigase.halcyon.core.xmpp.modules.mix.MIXModule.Companion.MISC_XMLNS
+import tigase.halcyon.core.xmpp.modules.pubsub.PubSubModule
 import tigase.halcyon.core.xmpp.modules.roster.RosterItemAnnotation
 import tigase.halcyon.core.xmpp.modules.roster.RosterItemAnnotationProcessor
 import tigase.halcyon.core.xmpp.modules.roster.RosterModule
@@ -55,12 +56,19 @@ data class MIXMessageEvent(val channel: BareJID, val stanza: Message, val timest
 	}
 }
 
+data class JoinResponse(val jid: JID, val nick: String, val nodes: Array<String>)
+
+data class CreateResponse(val jid: BareJID, val name: String)
+
 class MIXModule(override val context: Context) : XmppModule, RosterItemAnnotationProcessor {
 
 	companion object {
 		const val XMLNS = "urn:xmpp:mix:core:1"
 		const val MISC_XMLNS = "urn:xmpp:mix:misc:0"
 		const val TYPE = XMLNS
+
+		const val NODE_ALLOWED = "urn:xmpp:mix:nodes:allowed"
+		const val NODE_BANNED = "urn:xmpp:mix:nodes:banned"
 	}
 
 	override val criteria: Criteria? = Criterion.element(this@MIXModule::isMIXMessage)
@@ -68,9 +76,11 @@ class MIXModule(override val context: Context) : XmppModule, RosterItemAnnotatio
 	override val features = arrayOf(XMLNS)
 
 	private lateinit var rosterModule: RosterModule
+	private lateinit var pubsubModule: PubSubModule
 
 	override fun initialize() {
 		rosterModule = context.modules.getModule(RosterModule.TYPE)
+		pubsubModule = context.modules.getModule(PubSubModule.TYPE)
 		context.eventBus.register<MAMMessageEvent>(MAMMessageEvent.TYPE, this@MIXModule::process)
 	}
 
@@ -97,14 +107,60 @@ class MIXModule(override val context: Context) : XmppModule, RosterItemAnnotatio
 	private fun myJID(): JID =
 		context.modules.getModule<BindModule>(BindModule.TYPE).boundJID ?: throw HalcyonException("Resource not bound.")
 
-	private fun invitationToElement(invitation: MIXInvitation): Element {
+	private fun invitationToElement(invitation: MIXInvitation, withXmlns: Boolean = false): Element {
 		return element("invitation") {
+			if (withXmlns) xmlns = MISC_XMLNS
 			"inviter"{ +invitation.inviter.toString() }
 			"invitee"{ +invitation.invitee.toString() }
 			"channel"{ +invitation.channel.toString() }
 			invitation.token?.let {
 				"token"{ +it }
 			}
+		}
+	}
+
+	fun create(mixComponent: BareJID, name: String): IQRequestBuilder<CreateResponse> {
+		return context.request.iq {
+			type = IQType.Set
+			to = mixComponent.toJID()
+			"create"{
+				xmlns = XMLNS
+				attributes["channel"] = name
+			}
+		}.resultBuilder {
+			val cr = it.getChildrenNS("create", XMLNS)!!
+			val chname = cr.attributes["channel"]!!
+			CreateResponse(BareJID(chname, mixComponent.domain), chname)
+		}
+	}
+
+	fun createAllowed(channel: BareJID): IQRequestBuilder<Unit> {
+		return pubsubModule.create(channel.toJID(), NODE_ALLOWED)
+	}
+
+	fun createBanned(channel: BareJID): IQRequestBuilder<Unit> {
+		return pubsubModule.create(channel.toJID(), NODE_BANNED)
+	}
+
+	fun addToAllowed(channel: BareJID, participant: BareJID): IQRequestBuilder<Unit> {
+		return pubsubModule.publish(channel.toJID(), NODE_ALLOWED, participant.toString()).resultBuilder { Unit }
+	}
+
+	fun addToBanned(channel: BareJID, participant: BareJID): IQRequestBuilder<Unit> {
+		return pubsubModule.publish(channel.toJID(), NODE_BANNED, participant.toString()).resultBuilder { Unit }
+	}
+
+	fun createInvitation(
+		invitee: BareJID, channel: BareJID, inviter: BareJID = myJID().bareJID, token: String? = null
+	): MIXInvitation {
+		return MIXInvitation(inviter, invitee, channel, token)
+	}
+
+	fun invitationMessage(invitation: MIXInvitation, message: String): MessageRequestBuilder {
+		return context.request.message {
+			to = invitation.invitee.toJID()
+			body = message
+			addChild(invitationToElement(invitation, true))
 		}
 	}
 
@@ -139,8 +195,6 @@ class MIXModule(override val context: Context) : XmppModule, RosterItemAnnotatio
 			JoinResponse(join.attributes["jid"]!!.toJID(), nck, nodes)
 		}
 	}
-
-	data class JoinResponse(val jid: JID, val nick: String, val nodes: Array<String>)
 
 	fun leave(channel: BareJID): IQRequestBuilder<Unit> {
 		return context.request.iq {

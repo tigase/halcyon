@@ -107,16 +107,19 @@ enum class FormType(val xmppValue: String) {
 	 * The form-processing entity is asking the form-submitting entity to complete a form.
 	 */
 	Form("form"),
+
 	/**
 	 * The form-submitting entity is submitting data to the form-processing entity.
 	 * The submission MAY include fields that were not provided in the empty form,
 	 * but the form-processing entity MUST ignore any fields that it does not understand.
 	 */
 	Submit("submit"),
+
 	/**
 	 * The form-submitting entity has cancelled submission of data to the form-processing entity.
 	 */
 	Cancel("cancel"),
+
 	/**
 	 * The form-processing entity is returning data (e.g., search results) to the form-submitting entity,
 	 * or the data is a generic data set.
@@ -154,6 +157,11 @@ class JabberDataForm constructor(val element: Element) {
 		val field = element("field") {
 			varName?.let { attribute("var", it) }
 			type?.let { attribute("type", it.xmppValue) }
+		}
+		if (varName != null) {
+			element.getChildren("field").firstOrNull { it.attributes["var"] == varName }?.let {
+				element.remove(it)
+			}
 		}
 		element.add(field)
 		return Field(field)

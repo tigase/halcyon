@@ -17,9 +17,11 @@
  */
 package tigase.halcyon.core.xmpp.modules.pubsub
 
+import getFromAttr
 import kotlinx.serialization.Serializable
 import tigase.halcyon.core.Context
 import tigase.halcyon.core.eventbus.Event
+import tigase.halcyon.core.exceptions.HalcyonException
 import tigase.halcyon.core.logger.Logger
 import tigase.halcyon.core.modules.Criterion
 import tigase.halcyon.core.modules.XmppModule
@@ -28,6 +30,7 @@ import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xmpp.ErrorCondition
 import tigase.halcyon.core.xmpp.JID
 import tigase.halcyon.core.xmpp.XMPPException
+import tigase.halcyon.core.xmpp.forms.JabberDataForm
 import tigase.halcyon.core.xmpp.stanzas.IQType
 import tigase.halcyon.core.xmpp.stanzas.Message
 import tigase.halcyon.core.xmpp.stanzas.iq
@@ -52,6 +55,22 @@ data class PubSubEventReceivedEvent(
 	}
 }
 
+enum class Affiliation(val xmppName: String) {
+	Owner("owner"),
+	Publisher("publisher"),
+	PublishOnly("publish-only"),
+	Member("member"),
+	None("none"),
+	Outcast("outcast");
+
+	companion object {
+		fun byXMPPName(affiliation: String): Affiliation =
+			Affiliation.values().firstOrNull { te -> te.xmppName == affiliation }
+				?: throw XMPPException(ErrorCondition.BadRequest, "Unknown PubSub Affiliation '$affiliation'")
+	}
+
+}
+
 /**
  * States of subscription.
  */
@@ -61,17 +80,20 @@ enum class SubscriptionState(val xmppName: String) {
 	 * The node MUST NOT send event notifications or payloads to the Entity.
 	 */
 	None("none"),
+
 	/**
 	 * An entity has requested to subscribe to a node and the request has not yet been approved by a node owner.
 	 * The node MUST NOT send event notifications or payloads to the entity while it is in this state.
 	 */
 	Pending("pending"),
+
 	/**
 	 * An entity has subscribed but its subscription options have not yet been configured.
 	 * The node MAY send event notifications or payloads to the entity while it is in this state.
 	 * The service MAY timeout unconfigured subscriptions.
 	 */
 	Unconfigured("unconfigured"),
+
 	/**
 	 * An entity is subscribed to a node.The node MUST send all event notifications
 	 * (and, if configured, payloads) to the entity while it is in this state
@@ -114,6 +136,25 @@ class PubSubModule(override val context: Context) : XmppModule {
 	override fun initialize() {
 	}
 
+	fun create(pubSubJID: JID, node: String, configForm: JabberDataForm? = null): IQRequestBuilder<Unit> {
+		val iq = iq {
+			type = IQType.Set
+			to = pubSubJID
+			"pubsub"{
+				xmlns = XMLNS
+				"create"{
+					attribute("node", node)
+				}
+				configForm?.let {
+					"configure"{
+						addChild(it.createSubmitForm())
+					}
+				}
+			}
+		}
+		return context.request.iq(iq)
+	}
+
 	/**
 	 * Subscribe to a node.
 	 *
@@ -133,8 +174,7 @@ class PubSubModule(override val context: Context) : XmppModule {
 			}
 		}
 		return context.request.iq(iq).resultBuilder { element ->
-			val s = element.findChild("iq", "pubsub", "subscription")
-				?: throw XMPPException(ErrorCondition.BadRequest)
+			val s = element.findChild("iq", "pubsub", "subscription") ?: throw XMPPException(ErrorCondition.BadRequest)
 			parseSubscriptionElement(s)
 		}
 	}
@@ -251,13 +291,17 @@ class PubSubModule(override val context: Context) : XmppModule {
 		)
 	}
 
-	fun retrieveItem(jid: JID, node: String, itemId: String): IQRequestBuilder<Unit> {
+	data class RetrievedItem(val id: String, val content: Element?)
+
+	data class RetrieveResponse(val jid: JID, val node: String, val items: List<RetrievedItem>)
+
+	fun deleteItem(jid: JID, node: String, itemId: String): IQRequestBuilder<Unit> {
 		val iq = iq {
 			to = jid
-			type = IQType.Get
+			type = IQType.Set
 			"pubsub"{
 				xmlns = XMLNS
-				"items"{
+				"retract"{
 					attribute("node", node)
 					"item"{
 						attribute("id", itemId)
@@ -268,10 +312,39 @@ class PubSubModule(override val context: Context) : XmppModule {
 		return context.request.iq(iq)
 	}
 
-	@Serializable
-	data class PublishingInfo(val pubSubJID: JID?, val node: String, val id: String)
+	fun retrieveItem(jid: JID, node: String, itemId: String? = null): IQRequestBuilder<RetrieveResponse> {
+		val iq = iq {
+			to = jid
+			type = IQType.Get
+			"pubsub"{
+				xmlns = XMLNS
+				"items"{
+					attribute("node", node)
+					if (itemId != null) {
+						"item"{
+							attribute("id", itemId)
+						}
+					}
+				}
+			}
+		}
+		return context.request.iq(iq).resultBuilder(this@PubSubModule::buildRetrieveResponse)
+	}
 
-	fun publish(jid: JID?, node: String, itemId: String, payload: Element): IQRequestBuilder<PublishingInfo> {
+	private fun buildRetrieveResponse(iq: Element): RetrieveResponse {
+		val items = iq.getChildrenNS("pubsub", XMLNS)!!.getFirstChild("items")!!
+
+		val content = items.children.filter { it.name == "item" }.map { item ->
+			RetrievedItem(item.attributes["id"]!!, item.getFirstChild())
+		}.toList()
+
+		return RetrieveResponse(iq.getFromAttr()!!, items.attributes["node"]!!, content)
+	}
+
+	@Serializable
+	data class PublishingInfo(val pubSubJID: JID?, val node: String, val id: String?)
+
+	fun publish(jid: JID?, node: String, itemId: String?, payload: Element? = null): IQRequestBuilder<PublishingInfo> {
 		val iq = iq {
 			type = IQType.Set
 			jid?.let {
@@ -282,16 +355,46 @@ class PubSubModule(override val context: Context) : XmppModule {
 				"publish"{
 					attribute("node", node)
 					"item"{
-						addChild(payload)
+						if (itemId != null) {
+							attributes["id"] = itemId
+						}
+						payload?.let {
+							addChild(it)
+						}
 					}
 				}
 			}
 		}
-		return context.request.iq(iq).resultBuilder {
-			val publish = it.getChildrenNS("pubsub", XMLNS)?.getFirstChild("publish")!!
-			val item = publish.findChild("item")!!
-			val j = it.attributes["from"]?.let { JID.parse(it) }!!
-			PublishingInfo(j, publish.attributes["node"]!!, item.attributes["id"]!!)
+		return context.request.iq(iq).resultBuilder { resp ->
+			val publish = resp.getChildrenNS("pubsub", XMLNS)?.getFirstChild("publish")
+				?: throw HalcyonException("No publish element")
+			val item = publish.getFirstChild("item") ?: throw HalcyonException("No item element")
+			val j = resp.getFromAttr() ?: throw HalcyonException("No sender JID")
+			PublishingInfo(
+				j,
+				publish.attributes["node"] ?: throw HalcyonException("No node name"),
+				item.attributes["id"] ?: throw HalcyonException("No item ID")
+			)
+		}
+	}
+
+	data class RetrievedAffiliation(val node: String, val affiliation: Affiliation)
+
+	fun retrieveAffiliations(jid: JID?, node: String? = null): IQRequestBuilder<List<RetrievedAffiliation>> {
+		val iq = iq {
+			if (jid != null) to = jid
+			type = IQType.Get
+			"pubsub"{
+				xmlns = XMLNS
+				"affiliations"{
+					if (node != null) attribute("node", node)
+				}
+			}
+		}
+		return context.request.iq(iq).resultBuilder { r ->
+			r.getChildrenNS("pubsub", XMLNS)?.getFirstChild("affiliations")?.getChildren("affiliation")?.map { a ->
+				RetrievedAffiliation(a.attributes["node"]!!, Affiliation.byXMPPName(a.attributes["affiliation"]!!))
+			} ?: emptyList()
 		}
 	}
 
