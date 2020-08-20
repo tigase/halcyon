@@ -51,11 +51,16 @@ data class PubSubEventReceivedEvent(
 ) : Event(TYPE) {
 
 	companion object {
+
 		const val TYPE = "tigase.halcyon.core.xmpp.modules.pubsub.PubSubEventReceivedEvent"
 	}
 }
 
+/**
+ * Affiliations.
+ */
 enum class Affiliation(val xmppName: String) {
+
 	Owner("owner"),
 	Publisher("publisher"),
 	PublishOnly("publish-only"),
@@ -64,9 +69,11 @@ enum class Affiliation(val xmppName: String) {
 	Outcast("outcast");
 
 	companion object {
+
 		fun byXMPPName(affiliation: String): Affiliation =
-			Affiliation.values().firstOrNull { te -> te.xmppName == affiliation }
-				?: throw XMPPException(ErrorCondition.BadRequest, "Unknown PubSub Affiliation '$affiliation'")
+			values().firstOrNull { te -> te.xmppName == affiliation } ?: throw XMPPException(
+				ErrorCondition.BadRequest, "Unknown PubSub Affiliation '$affiliation'"
+			)
 	}
 
 }
@@ -114,6 +121,9 @@ data class Subscription(
 	val node: String, val jid: JID, var state: SubscriptionState, var subid: String? = null
 )
 
+/**
+ * PubSub Module.
+ */
 class PubSubModule(override val context: Context) : XmppModule {
 
 	private val log = Logger("tigase.halcyon.core.xmpp.modules.pubsub.PubSubModule")
@@ -127,6 +137,7 @@ class PubSubModule(override val context: Context) : XmppModule {
 	override val features: Array<String>? = null
 
 	companion object {
+
 		const val XMLNS = "http://jabber.org/protocol/pubsub"
 		const val TYPE = XMLNS
 		const val XMLNS_EVENT = "$XMLNS#event"
@@ -136,6 +147,13 @@ class PubSubModule(override val context: Context) : XmppModule {
 	override fun initialize() {
 	}
 
+	/**
+	 * Prepares PubSub node creation request.
+	 *
+	 * @param pubSubJID JabberID of PubSub service
+	 * @param node node name
+	 * @param configForm form with configuration
+	 */
 	fun create(pubSubJID: JID, node: String, configForm: JabberDataForm? = null): IQRequestBuilder<Unit> {
 		val iq = iq {
 			type = IQType.Set
@@ -156,10 +174,11 @@ class PubSubModule(override val context: Context) : XmppModule {
 	}
 
 	/**
-	 * Subscribe to a node.
+	 * Prepares Subscribe to a node request.
 	 *
 	 * @param pubSubJID JID of PubSub service.
 	 * @param node PubSub node name.
+	 * @return In case of success returns [Subscription] object.
 	 */
 	fun subscribe(pubSubJID: JID, node: String, jid: JID): IQRequestBuilder<Subscription> {
 		val iq = iq {
@@ -180,7 +199,7 @@ class PubSubModule(override val context: Context) : XmppModule {
 	}
 
 	/**
-	 * Purge all node items.
+	 * Prepares purge all node items request.
 	 *
 	 * @param pubSubJID JID of PubSub service.
 	 * @param node PubSub node name.
@@ -200,19 +219,14 @@ class PubSubModule(override val context: Context) : XmppModule {
 		return context.request.iq(iq)
 	}
 
-	/**
-	 * Retrieves list of subscriptions.
-	 *
-	 * @param pubSubJID JID of PubSub service.
-	 * @param node PubSub node name.
-	 * @return [Request] returning list of [subscriptions][Subscription].
-	 */
-	fun retrieveSubscriptions(pubSubJID: JID, node: String): IQRequestBuilder<List<Subscription>> {
+	private fun retrieveSubscriptions(
+		requestXMLNS: String, pubSubJID: JID, node: String
+	): IQRequestBuilder<List<Subscription>> {
 		val iq = iq {
 			type = IQType.Get
 			to = pubSubJID
 			"pubsub"{
-				xmlns = XMLNS_OWNER
+				xmlns = requestXMLNS
 				"subscriptions"{
 					attribute("node", node)
 				}
@@ -228,6 +242,26 @@ class PubSubModule(override val context: Context) : XmppModule {
 			}
 		}
 	}
+
+	/**
+	 * Prepares retrieves list of subscriptions request.
+	 *
+	 * @param pubSubJID JID of PubSub service.
+	 * @param node PubSub node name.
+	 * @return [Request] returning list of [subscriptions][Subscription].
+	 */
+	fun retrieveSubscriptions(pubSubJID: JID, node: String): IQRequestBuilder<List<Subscription>> =
+		retrieveSubscriptions(XMLNS, pubSubJID, node)
+
+	/**
+	 * Prepares retrieves list of subscriptions request as node owner.
+	 *
+	 * @param pubSubJID JID of PubSub service.
+	 * @param node PubSub node name.
+	 * @return [Request] returning list of [subscriptions][Subscription].
+	 */
+	fun retrieveSubscriptionsAsOwner(pubSubJID: JID, node: String): IQRequestBuilder<List<Subscription>> =
+		retrieveSubscriptions(XMLNS_OWNER, pubSubJID, node)
 
 	private fun parseSubscriptionElement(element: Element, nodeName: String? = null): Subscription {
 		val jid = element.attributes["jid"] ?: throw XMPPException(ErrorCondition.BadRequest, "No JID")
@@ -246,16 +280,14 @@ class PubSubModule(override val context: Context) : XmppModule {
 	}
 
 	/**
-	 * Modify list of subscriptions.
+	 * Prepare modify list of subscriptions request.
 	 *
 	 * @param pubSubJID JID of PubSub service.
 	 * @param node PubSub node name.
 	 * @param subscriptions list of [subscriptions][Subscription] to modify.
 	 * @return [Request] with no specific data.
 	 */
-	fun modifySubscriptions(
-		pubSubJID: JID, node: String, subscriptions: List<Subscription>
-	): IQRequestBuilder<Unit> {
+	fun modifySubscriptions(pubSubJID: JID, node: String, subscriptions: List<Subscription>): IQRequestBuilder<Unit> {
 		val iq = iq {
 			type = IQType.Set
 			to = pubSubJID
@@ -291,10 +323,30 @@ class PubSubModule(override val context: Context) : XmppModule {
 		)
 	}
 
+	/**
+	 * Published PubSub item.
+	 *
+	 * @param id id of published item
+	 * @param content published content.
+	 */
 	data class RetrievedItem(val id: String, val content: Element?)
 
+	/**
+	 * Response for retrieve item(s).
+	 *
+	 * @param jid JabberID of PubSub service
+	 * @param node node name
+	 * @param items list of [RetrievedItem]s.
+	 */
 	data class RetrieveResponse(val jid: JID, val node: String, val items: List<RetrievedItem>)
 
+	/**
+	 * Prepare delete item request.
+	 *
+	 * @param jid JID of PubSub service.
+	 * @param node PubSub node name.
+	 * @param itemId ID of published item.
+	 */
 	fun deleteItem(jid: JID, node: String, itemId: String): IQRequestBuilder<Unit> {
 		val iq = iq {
 			to = jid
@@ -312,6 +364,15 @@ class PubSubModule(override val context: Context) : XmppModule {
 		return context.request.iq(iq)
 	}
 
+	/**
+	 * Prepare [retrieve item](https://xmpp.org/extensions/xep-0060.html#subscriber-retrieve) request.
+	 *
+	 * @param jid JID of PubSub service.
+	 * @param node PubSub node name.
+	 * @param itemId ID of published item. If not provided, then all published items will be returned.
+	 *
+	 * @return [RetrieveResponse] what contains list of published items.
+	 */
 	fun retrieveItem(jid: JID, node: String, itemId: String? = null): IQRequestBuilder<RetrieveResponse> {
 		val iq = iq {
 			to = jid
@@ -341,9 +402,25 @@ class PubSubModule(override val context: Context) : XmppModule {
 		return RetrieveResponse(iq.getFromAttr()!!, items.attributes["node"]!!, content)
 	}
 
+	/**
+	 * Response for publish request.
+	 * @param pubSubJID JID of PubSub service.
+	 * @param node PubSub node name.
+	 * @param id ID of published item (may be different from requested ID).
+	 */
 	@Serializable
 	data class PublishingInfo(val pubSubJID: JID?, val node: String, val id: String?)
 
+	/**
+	 * Prepare [publish item](https://xmpp.org/extensions/xep-0060.html#publisher-publish) request.
+	 *
+	 * @param jid JID of PubSub service.
+	 * @param node PubSub node name.
+	 * @param itemId ID of publishing item.
+	 * @param payload to publish.
+	 *
+	 * @return [PublishingInfo]
+	 */
 	fun publish(jid: JID?, node: String, itemId: String?, payload: Element? = null): IQRequestBuilder<PublishingInfo> {
 		val iq = iq {
 			type = IQType.Set
@@ -366,8 +443,7 @@ class PubSubModule(override val context: Context) : XmppModule {
 			}
 		}
 		return context.request.iq(iq).resultBuilder { resp ->
-			val publish = resp.getChildrenNS("pubsub", XMLNS)?.getFirstChild("publish")
-				?: throw HalcyonException("No publish element")
+			val publish = resp.getChildrenNS("pubsub", XMLNS)?.getFirstChild("publish") ?: throw HalcyonException("No publish element")
 			val item = publish.getFirstChild("item") ?: throw HalcyonException("No item element")
 			val j = resp.getFromAttr() ?: throw HalcyonException("No sender JID")
 			PublishingInfo(
@@ -378,8 +454,19 @@ class PubSubModule(override val context: Context) : XmppModule {
 		}
 	}
 
+	/**
+	 * Retrieved affiliation.
+	 * @param node name of node
+	 * @param affiliation affiliation
+	 */
 	data class RetrievedAffiliation(val node: String, val affiliation: Affiliation)
 
+	/**
+	 * Prepare [retrieve affiliation](https://xmpp.org/extensions/xep-0060.html#entity-affiliations) request.
+	 * @param jid JID of PubSub service.
+	 * @param node PubSub node name.
+	 * @return list of [RetrievedAffiliation]
+	 */
 	fun retrieveAffiliations(jid: JID?, node: String? = null): IQRequestBuilder<List<RetrievedAffiliation>> {
 		val iq = iq {
 			if (jid != null) to = jid
