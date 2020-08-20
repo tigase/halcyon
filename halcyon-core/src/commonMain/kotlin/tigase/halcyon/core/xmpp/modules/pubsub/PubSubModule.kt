@@ -198,6 +198,24 @@ class PubSubModule(override val context: Context) : XmppModule {
 		}
 	}
 
+	fun unsubscribe(pubSubJID: JID, node: String, jid: JID): IQRequestBuilder<Subscription> {
+		val iq = iq {
+			type = IQType.Set
+			to = pubSubJID
+			"pubsub"{
+				xmlns = XMLNS
+				"unsubscribe"{
+					attribute("node", node)
+					attribute("jid", jid.toString())
+				}
+			}
+		}
+		return context.request.iq(iq).resultBuilder { element ->
+			val s = element.findChild("iq", "pubsub", "subscription") ?: throw XMPPException(ErrorCondition.BadRequest)
+			parseSubscriptionElement(s)
+		}
+	}
+
 	/**
 	 * Prepares purge all node items request.
 	 *
@@ -443,7 +461,8 @@ class PubSubModule(override val context: Context) : XmppModule {
 			}
 		}
 		return context.request.iq(iq).resultBuilder { resp ->
-			val publish = resp.getChildrenNS("pubsub", XMLNS)?.getFirstChild("publish") ?: throw HalcyonException("No publish element")
+			val publish = resp.getChildrenNS("pubsub", XMLNS)?.getFirstChild("publish")
+				?: throw HalcyonException("No publish element")
 			val item = publish.getFirstChild("item") ?: throw HalcyonException("No item element")
 			val j = resp.getFromAttr() ?: throw HalcyonException("No sender JID")
 			PublishingInfo(
