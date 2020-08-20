@@ -245,4 +245,6 @@ class RosterModule(context: Context) : AbstractXmppIQModule(
 		}
 	}
 
+	fun getAllItems(): List<RosterItem> = store.getAllItems()
+
 }
