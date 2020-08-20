@@ -139,10 +139,10 @@ abstract class AbstractIQRequest<V>(
 				)
 			)
 		} else response?.let { received ->
-			value = resultConverter?.invoke(received)
 			handler?.let {
 				val type = received.attributes["type"]
 				if (type == "result") {
+					value = resultConverter?.invoke(received)
 					it.invoke(IQResult.Success(this as IQRequest<V>, received, value))
 				} else if (type == "error") {
 					val e = findCondition(received)
