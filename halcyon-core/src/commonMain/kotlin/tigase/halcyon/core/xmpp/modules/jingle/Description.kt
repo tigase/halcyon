@@ -38,7 +38,7 @@ class Description(
 
     fun toElement(): Element {
         return element("description") {
-            xmlns = "urn:xmpp:jingle:apps:rtp:1"
+            xmlns = XMLNS
             attribute("media", media)
             ssrc?.let { attribute("ssrc", it) }
             payloads.forEach {
@@ -59,9 +59,12 @@ class Description(
     }
 
     companion object {
+        const val XMLNS = "urn:xmpp:jingle:apps:rtp:1";
+        val supportedFeatures = arrayOf(XMLNS, "urn:xmpp:jingle:apps:rtp:audio", "urn:xmpp:jingle:apps:rtp:video")
+
         @JvmStatic
         fun parse(el: Element): Description? {
-            if ("description".equals(el.name) && "urn:xmpp:jingle:apps:rtp:1".equals(el.xmlns)) {
+            if ("description".equals(el.name) && XMLNS.equals(el.xmlns)) {
                 val media = el.attributes["media"] ?: return null;
                 val payloads = el.children.map { Payload.parse(it) }.filterNotNull();
                 val ssrc = el.attributes["ssrc"];

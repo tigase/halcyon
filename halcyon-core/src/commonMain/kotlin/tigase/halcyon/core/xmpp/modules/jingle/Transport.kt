@@ -26,7 +26,7 @@ class Transport(val ufrag: String?, val pwd: String?, val candidates: List<Candi
 
     fun toElement(): Element {
         return element("transport") {
-            xmlns = "urn:xmpp:jingle:transports:ice-udp:1"
+            xmlns = XMLNS
             fingerprint?.let {
                 this.addChild(it.toElement());
             }
@@ -39,9 +39,13 @@ class Transport(val ufrag: String?, val pwd: String?, val candidates: List<Candi
     }
 
     companion object {
+        const val XMLNS = "urn:xmpp:jingle:transports:ice-udp:1";
+
+        val supportedFeatures = arrayOf(XMLNS, "urn:xmpp:jingle:apps:dtls:0");
+
         @JvmStatic
         fun parse(el: Element): Transport? {
-            if (!("transport".equals(el.name) && "".equals("urn:xmpp:jingle:transports:ice-udp:1"))) {
+            if (!("transport".equals(el.name) && XMLNS.equals(el.xmlns))) {
                 return null;
             }
             val candidates: List<Candidate> = el.children.map { Candidate.parse(it) }?.filterNotNull();
