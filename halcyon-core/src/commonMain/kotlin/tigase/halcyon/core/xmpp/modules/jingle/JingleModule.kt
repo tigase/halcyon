@@ -36,107 +36,6 @@ import tigase.halcyon.core.xmpp.stanzas.Message
 import tigase.halcyon.core.xmpp.stanzas.MessageType
 
 class Jingle {
-    enum class Action(val value: String) {
-        contentAccept("content-accept"),
-        contentAdd("content-add"),
-        contentModify("content-modify"),
-        contentReject("content-reject"),
-        descriptionInfo("description-info"),
-        securityInfo("security-info"),
-        sessionAccept("session-accept"),
-        sessionInfo("session-info"),
-        sessionInitiate("session-initiate"),
-        sessionTerminate("session-terminate"),
-        transportAccept("transport-accept"),
-        transportInfo("transport-info"),
-        transportReject("transport-reject"),
-        transportReplace("transport-replace");
-
-        companion object {
-            fun fromValue(value: String) = values().find { it.value == value }
-        }
-    }
-
-    data class MessageInitiationDescription(val xmlns: String, val media: String) {
-        companion object {
-            fun parse(descEl: Element): MessageInitiationDescription? {
-                return descEl.xmlns?.let { xmlns ->
-                    descEl.attributes["media"]?.let { media ->
-                        MessageInitiationDescription(xmlns, media)
-                    }
-                };
-            }
-        }
-
-        fun toElement(): Element {
-            return element("description") {
-                xmlns = this@MessageInitiationDescription.xmlns;
-                attribute("media", this@MessageInitiationDescription.media)
-            }
-        }
-    }
-
-    sealed class MessageInitiationAction(open val id: String, val actionName: String) {
-
-        class Propose(override val id: String, val descriptions: List<MessageInitiationDescription>) :
-            MessageInitiationAction(id, "propose")
-
-        class Retract(override val id: String) : MessageInitiationAction(id, "retract")
-
-        class Accept(override val id: String) : MessageInitiationAction(id, "accept")
-        class Proceed(override val id: String) : MessageInitiationAction(id, "proceed")
-        class Reject(override val id: String) : MessageInitiationAction(id, "reject")
-
-        companion object {
-            fun parse(actionEl: Element): MessageInitiationAction? {
-                val id = actionEl.attributes["id"] ?: return null;
-                when (actionEl.name) {
-                    "accept" -> return Accept(id)
-                    "proceed" -> return Proceed(id)
-                    "propose" -> {
-                        val descriptions = actionEl.children.map { MessageInitiationDescription.parse(it) }.filterNotNull();
-                        if (descriptions.isNotEmpty()) {
-                            return Propose(id, descriptions)
-                        } else {
-                            return null;
-                        }
-                    }
-                    "retract" -> return Retract(id)
-                    "reject" -> return Reject(id)
-                    else -> return null;
-                }
-            }
-        }
-    }
-
-    enum class TerminateReason(val value: String) {
-        alternativeSession("alternative-session"),
-        busy("busy"),
-        cancel("cancel"),
-        connectivityError("connectivity-error"),
-        decline("decline"),
-        expired("expired"),
-        failedApplication("failed-application"),
-        failedTransport("failed-transport"),
-        generalError("general-error"),
-        gone("gone"),
-        incompatibleParameters("incompatible-parameters"),
-        mediaError("media-error"),
-        securityError("security-error"),
-        success("success"),
-        timeout("timeout"),
-        unsupportedApplications("unsupported-applications"),
-        unsupportedTransports("unsupported-transports");
-
-        fun toElement(): Element = element(value) {};
-        fun toReasonElement(): Element = element("reason") {
-            addChild(toElement());
-        }
-
-        companion object {
-            fun fromValue(value: String) = values().find { it.value == value }
-        }
-    }
 
     interface Session {
         enum class State {
@@ -202,7 +101,7 @@ class JingleModule(
         }
 
         val jingle = iq.getChildrenNS("jingle", XMLNS) ?: throw XMPPException(ErrorCondition.BadRequest);
-        val action = Jingle.Action.fromValue(iq.attributes["action"] ?: throw XMPPException(ErrorCondition.BadRequest))
+        val action = Action.fromValue(iq.attributes["action"] ?: throw XMPPException(ErrorCondition.BadRequest))
             ?: throw XMPPException(ErrorCondition.BadRequest);
         val from = JID.parse(iq.attributes["from"] ?: throw XMPPException(ErrorCondition.BadRequest));
         val sid = (jingle.attributes["sid"] ?: sessionManager.activateSessionSid(context.config.userJID!!, from))
@@ -221,16 +120,16 @@ class JingleModule(
     private fun processMessage(message: Element) {
         val from = message.attributes["from"]?.let { JID.parse(it) } ?: return;
         val action =
-            Jingle.MessageInitiationAction.parse(message.children.filter { "urn:xmpp:jingle-message:0".equals(it.xmlns) }
+            MessageInitiationAction.parse(message.children.filter { "urn:xmpp:jingle-message:0".equals(it.xmlns) }
                 .firstOrNull() ?: throw XMPPException(ErrorCondition.BadRequest)) ?: return;
         when (action) {
-            is Jingle.MessageInitiationAction.Propose -> {
+            is MessageInitiationAction.Propose -> {
                 if (action.descriptions.filter { features?.contains(it.xmlns) == true }.isEmpty()) {
-                    this.sendMessageInitiation(Jingle.MessageInitiationAction.Reject(action.id), from);
+                    this.sendMessageInitiation(MessageInitiationAction.Reject(action.id), from);
                     return;
                 }
             }
-            is Jingle.MessageInitiationAction.Accept -> {
+            is MessageInitiationAction.Accept -> {
                 if (context.modules.getModule<BindModule>(BindModule.TYPE).boundJID?.equals(from) == true) {
                     return;
                 }
@@ -240,12 +139,12 @@ class JingleModule(
         context.eventBus.fire(JingleMessageInitiationEvent(from, action));
     }
 
-    fun sendMessageInitiation(action: Jingle.MessageInitiationAction, jid: JID) {
+    fun sendMessageInitiation(action: MessageInitiationAction, jid: JID) {
         when (action) {
-            is Jingle.MessageInitiationAction.Proceed -> sendMessageInitiation(Jingle.MessageInitiationAction.Accept(action.id), JID(context.config.userJID!!,null));
-            is Jingle.MessageInitiationAction.Reject -> {
+            is MessageInitiationAction.Proceed -> sendMessageInitiation(MessageInitiationAction.Accept(action.id), JID(context.config.userJID!!,null));
+            is MessageInitiationAction.Reject -> {
                 if (jid.bareJID != context.config.userJID) {
-                    sendMessageInitiation(Jingle.MessageInitiationAction.Accept(action.id), JID(context.config.userJID!!, null));
+                    sendMessageInitiation(MessageInitiationAction.Accept(action.id), JID(context.config.userJID!!, null));
                 }
             }
             else -> {}
@@ -256,7 +155,7 @@ class JingleModule(
                 xmlns = "urn:xmpp:jingle-message:0"
                 attribute("id", action.id)
                 when (action) {
-                    is Jingle.MessageInitiationAction.Propose -> action.descriptions.map { it.toElement() }.forEach { addChild(it) }
+                    is MessageInitiationAction.Propose -> action.descriptions.map { it.toElement() }.forEach { addChild(it) }
                 }
             })
             type = MessageType.Chat;
@@ -271,7 +170,7 @@ class JingleModule(
 
             addChild(element("jingle") {
                 xmlns = XMLNS
-                attribute("action", Jingle.Action.sessionInitiate.value)
+                attribute("action", Action.sessionInitiate.value)
                 attribute("sid", sid)
                 attribute("initiator", context.modules.getModule<BindModule>(BindModule.TYPE).boundJID?.toString() ?: throw XMPPException(ErrorCondition.NotAuthorized))
 
@@ -298,7 +197,7 @@ class JingleModule(
 
             addChild(element("jingle") {
                 xmlns = XMLNS
-                attribute("action", Jingle.Action.sessionAccept.value)
+                attribute("action", Action.sessionAccept.value)
                 attribute("sid", sid)
                 attribute("responder", context.modules.getModule<BindModule>(BindModule.TYPE).boundJID?.toString() ?: throw XMPPException(ErrorCondition.NotAuthorized))
 
@@ -318,14 +217,14 @@ class JingleModule(
         }
     }
 
-    fun terminateSession(jid: JID, sid: String, reason: Jingle.TerminateReason): IQRequestBuilder<Unit> {
+    fun terminateSession(jid: JID, sid: String, reason: TerminateReason): IQRequestBuilder<Unit> {
         return context.request.iq {
             to = jid
             type = IQType.Set
 
             addChild(element("jingle") {
                 xmlns = XMLNS
-                attribute("action", Jingle.Action.sessionTerminate.value)
+                attribute("action", Action.sessionTerminate.value)
                 attribute("sid", sid)
                 addChild(reason.toReasonElement())
             })
@@ -339,7 +238,7 @@ class JingleModule(
 
             addChild(element("jingle") {
                 xmlns = XMLNS
-                attribute("action", Jingle.Action.sessionAccept.value)
+                attribute("action", Action.sessionAccept.value)
                 attribute("sid", sid)
 
                 contents.map { it.toElement() }.forEach { contentEl -> addChild(contentEl) }
@@ -350,7 +249,7 @@ class JingleModule(
 
 data class JingleEvent(
     val jid: JID,
-    val action: Jingle.Action,
+    val action: Action,
     val intiator: JID,
     val sid: String,
     val contents: List<Content>,
@@ -363,7 +262,7 @@ data class JingleEvent(
 
 }
 
-data class JingleMessageInitiationEvent(val jid: JID, val action: Jingle.MessageInitiationAction) : Event(TYPE) {
+data class JingleMessageInitiationEvent(val jid: JID, val action: MessageInitiationAction) : Event(TYPE) {
     companion object {
         const val TYPE = "tigase.halcyon.core.xmpp.modules.jingle.JingleMessageInitiationEvent"
     }
