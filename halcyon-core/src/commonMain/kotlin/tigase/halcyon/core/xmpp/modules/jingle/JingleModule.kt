@@ -23,6 +23,7 @@ import tigase.halcyon.core.modules.Criteria
 import tigase.halcyon.core.modules.Criterion
 import tigase.halcyon.core.modules.XmppModule
 import tigase.halcyon.core.requests.IQRequestBuilder
+import tigase.halcyon.core.requests.MessageRequestBuilder
 import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xml.element
 import tigase.halcyon.core.xmpp.BareJID
@@ -125,7 +126,7 @@ class JingleModule(
         when (action) {
             is MessageInitiationAction.Propose -> {
                 if (action.descriptions.filter { features?.contains(it.xmlns) == true }.isEmpty()) {
-                    this.sendMessageInitiation(MessageInitiationAction.Reject(action.id), from);
+                    this.sendMessageInitiation(MessageInitiationAction.Reject(action.id), from).send();
                     return;
                 }
             }
@@ -139,18 +140,18 @@ class JingleModule(
         context.eventBus.fire(JingleMessageInitiationEvent(from, action));
     }
 
-    fun sendMessageInitiation(action: MessageInitiationAction, jid: JID) {
+    fun sendMessageInitiation(action: MessageInitiationAction, jid: JID): MessageRequestBuilder {
         when (action) {
-            is MessageInitiationAction.Proceed -> sendMessageInitiation(MessageInitiationAction.Accept(action.id), JID(context.config.userJID!!,null));
+            is MessageInitiationAction.Proceed -> sendMessageInitiation(MessageInitiationAction.Accept(action.id), JID(context.config.userJID!!,null)).send();
             is MessageInitiationAction.Reject -> {
                 if (jid.bareJID != context.config.userJID) {
-                    sendMessageInitiation(MessageInitiationAction.Accept(action.id), JID(context.config.userJID!!, null));
+                    sendMessageInitiation(MessageInitiationAction.Accept(action.id), JID(context.config.userJID!!, null)).send();
                 }
             }
             else -> {}
         }
 
-        context.request.message {
+        return context.request.message {
             addChild(element(action.actionName) {
                 xmlns = "urn:xmpp:jingle-message:0"
                 attribute("id", action.id)
@@ -160,7 +161,7 @@ class JingleModule(
             })
             type = MessageType.Chat;
             to = jid
-        }.send();
+        };
     }
 
     fun initiateSession(jid: JID, sid: String, contents: List<Content>, bundle: List<String>?): IQRequestBuilder<Unit> {
