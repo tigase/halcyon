@@ -1,0 +1,37 @@
+== Modules
+
+:toc:
+:numbered:
+:website: http://www.tigase.net
+
+Halcyon contains set of modules responsible for implementation of various tasks: sending and receiving messages, authentication, pinging, uploading files, handling roster, presences, etc.
+
+Modules:
+
+:leveloffset: +2
+
+include::modules/BindModule.asciidoc[]
+//include::modules/ChatStateModule.asciidoc[]
+//include::modules/DeliveryReceiptsModule.asciidoc[]
+
+include::modules/DiscoveryModule.asciidoc[]
+//include::modules/EntityCapabilitiesModule.asciidoc[]
+//include::modules/MAMModule.asciidoc[]
+//include::modules/MIXModule.asciidoc[]
+include::modules/MessageCarbonsModule.asciidoc[]
+//include::modules/MessageModule.asciidoc[]
+
+include::modules/PingModule.asciidoc[]
+
+include::modules/PresenceModule.asciidoc[]
+include::modules/PubSubModule.asciidoc[]
+
+include::modules/RosterModule.asciidoc[]
+
+include::modules/SASLModule.asciidoc[]
+//include::modules/StreamErrorModule.asciidoc[]
+//include::modules/StreamFeaturesModule.asciidoc[]
+//include::modules/StreamManagementModule.asciidoc[]
+//include::modules/UniqueStableStanzaIdModule.asciidoc[]
+//include::modules/UserAvatarModule.asciidoc[]
+//include::modules/VCardModule.asciidoc[]

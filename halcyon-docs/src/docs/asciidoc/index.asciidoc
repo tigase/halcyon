@@ -9,8 +9,10 @@ Tigase Team <team@tigase.com>
 
 //include::text/Release_Notes.asciidoc[]
 
-//include::text/Architecture.asciidoc[]
+include::text/Architecture.asciidoc[]
 
-//include::text/Quickstart.asciidoc[]
+include::text/Quickstart.asciidoc[]
 
 include::text/WorkingWithRequests.asciidoc[]
+include::text/WorkingWithEvents.asciidoc[]
+include::text/Modules.asciidoc[]
