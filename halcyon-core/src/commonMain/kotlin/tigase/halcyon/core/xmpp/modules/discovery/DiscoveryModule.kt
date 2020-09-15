@@ -165,6 +165,12 @@ class DiscoveryModule(override val context: Context) : XmppModule {
 		})
 	}
 
+	/**
+	 * Prepares request for disco#info.
+	 * @param jid JID of entity to ask for info (optional).
+	 * @param node name of node to ask for (optional).
+	 * @return request returns [Info] in case of success.
+	 */
 	fun info(jid: JID?, node: String? = null): IQRequestBuilder<Info> {
 		val stanza = iq {
 			type = IQType.Get
@@ -215,7 +221,7 @@ class DiscoveryModule(override val context: Context) : XmppModule {
 		}.send()
 	}
 
-	fun items(jid: JID, node: String? = null): IQRequestBuilder<Items> {
+	fun items(jid: JID?, node: String? = null): IQRequestBuilder<Items> {
 		val stanza = iq {
 			type = IQType.Get
 			if (jid != null) to = jid
