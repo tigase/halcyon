@@ -23,16 +23,17 @@ import tigase.halcyon.core.eventbus.Event
 import tigase.halcyon.core.logger.Logger
 import tigase.halcyon.core.modules.Criterion
 import tigase.halcyon.core.modules.XmppModule
-import tigase.halcyon.core.requests.PresenceRequestBuilder
+import tigase.halcyon.core.request2.RequestBuilder
 import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xmpp.BareJID
+import tigase.halcyon.core.xmpp.ErrorCondition
 import tigase.halcyon.core.xmpp.JID
 import tigase.halcyon.core.xmpp.stanzas.*
 
-data class PresenceReceivedEvent(val jid: JID, val stanzaType: PresenceType?, val stanza: Presence) :
-	Event(TYPE) {
+data class PresenceReceivedEvent(val jid: JID, val stanzaType: PresenceType?, val stanza: Presence) : Event(TYPE) {
 
 	companion object {
+
 		const val TYPE = "tigase.halcyon.core.xmpp.modules.presence.PresenceReceivedEvent"
 	}
 }
@@ -42,6 +43,7 @@ data class ContactChangeStatusEvent(
 ) : Event(TYPE) {
 
 	companion object {
+
 		const val TYPE = "tigase.halcyon.core.xmpp.modules.presence.ContactChangeStatusEvent"
 	}
 }
@@ -57,6 +59,7 @@ class PresenceModule(override val context: Context) : XmppModule {
 	var store: PresenceStore = DefaultPresenceStore()
 
 	companion object {
+
 		const val TYPE = "PresenceModule"
 	}
 
@@ -95,7 +98,7 @@ class PresenceModule(override val context: Context) : XmppModule {
 
 	fun sendPresence(
 		jid: JID? = null, type: PresenceType? = null, show: Show? = null, status: String? = null
-	): PresenceRequestBuilder {
+	): RequestBuilder<Unit, ErrorCondition, Presence> {
 		val presence = presence {
 			if (jid != null) this.to = jid
 			this.type = type
@@ -108,7 +111,7 @@ class PresenceModule(override val context: Context) : XmppModule {
 		return context.request.presence(presence)
 	}
 
-	fun sendSubscriptionSet(jid: JID, presenceType: PresenceType): PresenceRequestBuilder {
+	fun sendSubscriptionSet(jid: JID, presenceType: PresenceType): RequestBuilder<Unit, ErrorCondition, Presence> {
 		return context.request.presence {
 			to = jid
 			type = presenceType
@@ -117,6 +120,7 @@ class PresenceModule(override val context: Context) : XmppModule {
 
 	fun getBestPresenceOf(jid: BareJID): Presence? {
 		data class Envelope(val presence: Presence) {
+
 			val comp: String by lazy {
 				val weight = when (presence.type) {
 					null -> {

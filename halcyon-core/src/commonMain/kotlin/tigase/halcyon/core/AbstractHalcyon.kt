@@ -32,7 +32,6 @@ import tigase.halcyon.core.logger.Logger
 import tigase.halcyon.core.modules.ModulesManager
 import tigase.halcyon.core.modules.XmppModule
 import tigase.halcyon.core.requests.Request
-import tigase.halcyon.core.requests.RequestBuilderFactory
 import tigase.halcyon.core.requests.RequestsManager
 import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xml.element
@@ -62,6 +61,7 @@ data class HalcyonStateChangeEvent(val oldState: AbstractHalcyon.State, val newS
 	Event(TYPE) {
 
 	companion object {
+
 		const val TYPE = "tigase.halcyon.core.HalcyonStateChangeEvent"
 	}
 }
@@ -69,6 +69,7 @@ data class HalcyonStateChangeEvent(val oldState: AbstractHalcyon.State, val newS
 data class TickEvent(val counter: Long) : Event(TYPE) {
 
 	companion object {
+
 		const val TYPE = "tigase.halcyon.core.TickEvent"
 	}
 }
@@ -80,8 +81,7 @@ abstract class AbstractHalcyon : Context, PacketWriter {
 
 	private val log = Logger("tigase.halcyon.core.AbstractHalcyon")
 
-	enum class State {
-		Connecting,
+	enum class State { Connecting,
 		Connected,
 		Disconnecting,
 		Disconnected,
@@ -93,7 +93,7 @@ abstract class AbstractHalcyon : Context, PacketWriter {
 
 	var autoReconnect: Boolean = true
 
-	override val request = RequestBuilderFactory(this)
+	override val request = tigase.halcyon.core.request2.RequestBuilderFactory(this)
 
 	private var tickCounter: Long = 0
 

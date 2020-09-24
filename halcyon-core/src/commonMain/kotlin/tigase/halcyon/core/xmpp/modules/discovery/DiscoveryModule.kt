@@ -23,8 +23,7 @@ import tigase.halcyon.core.eventbus.Event
 import tigase.halcyon.core.modules.Criteria
 import tigase.halcyon.core.modules.Criterion
 import tigase.halcyon.core.modules.XmppModule
-import tigase.halcyon.core.requests.IQRequestBuilder
-import tigase.halcyon.core.requests.IQResult
+import tigase.halcyon.core.request2.RequestBuilder
 import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xml.response
 import tigase.halcyon.core.xmpp.ErrorCondition
@@ -55,6 +54,7 @@ class DiscoveryModule(override val context: Context) : XmppModule {
 	data class Items(val jid: JID, val node: String?, val items: List<Item>)
 
 	companion object {
+
 		const val XMLNS = "http://jabber.org/protocol/disco"
 		const val TYPE = XMLNS
 		const val XMLNS_INFO = "$XMLNS#info"
@@ -171,7 +171,7 @@ class DiscoveryModule(override val context: Context) : XmppModule {
 	 * @param node name of node to ask for (optional).
 	 * @return request returns [Info] in case of success.
 	 */
-	fun info(jid: JID?, node: String? = null): IQRequestBuilder<Info> {
+	fun info(jid: JID?, node: String? = null): RequestBuilder<Info, ErrorCondition, IQ> {
 		val stanza = iq {
 			type = IQType.Get
 			if (jid != null) to = jid
@@ -182,7 +182,7 @@ class DiscoveryModule(override val context: Context) : XmppModule {
 				}
 			}
 		}
-		return context.request.iq(stanza).resultBuilder(this@DiscoveryModule::buildInfo)
+		return context.request.iq(stanza).map(this@DiscoveryModule::buildInfo)
 	}
 
 	private fun buildInfo(response: Element): Info {
@@ -204,12 +204,12 @@ class DiscoveryModule(override val context: Context) : XmppModule {
 		val domain = context.modules.getModuleOrNull<BindModule>(BindModule.TYPE)?.boundJID?.bareJID?.domain!!
 		var found: Boolean = false
 		items(domain.toJID()).response {
-			if (it is IQResult.Success) {
-				val items = it.get()!!
+			if (it.isSuccess) {
+				val items = it.getOrThrow()
 				items.items.forEach {
 					info(it.jid).response {
-						if (it is IQResult.Success) {
-							val inf = it.get()!!
+						if (it.isSuccess) {
+							val inf = it.getOrThrow()
 							if (!found && predicate.invoke(inf)) {
 								found = true
 								consumer.invoke(inf)
@@ -221,7 +221,7 @@ class DiscoveryModule(override val context: Context) : XmppModule {
 		}.send()
 	}
 
-	fun items(jid: JID?, node: String? = null): IQRequestBuilder<Items> {
+	fun items(jid: JID?, node: String? = null): RequestBuilder<Items, ErrorCondition, IQ> {
 		val stanza = iq {
 			type = IQType.Get
 			if (jid != null) to = jid
@@ -232,7 +232,7 @@ class DiscoveryModule(override val context: Context) : XmppModule {
 				}
 			}
 		}
-		return context.request.iq(stanza).resultBuilder(this@DiscoveryModule::buildItems)
+		return context.request.iq(stanza).map(this@DiscoveryModule::buildItems)
 	}
 
 	private fun buildItems(response: Element): Items {
@@ -252,8 +252,8 @@ class DiscoveryModule(override val context: Context) : XmppModule {
 	internal fun discoverAccountFeatures() {
 		val ownJid = context.modules.getModuleOrNull<BindModule>(BindModule.TYPE)?.boundJID?.bareJID ?: return
 		info(JID.parse(ownJid.toString())).response {
-			if (it is IQResult.Success) {
-				it.get()?.let { info ->
+			if (it.isSuccess) {
+				it.getOrNull()?.let { info ->
 					context.eventBus.fire(AccountFeaturesReceivedEvent(info.identities, info.features))
 				}
 			}
@@ -268,8 +268,8 @@ class DiscoveryModule(override val context: Context) : XmppModule {
 		} else {
 			val ownJid = context.modules.getModuleOrNull<BindModule>(BindModule.TYPE)?.boundJID?.bareJID ?: return
 			info(JID.parse(ownJid.domain)).response {
-				if (it is IQResult.Success) {
-					it.get()?.let { info ->
+				if (it.isSuccess) {
+					it.getOrNull()?.let { info ->
 						context.eventBus.fire(ServerFeaturesReceivedEvent(info.identities, info.features))
 					}
 				}
@@ -282,6 +282,7 @@ data class AccountFeaturesReceivedEvent(val identities: List<DiscoveryModule.Ide
 	Event(TYPE) {
 
 	companion object {
+
 		const val TYPE = "tigase.halcyon.core.xmpp.modules.discovery.AccountFeaturesReceivedEvent"
 	}
 }
@@ -290,6 +291,7 @@ data class ServerFeaturesReceivedEvent(val identities: List<DiscoveryModule.Iden
 	Event(TYPE) {
 
 	companion object {
+
 		const val TYPE = "tigase.halcyon.core.xmpp.modules.discovery.ServerFeaturesReceivedEvent"
 	}
 }

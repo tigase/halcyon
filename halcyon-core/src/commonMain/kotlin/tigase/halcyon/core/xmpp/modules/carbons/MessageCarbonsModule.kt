@@ -23,21 +23,22 @@ import tigase.halcyon.core.eventbus.Event
 import tigase.halcyon.core.logger.Logger
 import tigase.halcyon.core.modules.Criterion
 import tigase.halcyon.core.modules.XmppModule
-import tigase.halcyon.core.requests.IQRequestBuilder
+import tigase.halcyon.core.request2.RequestBuilder
 import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xmpp.ErrorCondition
 import tigase.halcyon.core.xmpp.JID
 import tigase.halcyon.core.xmpp.XMPPException
 import tigase.halcyon.core.xmpp.modules.BindModule
 import tigase.halcyon.core.xmpp.modules.MessageModule
+import tigase.halcyon.core.xmpp.stanzas.IQ
 import tigase.halcyon.core.xmpp.stanzas.IQType
 import tigase.halcyon.core.xmpp.stanzas.Message
 import tigase.halcyon.core.xmpp.stanzas.asStanza
 
-sealed class CarbonEvent(val fromJID: JID?, val stanza: Message) : Event(TYPE) {
-	companion object {
-		const val TYPE = "tigase.halcyon.core.xmpp.modules.carbons.CarbonEvent"
-	}
+sealed class CarbonEvent(val fromJID: JID?, val stanza: Message) : Event(TYPE) { companion object {
+
+	const val TYPE = "tigase.halcyon.core.xmpp.modules.carbons.CarbonEvent"
+}
 
 	class Sent(fromJID: JID?, stanza: Message) : CarbonEvent(fromJID, stanza)
 	class Received(fromJID: JID?, stanza: Message) : CarbonEvent(fromJID, stanza)
@@ -53,6 +54,7 @@ class MessageCarbonsModule(override val context: Context, private val forwardHan
 	override val features: Array<String>? = arrayOf(XMLNS)
 
 	companion object {
+
 		const val XMLNS = "urn:xmpp:carbons:2"
 		const val TYPE = XMLNS
 		private const val FORWARD_XMLNS = "urn:xmpp:forward:0"
@@ -75,14 +77,14 @@ class MessageCarbonsModule(override val context: Context, private val forwardHan
 		}
 	}
 
-	fun enable(): IQRequestBuilder<Unit> = context.request.iq {
+	fun enable(): RequestBuilder<Unit, ErrorCondition, IQ> = context.request.iq {
 		type = IQType.Set
 		"enable"{
 			xmlns = XMLNS
 		}
 	}
 
-	fun disable(): IQRequestBuilder<Unit> = context.request.iq {
+	fun disable(): RequestBuilder<Unit, ErrorCondition, IQ> = context.request.iq {
 		type = IQType.Set
 		"disable"{
 			xmlns = XMLNS
@@ -104,7 +106,7 @@ class MessageCarbonsModule(override val context: Context, private val forwardHan
 			"forwarded", FORWARD_XMLNS
 		)?.getChildren(Message.NAME)?.firstOrNull()?.asStanza<Message>() ?: return
 
-		forwardHandler?.invoke(msg)
+		forwardHandler.invoke(msg)
 		context.eventBus.fire(CarbonEvent.Received(msg.from, msg))
 	}
 

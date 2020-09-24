@@ -21,7 +21,6 @@ import tigase.halcyon.core.Halcyon
 import tigase.halcyon.core.Scope
 import tigase.halcyon.core.eventbus.Event
 import tigase.halcyon.core.eventbus.EventHandler
-import tigase.halcyon.core.requests.IQResult
 import tigase.halcyon.core.xmpp.SessionController
 import tigase.halcyon.core.xmpp.modules.BindModule
 import tigase.halcyon.core.xmpp.modules.StreamErrorEvent
@@ -67,8 +66,8 @@ abstract class AbstractSocketSessionController(protected val halcyon: Halcyon, l
 	private fun bindResource() {
 		val resource = halcyon.config.resource
 		halcyon.modules.getModule<BindModule>(BindModule.TYPE).bind(resource).response { result ->
-			when (result) {
-				is IQResult.Success<BindModule.BindResult> -> processBindSuccess(result.get()!!)
+			when {
+				result.isSuccess -> processBindSuccess(result.getOrThrow())
 				else -> processBindError()
 			}
 		}.send()

@@ -21,17 +21,19 @@ import tigase.halcyon.core.xmpp.ErrorCondition
 import tigase.halcyon.core.xmpp.XMPPException
 import tigase.halcyon.core.xmpp.stanzas.IQ
 
+@Deprecated("Not used anymore!", replaceWith = ReplaceWith("kotlin.Result"))
 sealed class IQResult<V> {
 
 	abstract fun get(): V?
 
-	class Success<V>(val request: IQRequest<V>, val response: IQ, private val value: V?) : IQResult<V>() {
+	class Success<V>(val request: IQRequest<V>, val response: IQ, private val value: V?) : Result() {
+
 		override fun get(): V? = value
 	}
 
 	class Error<V>(
 		val request: IQRequest<V>, val response: IQ?, val error: ErrorCondition, val text: String?
-	) : IQResult<V>() {
+	) : Result() {
 
 		override fun get(): V = throw XMPPException(error)
 	}
@@ -43,7 +45,8 @@ sealed class IQResult<V> {
 
 }
 
-sealed class StanzaResult<out STT : Request<*, *>> {
-	class Sent<STT : Request<*, *>>(val request: STT) : StanzaResult<STT>()
+sealed class StanzaResult<out STT : Request<*, *>> { class Sent<STT : Request<*, *>>(val request: STT) :
+	StanzaResult<STT>()
+
 	class NotSent<STT : Request<*, *>>(val request: STT) : StanzaResult<STT>()
 }

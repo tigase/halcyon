@@ -21,17 +21,19 @@ import tigase.halcyon.core.Context
 import tigase.halcyon.core.Scope
 import tigase.halcyon.core.modules.Criteria
 import tigase.halcyon.core.modules.XmppModule
-import tigase.halcyon.core.requests.IQRequestBuilder
+import tigase.halcyon.core.request2.RequestBuilder
 import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xmpp.ErrorCondition
 import tigase.halcyon.core.xmpp.JID
 import tigase.halcyon.core.xmpp.XMPPException
+import tigase.halcyon.core.xmpp.stanzas.IQ
 import tigase.halcyon.core.xmpp.stanzas.IQType
 import tigase.halcyon.core.xmpp.stanzas.iq
 
 class BindModule(override val context: Context) : XmppModule {
 
 	companion object {
+
 		const val XMLNS = "urn:ietf:params:xml:ns:xmpp-bind"
 		const val TYPE = XMLNS
 	}
@@ -45,7 +47,7 @@ class BindModule(override val context: Context) : XmppModule {
 
 	override fun initialize() {}
 
-	fun bind(resource: String? = null): IQRequestBuilder<BindResult> {
+	fun bind(resource: String? = null): RequestBuilder<BindResult, ErrorCondition, IQ> {
 		val stanza = iq {
 			type = IQType.Set
 			"bind"{
@@ -57,10 +59,10 @@ class BindModule(override val context: Context) : XmppModule {
 				}
 			}
 		}
-		return context.request.iq(stanza).resultBuilder(this@BindModule::createBindResult)
+		return context.request.iq(stanza).map(this::createBindResult)
 	}
 
-	private fun createBindResult(element: Element): BindResult {
+	private fun createBindResult(element: IQ): BindResult {
 		val bind = element.getChildrenNS("bind", XMLNS)!!
 		val jidElement = bind.getFirstChild("jid")!!
 		val jid = JID.parse(jidElement.value!!)

@@ -23,8 +23,6 @@ import tigase.halcyon.core.connector.ReceivedXMLElementEvent
 import tigase.halcyon.core.connector.SentXMLElementEvent
 import tigase.halcyon.core.currentTimestamp
 import tigase.halcyon.core.eventbus.Event
-import tigase.halcyon.core.requests.IQResult
-import tigase.halcyon.core.requests.StanzaResult
 import tigase.halcyon.core.xmpp.modules.PingModule
 import tigase.halcyon.core.xmpp.modules.mam.MAMModule
 import tigase.halcyon.core.xmpp.modules.mix.MIXModule
@@ -35,7 +33,6 @@ import tigase.halcyon.core.xmpp.toJID
 import java.util.logging.ConsoleHandler
 import java.util.logging.Level
 import java.util.logging.Logger
-
 
 fun main(args: Array<String>) {
 	val handler = ConsoleHandler()
@@ -92,21 +89,6 @@ fun main(args: Array<String>) {
 					).send()
 				}
 			}
-			"mix_join" -> {
-				println("::$line")
-				halcyon.getModule<MIXModule>(MIXModule.TYPE)?.let { module ->
-					val req = module.join("Kanalik-Testowy@mix.tigase.org".toBareJID(), "Bocik").send()
-					val result = req.getResultWait()
-					println(
-						"""	
-						-----
-						$result
-						-----
-						""".trimIndent()
-					)
-				}
-
-			}
 			"mam" -> {
 				val mam = halcyon.getModule<MAMModule>(MAMModule.TYPE)!!
 				mam.query(with = "Kanalik-Testowy@mix.tigase.org").send()
@@ -124,31 +106,31 @@ fun main(args: Array<String>) {
 			"x" -> {
 				val pingModule = halcyon.modules.getModule<PingModule>(PingModule.TYPE)
 				val req = pingModule.ping().send()
-				val result = req.getResultWait()
-				println("!!!!!!!!!!!!!!!!!!!!!!$result")
+//				val result = req.getResultWait()
+//				println("!!!!!!!!!!!!!!!!!!!!!!$result")
 			}
 			"z" -> {
 				val pingModule = halcyon.modules.getModule<PingModule>(PingModule.TYPE)
 				val req = pingModule.ping("bmalkow@malkowscy.net".toJID()).send()
-				val result = req.getResultWait()
-				println("!!!!!!!!!!!!!!!!!!!!!!$result")
+//				val result = req.getResultWait()
+//				println("!!!!!!!!!!!!!!!!!!!!!!$result")
 			}
 			"y" -> {
 				val pingModule = halcyon.modules.getModule<PingModule>(PingModule.TYPE)
 				val req = pingModule.ping().response { resp ->
-					when (resp) {
-						is IQResult.Success -> println("PING ${resp.request.stanza.to}: time=${resp.get()}")
-						is IQResult.Error -> println("PING ${resp.request.stanza.to}: error=${resp.error}")
+					when {
+						resp.isSuccess -> println("PING time=${resp.getOrThrow().time}")
+						resp.isFailure -> println("PING error=${(resp.exceptionOrNull() as tigase.halcyon.core.request2.XMPPError).error}")
 					}
 				}.send()
 			}
-			"y1" -> {
-				val pingModule = halcyon.modules.getModule<PingModule>(PingModule.TYPE)
-				val req = pingModule.ping().send()
-				while (!req.isCompleted) print(".")
-				val result = req.getResult()
-				println("!+$result")
-			}
+//			"y1" -> {
+//				val pingModule = halcyon.modules.getModule<PingModule>(PingModule.TYPE)
+//				val req = pingModule.ping().send()
+//				while (!req.isCompleted) print(".")
+//				val result = req.getResult()
+//				println("!+$result")
+//			}
 			"m" -> {
 				val req = halcyon.writeDirectly(message {
 					attribute("to", "bmalkow@malkowscy.net")
@@ -162,37 +144,6 @@ fun main(args: Array<String>) {
 			"r" -> halcyon.modules.getModule<StreamManagementModule>(StreamManagementModule.TYPE).request()
 			"a" -> halcyon.modules.getModule<StreamManagementModule>(StreamManagementModule.TYPE).sendAck(true)
 			"resume" -> halcyon.modules.getModule<StreamManagementModule>(StreamManagementModule.TYPE).resume()
-			"p" -> {
-				halcyon.request.message { to = "a@b.c".toJID() }.result { result ->
-					when (result) {
-						is StanzaResult.Sent -> println("Stanza ${result.request} sent")
-						is StanzaResult.NotSent -> println("Stanza ${result.request} IS NOT SENT")
-					}
-				}.send()
-			}
-			"ping" -> {
-				val pingModule = halcyon.modules.getModule<PingModule>(PingModule.TYPE)
-				pingModule.ping().response { result ->
-					when (result) {
-						is IQResult.Success -> println("Pong: " + result.get()!!.time + " ms")
-						is IQResult.Error -> println("Pong error: ${result.error}")
-					}
-				}.send()
-
-//				request.response { request, element, result ->
-//					when (result) {
-//						is Request.Result.Success -> {
-//							result.result
-//							val t = (System.nanoTime() - start) / 1000_000.0;
-//							println("Pong in $t ms;   delivered=${request.isSet(StreamManagementModule.Delivered)}")
-//						}
-//						is Request.Result.Error -> {
-//							println("Pong error: ${result.errorCondition}")
-//						}
-//						is Request.Result.Timeout -> println("Pong timeout")
-//					}
-//				}
-			}
 		}
 	}
 	halcyon.disconnect()

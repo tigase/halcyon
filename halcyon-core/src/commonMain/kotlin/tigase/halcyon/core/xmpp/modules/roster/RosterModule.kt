@@ -24,7 +24,7 @@ import tigase.halcyon.core.exceptions.HalcyonException
 import tigase.halcyon.core.logger.Logger
 import tigase.halcyon.core.modules.AbstractXmppIQModule
 import tigase.halcyon.core.modules.Criterion
-import tigase.halcyon.core.requests.IQRequestBuilder
+import tigase.halcyon.core.request2.RequestBuilder
 import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xml.element
 import tigase.halcyon.core.xmpp.BareJID
@@ -36,26 +36,24 @@ import tigase.halcyon.core.xmpp.stanzas.IQType
 import tigase.halcyon.core.xmpp.stanzas.iq
 import tigase.halcyon.core.xmpp.toBareJID
 
-sealed class RosterEvent(val itemElement: Element, val item: RosterItem) : Event(TYPE) {
-	companion object {
-		const val TYPE = "com.example.modules.roster.RosterEvent"
-	}
+sealed class RosterEvent(val itemElement: Element, val item: RosterItem) : Event(TYPE) { companion object {
+
+	const val TYPE = "com.example.modules.roster.RosterEvent"
+}
 
 	class ItemAdded(element: Element, item: RosterItem) : RosterEvent(element, item)
 	class ItemUpdated(element: Element, val oldItem: RosterItem, item: RosterItem) : RosterEvent(element, item)
 	class ItemRemoved(element: Element, item: RosterItem) : RosterEvent(element, item)
 }
 
-enum class Subscription(val value: String) {
-	Both("both"),
+enum class Subscription(val value: String) { Both("both"),
 	From("from"),
 	None("none"),
 	Remove("remove"),
 	To("to")
 }
 
-enum class Ask(val value: String) {
-	Subscribe("subscribe")
+enum class Ask(val value: String) { Subscribe("subscribe")
 }
 
 interface RosterItemAnnotationProcessor {
@@ -92,13 +90,14 @@ class RosterModule(context: Context) : AbstractXmppIQModule(
 	private val log = Logger("com.example.modules.roster.RosterModule")
 
 	companion object {
+
 		const val XMLNS = "jabber:iq:roster"
 		const val TYPE = XMLNS
 	}
 
 	var store: RosterStore = DefaultRosterStore()
 
-	fun rosterGet(): IQRequestBuilder<RosterResponse> {
+	fun rosterGet(): RequestBuilder<RosterResponse, ErrorCondition, IQ> {
 		val iq = iq {
 			type = IQType.Get
 			"query"{
@@ -109,7 +108,7 @@ class RosterModule(context: Context) : AbstractXmppIQModule(
 			}
 		}
 		updateRequest(iq)
-		return context.request.iq(iq).resultBuilder {
+		return context.request.iq(iq).map {
 			it.getChildrenNS("query", XMLNS)?.let(this@RosterModule::processQueryResponse) ?: RosterResponse(null)
 		}
 	}
@@ -218,7 +217,7 @@ class RosterModule(context: Context) : AbstractXmppIQModule(
 	/**
 	 * Add or update roster item.
 	 */
-	fun addItem(vararg items: RosterItem): IQRequestBuilder<Unit> {
+	fun addItem(vararg items: RosterItem): RequestBuilder<Unit, ErrorCondition, IQ> {
 		return context.request.iq {
 			type = IQType.Set
 			"query"{
@@ -230,7 +229,7 @@ class RosterModule(context: Context) : AbstractXmppIQModule(
 		}
 	}
 
-	fun deleteItem(vararg jids: BareJID): IQRequestBuilder<Unit> {
+	fun deleteItem(vararg jids: BareJID): RequestBuilder<Unit, ErrorCondition, IQ> {
 		return context.request.iq {
 			type = IQType.Set
 			"query"{

@@ -23,24 +23,25 @@ import tigase.halcyon.core.eventbus.Event
 import tigase.halcyon.core.logger.Logger
 import tigase.halcyon.core.modules.Criteria
 import tigase.halcyon.core.modules.XmppModule
-import tigase.halcyon.core.requests.IQRequestBuilder
-import tigase.halcyon.core.requests.IQResult
+import tigase.halcyon.core.request2.RequestBuilder
 import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xml.element
 import tigase.halcyon.core.xmpp.*
 import tigase.halcyon.core.xmpp.modules.pubsub.PubSubEventReceivedEvent
 import tigase.halcyon.core.xmpp.modules.pubsub.PubSubModule
+import tigase.halcyon.core.xmpp.stanzas.IQ
 import tigase.halcyon.core.xmpp.stanzas.Message
 
-data class UserAvatarUpdatedEvent(val jid: BareJID, val avatarId: String) : Event(TYPE) {
-	companion object {
-		const val TYPE = "tigase.halcyon.core.xmpp.modules.avatar.UserAvatarUpdatedEvent"
-	}
+data class UserAvatarUpdatedEvent(val jid: BareJID, val avatarId: String) : Event(TYPE) { companion object {
+
+	const val TYPE = "tigase.halcyon.core.xmpp.modules.avatar.UserAvatarUpdatedEvent"
+}
 }
 
 class UserAvatarModule(override val context: Context) : XmppModule {
 
 	companion object {
+
 		const val TYPE = "urn:xmpp:avatar"
 		const val XMLNS_DATA = "urn:xmpp:avatar:data"
 		const val XMLNS_METADATA = "urn:xmpp:avatar:metadata"
@@ -107,9 +108,9 @@ class UserAvatarModule(override val context: Context) : XmppModule {
 		val stored = store.isStored(userJID, avatarID)
 		if (!stored) {
 			retrieveAvatar(userJID.toString().toJID(), avatarID).response {
-				if (it is IQResult.Success) {
-					log.fine("Storing UserAvatar data $avatarID" + it.get())
-					val avatar = it.get()?.let {
+				if (it.isSuccess) {
+					log.fine("Storing UserAvatar data $avatarID" + it.getOrNull())
+					val avatar = it.getOrNull()?.let {
 						if (it.base64Data == null) {
 							null
 						} else {
@@ -137,25 +138,25 @@ class UserAvatarModule(override val context: Context) : XmppModule {
 		val bytes: Int, val height: Int?, val id: String, val type: String, val url: String?, val width: Int?
 	)
 
-	fun retrieveAvatar(jid: JID, avatarID: String): IQRequestBuilder<AvatarData> {
-		val x = pubSubModule.retrieveItem(JID.parse(jid.bareJID.toString()), XMLNS_DATA, avatarID)
-			.resultBuilder { response ->
-				try {
-					val item = response.getChildrenNS("pubsub", PubSubModule.XMLNS)
-						?.children?.find { i -> i.attributes["node"] == XMLNS_DATA }?.getFirstChild("item")
+	fun retrieveAvatar(jid: JID, avatarID: String): RequestBuilder<AvatarData, ErrorCondition, IQ> {
+		val x = pubSubModule.retrieveItem(JID.parse(jid.bareJID.toString()), XMLNS_DATA, avatarID).map { response ->
+			try {
+				val item = response.getChildrenNS(
+					"pubsub", PubSubModule.XMLNS
+				)?.children?.find { i -> i.attributes["node"] == XMLNS_DATA }?.getFirstChild("item")
 
-					val data = item?.getChildrenNS("data", XMLNS_DATA)?.value
-					AvatarData(avatarID, data)
-				} catch (e: Exception) {
-					throw e
-				}
+				val data = item?.getChildrenNS("data", XMLNS_DATA)?.value
+				AvatarData(avatarID, data)
+			} catch (e: Exception) {
+				throw e
 			}
+		}
 		return x
 	}
 
 	override fun process(element: Element) = throw XMPPException(ErrorCondition.FeatureNotImplemented)
 
-	fun publish(data: AvatarData): IQRequestBuilder<PubSubModule.PublishingInfo> {
+	fun publish(data: AvatarData): RequestBuilder<PubSubModule.PublishingInfo, ErrorCondition, IQ> {
 		val payload = element("data") {
 			xmlns = XMLNS_DATA
 			+data.base64Data!!
@@ -163,7 +164,7 @@ class UserAvatarModule(override val context: Context) : XmppModule {
 		return pubSubModule.publish(null, XMLNS_DATA, data.id, payload)
 	}
 
-	fun publish(data: AvatarInfo): IQRequestBuilder<PubSubModule.PublishingInfo> {
+	fun publish(data: AvatarInfo): RequestBuilder<PubSubModule.PublishingInfo, ErrorCondition, IQ> {
 		val payload = element("metadata") {
 			xmlns = XMLNS_METADATA
 			"info"{

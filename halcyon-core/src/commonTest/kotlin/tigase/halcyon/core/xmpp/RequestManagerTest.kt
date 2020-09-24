@@ -19,12 +19,13 @@ package tigase.halcyon.core.xmpp
 
 import tigase.halcyon.core.AbstractHalcyon
 import tigase.halcyon.core.connector.AbstractConnector
-import tigase.halcyon.core.requests.*
+import tigase.halcyon.core.request2.XMPPError
+import tigase.halcyon.core.requests.RequestsManager
 import tigase.halcyon.core.xml.element
-import tigase.halcyon.core.xmpp.stanzas.IQ
 import kotlin.test.*
 
 class RequestManagerTest {
+
 	val halcyon = object : AbstractHalcyon() {
 		override fun reconnect(immediately: Boolean) {
 			TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
@@ -47,21 +48,13 @@ class RequestManagerTest {
 
 		var successCounter = 0
 
-		val rq = halcyon.request.iq(e).response(object : IQResponseHandler<Unit> {
-			override fun success(request: IQRequest<Unit>, responseStanza: IQ, v: Unit?) {
+		val rq = halcyon.request.iq(e).response {
+			if (it.isSuccess) {
 				++successCounter
-			}
-
-			override fun error(
-				request: IQRequest<Unit>,
-				responseStanza: IQ?,
-				errorCondition: ErrorCondition,
-				errorMessage: String?
-			) {
+			} else {
 				fail()
 			}
-
-		}).build()
+		}.build()
 
 		rm.register(rq)
 
@@ -89,9 +82,8 @@ class RequestManagerTest {
 
 		var successCounter = 0
 
-		val req = halcyon.request.iq(e).handle {
-			success { request, element, any -> ++successCounter }
-			error { _, _, _, _ -> fail() }
+		val req = halcyon.request.iq(e).response {
+			if (it.isSuccess) ++successCounter
 		}.build()
 
 		rm.register(req)
@@ -119,8 +111,8 @@ class RequestManagerTest {
 		var successCounter = 0
 
 		val req = halcyon.request.iq(e).response { result ->
-			when (result) {
-				is IQResult.Success -> {
+			when {
+				result.isSuccess -> {
 					++successCounter
 				}
 				else -> fail()
@@ -149,10 +141,10 @@ class RequestManagerTest {
 			attribute("type", "get")
 			attribute("to", "a@b.c")
 		}
-		val req = halcyon.request.iq(e).handle {
-			error { request, element, errorCondition, _ ->
+		val req = halcyon.request.iq(e).response {
+			if (it.isFailure) {
 				++errorCounter
-				assertEquals(ErrorCondition.NotAllowed, errorCondition)
+				assertEquals(ErrorCondition.NotAllowed, (it.exceptionOrNull()!! as XMPPError).error)
 			}
 		}.build()
 
@@ -185,9 +177,11 @@ class RequestManagerTest {
 			attribute("id", "1")
 			attribute("type", "get")
 			attribute("to", "a@b.c")
-		}).timeToLive(0)
-			.handle { error { _, _, errorCondition, _ -> if (errorCondition == ErrorCondition.RemoteServerTimeout) ++counter } }
-			.build()
+		}).timeToLive(0).response {
+			it.onFailure {
+				if ((it as XMPPError).error == ErrorCondition.RemoteServerTimeout) ++counter
+			}
+		}.build()
 		rm.register(r1)
 
 		// timout NOT expected
@@ -195,20 +189,18 @@ class RequestManagerTest {
 			attribute("id", "2")
 			attribute("type", "get")
 			attribute("to", "a@b.c")
-		})
-			.handle { error { _, _, errorCondition, _ -> if (errorCondition == ErrorCondition.RemoteServerTimeout) ++counter } }
-			.build()
+		}).response {
+			it.onFailure {
+				if ((it as XMPPError).error == ErrorCondition.RemoteServerTimeout) ++counter
+
+			}
+		}.build()
 		rm.register(r2)
 
-		// timout expected
-		var r3 = halcyon.request.message { to = "a@b.c".toJID() }.timeToLive(0).result { result ->
-			if (result is StanzaResult.NotSent) ++counter
-		}.build()
-		rm.register(r3)
 
 		rm.findOutdated()
 
-		assertEquals(2, counter)
+		assertEquals(1, counter)
 
 		assertFalse(rm.findAndExecute(element("iq") {
 			attribute("id", "1")

@@ -24,9 +24,10 @@ import tigase.halcyon.core.modules.Criteria
 import tigase.halcyon.core.modules.Criterion
 import tigase.halcyon.core.modules.XmppModule
 import tigase.halcyon.core.parseISO8601
-import tigase.halcyon.core.requests.IQRequestBuilder
+import tigase.halcyon.core.request2.RequestBuilder
 import tigase.halcyon.core.timestampToISO8601
 import tigase.halcyon.core.xml.Element
+import tigase.halcyon.core.xmpp.ErrorCondition
 import tigase.halcyon.core.xmpp.IdGenerator
 import tigase.halcyon.core.xmpp.forms.FieldType
 import tigase.halcyon.core.xmpp.forms.FormType
@@ -40,6 +41,7 @@ data class MAMMessageEvent(
 ) : Event(TYPE) {
 
 	companion object {
+
 		const val TYPE = "tigase.halcyon.core.xmpp.modules.mam.MAMMessageEvent"
 	}
 }
@@ -71,6 +73,7 @@ class MAMModule(override val context: Context) : XmppModule {
 	private data class RegisteredQuery(val queryId: String, val createdTimestamp: Long, var validUntil: Long)
 
 	companion object {
+
 		const val XMLNS = "urn:xmpp:mam:2"
 		const val TYPE = XMLNS
 	}
@@ -118,7 +121,9 @@ class MAMModule(override val context: Context) : XmppModule {
 		return if (form.element.children.size > 1) form.createSubmitForm() else null
 	}
 
-	fun query(rsm: RSM? = null, with: String? = null, start: Long? = null, end: Long? = null): IQRequestBuilder<Fin> {
+	fun query(
+		rsm: RSM? = null, with: String? = null, start: Long? = null, end: Long? = null
+	): RequestBuilder<Fin, ErrorCondition, IQ> {
 		val queryId = IdGenerator.nextId()
 		val form: Element? = prepareForm(with, start, end)
 		val stanza = iq {
@@ -133,7 +138,7 @@ class MAMModule(override val context: Context) : XmppModule {
 		requests.put(queryId, q)
 
 
-		return context.request.iq(stanza).resultBuilder { element -> createResponse(element, q) }
+		return context.request.iq(stanza).map { element -> createResponse(element, q) }
 	}
 
 	private fun createResponse(responseStanza: Element, registeredQuery: RegisteredQuery): Fin {

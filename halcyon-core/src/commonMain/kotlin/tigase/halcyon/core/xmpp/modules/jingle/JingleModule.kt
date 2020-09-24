@@ -22,10 +22,8 @@ import tigase.halcyon.core.eventbus.Event
 import tigase.halcyon.core.modules.Criteria
 import tigase.halcyon.core.modules.Criterion
 import tigase.halcyon.core.modules.XmppModule
-import tigase.halcyon.core.requests.IQRequestBuilder
-import tigase.halcyon.core.requests.MessageRequestBuilder
+import tigase.halcyon.core.request2.RequestBuilder
 import tigase.halcyon.core.xml.Element
-import tigase.halcyon.core.xml.element
 import tigase.halcyon.core.xmpp.BareJID
 import tigase.halcyon.core.xmpp.ErrorCondition
 import tigase.halcyon.core.xmpp.JID
@@ -38,22 +36,24 @@ import tigase.halcyon.core.xmpp.stanzas.MessageType
 
 class Jingle {
 
-    interface Session {
-        enum class State {
-            created, initiating, accepted, terminated
-        }
+	interface Session { enum class State { created,
+		initiating,
+		accepted,
+		terminated
+	}
 
-        val account: BareJID
-        val jid: JID
-        val sid: String
-        val state: State
+		val account: BareJID
+		val jid: JID
+		val sid: String
+		val state: State
 
-        fun terminate(reason: TerminateReason = TerminateReason.success)
-    }
+		fun terminate(reason: TerminateReason = TerminateReason.success)
+	}
 
-    interface SessionManager {
-        fun activateSessionSid(account: BareJID, with: JID): String?
-    }
+	interface SessionManager {
+
+		fun activateSessionSid(account: BareJID, with: JID): String?
+	}
 }
 
 class JingleModule(
@@ -62,190 +62,215 @@ class JingleModule(
     val supportsMessageInitiation: Boolean = true
 ) : XmppModule {
 
-    companion object {
-        const val XMLNS = "urn:xmpp:jingle:1"
-        const val MESSAGE_INITIATION_XMLNS = "urn:xmpp:jingle-message:0"
-        const val TYPE = XMLNS
-        val JMI_CRITERIA = Criterion.chain(Criterion.name(Message.NAME), Criterion.xmlns(MESSAGE_INITIATION_XMLNS));
-        val IQ_CRITERIA = Criterion.chain(Criterion.name(IQ.NAME), Criterion.nameAndXmlns("jingle", XMLNS));
-        val SUPPORTED_FEATURES = arrayOf(XMLNS) + Description.supportedFeatures + Transport.supportedFeatures;
-    }
+	companion object {
 
-    override val criteria: Criteria? = if (supportsMessageInitiation) {
-        Criterion.or(IQ_CRITERIA, JMI_CRITERIA)
-    } else {
-        IQ_CRITERIA
-    };
-    override val type = TYPE
-    override val features: Array<String>?
-        get() = if (supportsMessageInitiation) {
-            SUPPORTED_FEATURES + MESSAGE_INITIATION_XMLNS
-        } else {
-            SUPPORTED_FEATURES
-        }
+		const val XMLNS = "urn:xmpp:jingle:1"
+		const val MESSAGE_INITIATION_XMLNS = "urn:xmpp:jingle-message:0"
+		const val TYPE = XMLNS
+		val JMI_CRITERIA = Criterion.chain(Criterion.name(Message.NAME), Criterion.xmlns(MESSAGE_INITIATION_XMLNS))
+		val IQ_CRITERIA = Criterion.chain(Criterion.name(IQ.NAME), Criterion.nameAndXmlns("jingle", XMLNS))
+		val SUPPORTED_FEATURES = arrayOf(XMLNS) + Description.supportedFeatures + Transport.supportedFeatures
+	}
 
-    override fun initialize() {
-        TODO("Not yet implemented")
-    }
+	override val criteria: Criteria? = if (supportsMessageInitiation) {
+		Criterion.or(IQ_CRITERIA, JMI_CRITERIA)
+	} else {
+		IQ_CRITERIA
+	}
+	override val type = TYPE
+	override val features: Array<String>?
+		get() = if (supportsMessageInitiation) {
+			SUPPORTED_FEATURES + MESSAGE_INITIATION_XMLNS
+		} else {
+			SUPPORTED_FEATURES
+		}
 
-    override fun process(element: Element) {
-        when (element.name) {
-            IQ.NAME -> processIq(element);
-            Message.NAME -> processMessage(element);
-            else -> throw XMPPException(ErrorCondition.FeatureNotImplemented)
-        }
-    }
+	override fun initialize() {
+		TODO("Not yet implemented")
+	}
 
-    private fun processIq(iq: Element) {
-        if (iq.attributes["type"] != "set") {
-            throw XMPPException(ErrorCondition.FeatureNotImplemented);
-        }
+	override fun process(element: Element) {
+		when (element.name) {
+			IQ.NAME -> processIq(element)
+			Message.NAME -> processMessage(element)
+			else -> throw XMPPException(ErrorCondition.FeatureNotImplemented)
+		}
+	}
 
-        val jingle = iq.getChildrenNS("jingle", XMLNS) ?: throw XMPPException(ErrorCondition.BadRequest);
-        val action = Action.fromValue(iq.attributes["action"] ?: throw XMPPException(ErrorCondition.BadRequest))
-            ?: throw XMPPException(ErrorCondition.BadRequest);
-        val from = JID.parse(iq.attributes["from"] ?: throw XMPPException(ErrorCondition.BadRequest));
-        val sid = (jingle.attributes["sid"] ?: sessionManager.activateSessionSid(context.config.userJID!!, from))
-            ?: throw XMPPException(ErrorCondition.BadRequest);
+	private fun processIq(iq: Element) {
+		if (iq.attributes["type"] != "set") {
+			throw XMPPException(ErrorCondition.FeatureNotImplemented)
+		}
 
-        val initiator = jingle.attributes["initiator"]?.let { JID.parse(it) } ?: from;
+		val jingle = iq.getChildrenNS("jingle", XMLNS) ?: throw XMPPException(ErrorCondition.BadRequest)
+		val action = Action.fromValue(iq.attributes["action"] ?: throw XMPPException(ErrorCondition.BadRequest))
+			?: throw XMPPException(ErrorCondition.BadRequest)
+		val from = JID.parse(iq.attributes["from"] ?: throw XMPPException(ErrorCondition.BadRequest))
+		val sid = (jingle.attributes["sid"] ?: sessionManager.activateSessionSid(context.config.userJID!!, from))
+			?: throw XMPPException(ErrorCondition.BadRequest)
 
-        val contents = jingle.children.map { Content.parse(it) }.filterNotNull();
-        val bundle =
-            jingle.getChildrenNS("group", "urn:xmpp:jingle:apps:grouping:0")?.children?.filter { it.name == "content" }
-                ?.map { it.attributes["name"] }?.filterNotNull();
+		val initiator = jingle.attributes["initiator"]?.let { JID.parse(it) } ?: from
 
-        context.eventBus.fire(JingleEvent(from, action, initiator, sid, contents, bundle))
-    }
+		val contents = jingle.children.map { Content.parse(it) }.filterNotNull()
+		val bundle =
+			jingle.getChildrenNS("group", "urn:xmpp:jingle:apps:grouping:0")?.children?.filter { it.name == "content" }
+				?.map { it.attributes["name"] }?.filterNotNull()
 
-    private fun processMessage(message: Element) {
-        val from = message.attributes["from"]?.let { JID.parse(it) } ?: return;
-        val action =
-            MessageInitiationAction.parse(message.children.filter { "urn:xmpp:jingle-message:0".equals(it.xmlns) }
-                .firstOrNull() ?: throw XMPPException(ErrorCondition.BadRequest)) ?: return;
-        when (action) {
-            is MessageInitiationAction.Propose -> {
-                if (action.descriptions.filter { features?.contains(it.xmlns) == true }.isEmpty()) {
-                    this.sendMessageInitiation(MessageInitiationAction.Reject(action.id), from).send();
-                    return;
-                }
-            }
-            is MessageInitiationAction.Accept -> {
-                if (context.modules.getModule<BindModule>(BindModule.TYPE).boundJID?.equals(from) == true) {
-                    return;
-                }
-            }
-            else -> {}
-        }
-        context.eventBus.fire(JingleMessageInitiationEvent(from, action));
-    }
+		context.eventBus.fire(JingleEvent(from, action, initiator, sid, contents, bundle))
+	}
 
-    fun sendMessageInitiation(action: MessageInitiationAction, jid: JID): MessageRequestBuilder {
-        when (action) {
-            is MessageInitiationAction.Proceed -> sendMessageInitiation(MessageInitiationAction.Accept(action.id), JID(context.config.userJID!!,null)).send();
-            is MessageInitiationAction.Reject -> {
-                if (jid.bareJID != context.config.userJID) {
-                    sendMessageInitiation(MessageInitiationAction.Accept(action.id), JID(context.config.userJID!!, null)).send();
-                }
-            }
-            else -> {}
-        }
+	private fun processMessage(message: Element) {
+		val from = message.attributes["from"]?.let { JID.parse(it) } ?: return
+		val action =
+			MessageInitiationAction.parse(message.children.filter { "urn:xmpp:jingle-message:0".equals(it.xmlns) }
+											  .firstOrNull() ?: throw XMPPException(ErrorCondition.BadRequest))
+				?: return
+		when (action) {
+			is MessageInitiationAction.Propose -> {
+				if (action.descriptions.filter { features?.contains(it.xmlns) == true }.isEmpty()) {
+					this.sendMessageInitiation(MessageInitiationAction.Reject(action.id), from).send()
+					return
+				}
+			}
+			is MessageInitiationAction.Accept -> {
+				if (context.modules.getModule<BindModule>(BindModule.TYPE).boundJID?.equals(from) == true) {
+					return
+				}
+			}
+			else -> {
+			}
+		}
+		context.eventBus.fire(JingleMessageInitiationEvent(from, action))
+	}
 
-        return context.request.message {
-            addChild(element(action.actionName) {
-                xmlns = "urn:xmpp:jingle-message:0"
-                attribute("id", action.id)
-                when (action) {
-                    is MessageInitiationAction.Propose -> action.descriptions.map { it.toElement() }.forEach { addChild(it) }
-                }
-            })
-            type = MessageType.Chat;
-            to = jid
-        };
-    }
+	fun sendMessageInitiation(
+		action: MessageInitiationAction, jid: JID
+	): RequestBuilder<Unit, ErrorCondition, Message> {
+		when (action) {
+			is MessageInitiationAction.Proceed -> sendMessageInitiation(
+				MessageInitiationAction.Accept(action.id), JID(context.config.userJID!!, null)
+			).send()
+			is MessageInitiationAction.Reject -> {
+				if (jid.bareJID != context.config.userJID) {
+					sendMessageInitiation(
+						MessageInitiationAction.Accept(action.id), JID(context.config.userJID!!, null)
+					).send()
+				}
+			}
+			else -> {
+			}
+		}
 
-    fun initiateSession(jid: JID, sid: String, contents: List<Content>, bundle: List<String>?): IQRequestBuilder<Unit> {
-        return context.request.iq {
-            to = jid
-            type = IQType.Set
+		return context.request.message {
+			addChild(element(action.actionName) {
+				xmlns = "urn:xmpp:jingle-message:0"
+				attribute("id", action.id)
+				when (action) {
+					is MessageInitiationAction.Propose -> action.descriptions.map { it.toElement() }
+						.forEach { addChild(it) }
+				}
+			})
+			type = MessageType.Chat
+			to = jid
+		}
+	}
 
-            addChild(element("jingle") {
-                xmlns = XMLNS
-                attribute("action", Action.sessionInitiate.value)
-                attribute("sid", sid)
-                attribute("initiator", context.modules.getModule<BindModule>(BindModule.TYPE).boundJID?.toString() ?: throw XMPPException(ErrorCondition.NotAuthorized))
+	fun initiateSession(
+		jid: JID, sid: String, contents: List<Content>, bundle: List<String>?
+	): RequestBuilder<Unit, ErrorCondition, IQ> {
+		return context.request.iq {
+			to = jid
+			type = IQType.Set
 
-                contents.map { it.toElement() }.forEach { contentEl -> addChild(contentEl) }
-                bundle?.let { bundle ->
-                    addChild(element("group") {
-                        xmlns = "urn:xmpp:jingle:apps:grouping:0"
-                        attribute("semantics", "BUNDLE")
-                        bundle.forEach { name ->
-                            addChild(element("content") {
-                                attribute("name", name)
-                            })
-                        }
-                    })
-                }
-            })
-        }
-    }
+			addChild(element("jingle") {
+				xmlns = XMLNS
+				attribute("action", Action.sessionInitiate.value)
+				attribute("sid", sid)
+				attribute(
+					"initiator",
+					context.modules.getModule<BindModule>(BindModule.TYPE).boundJID?.toString() ?: throw XMPPException(
+						ErrorCondition.NotAuthorized
+					)
+				)
 
-    fun acceptSession(jid: JID, sid: String, contents: List<Content>, bundle: List<String>?): IQRequestBuilder<Unit> {
-        return context.request.iq {
-            to = jid
-            type = IQType.Set
+				contents.map { it.toElement() }.forEach { contentEl -> addChild(contentEl) }
+				bundle?.let { bundle ->
+					addChild(element("group") {
+						xmlns = "urn:xmpp:jingle:apps:grouping:0"
+						attribute("semantics", "BUNDLE")
+						bundle.forEach { name ->
+							addChild(element("content") {
+								attribute("name", name)
+							})
+						}
+					})
+				}
+			})
+		}
+	}
 
-            addChild(element("jingle") {
-                xmlns = XMLNS
-                attribute("action", Action.sessionAccept.value)
-                attribute("sid", sid)
-                attribute("responder", context.modules.getModule<BindModule>(BindModule.TYPE).boundJID?.toString() ?: throw XMPPException(ErrorCondition.NotAuthorized))
+	fun acceptSession(
+		jid: JID, sid: String, contents: List<Content>, bundle: List<String>?
+	): RequestBuilder<Unit, ErrorCondition, IQ> {
+		return context.request.iq {
+			to = jid
+			type = IQType.Set
 
-                contents.map { it.toElement() }.forEach { contentEl -> addChild(contentEl) }
-                bundle?.let { bundle ->
-                    addChild(element("group") {
-                        xmlns = "urn:xmpp:jingle:apps:grouping:0"
-                        attribute("semantics", "BUNDLE")
-                        bundle.forEach { name ->
-                            addChild(element("content") {
-                                attribute("name", name)
-                            })
-                        }
-                    })
-                }
-            })
-        }
-    }
+			addChild(element("jingle") {
+				xmlns = XMLNS
+				attribute("action", Action.sessionAccept.value)
+				attribute("sid", sid)
+				attribute(
+					"responder",
+					context.modules.getModule<BindModule>(BindModule.TYPE).boundJID?.toString() ?: throw XMPPException(
+						ErrorCondition.NotAuthorized
+					)
+				)
 
-    fun terminateSession(jid: JID, sid: String, reason: TerminateReason): IQRequestBuilder<Unit> {
-        return context.request.iq {
-            to = jid
-            type = IQType.Set
+				contents.map { it.toElement() }.forEach { contentEl -> addChild(contentEl) }
+				bundle?.let { bundle ->
+					addChild(element("group") {
+						xmlns = "urn:xmpp:jingle:apps:grouping:0"
+						attribute("semantics", "BUNDLE")
+						bundle.forEach { name ->
+							addChild(element("content") {
+								attribute("name", name)
+							})
+						}
+					})
+				}
+			})
+		}
+	}
 
-            addChild(element("jingle") {
-                xmlns = XMLNS
-                attribute("action", Action.sessionTerminate.value)
-                attribute("sid", sid)
-                addChild(reason.toReasonElement())
-            })
-        }
-    }
+	fun terminateSession(jid: JID, sid: String, reason: TerminateReason): RequestBuilder<Unit, ErrorCondition, IQ> {
+		return context.request.iq {
+			to = jid
+			type = IQType.Set
 
-    fun transportInfo(jid: JID, sid: String, contents: List<Content>): IQRequestBuilder<Unit> {
-        return context.request.iq {
-            to = jid
-            type = IQType.Set
+			addChild(element("jingle") {
+				xmlns = XMLNS
+				attribute("action", Action.sessionTerminate.value)
+				attribute("sid", sid)
+				addChild(reason.toReasonElement())
+			})
+		}
+	}
 
-            addChild(element("jingle") {
-                xmlns = XMLNS
-                attribute("action", Action.sessionAccept.value)
-                attribute("sid", sid)
+	fun transportInfo(jid: JID, sid: String, contents: List<Content>): RequestBuilder<Unit, ErrorCondition, IQ> {
+		return context.request.iq {
+			to = jid
+			type = IQType.Set
 
-                contents.map { it.toElement() }.forEach { contentEl -> addChild(contentEl) }
-            })
-        }
-    }
+			addChild(element("jingle") {
+				xmlns = XMLNS
+				attribute("action", Action.sessionAccept.value)
+				attribute("sid", sid)
+
+				contents.map { it.toElement() }.forEach { contentEl -> addChild(contentEl) }
+			})
+		}
+	}
 }
 
 data class JingleEvent(
@@ -257,14 +282,17 @@ data class JingleEvent(
     val bundle: List<String>?
 ) : Event(TYPE) {
 
-    companion object {
-        const val TYPE = "tigase.halcyon.core.xmpp.modules.jingle.JingleEvent"
-    }
+	companion object {
+
+		const val TYPE = "tigase.halcyon.core.xmpp.modules.jingle.JingleEvent"
+	}
 
 }
 
 data class JingleMessageInitiationEvent(val jid: JID, val action: MessageInitiationAction) : Event(TYPE) {
-    companion object {
-        const val TYPE = "tigase.halcyon.core.xmpp.modules.jingle.JingleMessageInitiationEvent"
-    }
+
+	companion object {
+
+		const val TYPE = "tigase.halcyon.core.xmpp.modules.jingle.JingleMessageInitiationEvent"
+	}
 }

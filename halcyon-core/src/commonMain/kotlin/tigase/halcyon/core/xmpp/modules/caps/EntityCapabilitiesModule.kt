@@ -23,7 +23,6 @@ import tigase.halcyon.core.modules.Criteria
 import tigase.halcyon.core.modules.HasInterceptors
 import tigase.halcyon.core.modules.StanzaInterceptor
 import tigase.halcyon.core.modules.XmppModule
-import tigase.halcyon.core.requests.IQResult
 import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xml.element
 import tigase.halcyon.core.xmpp.ErrorCondition
@@ -44,6 +43,7 @@ class EntityCapabilitiesModule(override val context: Context) : XmppModule, HasI
 	)
 
 	companion object {
+
 		const val XMLNS = "http://jabber.org/protocol/caps"
 		const val TYPE = XMLNS
 	}
@@ -75,7 +75,8 @@ class EntityCapabilitiesModule(override val context: Context) : XmppModule, HasI
 
 		override fun getFeatures(node: String?): List<String> {
 			val ver = getVerificationString()
-			return if (node == "${this@EntityCapabilitiesModule.node}#$ver") context.modules.getAvailableFeatures().toList() else emptyList()
+			return if (node == "${this@EntityCapabilitiesModule.node}#$ver") context.modules.getAvailableFeatures()
+				.toList() else emptyList()
 		}
 
 		override fun getItems(node: String?): List<DiscoveryModule.Item> = emptyList()
@@ -109,7 +110,7 @@ class EntityCapabilitiesModule(override val context: Context) : XmppModule, HasI
 			val jid = bindModule.boundJID ?: return
 			if (cache.isCached(node)) return
 			discoModule.info(JID.parse(jid.domain), node).response {
-				if (it is IQResult.Success) storeInfo(node, it.get()!!)
+				if (it.isSuccess) storeInfo(node, it.getOrThrow())
 			}.send()
 		}
 	}
@@ -133,11 +134,11 @@ class EntityCapabilitiesModule(override val context: Context) : XmppModule, HasI
 		if (cache.isCached("$node#$ver")) return
 
 		discoModule.info(presence.from, "$node#$ver").response {
-			if (it is IQResult.Success) storeInfo("$node#$ver", it.get()!!)
+			if (it.isSuccess) storeInfo("$node#$ver", it.getOrThrow())
 		}.send()
 	}
 
-	@UseExperimental(ExperimentalStdlibApi::class)
+	@OptIn(ExperimentalStdlibApi::class)
 	internal fun calculateVer(identities: List<DiscoveryModule.Identity>, features: List<String>): String {
 		val ids = identities.map { i -> i.category + "/" + i.type + "//" + i.name }.sorted()
 			.joinToString(separator = "<", postfix = "<")

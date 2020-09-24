@@ -25,13 +25,11 @@ import tigase.halcyon.core.exceptions.HalcyonException
 import tigase.halcyon.core.modules.Criteria
 import tigase.halcyon.core.modules.Criterion
 import tigase.halcyon.core.modules.XmppModule
-import tigase.halcyon.core.requests.IQRequestBuilder
-import tigase.halcyon.core.requests.MessageRequestBuilder
+import tigase.halcyon.core.request2.RequestBuilder
 import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xml.element
 import tigase.halcyon.core.xml.getChildContent
-import tigase.halcyon.core.xmpp.BareJID
-import tigase.halcyon.core.xmpp.JID
+import tigase.halcyon.core.xmpp.*
 import tigase.halcyon.core.xmpp.modules.BindModule
 import tigase.halcyon.core.xmpp.modules.mam.MAMMessageEvent
 import tigase.halcyon.core.xmpp.modules.mix.MIXModule.Companion.MISC_XMLNS
@@ -40,8 +38,6 @@ import tigase.halcyon.core.xmpp.modules.roster.RosterItemAnnotation
 import tigase.halcyon.core.xmpp.modules.roster.RosterItemAnnotationProcessor
 import tigase.halcyon.core.xmpp.modules.roster.RosterModule
 import tigase.halcyon.core.xmpp.stanzas.*
-import tigase.halcyon.core.xmpp.toBareJID
-import tigase.halcyon.core.xmpp.toJID
 
 @Serializable
 data class MIXRosterItemAnnotation(val participantId: String) : RosterItemAnnotation
@@ -52,6 +48,7 @@ data class MIXInvitation(val inviter: BareJID, val invitee: BareJID, val channel
 data class MIXMessageEvent(val channel: BareJID, val stanza: Message, val timestamp: Long) : Event(TYPE) {
 
 	companion object {
+
 		const val TYPE = "tigase.halcyon.core.xmpp.modules.mix.MIXMessageEvent"
 	}
 }
@@ -63,6 +60,7 @@ data class CreateResponse(val jid: BareJID, val name: String)
 class MIXModule(override val context: Context) : XmppModule, RosterItemAnnotationProcessor {
 
 	companion object {
+
 		const val XMLNS = "urn:xmpp:mix:core:1"
 		const val MISC_XMLNS = "urn:xmpp:mix:misc:0"
 		const val TYPE = XMLNS
@@ -119,7 +117,7 @@ class MIXModule(override val context: Context) : XmppModule, RosterItemAnnotatio
 		}
 	}
 
-	fun create(mixComponent: BareJID, name: String): IQRequestBuilder<CreateResponse> {
+	fun create(mixComponent: BareJID, name: String): RequestBuilder<CreateResponse, ErrorCondition, IQ> {
 		return context.request.iq {
 			type = IQType.Set
 			to = mixComponent.toJID()
@@ -127,27 +125,27 @@ class MIXModule(override val context: Context) : XmppModule, RosterItemAnnotatio
 				xmlns = XMLNS
 				attributes["channel"] = name
 			}
-		}.resultBuilder {
+		}.map {
 			val cr = it.getChildrenNS("create", XMLNS)!!
 			val chname = cr.attributes["channel"]!!
 			CreateResponse(BareJID(chname, mixComponent.domain), chname)
 		}
 	}
 
-	fun createAllowed(channel: BareJID): IQRequestBuilder<Unit> {
+	fun createAllowed(channel: BareJID): RequestBuilder<Unit, ErrorCondition, IQ> {
 		return pubsubModule.create(channel.toJID(), NODE_ALLOWED)
 	}
 
-	fun createBanned(channel: BareJID): IQRequestBuilder<Unit> {
+	fun createBanned(channel: BareJID): RequestBuilder<Unit, ErrorCondition, IQ> {
 		return pubsubModule.create(channel.toJID(), NODE_BANNED)
 	}
 
-	fun addToAllowed(channel: BareJID, participant: BareJID): IQRequestBuilder<Unit> {
-		return pubsubModule.publish(channel.toJID(), NODE_ALLOWED, participant.toString()).resultBuilder { Unit }
+	fun addToAllowed(channel: BareJID, participant: BareJID): RequestBuilder<Unit, ErrorCondition, IQ> {
+		return pubsubModule.publish(channel.toJID(), NODE_ALLOWED, participant.toString()).map { Unit }
 	}
 
-	fun addToBanned(channel: BareJID, participant: BareJID): IQRequestBuilder<Unit> {
-		return pubsubModule.publish(channel.toJID(), NODE_BANNED, participant.toString()).resultBuilder { Unit }
+	fun addToBanned(channel: BareJID, participant: BareJID): RequestBuilder<Unit, ErrorCondition, IQ> {
+		return pubsubModule.publish(channel.toJID(), NODE_BANNED, participant.toString()).map { Unit }
 	}
 
 	fun createInvitation(
@@ -156,7 +154,7 @@ class MIXModule(override val context: Context) : XmppModule, RosterItemAnnotatio
 		return MIXInvitation(inviter, invitee, channel, token)
 	}
 
-	fun invitationMessage(invitation: MIXInvitation, message: String): MessageRequestBuilder {
+	fun invitationMessage(invitation: MIXInvitation, message: String): RequestBuilder<Unit, ErrorCondition, Message> {
 		return context.request.message {
 			to = invitation.invitee.toJID()
 			body = message
@@ -164,10 +162,12 @@ class MIXModule(override val context: Context) : XmppModule, RosterItemAnnotatio
 		}
 	}
 
-	fun join(invitation: MIXInvitation, nick: String): IQRequestBuilder<JoinResponse> =
+	fun join(invitation: MIXInvitation, nick: String): RequestBuilder<JoinResponse, ErrorCondition, IQ> =
 		join(invitation.channel, nick, invitation)
 
-	fun join(channel: BareJID, nick: String, invitation: MIXInvitation? = null): IQRequestBuilder<JoinResponse> {
+	fun join(
+		channel: BareJID, nick: String, invitation: MIXInvitation? = null
+	): RequestBuilder<JoinResponse, ErrorCondition, IQ> {
 		return context.request.iq {
 			type = IQType.Set
 			to = myJID().bareJID.toJID()
@@ -188,7 +188,7 @@ class MIXModule(override val context: Context) : XmppModule, RosterItemAnnotatio
 					}
 				}
 			}
-		}.resultBuilder { iq ->
+		}.map { iq ->
 			val join = iq.getChildrenNS("client-join", "urn:xmpp:mix:pam:2")!!.getChildrenNS("join", XMLNS)!!
 			val nodes = join.getChildren("subscribe").map { it.attributes["node"]!! }.toTypedArray()
 			val nck = join.getChildren("subscribe").firstOrNull()?.value ?: nick
@@ -196,7 +196,7 @@ class MIXModule(override val context: Context) : XmppModule, RosterItemAnnotatio
 		}
 	}
 
-	fun leave(channel: BareJID): IQRequestBuilder<Unit> {
+	fun leave(channel: BareJID): RequestBuilder<Unit, ErrorCondition, IQ> {
 		return context.request.iq {
 			type = IQType.Set
 			"client-leave"{
@@ -209,7 +209,7 @@ class MIXModule(override val context: Context) : XmppModule, RosterItemAnnotatio
 		}
 	}
 
-	fun message(channel: BareJID, message: String): MessageRequestBuilder {
+	fun message(channel: BareJID, message: String): RequestBuilder<Unit, ErrorCondition, Message> {
 		return context.request.message {
 			to = channel.toJID()
 			type = MessageType.Groupchat

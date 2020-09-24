@@ -18,128 +18,129 @@
 package tigase.halcyon.core.xmpp.modules.jingle
 
 import tigase.halcyon.core.AsyncResult
-import tigase.halcyon.core.Result
-import tigase.halcyon.core.mapToResult
 import tigase.halcyon.core.xmpp.BareJID
-import tigase.halcyon.core.xmpp.ErrorCondition
 import tigase.halcyon.core.xmpp.JID
+import tigase.halcyon.core.xmpp.modules.jingle.Jingle.Session.State
 import kotlin.properties.Delegates
-import tigase.halcyon.core.xmpp.modules.jingle.Jingle.Session.State;
 
 abstract class AbstractJingleSession(
-    private val sessionManager: AbstractJingleSessionManager<AbstractJingleSession>,
-    private val jingleModule: JingleModule,
-    override val account: BareJID,
-    jid: JID,
-    override val sid: String,
-    val role: Content.Creator,
-    val initiationType: InitiationType
-): Jingle.Session {
-    override var state: Jingle.Session.State by Delegates.observable(Jingle.Session.State.created) { property, oldValue, newValue -> stateChanged(newValue)  }
-        protected set;
-    override lateinit var jid: JID
-        protected set;
+	private val sessionManager: AbstractJingleSessionManager<AbstractJingleSession>,
+	private val jingleModule: JingleModule,
+	override val account: BareJID,
+	jid: JID,
+	override val sid: String,
+	val role: Content.Creator,
+	val initiationType: InitiationType
+) : Jingle.Session {
 
-    private var remoteContents: List<Content>? = null;
-    private var remoteBundles: List<String>? = null;
+	override var state: Jingle.Session.State by Delegates.observable(Jingle.Session.State.created) { property, oldValue, newValue ->
+		stateChanged(
+			newValue
+		)
+	}
+		protected set
+	override lateinit var jid: JID
+		protected set
 
-    init {
-        this.jid = jid;
-    }
+	private var remoteContents: List<Content>? = null
+	private var remoteBundles: List<String>? = null
 
-    protected abstract fun stateChanged(state: Jingle.Session.State);
-    protected abstract fun setRemoteDescription(contents: List<Content>, bundle: List<String>?);
-    abstract fun addCandidate(candidate: Candidate, contentName: String);
+	init {
+		this.jid = jid
+	}
 
-    fun initiate(contents: List<Content>, bundle: List<String>?, completionHandler: AsyncResult<Unit, ErrorCondition>){
-        jingleModule.initiateSession(jid, sid, contents, bundle).response { result ->
-            val r = result.mapToResult { v -> v ?: Unit  };
-            when (r) {
-                is Result.Failure -> this.terminate();
-            }
-            completionHandler(r);
-        }.send();
-    }
+	protected abstract fun stateChanged(state: Jingle.Session.State)
+	protected abstract fun setRemoteDescription(contents: List<Content>, bundle: List<String>?)
+	abstract fun addCandidate(candidate: Candidate, contentName: String)
 
-    fun initiate(descriptions: List<MessageInitiationDescription>, completionHandler: AsyncResult<Unit, ErrorCondition>) {
-        jingleModule.sendMessageInitiation(MessageInitiationAction.Propose(sid, descriptions), jid).result { result ->
-            val r = result.mapToResult();
-            when (r) {
-                is Result.Failure -> this.terminate();
-            }
-            completionHandler(r);
-        }.send();
-    }
+	fun initiate(contents: List<Content>, bundle: List<String>?, completionHandler: AsyncResult<Unit>) {
+		jingleModule.initiateSession(jid, sid, contents, bundle).response { result ->
+			val r = result.map { v -> v }
+			if (r.isFailure) {
+				this.terminate()
+			}
+			completionHandler(r)
+		}.send()
+	}
 
-    fun initiated(contents: List<Content>, bundle: List<String>?) {
-        state = State.initiating;
-        remoteContents = contents;
-        remoteBundles = bundle;
-    }
+	fun initiate(descriptions: List<MessageInitiationDescription>, completionHandler: AsyncResult<Unit>) {
+		jingleModule.sendMessageInitiation(MessageInitiationAction.Propose(sid, descriptions), jid).response { r ->
+			if (r.isFailure) {
+				this.terminate()
+			}
+			completionHandler(r)
+		}.send()
+	}
 
-    fun accept() {
-        state = State.accepted;
-        remoteContents?.let { contents ->
-            setRemoteDescription(contents, remoteBundles);
-        } ?: {
-            jingleModule.sendMessageInitiation(MessageInitiationAction.Proceed(sid), jid);
-        }();
-    }
+	fun initiated(contents: List<Content>, bundle: List<String>?) {
+		state = State.initiating
+		remoteContents = contents
+		remoteBundles = bundle
+	}
 
-    fun accept(contents: List<Content>, bundle: List<String>?, completionHandler: AsyncResult<Unit, ErrorCondition>) {
-        jingleModule.acceptSession(jid, sid, contents, bundle).response { iqResult ->
-            val result = iqResult.mapToResult { v -> v ?: Unit }
-            when (result) {
-                is Result.Success -> state = State.accepted;
-                is Result.Failure -> terminate()
-            }
-            completionHandler(result);
-        }.send();
-    }
+	fun accept() {
+		state = State.accepted
+		remoteContents?.let { contents ->
+			setRemoteDescription(contents, remoteBundles)
+		} ?: {
+			jingleModule.sendMessageInitiation(MessageInitiationAction.Proceed(sid), jid)
+		}()
+	}
 
-    fun accepted(by: JID) {
-        this.state = State.accepted;
-        this.jid = by;
-    }
+	fun accept(contents: List<Content>, bundle: List<String>?, completionHandler: AsyncResult<Unit>) {
+		jingleModule.acceptSession(jid, sid, contents, bundle).response { iqResult ->
+			val result = iqResult.map { v -> v }
+			when {
+				result.isSuccess -> state = State.accepted
+				result.isFailure -> terminate()
+			}
+			completionHandler(result)
+		}.send()
+	}
 
-    fun accepted(contents: List<Content>, bundle: List<String>?) {
-        this.state = State.accepted;
-        remoteContents = contents;
-        remoteBundles = bundle;
-        setRemoteDescription(contents, bundle);
-    }
+	fun accepted(by: JID) {
+		this.state = State.accepted
+		this.jid = by
+	}
 
-    fun decline() {
-        terminate(reason = TerminateReason.decline);
-    }
+	fun accepted(contents: List<Content>, bundle: List<String>?) {
+		this.state = State.accepted
+		remoteContents = contents
+		remoteBundles = bundle
+		setRemoteDescription(contents, bundle)
+	}
 
-    override fun terminate(reason: TerminateReason) {
-        val oldState = state;
-        if (oldState == State.terminated) {
-            return;
-        }
-        state = State.terminated;
-        if (initiationType == InitiationType.iq || oldState == State.accepted) {
-            jingleModule.terminateSession(jid, sid, reason).send();
-        } else {
-            jingleModule.sendMessageInitiation(MessageInitiationAction.Reject(sid), jid).send();
-        }
-        terminateSession();
-    }
+	fun decline() {
+		terminate(reason = TerminateReason.decline)
+	}
 
-    fun terminated() {
-        if (state == State.terminated) {
-            return;
-        }
-        state = State.terminated;
-        terminateSession();
-    }
+	override fun terminate(reason: TerminateReason) {
+		val oldState = state
+		if (oldState == State.terminated) {
+			return
+		}
+		state = State.terminated
+		if (initiationType == InitiationType.iq || oldState == State.accepted) {
+			jingleModule.terminateSession(jid, sid, reason).send()
+		} else {
+			jingleModule.sendMessageInitiation(MessageInitiationAction.Reject(sid), jid).send()
+		}
+		terminateSession()
+	}
 
-    protected fun terminateSession() {
-        sessionManager.close(this);
-    }
+	fun terminated() {
+		if (state == State.terminated) {
+			return
+		}
+		state = State.terminated
+		terminateSession()
+	}
 
-    fun sendCandidate(contentName: String, creator: Content.Creator, transport: Transport) {
-        jingleModule.transportInfo(jid, sid, listOf(Content(creator, contentName, null, listOf(transport)))).send();
-    }
+	protected fun terminateSession() {
+		sessionManager.close(this)
+	}
+
+	fun sendCandidate(contentName: String, creator: Content.Creator, transport: Transport) {
+		jingleModule.transportInfo(jid, sid, listOf(Content(creator, contentName, null, listOf(transport)))).send()
+	}
 }

@@ -18,9 +18,8 @@
 package tigase.halcyon.core.modules
 
 import tigase.halcyon.core.Context
-import tigase.halcyon.core.InternalDataStore
 import tigase.halcyon.core.configuration.Configuration
-import tigase.halcyon.core.requests.RequestBuilderFactory
+import tigase.halcyon.core.request2.RequestBuilderFactory
 import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xml.element
 import kotlin.test.Test
@@ -30,9 +29,9 @@ import kotlin.test.assertTrue
 class ModulesManagerTest {
 
 	class Module01(override val context: Context) : tigase.halcyon.core.modules.XmppModule {
+
 		override val type = "Module01"
-		override val criteria: tigase.halcyon.core.modules.Criteria =
-			tigase.halcyon.core.modules.Criterion.name("iq")
+		override val criteria: tigase.halcyon.core.modules.Criteria = tigase.halcyon.core.modules.Criterion.name("iq")
 		override val features: Array<String> = arrayOf("1", "2")
 
 		override fun initialize() {
@@ -43,6 +42,7 @@ class ModulesManagerTest {
 	}
 
 	class Module02(override val context: Context) : tigase.halcyon.core.modules.XmppModule {
+
 		override val type = "Module02"
 		override val criteria = tigase.halcyon.core.modules.Criterion.name("msg")
 		override val features = arrayOf("a", "b")

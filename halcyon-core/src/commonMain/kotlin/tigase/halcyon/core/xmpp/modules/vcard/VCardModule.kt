@@ -21,27 +21,28 @@ import tigase.halcyon.core.Context
 import tigase.halcyon.core.eventbus.Event
 import tigase.halcyon.core.modules.Criteria
 import tigase.halcyon.core.modules.XmppModule
-import tigase.halcyon.core.requests.IQRequestBuilder
-import tigase.halcyon.core.requests.IQResult
+import tigase.halcyon.core.request2.RequestBuilder
 import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xmpp.BareJID
 import tigase.halcyon.core.xmpp.ErrorCondition
 import tigase.halcyon.core.xmpp.XMPPException
 import tigase.halcyon.core.xmpp.modules.BindModule
 import tigase.halcyon.core.xmpp.modules.pubsub.PubSubEventReceivedEvent
+import tigase.halcyon.core.xmpp.stanzas.IQ
 import tigase.halcyon.core.xmpp.stanzas.IQType
 import tigase.halcyon.core.xmpp.stanzas.iq
 import tigase.halcyon.core.xmpp.toJID
 
-data class VCardUpdatedEvent(val jid: BareJID, val vcard: VCard?) : Event(TYPE) {
-	companion object {
-		const val TYPE = "tigase.halcyon.core.xmpp.modules.vcard.VCardUpdatedEvent"
-	}
+data class VCardUpdatedEvent(val jid: BareJID, val vcard: VCard?) : Event(TYPE) { companion object {
+
+	const val TYPE = "tigase.halcyon.core.xmpp.modules.vcard.VCardUpdatedEvent"
+}
 }
 
 class VCardModule(override val context: Context) : XmppModule {
 
 	companion object {
+
 		const val XMLNS = "urn:ietf:params:xml:ns:vcard-4.0"
 		const val NODE = "urn:xmpp:vcard4"
 		const val TYPE = XMLNS
@@ -64,7 +65,7 @@ class VCardModule(override val context: Context) : XmppModule {
 
 	override fun process(element: Element) = throw XMPPException(ErrorCondition.FeatureNotImplemented)
 
-	fun retrieveVCard(jid: BareJID): IQRequestBuilder<VCard> {
+	fun retrieveVCard(jid: BareJID): RequestBuilder<VCard, ErrorCondition, IQ> {
 		val iq = iq {
 			type = IQType.Get
 			to = jid.toString().toJID()
@@ -72,10 +73,10 @@ class VCardModule(override val context: Context) : XmppModule {
 				xmlns = XMLNS
 			}
 		}
-		return context.request.iq(iq).resultBuilder(this@VCardModule::parseResponse)
+		return context.request.iq(iq).map(this@VCardModule::parseResponse)
 	}
 
-	fun publish(vcard: VCard): IQRequestBuilder<Unit> {
+	fun publish(vcard: VCard): RequestBuilder<Unit, ErrorCondition, IQ> {
 		val ownJid = context.modules.getModuleOrNull<BindModule>(BindModule.TYPE)?.boundJID?.bareJID
 		val iq = iq {
 			type = IQType.Set
@@ -95,8 +96,8 @@ class VCardModule(override val context: Context) : XmppModule {
 
 		if (autoRetrieve) {
 			retrieveVCard(jid.bareJID).response {
-				if (it is IQResult.Success) {
-					context.eventBus.fire(VCardUpdatedEvent(jid.bareJID, it.get()))
+				if (it.isSuccess) {
+					context.eventBus.fire(VCardUpdatedEvent(jid.bareJID, it.getOrNull()))
 				}
 			}.send()
 		} else {
