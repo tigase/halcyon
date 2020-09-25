@@ -29,6 +29,7 @@ import tigase.halcyon.core.xmpp.JID
 import tigase.halcyon.core.xmpp.stanzas.*
 
 typealias ResultHandler<V> = (Result<V>) -> Unit
+typealias ResponseStanzaHandler<STT> = (Request2<*, *, STT>, STT?) -> Unit
 
 class XMPPError(val response: Stanza<*>?, val error: ErrorCondition, val description: String?) : Exception()
 
@@ -77,27 +78,41 @@ class Request2<V, E, STT : Stanza<*>>(
 	private val transform: (value: STT) -> V
 ) : Request<V, STT>(jid, id, creationTimestamp, stanza, timeoutDelay) {
 
+	internal var stanzaHandler: ResponseStanzaHandler<STT>? = null
+
 	override fun createRequestNotCompletedException(): RequestNotCompletedException = RequestNotCompletedException(this)
 
 	override fun createRequestErrorException(error: ErrorCondition, text: String?): RequestErrorException =
 		RequestErrorException(this, error, text)
 
-	override fun callHandlers() {
-		val result = if (isTimeout) {
-			Result.failure(XMPPError(null, ErrorCondition.RemoteServerTimeout, null))
-		} else {
-			val type = response!!.attributes["type"]
-			if (type == "result") {
-				Result.success(response).map { st -> transform.invoke(st!!) }
-			} else if (type == "error") {
-				val e = findCondition(response!!)
-				Result.failure(XMPPError(response, e.condition, e.message))
-			} else {
-				Result.failure(XMPPError(response, ErrorCondition.UnexpectedRequest, null))
-			}
+	private fun callResponseStanzaHandler() {
+		try {
+			stanzaHandler?.invoke(this, response)
+		} catch (e: Throwable) {
 
 		}
-		handler?.invoke(result)
+	}
+
+	override fun callHandlers() {
+		callResponseStanzaHandler()
+
+		val result = if (isTimeout) {
+			Result.failure(XMPPError(response, ErrorCondition.RemoteServerTimeout, null))
+		} else {
+			when (response!!.attributes["type"]) {
+				"result" -> {
+					Result.success(response!!)//.map { st -> transform.invoke(st!!) }
+				}
+				"error" -> {
+					val e = findCondition(response!!)
+					Result.failure(XMPPError(response!!, e.condition, e.message))
+				}
+				else -> {
+					Result.failure(XMPPError(response!!, ErrorCondition.UnexpectedRequest, null))
+				}
+			}
+		}
+		handler?.invoke(result.map(transform))
 	}
 }
 
@@ -107,24 +122,33 @@ class RequestBuilder<V, ERR, STT : Stanza<*>>(
 
 	private var timeoutDelay: Long = 30000
 
-	private var handler: ResultHandler<V>? = null
+	private var resultHandler: ResultHandler<V>? = null
+
+	private var responseStanzaHandler: ResponseStanzaHandler<STT>? = null
 
 	fun build(): Request2<V, ERR, STT> {
 		val stanza = wrap<STT>(halcyon.modules.processSendInterceptors(element))
 		return Request2<V, ERR, STT>(
-			stanza.to, stanza.id!!, currentTimestamp(), stanza, timeoutDelay, handler, transform
-		)
+			stanza.to, stanza.id!!, currentTimestamp(), stanza, timeoutDelay, resultHandler, transform
+		).apply {
+			this.stanzaHandler = responseStanzaHandler
+		}
 	}
 
 	fun <R : Any> map(transform: (value: STT) -> R): RequestBuilder<R, ERR, STT> {
 		val res = RequestBuilder<R, ERR, STT>(halcyon, element, transform)
 		res.timeoutDelay = timeoutDelay
-		res.handler = null
+		res.resultHandler = null
 		return res
 	}
 
+	fun handleResponseStanza(handler: ResponseStanzaHandler<STT>): RequestBuilder<V, ERR, STT> {
+		this.responseStanzaHandler = handler
+		return this
+	}
+
 	fun response(handler: ResultHandler<V>): RequestBuilder<V, ERR, STT> {
-		this.handler = handler
+		this.resultHandler = handler
 		return this
 	}
 

@@ -20,6 +20,7 @@ package tigase.halcyon.core.request2
 import tigase.halcyon.core.AbstractHalcyon
 import tigase.halcyon.core.connector.AbstractConnector
 import tigase.halcyon.core.xmpp.ErrorCondition
+import tigase.halcyon.core.xmpp.stanzas.IQ
 import tigase.halcyon.core.xmpp.stanzas.IQType
 import tigase.halcyon.core.xmpp.stanzas.iq
 import tigase.halcyon.core.xmpp.toJID
@@ -65,6 +66,39 @@ class Request2Test {
 			}
 		}
 		req.setResponseStanza(response)
+
+		val rrNotNull = assertNotNull(rr)
+		assertTrue(rrNotNull.isSuccess)
+		assertEquals("1234", rrNotNull.getOrNull())
+	}
+
+	@Test
+	fun testResponseStanzaHandler() {
+		var rr: Result<String>? = null
+		var rs: IQ? = null
+
+		val req = factory.iq {
+			to = "a@b".toJID()
+			from = "x@y".toJID()
+			type = IQType.Get
+		}.map { response -> response.getChildrenNS("response", "test")!!.value!! }.response { result ->
+			if (result.isSuccess) rr = result
+		}.handleResponseStanza { request, iq ->
+			rs = iq
+		}.build()
+
+		val response = iq {
+			from = "a@b".toJID()
+			to = "x@y".toJID()
+			type = IQType.Result
+			"response"{
+				xmlns = "test"
+				+"1234"
+			}
+		}
+		req.setResponseStanza(response)
+
+		assertEquals(response, assertNotNull(rs))
 
 		val rrNotNull = assertNotNull(rr)
 		assertTrue(rrNotNull.isSuccess)
