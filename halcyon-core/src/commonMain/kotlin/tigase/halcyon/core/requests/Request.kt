@@ -21,7 +21,8 @@ import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xmpp.ErrorCondition
 import tigase.halcyon.core.xmpp.JID
 import tigase.halcyon.core.xmpp.XMPPException
-import tigase.halcyon.core.xmpp.stanzas.*
+import tigase.halcyon.core.xmpp.stanzas.Stanza
+import tigase.halcyon.core.xmpp.stanzas.wrap
 
 typealias ResultConverter<T> = (Element) -> T
 
@@ -50,17 +51,21 @@ abstract class Request<V, STT : Stanza<*>>(
 		this.isSent = true
 	}
 
-	internal fun setResponseStanza(response: Element) {
+	internal fun setResponseStanza(response: Element, processStack: Boolean = true) {
 		this.response = wrap(response)
 		isCompleted = true
+		if (processStack) processStack()
 		callHandlers()
 	}
 
-	internal fun markTimeout() {
+	internal fun markTimeout(processStack: Boolean = true) {
 		isCompleted = true
 		isTimeout = true
+		if (processStack) processStack()
 		callHandlers()
 	}
+
+	protected abstract fun processStack()
 
 	protected abstract fun createRequestNotCompletedException(): RequestNotCompletedException
 

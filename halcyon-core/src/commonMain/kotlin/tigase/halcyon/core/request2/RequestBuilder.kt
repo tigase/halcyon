@@ -75,7 +75,8 @@ class Request2<V, E, STT : Stanza<*>>(
 	stanza: STT,
 	timeoutDelay: Long,
 	private val handler: ResultHandler<V>?,
-	private val transform: (value: STT) -> V
+	private val transform: (value: STT) -> V,
+	private val parentRequest: Request2<*, *, STT>? = null
 ) : Request<V, STT>(jid, id, creationTimestamp, stanza, timeoutDelay) {
 
 	internal var stanzaHandler: ResponseStanzaHandler<STT>? = null
@@ -89,7 +90,26 @@ class Request2<V, E, STT : Stanza<*>>(
 		try {
 			stanzaHandler?.invoke(this, response)
 		} catch (e: Throwable) {
+		}
+	}
 
+	private fun requestStack(): List<Request2<*, *, STT>> {
+		val result = mutableListOf<Request2<*, *, STT>>()
+
+		var tmp: Request2<*, *, STT>? = this.parentRequest
+		while (tmp != null) {
+			result.add(0, tmp)
+			tmp = tmp.parentRequest
+		}
+
+		return result
+	}
+
+	override fun processStack() {
+		val requests = requestStack()
+		requests.forEach {
+			if (isTimeout) it.markTimeout(false)
+			else it.setResponseStanza(response!!, false)
 		}
 	}
 
@@ -120,6 +140,8 @@ class RequestBuilder<V, ERR, STT : Stanza<*>>(
 	private val halcyon: AbstractHalcyon, private val element: Element, private val transform: (value: STT) -> V
 ) {
 
+	private var parentBuilder: RequestBuilder<*, *, STT>? = null
+
 	private var timeoutDelay: Long = 30000
 
 	private var resultHandler: ResultHandler<V>? = null
@@ -129,7 +151,14 @@ class RequestBuilder<V, ERR, STT : Stanza<*>>(
 	fun build(): Request2<V, ERR, STT> {
 		val stanza = wrap<STT>(halcyon.modules.processSendInterceptors(element))
 		return Request2<V, ERR, STT>(
-			stanza.to, stanza.id!!, currentTimestamp(), stanza, timeoutDelay, resultHandler, transform
+			stanza.to,
+			stanza.id!!,
+			currentTimestamp(),
+			stanza,
+			timeoutDelay,
+			resultHandler,
+			transform,
+			parentBuilder?.build()
 		).apply {
 			this.stanzaHandler = responseStanzaHandler
 		}
@@ -139,6 +168,7 @@ class RequestBuilder<V, ERR, STT : Stanza<*>>(
 		val res = RequestBuilder<R, ERR, STT>(halcyon, element, transform)
 		res.timeoutDelay = timeoutDelay
 		res.resultHandler = null
+		res.parentBuilder = this
 		return res
 	}
 

@@ -53,7 +53,6 @@ class Request2Test {
 			type = IQType.Get
 		}.map { response -> response.getChildrenNS("response", "test")!!.value!! }.response { result ->
 			if (result.isSuccess) rr = result
-			val liczba = result.map { it.toLong() }
 		}.build()
 
 		val response = iq {
@@ -66,6 +65,47 @@ class Request2Test {
 			}
 		}
 		req.setResponseStanza(response)
+
+		val rrNotNull = assertNotNull(rr)
+		assertTrue(rrNotNull.isSuccess)
+		assertEquals("1234", rrNotNull.getOrNull())
+	}
+
+	@Test
+	fun testRequestStackSuccess() {
+		var rr: Result<String>? = null
+		var rr2: Result<Long>? = null
+
+		val req = factory.iq {
+			to = "a@b".toJID()
+			from = "x@y".toJID()
+			type = IQType.Get
+		}.map { response -> response.getChildrenNS("response", "test")!!.value!! }.response { result ->
+			if (result.isSuccess) rr = result
+		}.map { response ->
+			response.getChildrenNS("response2", "test")!!.value!!.toLong()
+		}.response {
+			if (it.isSuccess) rr2 = it
+		}.build()
+
+		val response = iq {
+			from = "a@b".toJID()
+			to = "x@y".toJID()
+			type = IQType.Result
+			"response"{
+				xmlns = "test"
+				+"1234"
+			}
+			"response2"{
+				xmlns = "test"
+				+"9832"
+			}
+		}
+		req.setResponseStanza(response)
+
+		val rr2NotNull = assertNotNull(rr2)
+		assertTrue(rr2NotNull.isSuccess)
+		assertEquals(9832, rr2NotNull.getOrNull())
 
 		val rrNotNull = assertNotNull(rr)
 		assertTrue(rrNotNull.isSuccess)
