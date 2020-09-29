@@ -165,6 +165,7 @@ class RequestBuilder<V, ERR, STT : Stanza<*>>(
 	}
 
 	fun <R : Any> map(transform: (value: STT) -> R): RequestBuilder<R, ERR, STT> {
+		if (parentBuilder != null) throw IllegalStateException("Stacked maps are not allowed.")
 		val res = RequestBuilder<R, ERR, STT>(halcyon, element, transform)
 		res.timeoutDelay = timeoutDelay
 		res.resultHandler = null

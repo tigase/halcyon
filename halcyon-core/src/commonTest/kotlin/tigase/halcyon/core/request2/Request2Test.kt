@@ -24,10 +24,7 @@ import tigase.halcyon.core.xmpp.stanzas.IQ
 import tigase.halcyon.core.xmpp.stanzas.IQType
 import tigase.halcyon.core.xmpp.stanzas.iq
 import tigase.halcyon.core.xmpp.toJID
-import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertNotNull
-import kotlin.test.assertTrue
+import kotlin.test.*
 
 class Request2Test {
 
@@ -72,6 +69,7 @@ class Request2Test {
 	}
 
 	@Test
+	@Ignore
 	fun testRequestStackSuccess() {
 		var rr: Result<String>? = null
 		var rr2: Result<Long>? = null
