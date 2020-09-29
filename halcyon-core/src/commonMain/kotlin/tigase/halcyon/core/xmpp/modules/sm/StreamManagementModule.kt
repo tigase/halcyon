@@ -30,7 +30,7 @@ import tigase.halcyon.core.logger.Level
 import tigase.halcyon.core.logger.Logger
 import tigase.halcyon.core.modules.Criterion
 import tigase.halcyon.core.modules.XmppModule
-import tigase.halcyon.core.requests.Request
+import tigase.halcyon.core.requests.AbstractRequest
 import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xml.element
 import tigase.halcyon.core.xmpp.ErrorCondition
@@ -78,6 +78,7 @@ class StreamManagementModule(override val context: Context) : XmppModule {
 	}
 
 	companion object {
+
 		const val XMLNS = "urn:xmpp:sm:3"
 		const val TYPE = XMLNS
 
@@ -102,10 +103,10 @@ class StreamManagementModule(override val context: Context) : XmppModule {
 
 	var resumptionContext: ResumptionContext by property(Scope.Session) { ResumptionContext() }
 
-	sealed class StreamManagementEvent : Event(TYPE) {
-		companion object {
-			const val TYPE = "tigase.halcyon.core.xmpp.modules.sm.StreamManagementModule.StreamManagementEvent"
-		}
+	sealed class StreamManagementEvent : Event(TYPE) { companion object {
+
+		const val TYPE = "tigase.halcyon.core.xmpp.modules.sm.StreamManagementModule.StreamManagementEvent"
+	}
 
 		class Enabled(val id: String, val resume: Boolean, val mx: Long?) : StreamManagementEvent()
 		class Failed(val error: ErrorCondition) : StreamManagementEvent()
@@ -150,7 +151,7 @@ class StreamManagementModule(override val context: Context) : XmppModule {
 		++resumptionContext.incomingH
 	}
 
-	private fun processElementSent(element: Element, request: Request<*, *>?) {
+	private fun processElementSent(element: Element, request: AbstractRequest<*, *>?) {
 		if (!resumptionContext.isAckActive) return
 		if (element.xmlns == XMLNS) return
 
@@ -231,7 +232,7 @@ class StreamManagementModule(override val context: Context) : XmppModule {
 		while (queue.size > left) {
 			val x = queue.get(0)
 			queue.remove(x)
-			if (x is Request<*, *>) {
+			if (x is AbstractRequest<*, *>) {
 				x.markAsSent()
 				log.fine("Marked as 'delivered to server': $x")
 			}
@@ -253,7 +254,7 @@ class StreamManagementModule(override val context: Context) : XmppModule {
 
 		unacked.forEach {
 			when (it) {
-				is Request<*, *> -> context.writer.write(it)
+				is AbstractRequest<*, *> -> context.writer.write(it)
 				is Element -> context.writer.writeDirectly(it)
 			}
 		}

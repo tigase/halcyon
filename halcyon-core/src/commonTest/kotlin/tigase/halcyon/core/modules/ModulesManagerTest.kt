@@ -19,7 +19,7 @@ package tigase.halcyon.core.modules
 
 import tigase.halcyon.core.Context
 import tigase.halcyon.core.configuration.Configuration
-import tigase.halcyon.core.request2.RequestBuilderFactory
+import tigase.halcyon.core.requests.RequestBuilderFactory
 import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xml.element
 import kotlin.test.Test

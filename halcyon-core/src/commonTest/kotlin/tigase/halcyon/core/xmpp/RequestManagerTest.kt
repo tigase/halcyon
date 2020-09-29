@@ -19,8 +19,8 @@ package tigase.halcyon.core.xmpp
 
 import tigase.halcyon.core.AbstractHalcyon
 import tigase.halcyon.core.connector.AbstractConnector
-import tigase.halcyon.core.request2.XMPPError
 import tigase.halcyon.core.requests.RequestsManager
+import tigase.halcyon.core.requests.XMPPError
 import tigase.halcyon.core.xml.element
 import kotlin.test.*
 

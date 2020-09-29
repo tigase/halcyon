@@ -23,6 +23,7 @@ import tigase.halcyon.core.connector.ReceivedXMLElementEvent
 import tigase.halcyon.core.connector.SentXMLElementEvent
 import tigase.halcyon.core.currentTimestamp
 import tigase.halcyon.core.eventbus.Event
+import tigase.halcyon.core.requests.XMPPError
 import tigase.halcyon.core.xmpp.modules.PingModule
 import tigase.halcyon.core.xmpp.modules.mam.MAMModule
 import tigase.halcyon.core.xmpp.modules.mix.MIXModule
@@ -120,7 +121,7 @@ fun main(args: Array<String>) {
 				val req = pingModule.ping().response { resp ->
 					when {
 						resp.isSuccess -> println("PING time=${resp.getOrThrow().time}")
-						resp.isFailure -> println("PING error=${(resp.exceptionOrNull() as tigase.halcyon.core.request2.XMPPError).error}")
+						resp.isFailure -> println("PING error=${(resp.exceptionOrNull() as XMPPError).error}")
 					}
 				}.send()
 			}

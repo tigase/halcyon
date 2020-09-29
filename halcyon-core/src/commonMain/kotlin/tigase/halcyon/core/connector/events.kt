@@ -18,12 +18,13 @@
 package tigase.halcyon.core.connector
 
 import tigase.halcyon.core.eventbus.Event
-import tigase.halcyon.core.requests.Request
+import tigase.halcyon.core.requests.AbstractRequest
 import tigase.halcyon.core.xml.Element
 
 data class ConnectorStateChangeEvent(val oldState: State, val newState: State) : Event(TYPE) {
 
 	companion object {
+
 		const val TYPE = "tigase.halcyon.core.connector.ConnectorStateChangeEvent"
 	}
 }
@@ -31,6 +32,7 @@ data class ConnectorStateChangeEvent(val oldState: State, val newState: State) :
 data class ReceivedXMLElementEvent(val element: Element) : Event(TYPE) {
 
 	companion object {
+
 		const val TYPE = "tigase.halcyon.core.connector.ReceivedXMLElementEvent"
 	}
 }
@@ -38,6 +40,7 @@ data class ReceivedXMLElementEvent(val element: Element) : Event(TYPE) {
 data class StreamStartedEvent(val attrs: Map<String, String>) : Event(TYPE) {
 
 	companion object {
+
 		const val TYPE = "tigase.halcyon.core.connector.StreamStartedEvent"
 	}
 }
@@ -45,6 +48,7 @@ data class StreamStartedEvent(val attrs: Map<String, String>) : Event(TYPE) {
 class StreamTerminatedEvent : Event(TYPE) {
 
 	companion object {
+
 		const val TYPE = "tigase.halcyon.core.connector.StreamTerminatedEvent"
 	}
 }
@@ -52,13 +56,15 @@ class StreamTerminatedEvent : Event(TYPE) {
 data class ParseErrorEvent(val errorMessage: String) : Event(TYPE) {
 
 	companion object {
+
 		const val TYPE = "tigase.halcyon.core.connector.ParseErrorEvent"
 	}
 }
 
-data class SentXMLElementEvent(val element: Element, val request: Request<*, *>?) : Event(TYPE) {
+data class SentXMLElementEvent(val element: Element, val request: AbstractRequest<*, *>?) : Event(TYPE) {
 
 	companion object {
+
 		const val TYPE = "tigase.halcyon.core.connector.SentXMLElementEvent"
 	}
 }
@@ -66,6 +72,7 @@ data class SentXMLElementEvent(val element: Element, val request: Request<*, *>?
 abstract class ConnectionErrorEvent : Event(TYPE) {
 
 	companion object {
+
 		const val TYPE = "tigase.halcyon.core.connector.ConnectionErrorEvent"
 	}
 }

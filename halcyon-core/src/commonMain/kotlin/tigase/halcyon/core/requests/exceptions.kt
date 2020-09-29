@@ -20,15 +20,16 @@ package tigase.halcyon.core.requests
 import tigase.halcyon.core.exceptions.HalcyonException
 import tigase.halcyon.core.xmpp.ErrorCondition
 
-abstract class RequestException(val request: Request<*, *>) : HalcyonException()
+abstract class RequestException(val request: AbstractRequest<*, *>) : HalcyonException()
 
-class RequestNotCompletedException(request: Request<*, *>) : RequestException(request) {
+class RequestNotCompletedException(request: AbstractRequest<*, *>) : RequestException(request) {
+
 	override fun toString(): String {
 		return "RequestNotCompletedException(request=$request)"
 	}
 }
 
-class RequestErrorException(request: Request<*, *>, val error: ErrorCondition, val text: String?) :
+class RequestErrorException(request: AbstractRequest<*, *>, val error: ErrorCondition, val text: String?) :
 	RequestException(request) {
 
 	override fun toString(): String {

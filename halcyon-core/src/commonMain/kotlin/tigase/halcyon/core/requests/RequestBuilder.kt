@@ -15,13 +15,10 @@
  * along with this program. Look for COPYING file in the top folder.
  * If not, see http://www.gnu.org/licenses/.
  */
-package tigase.halcyon.core.request2
+package tigase.halcyon.core.requests
 
 import tigase.halcyon.core.AbstractHalcyon
 import tigase.halcyon.core.currentTimestamp
-import tigase.halcyon.core.requests.Request
-import tigase.halcyon.core.requests.RequestErrorException
-import tigase.halcyon.core.requests.RequestNotCompletedException
 import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xml.ElementImpl
 import tigase.halcyon.core.xmpp.ErrorCondition
@@ -29,19 +26,19 @@ import tigase.halcyon.core.xmpp.JID
 import tigase.halcyon.core.xmpp.stanzas.*
 
 typealias ResultHandler<V> = (Result<V>) -> Unit
-typealias ResponseStanzaHandler<STT> = (Request2<*, *, STT>, STT?) -> Unit
+typealias ResponseStanzaHandler<STT> = (Request<*, *, STT>, STT?) -> Unit
 
 class XMPPError(val response: Stanza<*>?, val error: ErrorCondition, val description: String?) : Exception()
 
 class RequestBuilderFactory(private val halcyon: AbstractHalcyon) {
 
-	fun iq(stanza: Element): RequestBuilder<Unit, ErrorCondition, IQ> = RequestBuilder(halcyon, stanza) { Unit }
-	fun iq(init: IQNode.() -> Unit): RequestBuilder<Unit, ErrorCondition, IQ> {
+	fun iq(stanza: Element): RequestBuilder<IQ, ErrorCondition, IQ> = RequestBuilder(halcyon, stanza) { it as IQ }
+	fun iq(init: IQNode.() -> Unit): RequestBuilder<IQ, ErrorCondition, IQ> {
 		val n = IQNode(IQ(ElementImpl(IQ.NAME)))
 		n.init()
 		n.id()
 		val stanza = n.element as IQ
-		return RequestBuilder(halcyon, stanza) { Unit }
+		return RequestBuilder<IQ, ErrorCondition, IQ>(halcyon, stanza) { it as IQ }
 	}
 
 	fun presence(stanza: Element): RequestBuilder<Unit, ErrorCondition, Presence> =
@@ -68,16 +65,16 @@ class RequestBuilderFactory(private val halcyon: AbstractHalcyon) {
 
 }
 
-class Request2<V, E, STT : Stanza<*>>(
+class Request<V, E, STT : Stanza<*>>(
 	jid: JID?,
 	id: String,
 	creationTimestamp: Long,
 	stanza: STT,
 	timeoutDelay: Long,
 	private val handler: ResultHandler<V>?,
-	private val transform: (value: STT) -> V,
-	private val parentRequest: Request2<*, *, STT>? = null
-) : Request<V, STT>(jid, id, creationTimestamp, stanza, timeoutDelay) {
+	private val transform: (value: Any) -> V,
+	private val parentRequest: Request<*, *, STT>? = null
+) : AbstractRequest<V, STT>(jid, id, creationTimestamp, stanza, timeoutDelay) {
 
 	internal var stanzaHandler: ResponseStanzaHandler<STT>? = null
 
@@ -93,10 +90,10 @@ class Request2<V, E, STT : Stanza<*>>(
 		}
 	}
 
-	private fun requestStack(): List<Request2<*, *, STT>> {
-		val result = mutableListOf<Request2<*, *, STT>>()
+	private fun requestStack(): List<Request<*, *, STT>> {
+		val result = mutableListOf<Request<*, *, STT>>()
 
-		var tmp: Request2<*, *, STT>? = this.parentRequest
+		var tmp: Request<*, *, STT>? = this
 		while (tmp != null) {
 			result.add(0, tmp)
 			tmp = tmp.parentRequest
@@ -105,39 +102,49 @@ class Request2<V, E, STT : Stanza<*>>(
 		return result
 	}
 
+	private var calculatedResult: Result<V>? = null
+
 	override fun processStack() {
 		val requests = requestStack()
-		requests.forEach {
-			if (isTimeout) it.markTimeout(false)
-			else it.setResponseStanza(response!!, false)
+
+		var tmp: Any? = response
+
+
+		requests.forEach { req ->
+			val result = if (isTimeout) {
+				Result.failure(XMPPError(response, ErrorCondition.RemoteServerTimeout, null))
+			} else {
+				when (response!!.attributes["type"]) {
+					"result" -> {
+						tmp = req.transform.invoke(tmp!!)
+						Result.success(tmp)
+					}
+					"error" -> {
+						val e = findCondition(response!!)
+						Result.failure(XMPPError(response!!, e.condition, e.message))
+					}
+					else -> {
+						Result.failure(XMPPError(response!!, ErrorCondition.UnexpectedRequest, null))
+					}
+				}
+			}
+
+			req.calculatedResult = result as (Result<Nothing>)
+			if (isTimeout) req.markTimeout(false)
+			else req.setResponseStanza(response!!, false)
 		}
 	}
 
 	override fun callHandlers() {
 		callResponseStanzaHandler()
-
-		val result = if (isTimeout) {
-			Result.failure(XMPPError(response, ErrorCondition.RemoteServerTimeout, null))
-		} else {
-			when (response!!.attributes["type"]) {
-				"result" -> {
-					Result.success(response!!)//.map { st -> transform.invoke(st!!) }
-				}
-				"error" -> {
-					val e = findCondition(response!!)
-					Result.failure(XMPPError(response!!, e.condition, e.message))
-				}
-				else -> {
-					Result.failure(XMPPError(response!!, ErrorCondition.UnexpectedRequest, null))
-				}
-			}
-		}
-		handler?.invoke(result.map(transform))
+		val tmp = calculatedResult
+		if (tmp == null) throw RuntimeException()
+		handler?.invoke(tmp)
 	}
 }
 
 class RequestBuilder<V, ERR, STT : Stanza<*>>(
-	private val halcyon: AbstractHalcyon, private val element: Element, private val transform: (value: STT) -> V
+	private val halcyon: AbstractHalcyon, private val element: Element, private val transform: (value: Any) -> V
 ) {
 
 	private var parentBuilder: RequestBuilder<*, *, STT>? = null
@@ -148,9 +155,9 @@ class RequestBuilder<V, ERR, STT : Stanza<*>>(
 
 	private var responseStanzaHandler: ResponseStanzaHandler<STT>? = null
 
-	fun build(): Request2<V, ERR, STT> {
+	fun build(): Request<V, ERR, STT> {
 		val stanza = wrap<STT>(halcyon.modules.processSendInterceptors(element))
-		return Request2<V, ERR, STT>(
+		return Request<V, ERR, STT>(
 			stanza.to,
 			stanza.id!!,
 			currentTimestamp(),
@@ -164,9 +171,18 @@ class RequestBuilder<V, ERR, STT : Stanza<*>>(
 		}
 	}
 
-	fun <R : Any> map(transform: (value: STT) -> R): RequestBuilder<R, ERR, STT> {
-		if (parentBuilder != null) throw IllegalStateException("Stacked maps are not allowed.")
-		val res = RequestBuilder<R, ERR, STT>(halcyon, element, transform)
+//	fun <R : Any> map(transform: (value: STT) -> R): RequestBuilder<V,R, ERR, STT> {
+//		if (parentBuilder!=null) throw IllegalStateException("Stacked maps are not allowed.")
+//		val res = RequestBuilder<V,R, ERR, STT>(halcyon, element, transform)
+//		res.timeoutDelay = timeoutDelay
+//		res.resultHandler = null
+//		res.parentBuilder = this
+//		return res
+//	}
+
+	fun <R : Any> map(transform: (value: V) -> R): RequestBuilder<R, ERR, STT> {
+		val xx: ((Any) -> R) = transform as (((Any) -> R))
+		val res = RequestBuilder<R, ERR, STT>(halcyon, element, xx)
 		res.timeoutDelay = timeoutDelay
 		res.resultHandler = null
 		res.parentBuilder = this
@@ -188,7 +204,7 @@ class RequestBuilder<V, ERR, STT : Stanza<*>>(
 		return this
 	}
 
-	fun send(): Request2<V, ERR, STT> {
+	fun send(): Request<V, ERR, STT> {
 		val req = build()
 		halcyon.write(req)
 		return req

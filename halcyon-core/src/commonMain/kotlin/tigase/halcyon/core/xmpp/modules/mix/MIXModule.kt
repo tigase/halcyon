@@ -25,7 +25,8 @@ import tigase.halcyon.core.exceptions.HalcyonException
 import tigase.halcyon.core.modules.Criteria
 import tigase.halcyon.core.modules.Criterion
 import tigase.halcyon.core.modules.XmppModule
-import tigase.halcyon.core.request2.RequestBuilder
+import tigase.halcyon.core.requests.RequestBuilder
+
 import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xml.element
 import tigase.halcyon.core.xml.getChildContent
@@ -206,7 +207,7 @@ class MIXModule(override val context: Context) : XmppModule, RosterItemAnnotatio
 					xmlns = XMLNS
 				}
 			}
-		}
+		}.map { Unit }
 	}
 
 	fun message(channel: BareJID, message: String): RequestBuilder<Unit, ErrorCondition, Message> {

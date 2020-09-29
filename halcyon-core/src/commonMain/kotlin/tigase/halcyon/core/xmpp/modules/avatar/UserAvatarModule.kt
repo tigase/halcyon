@@ -23,7 +23,8 @@ import tigase.halcyon.core.eventbus.Event
 import tigase.halcyon.core.logger.Logger
 import tigase.halcyon.core.modules.Criteria
 import tigase.halcyon.core.modules.XmppModule
-import tigase.halcyon.core.request2.RequestBuilder
+import tigase.halcyon.core.requests.RequestBuilder
+
 import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xml.element
 import tigase.halcyon.core.xmpp.*
@@ -140,16 +141,9 @@ class UserAvatarModule(override val context: Context) : XmppModule {
 
 	fun retrieveAvatar(jid: JID, avatarID: String): RequestBuilder<AvatarData, ErrorCondition, IQ> {
 		val x = pubSubModule.retrieveItem(JID.parse(jid.bareJID.toString()), XMLNS_DATA, avatarID).map { response ->
-			try {
-				val item = response.getChildrenNS(
-					"pubsub", PubSubModule.XMLNS
-				)?.children?.find { i -> i.attributes["node"] == XMLNS_DATA }?.getFirstChild("item")
-
-				val data = item?.getChildrenNS("data", XMLNS_DATA)?.value
-				AvatarData(avatarID, data)
-			} catch (e: Exception) {
-				throw e
-			}
+			val item = response.items.first()
+			val data = item.content!!.value
+			AvatarData(avatarID, data)
 		}
 		return x
 	}

@@ -24,7 +24,8 @@ import tigase.halcyon.core.exceptions.HalcyonException
 import tigase.halcyon.core.logger.Logger
 import tigase.halcyon.core.modules.AbstractXmppIQModule
 import tigase.halcyon.core.modules.Criterion
-import tigase.halcyon.core.request2.RequestBuilder
+import tigase.halcyon.core.requests.RequestBuilder
+
 import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xml.element
 import tigase.halcyon.core.xmpp.BareJID
@@ -226,7 +227,7 @@ class RosterModule(context: Context) : AbstractXmppIQModule(
 					addChild(createItem(it))
 				}
 			}
-		}
+		}.map { Unit }
 	}
 
 	fun deleteItem(vararg jids: BareJID): RequestBuilder<Unit, ErrorCondition, IQ> {
@@ -241,7 +242,7 @@ class RosterModule(context: Context) : AbstractXmppIQModule(
 					}
 				}
 			}
-		}
+		}.map { Unit }
 	}
 
 	fun getAllItems(): List<RosterItem> = store.getAllItems()

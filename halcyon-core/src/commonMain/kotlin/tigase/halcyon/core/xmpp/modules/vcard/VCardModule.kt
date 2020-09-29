@@ -21,7 +21,8 @@ import tigase.halcyon.core.Context
 import tigase.halcyon.core.eventbus.Event
 import tigase.halcyon.core.modules.Criteria
 import tigase.halcyon.core.modules.XmppModule
-import tigase.halcyon.core.request2.RequestBuilder
+import tigase.halcyon.core.requests.RequestBuilder
+
 import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xmpp.BareJID
 import tigase.halcyon.core.xmpp.ErrorCondition
@@ -87,7 +88,7 @@ class VCardModule(override val context: Context) : XmppModule {
 				xmlns = XMLNS
 			}
 		}
-		return context.request.iq(iq)
+		return context.request.iq(iq).map { Unit }
 	}
 
 	private fun processEvent(event: PubSubEventReceivedEvent) {

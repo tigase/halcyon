@@ -22,7 +22,8 @@ import tigase.halcyon.core.eventbus.Event
 import tigase.halcyon.core.modules.Criteria
 import tigase.halcyon.core.modules.Criterion
 import tigase.halcyon.core.modules.XmppModule
-import tigase.halcyon.core.request2.RequestBuilder
+import tigase.halcyon.core.requests.RequestBuilder
+
 import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xmpp.BareJID
 import tigase.halcyon.core.xmpp.ErrorCondition
@@ -57,9 +58,9 @@ class Jingle {
 }
 
 class JingleModule(
-    override val context: Context,
-    val sessionManager: Jingle.SessionManager,
-    val supportsMessageInitiation: Boolean = true
+	override val context: Context,
+	val sessionManager: Jingle.SessionManager,
+	val supportsMessageInitiation: Boolean = true
 ) : XmppModule {
 
 	companion object {
@@ -206,7 +207,7 @@ class JingleModule(
 					})
 				}
 			})
-		}
+		}.map { Unit }
 	}
 
 	fun acceptSession(
@@ -240,7 +241,7 @@ class JingleModule(
 					})
 				}
 			})
-		}
+		}.map { Unit }
 	}
 
 	fun terminateSession(jid: JID, sid: String, reason: TerminateReason): RequestBuilder<Unit, ErrorCondition, IQ> {
@@ -254,7 +255,7 @@ class JingleModule(
 				attribute("sid", sid)
 				addChild(reason.toReasonElement())
 			})
-		}
+		}.map { Unit }
 	}
 
 	fun transportInfo(jid: JID, sid: String, contents: List<Content>): RequestBuilder<Unit, ErrorCondition, IQ> {
@@ -269,17 +270,17 @@ class JingleModule(
 
 				contents.map { it.toElement() }.forEach { contentEl -> addChild(contentEl) }
 			})
-		}
+		}.map { Unit }
 	}
 }
 
 data class JingleEvent(
-    val jid: JID,
-    val action: Action,
-    val intiator: JID,
-    val sid: String,
-    val contents: List<Content>,
-    val bundle: List<String>?
+	val jid: JID,
+	val action: Action,
+	val intiator: JID,
+	val sid: String,
+	val contents: List<Content>,
+	val bundle: List<String>?
 ) : Event(TYPE) {
 
 	companion object {

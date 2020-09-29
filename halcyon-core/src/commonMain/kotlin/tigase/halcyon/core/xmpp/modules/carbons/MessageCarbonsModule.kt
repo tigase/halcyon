@@ -23,7 +23,8 @@ import tigase.halcyon.core.eventbus.Event
 import tigase.halcyon.core.logger.Logger
 import tigase.halcyon.core.modules.Criterion
 import tigase.halcyon.core.modules.XmppModule
-import tigase.halcyon.core.request2.RequestBuilder
+import tigase.halcyon.core.requests.RequestBuilder
+
 import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xmpp.ErrorCondition
 import tigase.halcyon.core.xmpp.JID
@@ -82,14 +83,14 @@ class MessageCarbonsModule(override val context: Context, private val forwardHan
 		"enable"{
 			xmlns = XMLNS
 		}
-	}
+	}.map { Unit }
 
 	fun disable(): RequestBuilder<Unit, ErrorCondition, IQ> = context.request.iq {
 		type = IQType.Set
 		"disable"{
 			xmlns = XMLNS
 		}
-	}
+	}.map { Unit }
 
 	private fun processSent(message: Element, carbon: Element) {
 		val msg = carbon.getChildrenNS(

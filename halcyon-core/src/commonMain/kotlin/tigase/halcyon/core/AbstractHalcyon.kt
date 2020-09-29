@@ -31,7 +31,8 @@ import tigase.halcyon.core.logger.Level
 import tigase.halcyon.core.logger.Logger
 import tigase.halcyon.core.modules.ModulesManager
 import tigase.halcyon.core.modules.XmppModule
-import tigase.halcyon.core.requests.Request
+import tigase.halcyon.core.requests.AbstractRequest
+import tigase.halcyon.core.requests.RequestBuilderFactory
 import tigase.halcyon.core.requests.RequestsManager
 import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xml.element
@@ -93,7 +94,7 @@ abstract class AbstractHalcyon : Context, PacketWriter {
 
 	var autoReconnect: Boolean = true
 
-	override val request = tigase.halcyon.core.request2.RequestBuilderFactory(this)
+	override val request = RequestBuilderFactory(this)
 
 	private var tickCounter: Long = 0
 
@@ -294,7 +295,7 @@ abstract class AbstractHalcyon : Context, PacketWriter {
 		eventBus.fire(SentXMLElementEvent(toSend, null))
 	}
 
-	override fun write(request: Request<*, *>) {
+	override fun write(request: AbstractRequest<*, *>) {
 		val c = this.connector ?: throw HalcyonException("Connector is not initialized")
 		if (c.state != tigase.halcyon.core.connector.State.Connected) throw HalcyonException("Connector is not connected")
 		requestsManager.register(request)

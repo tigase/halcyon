@@ -25,7 +25,7 @@ import tigase.halcyon.core.exceptions.HalcyonException
 import tigase.halcyon.core.logger.Logger
 import tigase.halcyon.core.modules.Criterion
 import tigase.halcyon.core.modules.XmppModule
-import tigase.halcyon.core.request2.RequestBuilder
+import tigase.halcyon.core.requests.RequestBuilder
 import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xmpp.ErrorCondition
 import tigase.halcyon.core.xmpp.JID
@@ -169,7 +169,7 @@ class PubSubModule(override val context: Context) : XmppModule {
 				}
 			}
 		}
-		return context.request.iq(iq)
+		return context.request.iq(iq).map { Unit }
 	}
 
 	/**
@@ -233,7 +233,7 @@ class PubSubModule(override val context: Context) : XmppModule {
 			}
 		}
 
-		return context.request.iq(iq)
+		return context.request.iq(iq).map { Unit }
 	}
 
 	private fun retrieveSubscriptions(
@@ -324,7 +324,7 @@ class PubSubModule(override val context: Context) : XmppModule {
 				}
 			}
 		}
-		return context.request.iq(iq)
+		return context.request.iq(iq).map { Unit }
 	}
 
 	override fun process(element: Element) {
@@ -381,7 +381,7 @@ class PubSubModule(override val context: Context) : XmppModule {
 				}
 			}
 		}
-		return context.request.iq(iq)
+		return context.request.iq(iq).map { Unit }
 	}
 
 	/**

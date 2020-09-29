@@ -26,7 +26,7 @@ import tigase.halcyon.core.xmpp.stanzas.wrap
 
 typealias ResultConverter<T> = (Element) -> T
 
-abstract class Request<V, STT : Stanza<*>>(
+abstract class AbstractRequest<V, STT : Stanza<*>>(
 	val jid: JID?, val id: String, val creationTimestamp: Long, val stanza: STT, var timeoutDelay: Long
 ) {
 
