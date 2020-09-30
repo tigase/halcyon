@@ -26,10 +26,7 @@ import tigase.halcyon.core.xmpp.stanzas.IQ
 import tigase.halcyon.core.xmpp.stanzas.IQType
 import tigase.halcyon.core.xmpp.stanzas.iq
 import tigase.halcyon.core.xmpp.toJID
-import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertNotNull
-import kotlin.test.assertTrue
+import kotlin.test.*
 
 class RequestsTest {
 
@@ -294,4 +291,77 @@ class RequestsTest {
 		assertEquals("Test message", exNotNull.description)
 	}
 
+	@Test
+	fun testMarkAsSentIQ() {
+		var rr: Result<*>? = null
+
+		val req = factory.iq {
+			to = "a@b".toJID()
+			from = "x@y".toJID()
+			type = IQType.Get
+		}.response {
+			rr = it
+		}.build()
+		req.markAsSent()
+
+		assertNull(rr, "Handler must not be executed for IQ stanza, if markAsRead() is called.")
+		assertTrue(req.isSent)
+	}
+
+	@Test
+	fun testMarkAsSentIQStacked() {
+		var rr: Result<*>? = null
+
+		val req = factory.iq {
+			to = "a@b".toJID()
+			from = "x@y".toJID()
+			type = IQType.Get
+		}.map { Unit }.response {
+			rr = it
+		}.map { Unit }.build()
+		req.markAsSent()
+
+		assertNull(rr, "Handler must not be executed for IQ stanza, if markAsRead() is called.")
+		assertTrue(req.isSent)
+	}
+
+	@Test
+	fun testMarkAsSentMessage() {
+		var rr: Result<*>? = null
+
+		val req = factory.message {
+			to = "a@b".toJID()
+			from = "x@y".toJID()
+		}.response {
+			rr = it
+		}.build()
+		req.markAsSent()
+
+		val rrNN = assertNotNull(rr, "We should have any response here!")
+		assertTrue(rrNN.isSuccess, "Result should be success, because stanza is sent")
+		assertTrue(req.isSent)
+	}
+
+	@Test
+	fun testMarkAsSentMessageStacked() {
+		var rr: Result<*>? = null
+		var rr1: Result<String>? = null
+
+		val req = factory.message {
+			to = "a@b".toJID()
+			from = "x@y".toJID()
+		}.map { Unit }.response {
+			rr = it
+		}.map { "Sent" }.response { rr1 = it }.build()
+		req.markAsSent()
+
+		assertTrue(req.isSent)
+
+		val rrNN = assertNotNull(rr, "We should have any response here!")
+		assertTrue(rrNN.isSuccess, "Result should be success, because stanza is sent")
+
+		val rr1NN = assertNotNull(rr1, "We should have any response here!")
+		assertTrue(rr1NN.isSuccess, "Result should be success, because stanza is sent")
+		assertEquals("Sent", rr1NN.getOrNull())
+	}
 }

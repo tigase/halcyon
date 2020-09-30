@@ -38,27 +38,27 @@ class RequestBuilderFactory(private val halcyon: AbstractHalcyon) {
 		n.init()
 		n.id()
 		val stanza = n.element as IQ
-		return RequestBuilder<IQ, IQ>(halcyon, stanza) { it as IQ }
+		return RequestBuilder(halcyon, stanza) { it as IQ }
 	}
 
-	fun presence(stanza: Element): RequestBuilder<Unit, Presence> = RequestBuilder(halcyon, stanza) { Unit }
+	fun presence(stanza: Element): RequestBuilder<Unit, Presence> = RequestBuilder(halcyon, stanza, true) { Unit }
 
 	fun presence(init: PresenceNode.() -> Unit): RequestBuilder<Unit, Presence> {
 		val n = PresenceNode(Presence(ElementImpl(Presence.NAME)))
 		n.init()
 		n.id()
 		val stanza = n.element as Presence
-		return RequestBuilder(halcyon, stanza) { Unit }
+		return RequestBuilder(halcyon, stanza, true) { Unit }
 	}
 
-	fun message(stanza: Element): RequestBuilder<Unit, Message> = RequestBuilder(halcyon, stanza) { Unit }
+	fun message(stanza: Element): RequestBuilder<Unit, Message> = RequestBuilder(halcyon, stanza, true) { Unit }
 
 	fun message(init: MessageNode.() -> Unit): RequestBuilder<Unit, Message> {
 		val n = MessageNode(Message(ElementImpl(Message.NAME)))
 		n.init()
 		n.id()
 		val stanza = n.element as Message
-		return RequestBuilder(halcyon, stanza) { Unit }
+		return RequestBuilder(halcyon, stanza, true) { Unit }
 	}
 
 }
@@ -71,11 +71,23 @@ class Request<V, STT : Stanza<*>>(
 	timeoutDelay: Long,
 	handler: ResultHandler<V>?,
 	transform: (value: Any) -> V,
-	parentRequest: Request<*, STT>? = null
-) : AbstractRequest<V, STT>(jid, id, creationTimestamp, stanza, timeoutDelay, handler, transform, parentRequest)
+	parentRequest: Request<*, STT>? = null,
+	callHandlerOnSent: Boolean
+) : AbstractRequest<V, STT>(jid,
+							id,
+							creationTimestamp,
+							stanza,
+							timeoutDelay,
+							handler,
+							transform,
+							parentRequest,
+							callHandlerOnSent)
 
 class RequestBuilder<V, STT : Stanza<*>>(
-	private val halcyon: AbstractHalcyon, private val element: Element, private val transform: (value: Any) -> V
+	private val halcyon: AbstractHalcyon,
+	private val element: Element,
+	private val callHandlerOnSent: Boolean = false,
+	private val transform: (value: Any) -> V
 ) {
 
 	private var parentBuilder: RequestBuilder<*, STT>? = null
@@ -95,23 +107,15 @@ class RequestBuilder<V, STT : Stanza<*>>(
 							   timeoutDelay,
 							   resultHandler,
 							   transform,
-							   parentBuilder?.build()).apply {
+							   parentBuilder?.build(),
+							   callHandlerOnSent).apply {
 			this.stanzaHandler = responseStanzaHandler
 		}
 	}
 
-//	fun <R : Any> map(transform: (value: STT) -> R): RequestBuilder<V,R, ERR, STT> {
-//		if (parentBuilder!=null) throw IllegalStateException("Stacked maps are not allowed.")
-//		val res = RequestBuilder<V,R, ERR, STT>(halcyon, element, transform)
-//		res.timeoutDelay = timeoutDelay
-//		res.resultHandler = null
-//		res.parentBuilder = this
-//		return res
-//	}
-
 	fun <R : Any> map(transform: (value: V) -> R): RequestBuilder<R, STT> {
 		val xx: ((Any) -> R) = transform as (((Any) -> R))
-		val res = RequestBuilder<R, STT>(halcyon, element, xx)
+		val res = RequestBuilder<R, STT>(halcyon, element, callHandlerOnSent, xx)
 		res.timeoutDelay = timeoutDelay
 		res.resultHandler = null
 		res.parentBuilder = this

@@ -32,7 +32,8 @@ abstract class AbstractRequest<V, STT : Stanza<*>>(
 	var timeoutDelay: Long,
 	private val handler: ResultHandler<V>?,
 	private val transform: (value: Any) -> V,
-	private val parentRequest: AbstractRequest<*, STT>? = null
+	private val parentRequest: AbstractRequest<*, STT>? = null,
+	private val callHandlerOnSent: Boolean
 ) {
 
 	data class Error(val condition: ErrorCondition, val message: String?)
@@ -107,8 +108,18 @@ abstract class AbstractRequest<V, STT : Stanza<*>>(
 		callHandlers()
 	}
 
-	internal open fun markAsSent() {
-		this.isSent = true
+	internal open fun markAsSent(processStack: Boolean = true) {
+		var tmp: Any? = Unit
+		requestStack().forEach { req ->
+			req.isSent = true
+
+			if (callHandlerOnSent) {
+				tmp = req.transform.invoke(tmp!!)
+				val res = Result.success(tmp!!)
+				req.calculatedResult = res as (Result<Nothing>)
+				req.handler?.invoke(res)
+			}
+		}
 	}
 
 	internal fun markTimeout(processStack: Boolean = true) {
@@ -121,7 +132,7 @@ abstract class AbstractRequest<V, STT : Stanza<*>>(
 	private fun callHandlers() {
 		callResponseStanzaHandler()
 		val tmp = calculatedResult
-		if (tmp == null) throw RuntimeException()
+		if (tmp == null) throw RuntimeException("No calculated result")
 		handler?.invoke(tmp)
 	}
 
