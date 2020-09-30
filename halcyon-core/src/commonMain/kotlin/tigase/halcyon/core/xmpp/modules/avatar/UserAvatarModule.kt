@@ -88,14 +88,12 @@ class UserAvatarModule(override val context: Context) : XmppModule {
 	}
 
 	private fun parseInfo(info: Element): AvatarInfo {
-		return AvatarInfo(
-			info.attributes["bytes"]!!.toInt(),
-			info.attributes["height"]?.toInt(),
-			info.attributes["id"]!!,
-			info.attributes["type"]!!,
-			info.attributes["url"],
-			info.attributes["width"]?.toInt()
-		)
+		return AvatarInfo(info.attributes["bytes"]!!.toInt(),
+						  info.attributes["height"]?.toInt(),
+						  info.attributes["id"]!!,
+						  info.attributes["type"]!!,
+						  info.attributes["url"],
+						  info.attributes["width"]?.toInt())
 	}
 
 	private fun processMetadataItem(stanza: Message, avatarID: String, metadata: Element) {
@@ -139,7 +137,7 @@ class UserAvatarModule(override val context: Context) : XmppModule {
 		val bytes: Int, val height: Int?, val id: String, val type: String, val url: String?, val width: Int?
 	)
 
-	fun retrieveAvatar(jid: JID, avatarID: String): RequestBuilder<AvatarData, ErrorCondition, IQ> {
+	fun retrieveAvatar(jid: JID, avatarID: String): RequestBuilder<AvatarData, IQ> {
 		val x = pubSubModule.retrieveItem(JID.parse(jid.bareJID.toString()), XMLNS_DATA, avatarID).map { response ->
 			val item = response.items.first()
 			val data = item.content!!.value
@@ -150,7 +148,7 @@ class UserAvatarModule(override val context: Context) : XmppModule {
 
 	override fun process(element: Element) = throw XMPPException(ErrorCondition.FeatureNotImplemented)
 
-	fun publish(data: AvatarData): RequestBuilder<PubSubModule.PublishingInfo, ErrorCondition, IQ> {
+	fun publish(data: AvatarData): RequestBuilder<PubSubModule.PublishingInfo, IQ> {
 		val payload = element("data") {
 			xmlns = XMLNS_DATA
 			+data.base64Data!!
@@ -158,7 +156,7 @@ class UserAvatarModule(override val context: Context) : XmppModule {
 		return pubSubModule.publish(null, XMLNS_DATA, data.id, payload)
 	}
 
-	fun publish(data: AvatarInfo): RequestBuilder<PubSubModule.PublishingInfo, ErrorCondition, IQ> {
+	fun publish(data: AvatarInfo): RequestBuilder<PubSubModule.PublishingInfo, IQ> {
 		val payload = element("metadata") {
 			xmlns = XMLNS_METADATA
 			"info"{

@@ -33,10 +33,8 @@ abstract class AbstractJingleSession(
 	val initiationType: InitiationType
 ) : Jingle.Session {
 
-	override var state: Jingle.Session.State by Delegates.observable(Jingle.Session.State.created) { property, oldValue, newValue ->
-		stateChanged(
-			newValue
-		)
+	override var state: State by Delegates.observable(State.created) { property, oldValue, newValue ->
+		stateChanged(newValue)
 	}
 		protected set
 	override lateinit var jid: JID
@@ -49,7 +47,7 @@ abstract class AbstractJingleSession(
 		this.jid = jid
 	}
 
-	protected abstract fun stateChanged(state: Jingle.Session.State)
+	protected abstract fun stateChanged(state: State)
 	protected abstract fun setRemoteDescription(contents: List<Content>, bundle: List<String>?)
 	abstract fun addCandidate(candidate: Candidate, contentName: String)
 

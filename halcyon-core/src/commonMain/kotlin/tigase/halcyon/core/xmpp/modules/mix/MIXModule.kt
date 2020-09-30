@@ -26,11 +26,11 @@ import tigase.halcyon.core.modules.Criteria
 import tigase.halcyon.core.modules.Criterion
 import tigase.halcyon.core.modules.XmppModule
 import tigase.halcyon.core.requests.RequestBuilder
-
 import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xml.element
 import tigase.halcyon.core.xml.getChildContent
-import tigase.halcyon.core.xmpp.*
+import tigase.halcyon.core.xmpp.BareJID
+import tigase.halcyon.core.xmpp.JID
 import tigase.halcyon.core.xmpp.modules.BindModule
 import tigase.halcyon.core.xmpp.modules.mam.MAMMessageEvent
 import tigase.halcyon.core.xmpp.modules.mix.MIXModule.Companion.MISC_XMLNS
@@ -39,6 +39,8 @@ import tigase.halcyon.core.xmpp.modules.roster.RosterItemAnnotation
 import tigase.halcyon.core.xmpp.modules.roster.RosterItemAnnotationProcessor
 import tigase.halcyon.core.xmpp.modules.roster.RosterModule
 import tigase.halcyon.core.xmpp.stanzas.*
+import tigase.halcyon.core.xmpp.toBareJID
+import tigase.halcyon.core.xmpp.toJID
 
 @Serializable
 data class MIXRosterItemAnnotation(val participantId: String) : RosterItemAnnotation
@@ -118,7 +120,7 @@ class MIXModule(override val context: Context) : XmppModule, RosterItemAnnotatio
 		}
 	}
 
-	fun create(mixComponent: BareJID, name: String): RequestBuilder<CreateResponse, ErrorCondition, IQ> {
+	fun create(mixComponent: BareJID, name: String): RequestBuilder<CreateResponse, IQ> {
 		return context.request.iq {
 			type = IQType.Set
 			to = mixComponent.toJID()
@@ -133,19 +135,19 @@ class MIXModule(override val context: Context) : XmppModule, RosterItemAnnotatio
 		}
 	}
 
-	fun createAllowed(channel: BareJID): RequestBuilder<Unit, ErrorCondition, IQ> {
+	fun createAllowed(channel: BareJID): RequestBuilder<Unit, IQ> {
 		return pubsubModule.create(channel.toJID(), NODE_ALLOWED)
 	}
 
-	fun createBanned(channel: BareJID): RequestBuilder<Unit, ErrorCondition, IQ> {
+	fun createBanned(channel: BareJID): RequestBuilder<Unit, IQ> {
 		return pubsubModule.create(channel.toJID(), NODE_BANNED)
 	}
 
-	fun addToAllowed(channel: BareJID, participant: BareJID): RequestBuilder<Unit, ErrorCondition, IQ> {
+	fun addToAllowed(channel: BareJID, participant: BareJID): RequestBuilder<Unit, IQ> {
 		return pubsubModule.publish(channel.toJID(), NODE_ALLOWED, participant.toString()).map { Unit }
 	}
 
-	fun addToBanned(channel: BareJID, participant: BareJID): RequestBuilder<Unit, ErrorCondition, IQ> {
+	fun addToBanned(channel: BareJID, participant: BareJID): RequestBuilder<Unit, IQ> {
 		return pubsubModule.publish(channel.toJID(), NODE_BANNED, participant.toString()).map { Unit }
 	}
 
@@ -155,7 +157,7 @@ class MIXModule(override val context: Context) : XmppModule, RosterItemAnnotatio
 		return MIXInvitation(inviter, invitee, channel, token)
 	}
 
-	fun invitationMessage(invitation: MIXInvitation, message: String): RequestBuilder<Unit, ErrorCondition, Message> {
+	fun invitationMessage(invitation: MIXInvitation, message: String): RequestBuilder<Unit, Message> {
 		return context.request.message {
 			to = invitation.invitee.toJID()
 			body = message
@@ -163,12 +165,12 @@ class MIXModule(override val context: Context) : XmppModule, RosterItemAnnotatio
 		}
 	}
 
-	fun join(invitation: MIXInvitation, nick: String): RequestBuilder<JoinResponse, ErrorCondition, IQ> =
+	fun join(invitation: MIXInvitation, nick: String): RequestBuilder<JoinResponse, IQ> =
 		join(invitation.channel, nick, invitation)
 
 	fun join(
 		channel: BareJID, nick: String, invitation: MIXInvitation? = null
-	): RequestBuilder<JoinResponse, ErrorCondition, IQ> {
+	): RequestBuilder<JoinResponse, IQ> {
 		return context.request.iq {
 			type = IQType.Set
 			to = myJID().bareJID.toJID()
@@ -197,7 +199,7 @@ class MIXModule(override val context: Context) : XmppModule, RosterItemAnnotatio
 		}
 	}
 
-	fun leave(channel: BareJID): RequestBuilder<Unit, ErrorCondition, IQ> {
+	fun leave(channel: BareJID): RequestBuilder<Unit, IQ> {
 		return context.request.iq {
 			type = IQType.Set
 			"client-leave"{
@@ -210,7 +212,7 @@ class MIXModule(override val context: Context) : XmppModule, RosterItemAnnotatio
 		}.map { Unit }
 	}
 
-	fun message(channel: BareJID, message: String): RequestBuilder<Unit, ErrorCondition, Message> {
+	fun message(channel: BareJID, message: String): RequestBuilder<Unit, Message> {
 		return context.request.message {
 			to = channel.toJID()
 			type = MessageType.Groupchat

@@ -80,13 +80,11 @@ data class RosterItem(
 
 data class RosterResponse(val version: String?)
 
-class RosterModule(context: Context) : AbstractXmppIQModule(
-	context, TYPE, emptyArray(), Criterion.chain(
-		Criterion.name(IQ.NAME), Criterion.xmlns(
-			XMLNS
-		)
-	)
-) {
+class RosterModule(context: Context) : AbstractXmppIQModule(context,
+															TYPE,
+															emptyArray(),
+															Criterion.chain(Criterion.name(IQ.NAME),
+																			Criterion.xmlns(XMLNS))) {
 
 	private val log = Logger("com.example.modules.roster.RosterModule")
 
@@ -98,7 +96,7 @@ class RosterModule(context: Context) : AbstractXmppIQModule(
 
 	var store: RosterStore = DefaultRosterStore()
 
-	fun rosterGet(): RequestBuilder<RosterResponse, ErrorCondition, IQ> {
+	fun rosterGet(): RequestBuilder<RosterResponse, IQ> {
 		val iq = iq {
 			type = IQType.Get
 			"query"{
@@ -172,9 +170,8 @@ class RosterModule(context: Context) : AbstractXmppIQModule(
 	}
 
 	private fun parseItem(item: Element): RosterItem {
-		val jid = item.attributes["jid"]?.toBareJID() ?: throw XMPPException(
-			ErrorCondition.BadRequest, "Missing JID in roster item."
-		)
+		val jid = item.attributes["jid"]?.toBareJID() ?: throw XMPPException(ErrorCondition.BadRequest,
+																			 "Missing JID in roster item.")
 		val name = item.attributes["name"]
 		val subscription = item.attributes["subscription"]?.let { sname ->
 			Subscription.values().firstOrNull { s -> s.value == sname }
@@ -210,15 +207,13 @@ class RosterModule(context: Context) : AbstractXmppIQModule(
 		if (from != null && from.bareJID != boundJID.bareJID) {
 			throw XMPPException(ErrorCondition.NotAllowed)
 		}
-		element.getChildrenNS(
-			"query", XMLNS
-		)?.let(this@RosterModule::processQueryResponse)
+		element.getChildrenNS("query", XMLNS)?.let(this@RosterModule::processQueryResponse)
 	}
 
 	/**
 	 * Add or update roster item.
 	 */
-	fun addItem(vararg items: RosterItem): RequestBuilder<Unit, ErrorCondition, IQ> {
+	fun addItem(vararg items: RosterItem): RequestBuilder<Unit, IQ> {
 		return context.request.iq {
 			type = IQType.Set
 			"query"{
@@ -230,7 +225,7 @@ class RosterModule(context: Context) : AbstractXmppIQModule(
 		}.map { Unit }
 	}
 
-	fun deleteItem(vararg jids: BareJID): RequestBuilder<Unit, ErrorCondition, IQ> {
+	fun deleteItem(vararg jids: BareJID): RequestBuilder<Unit, IQ> {
 		return context.request.iq {
 			type = IQType.Set
 			"query"{

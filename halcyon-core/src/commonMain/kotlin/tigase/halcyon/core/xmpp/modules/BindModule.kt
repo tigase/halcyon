@@ -47,7 +47,7 @@ class BindModule(override val context: Context) : XmppModule {
 
 	override fun initialize() {}
 
-	fun bind(resource: String? = null): RequestBuilder<BindResult, ErrorCondition, IQ> {
+	fun bind(resource: String? = null): RequestBuilder<BindResult, IQ> {
 		val stanza = iq {
 			type = IQType.Set
 			"bind"{

@@ -25,10 +25,8 @@ import tigase.halcyon.core.modules.Criterion
 import tigase.halcyon.core.modules.XmppModule
 import tigase.halcyon.core.parseISO8601
 import tigase.halcyon.core.requests.RequestBuilder
-
 import tigase.halcyon.core.timestampToISO8601
 import tigase.halcyon.core.xml.Element
-import tigase.halcyon.core.xmpp.ErrorCondition
 import tigase.halcyon.core.xmpp.IdGenerator
 import tigase.halcyon.core.xmpp.forms.FieldType
 import tigase.halcyon.core.xmpp.forms.FormType
@@ -80,9 +78,8 @@ class MAMModule(override val context: Context) : XmppModule {
 	}
 
 	override val type = TYPE
-	override val criteria: Criteria? = Criterion.chain(
-		Criterion.name(Message.NAME), Criterion.nameAndXmlns("result", XMLNS)
-	)
+	override val criteria: Criteria? =
+		Criterion.chain(Criterion.name(Message.NAME), Criterion.nameAndXmlns("result", XMLNS))
 	override val features = arrayOf(XMLNS)
 
 	private val requests = ExpiringMap<String, RegisteredQuery>()
@@ -104,11 +101,7 @@ class MAMModule(override val context: Context) : XmppModule {
 
 		val msg = forwarded.getFirstChild("message") ?: return
 
-		context.eventBus.fire(
-			MAMMessageEvent(
-				wrap(element), queryId, resultId, ForwardedStanza(forwarded)
-			)
-		)
+		context.eventBus.fire(MAMMessageEvent(wrap(element), queryId, resultId, ForwardedStanza(forwarded)))
 	}
 
 	private fun prepareForm(with: String? = null, start: Long? = null, end: Long? = null): Element? {
@@ -124,7 +117,7 @@ class MAMModule(override val context: Context) : XmppModule {
 
 	fun query(
 		rsm: RSM? = null, with: String? = null, start: Long? = null, end: Long? = null
-	): RequestBuilder<Fin, ErrorCondition, IQ> {
+	): RequestBuilder<Fin, IQ> {
 		val queryId = IdGenerator.nextId()
 		val form: Element? = prepareForm(with, start, end)
 		val stanza = iq {

@@ -30,9 +30,11 @@ import tigase.halcyon.core.xmpp.stanzas.IQ
 import tigase.halcyon.core.xmpp.stanzas.IQType
 import tigase.halcyon.core.xmpp.stanzas.iq
 
-class PingModule(context: Context) : AbstractXmppIQModule(
-	context, TYPE, arrayOf(XMLNS), Criterion.chain(Criterion.name(IQ.NAME), Criterion.xmlns(XMLNS))
-) {
+class PingModule(context: Context) : AbstractXmppIQModule(context,
+														  TYPE,
+														  arrayOf(XMLNS),
+														  Criterion.chain(Criterion.name(IQ.NAME),
+																		  Criterion.xmlns(XMLNS))) {
 
 	companion object {
 
@@ -40,7 +42,7 @@ class PingModule(context: Context) : AbstractXmppIQModule(
 		const val TYPE = XMLNS
 	}
 
-	fun ping(jid: JID? = null): RequestBuilder<Pong, ErrorCondition, IQ> {
+	fun ping(jid: JID? = null): RequestBuilder<Pong, IQ> {
 		val stanza = iq {
 			type = IQType.Get
 			if (jid != null) to = jid

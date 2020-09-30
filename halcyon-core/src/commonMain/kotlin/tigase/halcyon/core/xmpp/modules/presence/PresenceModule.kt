@@ -24,10 +24,8 @@ import tigase.halcyon.core.logger.Logger
 import tigase.halcyon.core.modules.Criterion
 import tigase.halcyon.core.modules.XmppModule
 import tigase.halcyon.core.requests.RequestBuilder
-
 import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xmpp.BareJID
-import tigase.halcyon.core.xmpp.ErrorCondition
 import tigase.halcyon.core.xmpp.JID
 import tigase.halcyon.core.xmpp.stanzas.*
 
@@ -85,11 +83,10 @@ class PresenceModule(override val context: Context) : XmppModule {
 		val bestPresence = getBestPresenceOf(fromJID.bareJID)
 		val bestShow = bestPresence?.show
 
-		context.eventBus.fire(
-			ContactChangeStatusEvent(
-				fromJID.bareJID, bestPresence?.status, bestPresence ?: presence, presence
-			)
-		)
+		context.eventBus.fire(ContactChangeStatusEvent(fromJID.bareJID,
+													   bestPresence?.status,
+													   bestPresence ?: presence,
+													   presence))
 	}
 
 	fun sendInitialPresence() {
@@ -99,7 +96,7 @@ class PresenceModule(override val context: Context) : XmppModule {
 
 	fun sendPresence(
 		jid: JID? = null, type: PresenceType? = null, show: Show? = null, status: String? = null
-	): RequestBuilder<Unit, ErrorCondition, Presence> {
+	): RequestBuilder<Unit, Presence> {
 		val presence = presence {
 			if (jid != null) this.to = jid
 			this.type = type
@@ -112,7 +109,7 @@ class PresenceModule(override val context: Context) : XmppModule {
 		return context.request.presence(presence)
 	}
 
-	fun sendSubscriptionSet(jid: JID, presenceType: PresenceType): RequestBuilder<Unit, ErrorCondition, Presence> {
+	fun sendSubscriptionSet(jid: JID, presenceType: PresenceType): RequestBuilder<Unit, Presence> {
 		return context.request.presence {
 			to = jid
 			type = presenceType

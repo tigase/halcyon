@@ -78,14 +78,14 @@ class MessageCarbonsModule(override val context: Context, private val forwardHan
 		}
 	}
 
-	fun enable(): RequestBuilder<Unit, ErrorCondition, IQ> = context.request.iq {
+	fun enable(): RequestBuilder<Unit, IQ> = context.request.iq {
 		type = IQType.Set
 		"enable"{
 			xmlns = XMLNS
 		}
 	}.map { Unit }
 
-	fun disable(): RequestBuilder<Unit, ErrorCondition, IQ> = context.request.iq {
+	fun disable(): RequestBuilder<Unit, IQ> = context.request.iq {
 		type = IQType.Set
 		"disable"{
 			xmlns = XMLNS
@@ -93,9 +93,8 @@ class MessageCarbonsModule(override val context: Context, private val forwardHan
 	}.map { Unit }
 
 	private fun processSent(message: Element, carbon: Element) {
-		val msg = carbon.getChildrenNS(
-			"forwarded", FORWARD_XMLNS
-		)?.getChildren(Message.NAME)?.firstOrNull()?.asStanza<Message>() ?: return
+		val msg = carbon.getChildrenNS("forwarded", FORWARD_XMLNS)?.getChildren(Message.NAME)?.firstOrNull()
+			?.asStanza<Message>() ?: return
 
 		messageModule?.process(msg)
 //		forwardHandler?.invoke(msg)
@@ -103,9 +102,8 @@ class MessageCarbonsModule(override val context: Context, private val forwardHan
 	}
 
 	private fun processReceived(message: Element, carbon: Element) {
-		val msg = carbon.getChildrenNS(
-			"forwarded", FORWARD_XMLNS
-		)?.getChildren(Message.NAME)?.firstOrNull()?.asStanza<Message>() ?: return
+		val msg = carbon.getChildrenNS("forwarded", FORWARD_XMLNS)?.getChildren(Message.NAME)?.firstOrNull()
+			?.asStanza<Message>() ?: return
 
 		forwardHandler.invoke(msg)
 		context.eventBus.fire(CarbonEvent.Received(msg.from, msg))

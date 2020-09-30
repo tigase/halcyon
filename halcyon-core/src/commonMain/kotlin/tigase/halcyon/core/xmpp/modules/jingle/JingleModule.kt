@@ -146,16 +146,14 @@ class JingleModule(
 
 	fun sendMessageInitiation(
 		action: MessageInitiationAction, jid: JID
-	): RequestBuilder<Unit, ErrorCondition, Message> {
+	): RequestBuilder<Unit, Message> {
 		when (action) {
-			is MessageInitiationAction.Proceed -> sendMessageInitiation(
-				MessageInitiationAction.Accept(action.id), JID(context.config.userJID!!, null)
-			).send()
+			is MessageInitiationAction.Proceed -> sendMessageInitiation(MessageInitiationAction.Accept(action.id),
+																		JID(context.config.userJID!!, null)).send()
 			is MessageInitiationAction.Reject -> {
 				if (jid.bareJID != context.config.userJID) {
-					sendMessageInitiation(
-						MessageInitiationAction.Accept(action.id), JID(context.config.userJID!!, null)
-					).send()
+					sendMessageInitiation(MessageInitiationAction.Accept(action.id),
+										  JID(context.config.userJID!!, null)).send()
 				}
 			}
 			else -> {
@@ -178,7 +176,7 @@ class JingleModule(
 
 	fun initiateSession(
 		jid: JID, sid: String, contents: List<Content>, bundle: List<String>?
-	): RequestBuilder<Unit, ErrorCondition, IQ> {
+	): RequestBuilder<Unit, IQ> {
 		return context.request.iq {
 			to = jid
 			type = IQType.Set
@@ -187,12 +185,9 @@ class JingleModule(
 				xmlns = XMLNS
 				attribute("action", Action.sessionInitiate.value)
 				attribute("sid", sid)
-				attribute(
-					"initiator",
-					context.modules.getModule<BindModule>(BindModule.TYPE).boundJID?.toString() ?: throw XMPPException(
-						ErrorCondition.NotAuthorized
-					)
-				)
+				attribute("initiator",
+						  context.modules.getModule<BindModule>(BindModule.TYPE).boundJID?.toString()
+							  ?: throw XMPPException(ErrorCondition.NotAuthorized))
 
 				contents.map { it.toElement() }.forEach { contentEl -> addChild(contentEl) }
 				bundle?.let { bundle ->
@@ -212,7 +207,7 @@ class JingleModule(
 
 	fun acceptSession(
 		jid: JID, sid: String, contents: List<Content>, bundle: List<String>?
-	): RequestBuilder<Unit, ErrorCondition, IQ> {
+	): RequestBuilder<Unit, IQ> {
 		return context.request.iq {
 			to = jid
 			type = IQType.Set
@@ -221,12 +216,9 @@ class JingleModule(
 				xmlns = XMLNS
 				attribute("action", Action.sessionAccept.value)
 				attribute("sid", sid)
-				attribute(
-					"responder",
-					context.modules.getModule<BindModule>(BindModule.TYPE).boundJID?.toString() ?: throw XMPPException(
-						ErrorCondition.NotAuthorized
-					)
-				)
+				attribute("responder",
+						  context.modules.getModule<BindModule>(BindModule.TYPE).boundJID?.toString()
+							  ?: throw XMPPException(ErrorCondition.NotAuthorized))
 
 				contents.map { it.toElement() }.forEach { contentEl -> addChild(contentEl) }
 				bundle?.let { bundle ->
@@ -244,7 +236,7 @@ class JingleModule(
 		}.map { Unit }
 	}
 
-	fun terminateSession(jid: JID, sid: String, reason: TerminateReason): RequestBuilder<Unit, ErrorCondition, IQ> {
+	fun terminateSession(jid: JID, sid: String, reason: TerminateReason): RequestBuilder<Unit, IQ> {
 		return context.request.iq {
 			to = jid
 			type = IQType.Set
@@ -258,7 +250,7 @@ class JingleModule(
 		}.map { Unit }
 	}
 
-	fun transportInfo(jid: JID, sid: String, contents: List<Content>): RequestBuilder<Unit, ErrorCondition, IQ> {
+	fun transportInfo(jid: JID, sid: String, contents: List<Content>): RequestBuilder<Unit, IQ> {
 		return context.request.iq {
 			to = jid
 			type = IQType.Set

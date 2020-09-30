@@ -63,10 +63,9 @@ class DiscoveryModule(override val context: Context) : XmppModule {
 	}
 
 	override val type: String = TYPE
-	override val criteria: Criteria? = Criterion.or(
-		Criterion.chain(Criterion.name("iq"), Criterion.nameAndXmlns("query", XMLNS_INFO)),
-		Criterion.chain(Criterion.name("iq"), Criterion.nameAndXmlns("query", XMLNS_ITEMS))
-	)
+	override val criteria: Criteria? =
+		Criterion.or(Criterion.chain(Criterion.name("iq"), Criterion.nameAndXmlns("query", XMLNS_INFO)),
+					 Criterion.chain(Criterion.name("iq"), Criterion.nameAndXmlns("query", XMLNS_ITEMS)))
 	override val features: Array<String> = arrayOf(XMLNS_INFO, XMLNS_ITEMS)
 
 	var clientName = "Halcyon Based Client"
@@ -172,7 +171,7 @@ class DiscoveryModule(override val context: Context) : XmppModule {
 	 * @param node name of node to ask for (optional).
 	 * @return request returns [Info] in case of success.
 	 */
-	fun info(jid: JID?, node: String? = null): RequestBuilder<Info, ErrorCondition, IQ> {
+	fun info(jid: JID?, node: String? = null): RequestBuilder<Info, IQ> {
 		val stanza = iq {
 			type = IQType.Get
 			if (jid != null) to = jid
@@ -222,7 +221,7 @@ class DiscoveryModule(override val context: Context) : XmppModule {
 		}.send()
 	}
 
-	fun items(jid: JID?, node: String? = null): RequestBuilder<Items, ErrorCondition, IQ> {
+	fun items(jid: JID?, node: String? = null): RequestBuilder<Items, IQ> {
 		val stanza = iq {
 			type = IQType.Get
 			if (jid != null) to = jid

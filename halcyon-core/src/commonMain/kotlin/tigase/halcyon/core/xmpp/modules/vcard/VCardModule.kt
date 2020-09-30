@@ -59,14 +59,12 @@ class VCardModule(override val context: Context) : XmppModule {
 	var autoRetrieve: Boolean = false
 
 	override fun initialize() {
-		context.eventBus.register(
-			PubSubEventReceivedEvent.TYPE, this@VCardModule::processEvent
-		)
+		context.eventBus.register(PubSubEventReceivedEvent.TYPE, this@VCardModule::processEvent)
 	}
 
 	override fun process(element: Element) = throw XMPPException(ErrorCondition.FeatureNotImplemented)
 
-	fun retrieveVCard(jid: BareJID): RequestBuilder<VCard, ErrorCondition, IQ> {
+	fun retrieveVCard(jid: BareJID): RequestBuilder<VCard, IQ> {
 		val iq = iq {
 			type = IQType.Get
 			to = jid.toString().toJID()
@@ -77,7 +75,7 @@ class VCardModule(override val context: Context) : XmppModule {
 		return context.request.iq(iq).map(this@VCardModule::parseResponse)
 	}
 
-	fun publish(vcard: VCard): RequestBuilder<Unit, ErrorCondition, IQ> {
+	fun publish(vcard: VCard): RequestBuilder<Unit, IQ> {
 		val ownJid = context.modules.getModuleOrNull<BindModule>(BindModule.TYPE)?.boundJID?.bareJID
 		val iq = iq {
 			type = IQType.Set

@@ -24,19 +24,26 @@ import tigase.halcyon.core.xmpp.XMPPException
 import tigase.halcyon.core.xmpp.stanzas.Stanza
 import tigase.halcyon.core.xmpp.stanzas.wrap
 
-typealias ResultConverter<T> = (Element) -> T
-
 abstract class AbstractRequest<V, STT : Stanza<*>>(
-	val jid: JID?, val id: String, val creationTimestamp: Long, val stanza: STT, var timeoutDelay: Long
+	val jid: JID?,
+	val id: String,
+	val creationTimestamp: Long,
+	val stanza: STT,
+	var timeoutDelay: Long,
+	private val handler: ResultHandler<V>?,
+	private val transform: (value: Any) -> V,
+	private val parentRequest: AbstractRequest<*, STT>? = null
 ) {
 
-	protected val data = HashMap<String, Any>()
+	data class Error(val condition: ErrorCondition, val message: String?)
+
+	private val data = HashMap<String, Any>()
 
 	/**
 	 * `true` when no response for IQ or when stanza is not delivered to server (StreamManagement must be enabled)
 	 */
 	var isTimeout: Boolean = false
-		protected set
+		private set
 
 	var isCompleted: Boolean = false
 		private set
@@ -47,8 +54,50 @@ abstract class AbstractRequest<V, STT : Stanza<*>>(
 	var response: STT? = null
 		private set
 
-	internal open fun markAsSent() {
-		this.isSent = true
+	private var calculatedResult: Result<V>? = null
+
+	internal var stanzaHandler: ResponseStanzaHandler<STT>? = null
+
+	private fun requestStack(): List<AbstractRequest<*, STT>> {
+		val result = mutableListOf<AbstractRequest<*, STT>>()
+
+		var tmp: AbstractRequest<*, STT>? = this
+		while (tmp != null) {
+			result.add(0, tmp)
+			tmp = tmp.parentRequest
+		}
+
+		return result
+	}
+
+	fun processStack() {
+		val requests = requestStack()
+
+		var tmp: Any? = response
+
+		requests.forEach { req ->
+			val result = if (isTimeout) {
+				Result.failure(XMPPError(response, ErrorCondition.RemoteServerTimeout, null))
+			} else {
+				when (response!!.attributes["type"]) {
+					"result" -> {
+						tmp = req.transform.invoke(tmp!!)
+						Result.success(tmp)
+					}
+					"error" -> {
+						val e = findCondition(response!!)
+						Result.failure(XMPPError(response!!, e.condition, e.message))
+					}
+					else -> {
+						Result.failure(XMPPError(response!!, ErrorCondition.UnexpectedRequest, null))
+					}
+				}
+			}
+
+			req.calculatedResult = result as (Result<Nothing>)
+			if (isTimeout) req.markTimeout(false)
+			else req.setResponseStanza(response!!, false)
+		}
 	}
 
 	internal fun setResponseStanza(response: Element, processStack: Boolean = true) {
@@ -58,6 +107,10 @@ abstract class AbstractRequest<V, STT : Stanza<*>>(
 		callHandlers()
 	}
 
+	internal open fun markAsSent() {
+		this.isSent = true
+	}
+
 	internal fun markTimeout(processStack: Boolean = true) {
 		isCompleted = true
 		isTimeout = true
@@ -65,22 +118,17 @@ abstract class AbstractRequest<V, STT : Stanza<*>>(
 		callHandlers()
 	}
 
-	protected abstract fun processStack()
+	private fun callHandlers() {
+		callResponseStanzaHandler()
+		val tmp = calculatedResult
+		if (tmp == null) throw RuntimeException()
+		handler?.invoke(tmp)
+	}
 
-	protected abstract fun createRequestNotCompletedException(): RequestNotCompletedException
-
-	protected abstract fun createRequestErrorException(
-		error: ErrorCondition, text: String? = null
-	): RequestErrorException
-
-	protected abstract fun callHandlers()
-
-	data class Error(val condition: ErrorCondition, val message: String?)
-
-	protected fun findCondition(stanza: Element): Error {
-		val error = stanza.children.firstOrNull { element -> element.name == "error" } ?: return Error(
-			ErrorCondition.Unknown, null
-		)
+	private fun findCondition(stanza: Element): Error {
+		val error =
+			stanza.children.firstOrNull { element -> element.name == "error" } ?: return Error(ErrorCondition.Unknown,
+																							   null)
 		// Condition Element
 		val cnd =
 			error.children.firstOrNull { element -> element.name != "text" && element.xmlns == XMPPException.XMLNS }
@@ -90,6 +138,13 @@ abstract class AbstractRequest<V, STT : Stanza<*>>(
 
 		val c = ErrorCondition.getByElementName(cnd.name)
 		return Error(c, txt?.value)
+	}
+
+	private fun callResponseStanzaHandler() {
+		try {
+			stanzaHandler?.invoke(this, response)
+		} catch (e: Throwable) {
+		}
 	}
 
 	fun isSet(param: String): Boolean {
