@@ -4,7 +4,7 @@
 :numbered:
 :website: http://www.tigase.net
 
-Each module may perform some requests on other XMPP entities, and (if yes) must return specific `RequestBuilder` object to allow check status of request and receive response.
+Each module may perform some requests on other XMPP entities, and (if yes) must return `RequestBuilder` object to allow check status of request and receive response.
 
 For example, suppose we want to ping XMPP server (as described in https://xmpp.org/extensions/xep-0199.html[XEP-0199]):
 
@@ -22,14 +22,6 @@ For example, suppose we want to ping XMPP server (as described in https://xmpp.o
 
 There is module `PingModule` in Halcyon to do it:
 
-.Java sample
-[source,java]
-----
-PingModule pingModule = client.getModules().getModule(PingModule.TYPE);
-
-IQRequest<PingModule.Pong> request = pingModule.ping(JID.parse("tigase.net")).send();
-----
-
 .Kotlin sample
 [source,kotlin]
 ----
@@ -37,115 +29,24 @@ val pingModule: PingModule = client.modules[PingModule.TYPE]
 val request = pingModule.ping("tigase.net".toJID()).send()
 ----
 
-In this case, method `ping()` returns `IQRequestBuilder` to allow add result handler, change default timeout and other operations.
-To send stanza you have to call method 'send()'. There is also available method `buid()` what also creates request object, but doesn't sends it.
-
-There are few ways to get response from request object.
-
-Simplest is to call method `getResult()` on request object.
-But we need to be prepare for two results:
-
-1. method may throws exception `RequestNotCompletedException` when response not received yet.
-To prevent it, we should check if request is completed with method `isCompleted()`.
-2. method may throws `RequestErrorException` if response was received but it was error.
-
-If everything goes fine, `getResult()` returns expected result object or `null` if response was empty.
-
-.Using getResult() in Java
-[source,java]
-----
-IQRequest<PingModule.Pong> request = pingModule.ping(JID.parse("tigase.net")).send();
-try {
-    PingModule.Pong pong = request.getResultWait();
-    System.out.println("Pong: " + pong.getTime() + "ms");
-} catch (RequestErrorException e) {
-    System.out.println("Ping error " + e.getError().name());
-} catch (RequestNotCompletedException e) {
-    System.out.println("No response yet. Still waiting.");
-}
-----
-
-Similar in Kotlin:
-
-.Using getResult() in Kotlin
-[source,kotlin]
-----
-try {
-    val pong = pingModule.ping("tigase.net".toJID()).send().getResult()
-    println("Pong: " + pong!!.time + "ms")
-} catch (e: RequestErrorException) {
-    println("Ping error " + e.error.name)
-} catch (e: RequestNotCompletedException){
-    println("No response yet. Still waiting.")
-}
-----
-
-On JVM version of Halcyon there also is variant of above method called `getResultWait()`.
-This method is synchronous, it wait for response and returns result object or throw exception.
-Except for waiting for response, behavior of it is identical to `getResult()` method.
-
-Most universal way to receive result in asynchronous way is add response handler to request builder:
+In this case, method `ping()` returns `RequestBuilder` to allow add result handler, change default timeout and other operations.
+To send stanza you have to call method 'send()'.
+There is also available method `build()` what also creates request object, but doesn't sends it.
 
 NOTE: On JVM, methods of handler will be called from separate thread.
 
-.Adding ResponseHandler in Java
-[source,java]
-----
-pingModule.ping(JID.parse("tigase.net")).response(new IQResponseHandler<PingModule.Pong>() {
-
-    @Override
-    public void success(@NotNull IQRequest<PingModule.Pong> iqRequest, @NotNull IQ iq,
-                        @Nullable PingModule.Pong pong) {
-        System.out.println("Pong: " + pong.getTime() + "ms");
-    }
-
-    @Override
-    public void error(@NotNull IQRequest<PingModule.Pong> iqRequest, @Nullable IQ iq,
-                      @NotNull ErrorCondition errorCondition, @Nullable String s) {
-        System.out.println("Ping error " + errorCondition.name());
-    }
-}).send();
-----
-
-Unfortunately in Kotlin this constriction doesn't looks good, but is possible.
-
-.Adding ResponseHandler in Kotlin
-[source,kotlin]
-----
-pingModule.ping(JID.parse("tigase.net")).response(object : IQResponseHandler<Pong> {
-    override fun error(
-        request: IQRequest<Pong>, response: IQ?, error: ErrorCondition, errorMessage: String?
-    ) {
-        println("(1) Ping error ${error.name}")
-    }
-
-    override fun success(request: IQRequest<Pong>, response: IQ, pong: Pong?) {
-        println("(1) Pong: ${pong!!.time}ms")
-    }
-
-}).send()
-----
-
-Kotlin allows us to use two more mays to handle responses:
-
-We can use sealed Result class to distinguish type of result.
+Most universal way to receive result in asynchronous way is add response handler to request builder:
 
 [source,kotlin]
 ----
-pingModule.ping("tigase.net".toJID()).response {result ->
-    when (result) {
-        is IQResult.Success -> println("Pong: ${result.get()!!.time}ms")
-        is IQResult.Error -> println("Ping error ${result.error.name}")
-    }
-}.send()
-----
-
-We can also use DSL, to build response handler:
-
-[source,kotlin]
-----
-pingModule.ping("tigase.net".toJID()).handle {
-    success { request, element, result -> println("Pong: ${result!!.time}ms") }
-    error { request, element, errorCondition, text -> println("Ping error ${errorCondition.name}") }
+val client = Halcyon()
+val pingModule: PingModule = client.modules[PingModule.TYPE]
+pingModule.ping("tigase.net".toJID()).response { result ->
+	result.onSuccess { pong ->
+		println("Pong: ${pong.time}ms")
+	}
+	result.onFailure { error ->
+		println("Error $error")
+	}
 }.send()
 ----
