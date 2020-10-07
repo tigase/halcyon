@@ -21,6 +21,7 @@ import tigase.halcyon.core.connector.ConnectorConfig
 import tigase.halcyon.core.xmpp.BareJID
 
 interface PasswordCallback {
+
 	fun getPassword(): String
 }
 

@@ -18,6 +18,7 @@
 package tigase.halcyon.core.xml
 
 interface Element {
+
 	var parent: Element?
 	val xmlns: String?
 	val name: String

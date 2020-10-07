@@ -17,7 +17,6 @@
  */
 package tigase.halcyon.core.xmpp.modules.roster
 
-import tigase.halcyon.core.xmpp.modules.roster.RosterItem
 import tigase.halcyon.core.xmpp.BareJID
 
 interface RosterStore {

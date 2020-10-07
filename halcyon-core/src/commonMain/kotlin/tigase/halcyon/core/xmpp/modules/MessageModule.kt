@@ -27,10 +27,10 @@ import tigase.halcyon.core.xmpp.JID
 import tigase.halcyon.core.xmpp.stanzas.Message
 import tigase.halcyon.core.xmpp.stanzas.wrap
 
-data class MessageReceivedEvent(val fromJID: JID?, val stanza: Message) : Event(TYPE) {
-	companion object {
-		const val TYPE = "tigase.halcyon.core.xmpp.modules.MessageReceivedEvent"
-	}
+data class MessageReceivedEvent(val fromJID: JID?, val stanza: Message) : Event(TYPE) { companion object {
+
+	const val TYPE = "tigase.halcyon.core.xmpp.modules.MessageReceivedEvent"
+}
 }
 
 class MessageModule(override val context: Context) : XmppModule {
@@ -42,6 +42,7 @@ class MessageModule(override val context: Context) : XmppModule {
 	override val features: Array<String>? = null
 
 	companion object {
+
 		const val TYPE = "MessageModule"
 	}
 

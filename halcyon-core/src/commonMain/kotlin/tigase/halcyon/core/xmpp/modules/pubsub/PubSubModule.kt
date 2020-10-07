@@ -68,8 +68,9 @@ enum class Affiliation(val xmppName: String) {
 	companion object {
 
 		fun byXMPPName(affiliation: String): Affiliation =
-			values().firstOrNull { te -> te.xmppName == affiliation } ?: throw XMPPException(ErrorCondition.BadRequest,
-																							 "Unknown PubSub Affiliation '$affiliation'")
+			values().firstOrNull { te -> te.xmppName == affiliation } ?: throw XMPPException(
+				ErrorCondition.BadRequest, "Unknown PubSub Affiliation '$affiliation'"
+			)
 	}
 
 }
@@ -277,17 +278,18 @@ class PubSubModule(override val context: Context) : XmppModule {
 
 	private fun parseSubscriptionElement(element: Element, nodeName: String? = null): Subscription {
 		val jid = element.attributes["jid"] ?: throw XMPPException(ErrorCondition.BadRequest, "No JID")
-		val sstate = element.attributes["subscription"] ?: throw XMPPException(ErrorCondition.BadRequest,
-																			   "No subscription state")
+		val sstate = element.attributes["subscription"] ?: throw XMPPException(
+			ErrorCondition.BadRequest, "No subscription state"
+		)
 		val subid = element.attributes["subid"]
 
-		val nn = element.attributes["node"] ?: nodeName ?: throw XMPPException(ErrorCondition.BadRequest,
-																			   "Unknown node name")
+		val nn = element.attributes["node"] ?: nodeName ?: throw XMPPException(
+			ErrorCondition.BadRequest, "Unknown node name"
+		)
 
-		return Subscription(nn,
-							JID.parse(jid),
-							SubscriptionState.values().first { state -> state.xmppName == sstate },
-							subid)
+		return Subscription(
+			nn, JID.parse(jid), SubscriptionState.values().first { state -> state.xmppName == sstate }, subid
+		)
 	}
 
 	/**
@@ -458,9 +460,11 @@ class PubSubModule(override val context: Context) : XmppModule {
 				?: throw HalcyonException("No publish element")
 			val item = publish.getFirstChild("item") ?: throw HalcyonException("No item element")
 			val j = resp.getFromAttr() ?: throw HalcyonException("No sender JID")
-			PublishingInfo(j,
-						   publish.attributes["node"] ?: throw HalcyonException("No node name"),
-						   item.attributes["id"] ?: throw HalcyonException("No item ID"))
+			PublishingInfo(
+				j,
+				publish.attributes["node"] ?: throw HalcyonException("No node name"),
+				item.attributes["id"] ?: throw HalcyonException("No item ID")
+			)
 		}
 	}
 

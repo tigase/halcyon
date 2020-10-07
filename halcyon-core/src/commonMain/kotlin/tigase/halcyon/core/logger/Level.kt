@@ -17,8 +17,7 @@
  */
 package tigase.halcyon.core.logger
 
-enum class Level(val value: Int) {
-	OFF(Int.MAX_VALUE),
+enum class Level(val value: Int) { OFF(Int.MAX_VALUE),
 	SEVERE(1000),
 	WARNING(900),
 	INFO(800),

@@ -20,14 +20,13 @@ package tigase.halcyon.core.eventbus
 import org.junit.Assert
 import org.junit.Test
 import tigase.halcyon.core.Halcyon
-import tigase.halcyon.core.InternalDataStore
 import tigase.halcyon.core.eventbus.AbstractEventBus.Companion.ALL_EVENTS
 
 class EventBusJvmTest {
 
 	@Test
 	fun testBasic() {
-		 val halcyon = Halcyon()
+		val halcyon = Halcyon()
 		val eventBus = EventBus(halcyon)
 		val responses = mutableListOf<Any>()
 
@@ -65,10 +64,10 @@ class EventBusJvmTest {
 
 	}
 
-	internal class TestEvent(val value: String?) : Event(TYPE) {
-		companion object {
-			const val TYPE = "test"
-		}
+	internal class TestEvent(val value: String?) : Event(TYPE) { companion object {
+
+		const val TYPE = "test"
+	}
 
 	}
 

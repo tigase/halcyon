@@ -148,12 +148,14 @@ class JingleModule(
 		action: MessageInitiationAction, jid: JID
 	): RequestBuilder<Unit, Message> {
 		when (action) {
-			is MessageInitiationAction.Proceed -> sendMessageInitiation(MessageInitiationAction.Accept(action.id),
-																		JID(context.config.userJID!!, null)).send()
+			is MessageInitiationAction.Proceed -> sendMessageInitiation(
+				MessageInitiationAction.Accept(action.id), JID(context.config.userJID!!, null)
+			).send()
 			is MessageInitiationAction.Reject -> {
 				if (jid.bareJID != context.config.userJID) {
-					sendMessageInitiation(MessageInitiationAction.Accept(action.id),
-										  JID(context.config.userJID!!, null)).send()
+					sendMessageInitiation(
+						MessageInitiationAction.Accept(action.id), JID(context.config.userJID!!, null)
+					).send()
 				}
 			}
 			else -> {
@@ -185,9 +187,12 @@ class JingleModule(
 				xmlns = XMLNS
 				attribute("action", Action.sessionInitiate.value)
 				attribute("sid", sid)
-				attribute("initiator",
-						  context.modules.getModule<BindModule>(BindModule.TYPE).boundJID?.toString()
-							  ?: throw XMPPException(ErrorCondition.NotAuthorized))
+				attribute(
+					"initiator",
+					context.modules.getModule<BindModule>(BindModule.TYPE).boundJID?.toString() ?: throw XMPPException(
+						ErrorCondition.NotAuthorized
+					)
+				)
 
 				contents.map { it.toElement() }.forEach { contentEl -> addChild(contentEl) }
 				bundle?.let { bundle ->
@@ -216,9 +221,12 @@ class JingleModule(
 				xmlns = XMLNS
 				attribute("action", Action.sessionAccept.value)
 				attribute("sid", sid)
-				attribute("responder",
-						  context.modules.getModule<BindModule>(BindModule.TYPE).boundJID?.toString()
-							  ?: throw XMPPException(ErrorCondition.NotAuthorized))
+				attribute(
+					"responder",
+					context.modules.getModule<BindModule>(BindModule.TYPE).boundJID?.toString() ?: throw XMPPException(
+						ErrorCondition.NotAuthorized
+					)
+				)
 
 				contents.map { it.toElement() }.forEach { contentEl -> addChild(contentEl) }
 				bundle?.let { bundle ->

@@ -29,6 +29,7 @@ data class OwnChatStateChangeEvent(
 ) : Event(TYPE) {
 
 	companion object {
+
 		const val TYPE = "tigase.halcyon.core.xmpp.modules.chatstates.OwnChatStateChangeEvent"
 	}
 }

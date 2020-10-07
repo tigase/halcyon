@@ -31,11 +31,10 @@ import tigase.halcyon.core.xmpp.modules.MessageReceivedEvent
 import tigase.halcyon.core.xmpp.stanzas.Message
 import tigase.halcyon.core.xmpp.stanzas.message
 
-enum class ChatState(val xmppValue: String) {
-	/**
-	 * User is actively participating in the chat session.
-	 */
-	Active("active"),
+enum class ChatState(val xmppValue: String) { /**
+ * User is actively participating in the chat session.
+ */
+Active("active"),
 
 	/**
 	 * User has not been actively participating in the chat session.
@@ -80,10 +79,10 @@ var Message.chatState: ChatState?
 	get() = findChatState(this)
 	set(value) = setChatState(this, value)
 
-data class ChatStateEvent(val jid: JID, val state: ChatState) : Event(TYPE) {
-	companion object {
-		const val TYPE = "tigase.halcyon.core.xmpp.modules.chatstates.ChatStateEvent"
-	}
+data class ChatStateEvent(val jid: JID, val state: ChatState) : Event(TYPE) { companion object {
+
+	const val TYPE = "tigase.halcyon.core.xmpp.modules.chatstates.ChatStateEvent"
+}
 }
 
 class ChatStateModule(override val context: Context) : XmppModule {
@@ -94,6 +93,7 @@ class ChatStateModule(override val context: Context) : XmppModule {
 	override val features: Array<String>? = arrayOf(XMLNS)
 
 	companion object {
+
 		const val XMLNS = "http://jabber.org/protocol/chatstates"
 		const val TYPE = XMLNS
 	}

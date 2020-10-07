@@ -255,7 +255,8 @@ class JabberDataFormTest {
 		val submit = form.createSubmitForm()
 
 		assertEquals(listOf("reminders", "polls"),
-					 submit.children.first { it.attributes["var"] == "features" }.children.filter { it.name == "value" }.mapNotNull { it.value })
+					 submit.children.first { it.attributes["var"] == "features" }.children.filter { it.name == "value" }
+						 .mapNotNull { it.value })
 
 		assertEquals(
 			"1234567890", submit.children.first { it.attributes["var"] == "password" }.getFirstChild("value")?.value

@@ -54,6 +54,7 @@ abstract class StanzaNode<STANZA_TYPE>(element: Element) : ElementNode(element) 
 }
 
 class PresenceNode(private val presence: Presence) : StanzaNode<PresenceType?>(presence) {
+
 	override var type: PresenceType?
 		set(value) = setAtt("type", value?.value)
 		get() = PresenceType.values().firstOrNull { te -> te.value == value }
@@ -85,6 +86,7 @@ class PresenceNode(private val presence: Presence) : StanzaNode<PresenceType?>(p
 }
 
 class IQNode(element: IQ) : StanzaNode<IQType>(element) {
+
 	override var type: IQType
 		set(value) = setAtt("type", value.value)
 		get() = IQType.values().first { te -> te.value == value }
@@ -105,6 +107,7 @@ class IQNode(element: IQ) : StanzaNode<IQType>(element) {
 }
 
 class MessageNode(element: Message) : StanzaNode<MessageType?>(element) {
+
 	override var type: MessageType?
 		set(value) = setAtt("type", value?.value)
 		get() = MessageType.values().firstOrNull { te -> te.value == value }

@@ -27,7 +27,6 @@ import kotlin.test.fail
 
 class Stanza_buildersKtTest {
 
-
 	@Test
 	fun testWrap() {
 		assertTrue { wrap<Stanza<*>>(ElementImpl("iq")) is IQ }

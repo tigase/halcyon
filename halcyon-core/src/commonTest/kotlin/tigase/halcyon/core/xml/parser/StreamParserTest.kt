@@ -61,7 +61,8 @@ class StreamParserTest {
 
 	@Test
 	fun testParse() {
-		val input = "<message><body>body</body><html><body><p><em>Wow</em>*, I&apos;m* <span>green</span>with <strong>envy</strong>!</p></body></html></message>"
+		val input =
+			"<message><body>body</body><html><body><p><em>Wow</em>*, I&apos;m* <span>green</span>with <strong>envy</strong>!</p></body></html></message>"
 		var tmp = parse(input)
 		assertNotEquals(input, tmp.element!!.getAsString())
 	}

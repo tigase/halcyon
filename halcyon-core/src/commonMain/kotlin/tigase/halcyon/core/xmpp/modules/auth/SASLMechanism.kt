@@ -17,10 +17,10 @@
  */
 package tigase.halcyon.core.xmpp.modules.auth
 
-import tigase.halcyon.core.InternalDataStore
 import tigase.halcyon.core.configuration.Configuration
 
 interface SASLMechanism {
+
 	/**
 	 * Evaluating challenge received from server.
 	 *
@@ -29,7 +29,7 @@ interface SASLMechanism {
 	 *
 	 * @return calculated response
 	 */
-	fun evaluateChallenge(input: String?,config: Configuration, saslContext: SASLContext): String?
+	fun evaluateChallenge(input: String?, config: Configuration, saslContext: SASLContext): String?
 
 	/**
 	 * This method is used to check if mechanism can be used with current

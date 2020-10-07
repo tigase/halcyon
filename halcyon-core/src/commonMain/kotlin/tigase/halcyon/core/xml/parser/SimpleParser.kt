@@ -44,6 +44,7 @@ package tigase.halcyon.core.xml.parser
 class SimpleParser {
 
 	var ATTRIBUTES_NUMBER_LIMIT = 50
+
 	/**
 	 * Variable constant `MAX_ATTRIBS_NUMBER` keeps value of maximum possible attributes number. Real XML
 	 * parser shouldn't have such limit but in most cases XML elements don't have too many attributes. For efficiency it
@@ -296,10 +297,8 @@ class SimpleParser {
 								} else {
 									val new_size = parser_state.attrib_names!!.size + MAX_ATTRIBS_NUMBER
 
-									parser_state.attrib_names =
-										resizeArray(parser_state.attrib_names, new_size)
-									parser_state.attrib_values =
-										resizeArray(parser_state.attrib_values, new_size)
+									parser_state.attrib_names = resizeArray(parser_state.attrib_names, new_size)
+									parser_state.attrib_values = resizeArray(parser_state.attrib_values, new_size)
 								}
 							}
 						}    // end of else
@@ -554,19 +553,16 @@ class SimpleParser {
 		return res
 	}
 
-	private fun resizeArray(src: Array<StringBuilder?>?, size: Int): Array<StringBuilder?> =
-		src!!.copyOf(size)
+	private fun resizeArray(src: Array<StringBuilder?>?, size: Int): Array<StringBuilder?> = src!!.copyOf(size)
 
-	protected enum class EntityType {
-		UNKNOWN,
+	protected enum class EntityType { UNKNOWN,
 		NAMED,
 		CODEPOINT,
 		CODEPOINT_DEC,
 		CODEPOINT_HEX
 	}
 
-	protected enum class State {
-		START,
+	protected enum class State { START,
 		OPEN_BRACKET,
 		ELEMENT_NAME,
 		END_ELEMENT_NAME,
@@ -582,6 +578,7 @@ class SimpleParser {
 	}
 
 	protected class ParserState {
+
 		internal var attrib_names: Array<StringBuilder?>? = null
 		internal var attrib_values: Array<StringBuilder?>? = null
 		internal var current_attr = -1
@@ -596,6 +593,7 @@ class SimpleParser {
 	}
 
 	companion object {
+
 		private val OPEN_BRACKET = '<'
 		private val CLOSE_BRACKET = '>'
 		private val QUESTION_MARK = '?'

@@ -20,31 +20,31 @@ package tigase.halcyon.core.xmpp.modules.jingle
 import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xml.element
 
-enum class TerminateReason(val value: String) {
-    alternativeSession("alternative-session"),
-    busy("busy"),
-    cancel("cancel"),
-    connectivityError("connectivity-error"),
-    decline("decline"),
-    expired("expired"),
-    failedApplication("failed-application"),
-    failedTransport("failed-transport"),
-    generalError("general-error"),
-    gone("gone"),
-    incompatibleParameters("incompatible-parameters"),
-    mediaError("media-error"),
-    securityError("security-error"),
-    success("success"),
-    timeout("timeout"),
-    unsupportedApplications("unsupported-applications"),
-    unsupportedTransports("unsupported-transports");
+enum class TerminateReason(val value: String) { alternativeSession("alternative-session"),
+	busy("busy"),
+	cancel("cancel"),
+	connectivityError("connectivity-error"),
+	decline("decline"),
+	expired("expired"),
+	failedApplication("failed-application"),
+	failedTransport("failed-transport"),
+	generalError("general-error"),
+	gone("gone"),
+	incompatibleParameters("incompatible-parameters"),
+	mediaError("media-error"),
+	securityError("security-error"),
+	success("success"),
+	timeout("timeout"),
+	unsupportedApplications("unsupported-applications"),
+	unsupportedTransports("unsupported-transports");
 
-    fun toElement(): Element = element(value) {};
-    fun toReasonElement(): Element = element("reason") {
-        addChild(toElement());
-    }
+	fun toElement(): Element = element(value) {}
+	fun toReasonElement(): Element = element("reason") {
+		addChild(toElement())
+	}
 
-    companion object {
-        fun fromValue(value: String) = values().find { it.value == value }
-    }
+	companion object {
+
+		fun fromValue(value: String) = values().find { it.value == value }
+	}
 }

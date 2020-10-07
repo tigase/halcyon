@@ -23,6 +23,7 @@ import kotlin.reflect.KMutableProperty0
 import kotlin.reflect.KProperty
 
 internal class Alias<T>(private val delegate: KMutableProperty0<T>) {
+
 	operator fun getValue(thisRef: Any?, property: KProperty<*>): T = delegate.get()
 
 	operator fun setValue(thisRef: Any?, property: KProperty<*>, value: T) {
@@ -33,6 +34,7 @@ internal class Alias<T>(private val delegate: KMutableProperty0<T>) {
 abstract class AbstractConfigDsl(protected val configuration: Configuration) {
 
 	protected class IntPasswordCallback(val pwd: String) : PasswordCallback {
+
 		override fun getPassword(): String = pwd
 	}
 

@@ -80,11 +80,11 @@ data class RosterItem(
 
 data class RosterResponse(val version: String?)
 
-class RosterModule(context: Context) : AbstractXmppIQModule(context,
-															TYPE,
-															emptyArray(),
-															Criterion.chain(Criterion.name(IQ.NAME),
-																			Criterion.xmlns(XMLNS))) {
+class RosterModule(context: Context) : AbstractXmppIQModule(
+	context, TYPE, emptyArray(), Criterion.chain(
+		Criterion.name(IQ.NAME), Criterion.xmlns(XMLNS)
+	)
+) {
 
 	private val log = Logger("com.example.modules.roster.RosterModule")
 
@@ -170,8 +170,9 @@ class RosterModule(context: Context) : AbstractXmppIQModule(context,
 	}
 
 	private fun parseItem(item: Element): RosterItem {
-		val jid = item.attributes["jid"]?.toBareJID() ?: throw XMPPException(ErrorCondition.BadRequest,
-																			 "Missing JID in roster item.")
+		val jid = item.attributes["jid"]?.toBareJID() ?: throw XMPPException(
+			ErrorCondition.BadRequest, "Missing JID in roster item."
+		)
 		val name = item.attributes["name"]
 		val subscription = item.attributes["subscription"]?.let { sname ->
 			Subscription.values().firstOrNull { s -> s.value == sname }

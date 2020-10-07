@@ -20,21 +20,21 @@ package tigase.halcyon.core.xmpp.modules.jingle
 import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xml.element
 
-data class MessageInitiationDescription(val xmlns: String, val media: String) {
-    companion object {
-        fun parse(descEl: Element): MessageInitiationDescription? {
-            return descEl.xmlns?.let { xmlns ->
-                descEl.attributes["media"]?.let { media ->
-                    MessageInitiationDescription(xmlns, media)
-                }
-            };
-        }
-    }
+data class MessageInitiationDescription(val xmlns: String, val media: String) { companion object {
 
-    fun toElement(): Element {
-        return element("description") {
-            xmlns = this@MessageInitiationDescription.xmlns;
-            attribute("media", this@MessageInitiationDescription.media)
-        }
-    }
+	fun parse(descEl: Element): MessageInitiationDescription? {
+		return descEl.xmlns?.let { xmlns ->
+			descEl.attributes["media"]?.let { media ->
+				MessageInitiationDescription(xmlns, media)
+			}
+		}
+	}
+}
+
+	fun toElement(): Element {
+		return element("description") {
+			xmlns = this@MessageInitiationDescription.xmlns
+			attribute("media", this@MessageInitiationDescription.media)
+		}
+	}
 }

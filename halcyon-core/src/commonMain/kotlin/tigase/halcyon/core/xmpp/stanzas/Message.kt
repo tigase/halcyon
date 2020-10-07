@@ -24,18 +24,17 @@ import tigase.halcyon.core.xml.setChildContent
 import tigase.halcyon.core.xmpp.ErrorCondition
 import tigase.halcyon.core.xmpp.XMPPException
 
-enum class MessageType(val value: String) {
-	Chat("chat"),
+enum class MessageType(val value: String) { Chat("chat"),
 	Error("error"),
 	Groupchat("groupchat"),
 	Headline("headline"),
 	Normal("normal")
 }
 
-class Message(wrappedElement: Element) : Stanza<MessageType?>(wrappedElement) {
-	companion object {
-		const val NAME = "message"
-	}
+class Message(wrappedElement: Element) : Stanza<MessageType?>(wrappedElement) { companion object {
+
+	const val NAME = "message"
+}
 
 	override var type: MessageType?
 		set(value) = setAtt("type", value?.value)

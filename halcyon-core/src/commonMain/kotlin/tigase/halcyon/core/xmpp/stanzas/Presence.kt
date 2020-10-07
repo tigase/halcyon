@@ -33,15 +33,18 @@ enum class Show(val weight: Int, val value: String) {
 	 * The entity or resource is actively interested in chatting.
 	 */
 	Chat(5, "chat"),
+
 	/**
 	 * The entity or resource is temporarily away.
 	 */
 	Away(3, "away"),
+
 	/**
 	 * The entity or resource is away for an extended period (xa =
 	 * "eXtended Away").
 	 */
 	XA(2, "xa"),
+
 	/**
 	 * The entity or resource is busy (dnd = "Do Not Disturb").
 	 */
@@ -49,8 +52,7 @@ enum class Show(val weight: Int, val value: String) {
 
 }
 
-enum class PresenceType(val value: String) {
-	Error("error"),
+enum class PresenceType(val value: String) { Error("error"),
 	Probe("probe"),
 	Subscribe("subscribe"),
 	Subscribed("subscribed"),
@@ -62,21 +64,22 @@ enum class PresenceType(val value: String) {
 class Presence(wrappedElement: Element) : Stanza<PresenceType?>(wrappedElement) {
 
 	companion object {
+
 		const val NAME = "presence"
 	}
 
 	override var type: PresenceType?
 		set(value) = setAtt("type", value?.value)
 		get() = attributes["type"]?.let {
-			PresenceType.values().firstOrNull { te -> te.value == it }
-				?: throw XMPPException(ErrorCondition.BadRequest, "Unknown stanza type '$it'")
+			PresenceType.values().firstOrNull { te -> te.value == it } ?: throw XMPPException(
+				ErrorCondition.BadRequest, "Unknown stanza type '$it'"
+			)
 		}
 
 	private fun getShowValue(): Show? {
 		return getChildContent("show")?.let {
 			Show.values().firstOrNull { s -> s.value == it } ?: throw XMPPException(
-				ErrorCondition.BadRequest,
-				"Unknown show value: '$it'"
+				ErrorCondition.BadRequest, "Unknown show value: '$it'"
 			)
 		}
 	}

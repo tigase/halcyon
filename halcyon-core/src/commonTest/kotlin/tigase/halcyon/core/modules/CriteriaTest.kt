@@ -25,7 +25,6 @@ import kotlin.test.assertTrue
 
 class CriteriaTest {
 
-
 	val element: Element = element("iq") {
 		xmlns = "jabber:client"
 		attribute("to", "a@b.c")
@@ -53,20 +52,17 @@ class CriteriaTest {
 	fun testCriterion() {
 		assertFalse(
 			tigase.halcyon.core.modules.Criterion.or(
-				tigase.halcyon.core.modules.Criterion.name("X"),
-				tigase.halcyon.core.modules.Criterion.name("Y")
+				tigase.halcyon.core.modules.Criterion.name("X"), tigase.halcyon.core.modules.Criterion.name("Y")
 			).match(element)
 		)
 		assertFalse(
 			tigase.halcyon.core.modules.Criterion.or(
-				tigase.halcyon.core.modules.Criterion.name("X"),
-				tigase.halcyon.core.modules.Criterion.name("Y")
+				tigase.halcyon.core.modules.Criterion.name("X"), tigase.halcyon.core.modules.Criterion.name("Y")
 			).match(element)
 		)
 		assertTrue(
 			tigase.halcyon.core.modules.Criterion.or(
-				tigase.halcyon.core.modules.Criterion.name("X"),
-				tigase.halcyon.core.modules.Criterion.name("iq")
+				tigase.halcyon.core.modules.Criterion.name("X"), tigase.halcyon.core.modules.Criterion.name("iq")
 			).match(element)
 		)
 
@@ -104,14 +100,12 @@ class CriteriaTest {
 
 		assertTrue(
 			tigase.halcyon.core.modules.Criterion.chain(
-				tigase.halcyon.core.modules.Criterion.name("iq"),
-				tigase.halcyon.core.modules.Criterion.xmlns("a:b")
+				tigase.halcyon.core.modules.Criterion.name("iq"), tigase.halcyon.core.modules.Criterion.xmlns("a:b")
 			).match(element)
 		)
 		assertFalse(
 			tigase.halcyon.core.modules.Criterion.chain(
-				tigase.halcyon.core.modules.Criterion.name("iq"),
-				tigase.halcyon.core.modules.Criterion.xmlns("a:c")
+				tigase.halcyon.core.modules.Criterion.name("iq"), tigase.halcyon.core.modules.Criterion.xmlns("a:c")
 			).match(element)
 		)
 		assertFalse(

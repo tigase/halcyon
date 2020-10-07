@@ -26,11 +26,9 @@ actual class EventBus actual constructor(context: AbstractHalcyon) : AbstractEve
 
 	override fun createHandlersMap(): MutableMap<String, MutableSet<EventHandler<*>>> = ConcurrentHashMap()
 
-	override fun createHandlersSet(): MutableSet<EventHandler<*>> =
-		ConcurrentHashMap.newKeySet<EventHandler<*>>()
+	override fun createHandlersSet(): MutableSet<EventHandler<*>> = ConcurrentHashMap.newKeySet<EventHandler<*>>()
 
-	enum class Mode {
-		NoThread,
+	enum class Mode { NoThread,
 		ThreadPerEvent,
 		ThreadPerHandler
 	}

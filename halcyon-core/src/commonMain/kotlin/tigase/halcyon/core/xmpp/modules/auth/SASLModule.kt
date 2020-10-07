@@ -29,10 +29,10 @@ import tigase.halcyon.core.xml.element
 import tigase.halcyon.core.xmpp.ErrorCondition
 import tigase.halcyon.core.xmpp.XMPPException
 
-sealed class SASLEvent : Event(TYPE) {
-	companion object {
-		const val TYPE = "tigase.halcyon.core.xmpp.modules.auth.SASLEvent"
-	}
+sealed class SASLEvent : Event(TYPE) { companion object {
+
+	const val TYPE = "tigase.halcyon.core.xmpp.modules.auth.SASLEvent"
+}
 
 	data class SASLStarted(val mechanism: String) : SASLEvent()
 	class SASLSuccess : SASLEvent()
@@ -40,6 +40,7 @@ sealed class SASLEvent : Event(TYPE) {
 }
 
 class SASLContext {
+
 	var mechanism: SASLMechanism? = null
 		internal set
 
@@ -64,6 +65,7 @@ class SASLModule(override val context: Context) : XmppModule {
 		 * the initiating entity; sent in reply to the &lt;abort/&gt; element.
 		 */
 		Aborted("aborted"),
+
 		/**
 		 * The data provided by the initiating entity could not be processed
 		 * because the BASE64 encoding is incorrect (e.g., because the encoding
@@ -72,6 +74,7 @@ class SASLModule(override val context: Context) : XmppModule {
 		 * initial response data.
 		 */
 		IncorrectEncoding("incorrect-encoding"),
+
 		/**
 		 * The authzid provided by the initiating entity is invalid, either
 		 * because it is incorrectly formatted or because the initiating entity
@@ -80,12 +83,14 @@ class SASLModule(override val context: Context) : XmppModule {
 		 * response data.
 		 */
 		InvalidAuthzid("invalid-authzid"),
+
 		/**
 		 * The initiating entity did not provide a mechanism or requested a
 		 * mechanism that is not supported by the receiving entity; sent in
 		 * reply to an &lt;auth/&gt element.
 		 */
 		InvalidMechanism("invalid-mechanism"),
+
 		/**
 		 * The mechanism requested by the initiating entity is weaker than
 		 * server policy permits for that initiating entity; sent in reply to a
@@ -93,6 +98,7 @@ class SASLModule(override val context: Context) : XmppModule {
 		 * response data.
 		 */
 		MechanismTooWeak("mechanism-too-weak"),
+
 		/**
 		 * he authentication failed because the initiating entity did not
 		 * provide valid credentials (this includes but is not limited to the
@@ -101,6 +107,7 @@ class SASLModule(override val context: Context) : XmppModule {
 		 */
 		NotAuthorized("not-authorized"),
 		ServerNotTrusted("server-not-trusted"),
+
 		/**
 		 * The authentication failed because of a temporary error condition
 		 * within the receiving entity; sent in reply to an &lt;auth/&gt element
@@ -109,20 +116,21 @@ class SASLModule(override val context: Context) : XmppModule {
 		TemporaryAuthFailure("temporary-auth-failure");
 
 		companion object {
+
 			fun valueByElementName(elementName: String): SASLError? {
 				return values().firstOrNull { saslError -> saslError.elementName == elementName }
 			}
 		}
 	}
 
-	enum class State {
-		Unknown,
+	enum class State { Unknown,
 		InProgress,
 		Success,
 		Failed
 	}
 
 	companion object {
+
 		const val XMLNS = "urn:ietf:params:xml:ns:xmpp-sasl"
 		const val TYPE = "tigase.halcyon.core.xmpp.modules.auth.SASLModule"
 		private const val SASL_CONTEXT = "$TYPE#Context"
@@ -138,7 +146,7 @@ class SASLModule(override val context: Context) : XmppModule {
 	)
 	override val features: Array<String>? = null
 
-	var saslContext: SASLContext by property(Scope.Connection){SASLContext()}
+	var saslContext: SASLContext by property(Scope.Connection) { SASLContext() }
 		private set
 
 	private val mechanisms: MutableList<SASLMechanism> = mutableListOf()

@@ -22,6 +22,7 @@ import tigase.halcyon.core.xml.Element
 class Criterion private constructor() {
 
 	companion object {
+
 		fun element(predicate: (Element) -> Boolean): Criteria = object : Criteria {
 			override fun match(element: Element): Boolean = predicate.invoke(element)
 		}

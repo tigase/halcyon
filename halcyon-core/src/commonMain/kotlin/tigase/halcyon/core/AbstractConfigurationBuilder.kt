@@ -22,7 +22,6 @@ import tigase.halcyon.core.xmpp.BareJID
 
 abstract class AbstractConfigurationBuilder internal constructor(val halcyon: AbstractHalcyon) {
 
-
 	fun setAutoReconnect(value: Boolean): ConfigurationBuilder {
 		halcyon.autoReconnect = value
 		return this as ConfigurationBuilder

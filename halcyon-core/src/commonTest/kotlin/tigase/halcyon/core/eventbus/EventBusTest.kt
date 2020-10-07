@@ -18,15 +18,14 @@
 package tigase.halcyon.core.eventbus
 
 import tigase.halcyon.core.Halcyon
-import tigase.halcyon.core.InternalDataStore
 import kotlin.test.Test
 
 class EventBusTest {
 
-	class Event01 : Event(TYPE) {
-		companion object {
-			const val TYPE = "Event01"
-		}
+	class Event01 : Event(TYPE) { companion object {
+
+		const val TYPE = "Event01"
+	}
 	}
 
 	@Test

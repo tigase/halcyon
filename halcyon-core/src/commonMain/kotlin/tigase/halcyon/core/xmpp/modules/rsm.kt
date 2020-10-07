@@ -53,6 +53,7 @@ data class RSM(
 ) {
 
 	companion object {
+
 		const val XMLNS = "http://jabber.org/protocol/rsm"
 		const val NAME = "set"
 		fun fromElement(element: Element): RSM = parseRSM(element)

@@ -23,7 +23,7 @@ class SASLAnonymous : SASLMechanism {
 
 	override val name = "ANONYMOUS"
 
-	override fun evaluateChallenge(input: String?, config: Configuration,saslContext: SASLContext): String? {
+	override fun evaluateChallenge(input: String?, config: Configuration, saslContext: SASLContext): String? {
 		saslContext.complete = true
 		return null
 	}

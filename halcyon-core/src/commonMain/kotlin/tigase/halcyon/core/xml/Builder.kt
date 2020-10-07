@@ -18,6 +18,7 @@
 package tigase.halcyon.core.xml
 
 class ElementAttributes(private val element: Element) {
+
 	operator fun set(name: String, value: String?) {
 		if (value == null) element.attributes.remove(name)
 		else element.attributes[name] = value

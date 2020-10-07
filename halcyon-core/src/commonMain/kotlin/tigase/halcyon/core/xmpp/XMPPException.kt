@@ -40,6 +40,7 @@ class XMPPException : HalcyonException {
 	}
 
 	companion object {
+
 		const val XMLNS = "urn:ietf:params:xml:ns:xmpp-stanzas"
 	}
 }

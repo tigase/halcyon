@@ -21,33 +21,34 @@ import tigase.halcyon.core.xml.Element
 
 sealed class MessageInitiationAction(open val id: String, val actionName: String) {
 
-    class Propose(override val id: String, val descriptions: List<MessageInitiationDescription>) :
-        MessageInitiationAction(id, "propose")
+	class Propose(override val id: String, val descriptions: List<MessageInitiationDescription>) :
+		MessageInitiationAction(id, "propose")
 
-    class Retract(override val id: String) : MessageInitiationAction(id, "retract")
+	class Retract(override val id: String) : MessageInitiationAction(id, "retract")
 
-    class Accept(override val id: String) : MessageInitiationAction(id, "accept")
-    class Proceed(override val id: String) : MessageInitiationAction(id, "proceed")
-    class Reject(override val id: String) : MessageInitiationAction(id, "reject")
+	class Accept(override val id: String) : MessageInitiationAction(id, "accept")
+	class Proceed(override val id: String) : MessageInitiationAction(id, "proceed")
+	class Reject(override val id: String) : MessageInitiationAction(id, "reject")
 
-    companion object {
-        fun parse(actionEl: Element): MessageInitiationAction? {
-            val id = actionEl.attributes["id"] ?: return null;
-            when (actionEl.name) {
-                "accept" -> return Accept(id)
-                "proceed" -> return Proceed(id)
-                "propose" -> {
-                    val descriptions = actionEl.children.map { MessageInitiationDescription.parse(it) }.filterNotNull();
-                    if (descriptions.isNotEmpty()) {
-                        return Propose(id, descriptions)
-                    } else {
-                        return null;
-                    }
-                }
-                "retract" -> return Retract(id)
-                "reject" -> return Reject(id)
-                else -> return null;
-            }
-        }
-    }
+	companion object {
+
+		fun parse(actionEl: Element): MessageInitiationAction? {
+			val id = actionEl.attributes["id"] ?: return null
+			when (actionEl.name) {
+				"accept" -> return Accept(id)
+				"proceed" -> return Proceed(id)
+				"propose" -> {
+					val descriptions = actionEl.children.map { MessageInitiationDescription.parse(it) }.filterNotNull()
+					if (descriptions.isNotEmpty()) {
+						return Propose(id, descriptions)
+					} else {
+						return null
+					}
+				}
+				"retract" -> return Retract(id)
+				"reject" -> return Reject(id)
+				else -> return null
+			}
+		}
+	}
 }

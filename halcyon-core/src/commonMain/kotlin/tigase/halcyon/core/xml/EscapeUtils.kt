@@ -20,6 +20,7 @@ package tigase.halcyon.core.xml
 class EscapeUtils private constructor() {
 
 	companion object {
+
 		private val ENTITIES = arrayOf(
 			arrayOf("&", "&amp;"),
 			arrayOf("<", "&lt;"),

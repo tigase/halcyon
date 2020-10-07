@@ -26,8 +26,7 @@ class ErrorConditionTest {
 	@Test
 	fun testElementByName() {
 		assertEquals(
-			ErrorCondition.FeatureNotImplemented,
-			ErrorCondition.Companion.getByElementName("feature-not-implemented")
+			ErrorCondition.FeatureNotImplemented, ErrorCondition.Companion.getByElementName("feature-not-implemented")
 		)
 		assertNotEquals(
 			ErrorCondition.Conflict, ErrorCondition.Companion.getByElementName("feature-not-implemented")

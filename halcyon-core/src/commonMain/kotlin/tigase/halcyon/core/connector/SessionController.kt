@@ -24,6 +24,7 @@ interface SessionController {
 	sealed class SessionControllerEvents : Event(TYPE) {
 
 		companion object {
+
 			const val TYPE = "tigase.halcyon.core.xmpp.SessionController.SessionControllerEvents"
 		}
 

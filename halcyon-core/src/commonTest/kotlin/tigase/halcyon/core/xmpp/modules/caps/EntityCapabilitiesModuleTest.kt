@@ -43,7 +43,7 @@ class EntityCapabilitiesModuleTest {
 			"http://jabber.org/protocol/disco#info"
 		)
 
-		assertEquals("QgayPKawpkPSDYmwT/WM94uAlu0=", module.	calculateVer(identities, features))
+		assertEquals("QgayPKawpkPSDYmwT/WM94uAlu0=", module.calculateVer(identities, features))
 	}
 
 }

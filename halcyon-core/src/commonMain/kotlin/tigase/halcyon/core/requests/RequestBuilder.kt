@@ -73,15 +73,9 @@ class Request<V, STT : Stanza<*>>(
 	transform: (value: Any) -> V,
 	parentRequest: Request<*, STT>? = null,
 	callHandlerOnSent: Boolean
-) : AbstractRequest<V, STT>(jid,
-							id,
-							creationTimestamp,
-							stanza,
-							timeoutDelay,
-							handler,
-							transform,
-							parentRequest,
-							callHandlerOnSent)
+) : AbstractRequest<V, STT>(
+	jid, id, creationTimestamp, stanza, timeoutDelay, handler, transform, parentRequest, callHandlerOnSent
+)
 
 class RequestBuilder<V, STT : Stanza<*>>(
 	private val halcyon: AbstractHalcyon,
@@ -100,15 +94,17 @@ class RequestBuilder<V, STT : Stanza<*>>(
 
 	fun build(): Request<V, STT> {
 		val stanza = wrap<STT>(halcyon.modules.processSendInterceptors(element))
-		return Request<V, STT>(stanza.to,
-							   stanza.id!!,
-							   currentTimestamp(),
-							   stanza,
-							   timeoutDelay,
-							   resultHandler,
-							   transform,
-							   parentBuilder?.build(),
-							   callHandlerOnSent).apply {
+		return Request<V, STT>(
+			stanza.to,
+			stanza.id!!,
+			currentTimestamp(),
+			stanza,
+			timeoutDelay,
+			resultHandler,
+			transform,
+			parentBuilder?.build(),
+			callHandlerOnSent
+		).apply {
 			this.stanzaHandler = responseStanzaHandler
 		}
 	}

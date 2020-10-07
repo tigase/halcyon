@@ -94,6 +94,7 @@ class IdGenerator {
 	}
 
 	companion object {
+
 		private val generator = IdGenerator()
 
 		private const val ALPHABET: String = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"

@@ -20,7 +20,6 @@ package tigase.halcyon.core.eventbus
 import org.junit.Assert
 import org.junit.Test
 import tigase.halcyon.core.Halcyon
-import tigase.halcyon.core.InternalDataStore
 import java.util.concurrent.ConcurrentLinkedQueue
 
 class EventBusMultiThreadTest {
@@ -101,11 +100,10 @@ class EventBusMultiThreadTest {
 		Assert.assertEquals(THREADS * EVENTS, result2.size)
 	}
 
-	internal class TestEvent(val value: String?) : tigase.halcyon.core.eventbus.Event(TYPE) {
-		companion object {
+	internal class TestEvent(val value: String?) : tigase.halcyon.core.eventbus.Event(TYPE) { companion object {
 
-			const val TYPE = "test:event"
-		}
+		const val TYPE = "test:event"
+	}
 
 	}
 
@@ -125,6 +123,7 @@ class EventBusMultiThreadTest {
 	}
 
 	companion object {
+
 		private const val EVENTS = 1000
 		private const val THREADS = 1000
 	}

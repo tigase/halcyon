@@ -17,10 +17,7 @@
  */
 package tigase.halcyon.core
 
-import tigase.halcyon.core.connector.socket.SocketConnector
-
-actual class ConfigurationBuilder actual constructor(halcyon: AbstractHalcyon) :
-	AbstractConfigurationBuilder(halcyon) {
+actual class ConfigurationBuilder actual constructor(halcyon: AbstractHalcyon) : AbstractConfigurationBuilder(halcyon) {
 
 	fun setServerHost(host: String): ConfigurationBuilder {
 		TODO()

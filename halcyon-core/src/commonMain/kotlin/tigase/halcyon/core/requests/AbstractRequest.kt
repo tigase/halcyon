@@ -137,9 +137,9 @@ abstract class AbstractRequest<V, STT : Stanza<*>>(
 	}
 
 	private fun findCondition(stanza: Element): Error {
-		val error =
-			stanza.children.firstOrNull { element -> element.name == "error" } ?: return Error(ErrorCondition.Unknown,
-																							   null)
+		val error = stanza.children.firstOrNull { element -> element.name == "error" } ?: return Error(
+			ErrorCondition.Unknown, null
+		)
 		// Condition Element
 		val cnd =
 			error.children.firstOrNull { element -> element.name != "text" && element.xmlns == XMPPException.XMLNS }

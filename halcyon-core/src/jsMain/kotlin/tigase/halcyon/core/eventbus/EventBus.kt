@@ -18,7 +18,6 @@
 package tigase.halcyon.core.eventbus
 
 import tigase.halcyon.core.AbstractHalcyon
-import tigase.halcyon.core.Halcyon
 
 actual class EventBus actual constructor(context: AbstractHalcyon) : AbstractEventBus(context) {
 

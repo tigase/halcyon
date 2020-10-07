@@ -30,11 +30,11 @@ import tigase.halcyon.core.xmpp.stanzas.IQ
 import tigase.halcyon.core.xmpp.stanzas.IQType
 import tigase.halcyon.core.xmpp.stanzas.iq
 
-class PingModule(context: Context) : AbstractXmppIQModule(context,
-														  TYPE,
-														  arrayOf(XMLNS),
-														  Criterion.chain(Criterion.name(IQ.NAME),
-																		  Criterion.xmlns(XMLNS))) {
+class PingModule(context: Context) : AbstractXmppIQModule(
+	context, TYPE, arrayOf(XMLNS), Criterion.chain(
+		Criterion.name(IQ.NAME), Criterion.xmlns(XMLNS)
+	)
+) {
 
 	companion object {
 

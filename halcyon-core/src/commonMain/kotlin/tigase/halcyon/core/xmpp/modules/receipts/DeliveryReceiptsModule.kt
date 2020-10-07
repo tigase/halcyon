@@ -33,15 +33,16 @@ import tigase.halcyon.core.xmpp.stanzas.MessageType
 import tigase.halcyon.core.xmpp.stanzas.message
 import tigase.halcyon.core.xmpp.toJID
 
-data class MessageDeliveryReceiptEvent(val jid: JID, val msgId: String) : Event(TYPE) {
-	companion object {
-		const val TYPE = "tigase.halcyon.core.xmpp.modules.receipts.MessageDeliveryReceiptEvent"
-	}
+data class MessageDeliveryReceiptEvent(val jid: JID, val msgId: String) : Event(TYPE) { companion object {
+
+	const val TYPE = "tigase.halcyon.core.xmpp.modules.receipts.MessageDeliveryReceiptEvent"
+}
 }
 
 class DeliveryReceiptsModule(override val context: Context) : XmppModule, HasInterceptors, StanzaInterceptor {
 
 	companion object {
+
 		const val XMLNS = "urn:xmpp:receipts"
 		const val TYPE = XMLNS
 	}

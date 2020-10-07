@@ -69,6 +69,7 @@ class Organization(element: Element) : VCardStruct(element) {
 sealed class Photo(element: Element) : VCardStruct(element) {
 
 	companion object {
+
 		fun create(element: Element): Photo = if (element.getFirstChild("uri")?.value?.startsWith("data:") == true) {
 			PhotoData(element)
 		} else {
@@ -78,8 +79,7 @@ sealed class Photo(element: Element) : VCardStruct(element) {
 
 	var uri: String? by VCardElement(path = arrayOf("uri"), factory = Element::value)
 
-	class PhotoUri(element: Element) : Photo(element) {
-		constructor() : this(element("photo") {})
+	class PhotoUri(element: Element) : Photo(element) { constructor() : this(element("photo") {})
 	}
 
 	class PhotoData(element: Element) : Photo(element) {
@@ -119,9 +119,7 @@ class VCard(element: Element) : VCardStruct(element) {
 }
 
 class VCardElementsList<T>(
-	val constPath: Array<String> = emptyArray(),
-	val path: Array<String>,
-	val factory: (Element) -> T
+	val constPath: Array<String> = emptyArray(), val path: Array<String>, val factory: (Element) -> T
 ) : ReadWriteProperty<VCardStruct, List<T>?> {
 
 	override fun getValue(thisRef: VCardStruct, property: KProperty<*>): List<T>? {
@@ -192,9 +190,7 @@ private fun Element.find(path: Array<String>, create: Boolean = false): Element?
 }
 
 open class VCardElement<T>(
-	val constPath: Array<String> = emptyArray(),
-	val path: Array<String>,
-	val factory: (Element) -> T
+	val constPath: Array<String> = emptyArray(), val path: Array<String>, val factory: (Element) -> T
 ) : ReadWriteProperty<VCardStruct, T?> {
 
 	override fun getValue(thisRef: VCardStruct, property: KProperty<*>): T? {

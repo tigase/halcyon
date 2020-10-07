@@ -17,23 +17,23 @@
  */
 package tigase.halcyon.core.xmpp.modules.jingle
 
-enum class Action(val value: String) {
-    contentAccept("content-accept"),
-    contentAdd("content-add"),
-    contentModify("content-modify"),
-    contentReject("content-reject"),
-    descriptionInfo("description-info"),
-    securityInfo("security-info"),
-    sessionAccept("session-accept"),
-    sessionInfo("session-info"),
-    sessionInitiate("session-initiate"),
-    sessionTerminate("session-terminate"),
-    transportAccept("transport-accept"),
-    transportInfo("transport-info"),
-    transportReject("transport-reject"),
-    transportReplace("transport-replace");
+enum class Action(val value: String) { contentAccept("content-accept"),
+	contentAdd("content-add"),
+	contentModify("content-modify"),
+	contentReject("content-reject"),
+	descriptionInfo("description-info"),
+	securityInfo("security-info"),
+	sessionAccept("session-accept"),
+	sessionInfo("session-info"),
+	sessionInitiate("session-initiate"),
+	sessionTerminate("session-terminate"),
+	transportAccept("transport-accept"),
+	transportInfo("transport-info"),
+	transportReject("transport-reject"),
+	transportReplace("transport-replace");
 
-    companion object {
-        fun fromValue(value: String) = values().find { it.value == value }
-    }
+	companion object {
+
+		fun fromValue(value: String) = values().find { it.value == value }
+	}
 }

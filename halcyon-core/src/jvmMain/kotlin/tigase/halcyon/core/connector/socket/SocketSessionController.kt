@@ -41,8 +41,7 @@ class SocketSessionController(halcyon: Halcyon, private val connector: SocketCon
 		connector.restartStream()
 	}
 
-	private fun isTLSAvailable(features: Element): Boolean =
-		features.getChildrenNS("starttls", XMLNS_START_TLS) != null
+	private fun isTLSAvailable(features: Element): Boolean = features.getChildrenNS("starttls", XMLNS_START_TLS) != null
 
 	override fun processConnectionError(event: ConnectionErrorEvent) {
 		log.log(Level.FINE, "Received connector exception: $event")

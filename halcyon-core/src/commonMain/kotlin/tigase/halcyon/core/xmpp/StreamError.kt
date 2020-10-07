@@ -17,11 +17,10 @@
  */
 package tigase.halcyon.core.xmpp
 
-enum class StreamError(val elementName: String) {
-	/**
-	 * The entity has sent XML that cannot be processed.
-	 */
-	BAD_FORMAT("bad-format"),
+enum class StreamError(val elementName: String) { /**
+ * The entity has sent XML that cannot be processed.
+ */
+BAD_FORMAT("bad-format"),
 	BAD_NAMESPACE_PREFIX("bad-namespace-prefix"),
 	CONFLICT("conflict"),
 	CONNECTION_TIMEOUT("connection-timeout"),
@@ -40,6 +39,7 @@ enum class StreamError(val elementName: String) {
 	RESET("reset"),
 	RESOURCE_CONSTRAINT("resource-constraint"),
 	RESTRICTED_XML("restricted-xml"),
+
 	/**
 	 * The server will not provide service to the initiating entity but is redirecting traffic to another host
 	 * under the administrative control	of the same service provider.

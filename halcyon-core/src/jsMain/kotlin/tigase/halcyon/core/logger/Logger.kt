@@ -22,6 +22,7 @@ import kotlin.js.Date
 actual class Logger actual constructor(val name: String, val enabled: Boolean) {
 
 	companion object {
+
 		var levelFilter: Level = Level.INFO
 		var nameFilter: String? = null
 	}

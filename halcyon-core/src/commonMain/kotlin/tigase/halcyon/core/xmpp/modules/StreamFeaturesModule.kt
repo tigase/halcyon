@@ -26,6 +26,7 @@ import tigase.halcyon.core.xml.Element
 data class StreamFeaturesEvent(val features: Element) : Event(TYPE) {
 
 	companion object {
+
 		const val TYPE = "tigase.halcyon.core.xmpp.modules.StreamFeaturesEvent"
 	}
 }
@@ -33,6 +34,7 @@ data class StreamFeaturesEvent(val features: Element) : Event(TYPE) {
 class StreamFeaturesModule(override val context: Context) : XmppModule {
 
 	companion object {
+
 		const val TYPE = "StreamFeaturesModule"
 	}
 
@@ -49,8 +51,7 @@ class StreamFeaturesModule(override val context: Context) : XmppModule {
 
 	override fun initialize() {}
 
-	fun isFeatureAvailable(name: String, xmlns: String): Boolean =
-		streamFeatures?.getChildrenNS(name, xmlns) != null
+	fun isFeatureAvailable(name: String, xmlns: String): Boolean = streamFeatures?.getChildrenNS(name, xmlns) != null
 
 	override fun process(element: Element) {
 		streamFeatures = element

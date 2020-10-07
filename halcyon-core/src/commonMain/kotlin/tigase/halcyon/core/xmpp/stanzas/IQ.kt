@@ -22,17 +22,16 @@ import tigase.halcyon.core.xml.setAtt
 import tigase.halcyon.core.xmpp.ErrorCondition
 import tigase.halcyon.core.xmpp.XMPPException
 
-enum class IQType(val value: String) {
-	Error("error"),
+enum class IQType(val value: String) { Error("error"),
 	Get("get"),
 	Result("result"),
 	Set("set")
 }
 
-class IQ(wrappedElement: Element) : Stanza<IQType>(wrappedElement) {
-	companion object {
-		const val NAME = "iq"
-	}
+class IQ(wrappedElement: Element) : Stanza<IQType>(wrappedElement) { companion object {
+
+	const val NAME = "iq"
+}
 
 	override var type: IQType
 		set(value) = setAtt("type", value.value)

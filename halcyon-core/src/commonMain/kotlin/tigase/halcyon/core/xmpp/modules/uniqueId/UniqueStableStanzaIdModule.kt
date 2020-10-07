@@ -32,6 +32,7 @@ import tigase.halcyon.core.xmpp.stanzas.Message
 class UniqueStableStanzaIdModule(override val context: Context) : XmppModule, HasInterceptors, StanzaInterceptor {
 
 	companion object {
+
 		const val XMLNS = "urn:xmpp:sid:0"
 		const val TYPE = XMLNS
 	}

@@ -27,8 +27,8 @@ class XMPPDomHandler(
 	val onParseError: (String) -> Unit
 ) : SimpleHandler {
 
-
 	companion object {
+
 		private val ELEM_STREAM_STREAM = "stream:stream"
 
 	}

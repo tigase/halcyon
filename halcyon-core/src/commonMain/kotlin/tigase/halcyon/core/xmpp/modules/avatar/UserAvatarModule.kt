@@ -88,12 +88,14 @@ class UserAvatarModule(override val context: Context) : XmppModule {
 	}
 
 	private fun parseInfo(info: Element): AvatarInfo {
-		return AvatarInfo(info.attributes["bytes"]!!.toInt(),
-						  info.attributes["height"]?.toInt(),
-						  info.attributes["id"]!!,
-						  info.attributes["type"]!!,
-						  info.attributes["url"],
-						  info.attributes["width"]?.toInt())
+		return AvatarInfo(
+			info.attributes["bytes"]!!.toInt(),
+			info.attributes["height"]?.toInt(),
+			info.attributes["id"]!!,
+			info.attributes["type"]!!,
+			info.attributes["url"],
+			info.attributes["width"]?.toInt()
+		)
 	}
 
 	private fun processMetadataItem(stanza: Message, avatarID: String, metadata: Element) {

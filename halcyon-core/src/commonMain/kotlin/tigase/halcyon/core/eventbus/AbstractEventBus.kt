@@ -24,6 +24,7 @@ import tigase.halcyon.core.logger.Level
 abstract class AbstractEventBus(val context: AbstractHalcyon) {
 
 	companion object {
+
 		const val ALL_EVENTS = "EventBus#ALL_EVENTS"
 	}
 

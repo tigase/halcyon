@@ -21,31 +21,35 @@ import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xml.element
 import kotlin.jvm.JvmStatic
 
-class Content(val creator: Creator, val name: String, val description: Description?, val transports: List<Transport>) {
-    enum class Creator {
-        initiator, responder
-    }
+class Content(
+	val creator: Creator, val name: String, val description: Description?, val transports: List<Transport>
+) {
 
-    fun toElement(): Element {
-        return element("content") {
-            attribute("name", name)
-            attribute("creator", creator.name)
-            description?.let { addChild(it.toElement()) }
-            transports.forEach { addChild(it.toElement()) }
-        }
-    }
+	enum class Creator { initiator,
+		responder
+	}
 
-    companion object {
-        @JvmStatic
-        fun parse(el: Element): Content? {
-            if ("content" == el.name) {
-                val name = el.attributes["name"] ?: return null;
-                val creator = el.attributes["creator"]?.let { Creator.valueOf(it) } ?: return null;
-                val description = el.getFirstChild("description")?.let { Description.parse(it) }
-                val transports = el.children.map { Transport.parse(it) }.filterNotNull();
-                return Content(creator, name, description, transports)
-            }
-            return null;
-        }
-    }
+	fun toElement(): Element {
+		return element("content") {
+			attribute("name", name)
+			attribute("creator", creator.name)
+			description?.let { addChild(it.toElement()) }
+			transports.forEach { addChild(it.toElement()) }
+		}
+	}
+
+	companion object {
+
+		@JvmStatic
+		fun parse(el: Element): Content? {
+			if ("content" == el.name) {
+				val name = el.attributes["name"] ?: return null
+				val creator = el.attributes["creator"]?.let { Creator.valueOf(it) } ?: return null
+				val description = el.getFirstChild("description")?.let { Description.parse(it) }
+				val transports = el.children.map { Transport.parse(it) }.filterNotNull()
+				return Content(creator, name, description, transports)
+			}
+			return null
+		}
+	}
 }

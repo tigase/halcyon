@@ -51,6 +51,7 @@ sealed class SocketConnectionErrorEvent : ConnectionErrorEvent() {
 class SocketConnector(halcyon: Halcyon) : AbstractConnector(halcyon) {
 
 	companion object {
+
 		const val SERVER_HOST = "tigase.halcyon.core.connector.socket.SocketConnector#serverHost"
 		const val SERVER_PORT = "tigase.halcyon.core.connector.socket.SocketConnector#serverPort"
 		const val SEE_OTHER_HOST_KEY = "tigase.halcyon.core.connector.socket.SocketConnector#seeOtherHost"

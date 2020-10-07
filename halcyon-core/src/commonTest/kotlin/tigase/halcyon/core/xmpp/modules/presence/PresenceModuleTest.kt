@@ -64,7 +64,7 @@ class PresenceModuleTest {
 	}
 
 	@Test
-	fun testGetPresenceOf(){
+	fun testGetPresenceOf() {
 		val module = PresenceModule(halcyon)
 
 		module.process(presence {
@@ -90,7 +90,6 @@ class PresenceModuleTest {
 		assertNull(module.getPresenceOf("a@b.c/2".toJID()))
 
 	}
-
 
 	@Test
 	fun testGetPresenceOfBareJid() {
