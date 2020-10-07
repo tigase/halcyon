@@ -37,14 +37,25 @@ import tigase.halcyon.core.xmpp.stanzas.IQType
 import tigase.halcyon.core.xmpp.stanzas.iq
 import tigase.halcyon.core.xmpp.toBareJID
 
-sealed class RosterEvent(val itemElement: Element, val item: RosterItem) : Event(TYPE) { companion object {
+sealed class RosterEvent(val itemElement: Element, val item: RosterItem) : Event(TYPE) {
 
-	const val TYPE = "com.example.modules.roster.RosterEvent"
-}
+	companion object {
+
+		const val TYPE = "tigase.halcyon.core.xmpp.modules.roster.RosterEvent"
+	}
 
 	class ItemAdded(element: Element, item: RosterItem) : RosterEvent(element, item)
 	class ItemUpdated(element: Element, val oldItem: RosterItem, item: RosterItem) : RosterEvent(element, item)
 	class ItemRemoved(element: Element, item: RosterItem) : RosterEvent(element, item)
+}
+
+class RosterLoadedEvent : Event(TYPE) {
+
+	companion object {
+
+		const val TYPE = "tigase.halcyon.core.xmpp.modules.roster.RosterLoadedEvent"
+	}
+
 }
 
 enum class Subscription(val value: String) { Both("both"),
@@ -108,7 +119,10 @@ class RosterModule(context: Context) : AbstractXmppIQModule(
 		}
 		updateRequest(iq)
 		return context.request.iq(iq).map {
-			it.getChildrenNS("query", XMLNS)?.let(this@RosterModule::processQueryResponse) ?: RosterResponse(null)
+			val result =
+				it.getChildrenNS("query", XMLNS)?.let(this@RosterModule::processQueryResponse) ?: RosterResponse(null)
+			context.eventBus.fire(RosterLoadedEvent())
+			result
 		}
 	}
 
