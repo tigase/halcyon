@@ -26,6 +26,7 @@ import tigase.halcyon.core.logger.Logger
 import tigase.halcyon.core.modules.Criterion
 import tigase.halcyon.core.modules.XmppModule
 import tigase.halcyon.core.requests.RequestBuilder
+import tigase.halcyon.core.requests.XMPPError
 import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xmpp.ErrorCondition
 import tigase.halcyon.core.xmpp.JID
@@ -400,15 +401,19 @@ class PubSubModule(override val context: Context) : XmppModule {
 				}
 			}
 		}
-		return context.request.iq(iq).map(this@PubSubModule::buildRetrieveResponse)
+		return context.request.iq(iq).map { resp: IQ -> buildRetrieveResponse(resp, node, itemId) }
 	}
 
-	private fun buildRetrieveResponse(iq: Element): RetrieveResponse {
+	private fun buildRetrieveResponse(iq: IQ, node: String, requestedItemId: String?): RetrieveResponse {
 		val items = iq.getChildrenNS("pubsub", XMLNS)!!.getFirstChild("items")!!
 
 		val content = items.children.filter { it.name == "item" }.map { item ->
 			RetrievedItem(item.attributes["id"]!!, item.getFirstChild())
 		}.toList()
+
+		if (requestedItemId != null && content.isEmpty()) throw XMPPError(
+			iq, ErrorCondition.ItemNotFound, "There is no item $requestedItemId in node $node."
+		)
 
 		return RetrieveResponse(iq.getFromAttr()!!, items.attributes["node"]!!, content)
 	}

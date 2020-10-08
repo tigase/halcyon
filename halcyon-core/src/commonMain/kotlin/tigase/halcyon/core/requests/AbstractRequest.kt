@@ -74,16 +74,23 @@ abstract class AbstractRequest<V, STT : Stanza<*>>(
 	fun processStack() {
 		val requests = requestStack()
 
-		var tmp: Any? = response
+		// Currently returned value. Will be updated by map()'s from stack.
+		var tmpValue: Any? = response
+		// Result calculated in previous step
+		var tmpResult: Result<Any?>? = null
 
 		requests.forEach { req ->
-			val result = if (isTimeout) {
+			tmpResult = if (tmpResult != null && (tmpResult as Result<Any?>).isFailure) tmpResult else if (isTimeout) {
 				Result.failure(XMPPError(response, ErrorCondition.RemoteServerTimeout, null))
 			} else {
 				when (response!!.attributes["type"]) {
 					"result" -> {
-						tmp = req.transform.invoke(tmp!!)
-						Result.success(tmp)
+						try {
+							tmpValue = req.transform.invoke(tmpValue!!)
+							Result.success(tmpValue)
+						} catch (e: XMPPError) {
+							Result.failure<XMPPError>(e)
+						}
 					}
 					"error" -> {
 						val e = findCondition(response!!)
@@ -95,7 +102,7 @@ abstract class AbstractRequest<V, STT : Stanza<*>>(
 				}
 			}
 
-			req.calculatedResult = result as (Result<Nothing>)
+			req.calculatedResult = tmpResult as (Result<Nothing>)
 			if (isTimeout) req.markTimeout(false)
 			else req.setResponseStanza(response!!, false)
 		}
@@ -104,8 +111,7 @@ abstract class AbstractRequest<V, STT : Stanza<*>>(
 	internal fun setResponseStanza(response: Element, processStack: Boolean = true) {
 		this.response = wrap(response)
 		isCompleted = true
-		if (processStack) processStack()
-		callHandlers()
+		if (processStack) processStack() else callHandlers()
 	}
 
 	internal open fun markAsSent(processStack: Boolean = true) {
@@ -125,8 +131,7 @@ abstract class AbstractRequest<V, STT : Stanza<*>>(
 	internal fun markTimeout(processStack: Boolean = true) {
 		isCompleted = true
 		isTimeout = true
-		if (processStack) processStack()
-		callHandlers()
+		if (processStack) processStack() else callHandlers()
 	}
 
 	private fun callHandlers() {

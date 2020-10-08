@@ -47,21 +47,34 @@ class RequestsTest {
 		var rr1: Result<Long>? = null
 		var rr2: Result<Long>? = null
 
+		var respCounter1 = 0
+		var respCounter2 = 0
+		var mapCounter1 = 0
+		var mapCounter2 = 0
+		var mapCounter3 = 0
+		var mapCounter4 = 0
+
 		val req = factory.iq {
 			to = "a@b".toJID()
 			from = "x@y".toJID()
 			type = IQType.Get
 		}.map { value ->
+			++mapCounter1
 			value.getChildrenNS("response", "test")!!.value!!
 		}.map { value ->
+			++mapCounter2
 			value.toLong()
 		}.response { result ->
+			++respCounter1
 			rr1 = result
 		}.map { value ->
+			++mapCounter3
 			value + 1
 		}.map { value ->
+			++mapCounter4
 			value + 1
 		}.response { result ->
+			++respCounter2
 			rr2 = result
 		}.build()
 
@@ -87,6 +100,14 @@ class RequestsTest {
 		val rr2NotNull = assertNotNull(rr2)
 		assertTrue(rr2NotNull.isSuccess)
 		assertEquals(1236, rr2NotNull.getOrNull())
+
+		assertEquals(1, respCounter1, "Response handler must be called once!")
+		assertEquals(1, respCounter2, "Response handler must be called once!")
+		assertEquals(1, mapCounter1, "Mapping must be executed once!")
+		assertEquals(1, mapCounter2, "Mapping must be executed once!")
+		assertEquals(1, mapCounter3, "Mapping must be executed once!")
+		assertEquals(1, mapCounter4, "Mapping must be executed once!")
+
 	}
 
 	@Test
@@ -194,17 +215,28 @@ class RequestsTest {
 	}
 
 	@Test
-	fun testResponseTimeoutStacket() {
+	fun testResponseTimeoutStacked() {
 		var rr1: Result<*>? = null
 		var rr2: Result<*>? = null
+
+		var respCounter1 = 0
+		var respCounter2 = 0
+		var mapCounter1 = 0
 
 		val req = factory.iq {
 			to = "a@b".toJID()
 			from = "x@y".toJID()
 			type = IQType.Get
-		}.response { rr1 = it }.map {
+		}.response {
+			++respCounter1
+			rr1 = it
+		}.map {
+			++mapCounter1
 			it.getChildrenNS("response", "test")!!.value!!
-		}.response { rr2 = it }.build()
+		}.response {
+			++respCounter2
+			rr2 = it
+		}.build()
 		req.markTimeout()
 
 		val exNotNull = assertNotNull(assertNotNull(rr1).exceptionOrNull())
@@ -213,6 +245,10 @@ class RequestsTest {
 		val exNotNull2 = assertNotNull(assertNotNull(rr2).exceptionOrNull())
 		assertTrue(exNotNull2 is XMPPError)
 		assertEquals(ErrorCondition.RemoteServerTimeout, exNotNull2.error)
+
+		assertEquals(1, respCounter1, "Response handler must be called once!")
+		assertEquals(1, respCounter2, "Response handler must be called once!")
+		assertEquals(0, mapCounter1, "Mapping cannot be called")
 	}
 
 	@Test
@@ -347,12 +383,27 @@ class RequestsTest {
 		var rr: Result<*>? = null
 		var rr1: Result<String>? = null
 
+		var respCounter1 = 0
+		var respCounter2 = 0
+		var mapCounter1 = 0
+		var mapCounter2 = 0
+
 		val req = factory.message {
 			to = "a@b".toJID()
 			from = "x@y".toJID()
-		}.map { Unit }.response {
+		}.map {
+			++mapCounter1
+			Unit
+		}.response {
+			++respCounter1
 			rr = it
-		}.map { "Sent" }.response { rr1 = it }.build()
+		}.map {
+			++mapCounter2
+			"Sent"
+		}.response {
+			++respCounter2
+			rr1 = it
+		}.build()
 		req.markAsSent()
 
 		assertTrue(req.isSent)
@@ -363,5 +414,10 @@ class RequestsTest {
 		val rr1NN = assertNotNull(rr1, "We should have any response here!")
 		assertTrue(rr1NN.isSuccess, "Result should be success, because stanza is sent")
 		assertEquals("Sent", rr1NN.getOrNull())
+
+		assertEquals(1, respCounter1, "Response handler must be called once!")
+		assertEquals(1, respCounter2, "Response handler must be called once!")
+		assertEquals(1, mapCounter1, "Mapping must be executed once!")
+		assertEquals(1, mapCounter2, "Mapping must be executed once!")
 	}
 }

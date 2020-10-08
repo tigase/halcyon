@@ -28,7 +28,7 @@ import tigase.halcyon.core.xmpp.stanzas.*
 typealias ResultHandler<V> = (Result<V>) -> Unit
 typealias ResponseStanzaHandler<STT> = (AbstractRequest<*, STT>, STT?) -> Unit
 
-class XMPPError(val response: Stanza<*>?, val error: ErrorCondition, val description: String?) : Exception()
+class XMPPError(val response: Stanza<*>?, val error: ErrorCondition, val description: String?) : Exception(description)
 
 class RequestBuilderFactory(private val halcyon: AbstractHalcyon) {
 
