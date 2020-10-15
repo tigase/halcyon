@@ -64,10 +64,15 @@ class VCardModule(override val context: Context) : XmppModule {
 
 	override fun process(element: Element) = throw XMPPException(ErrorCondition.FeatureNotImplemented)
 
+	/**
+	 * Prepares request to retrieve vcard.
+	 * @param jid address of entity what VCard have to be retrieved.
+	 * @return builder of request returning [VCard] as result.
+	 */
 	fun retrieveVCard(jid: BareJID): RequestBuilder<VCard, IQ> {
 		val iq = iq {
 			type = IQType.Get
-			to = jid.toString().toJID()
+			to = jid.toJID()
 			"vcard"{
 				xmlns = XMLNS
 			}
@@ -75,6 +80,11 @@ class VCardModule(override val context: Context) : XmppModule {
 		return context.request.iq(iq).map(this@VCardModule::parseResponse)
 	}
 
+	/**
+	 * Prepares request to publish own VCard.
+	 *
+	 * @param vcard VCard to be published.
+	 */
 	fun publish(vcard: VCard): RequestBuilder<Unit, IQ> {
 		val ownJid = context.modules.getModuleOrNull<BindModule>(BindModule.TYPE)?.boundJID?.bareJID
 		val iq = iq {

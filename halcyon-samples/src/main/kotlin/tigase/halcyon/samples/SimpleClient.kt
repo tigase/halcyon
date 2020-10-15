@@ -94,6 +94,60 @@ fun main(args: Array<String>) {
 				val mam = halcyon.getModule<MAMModule>(MAMModule.TYPE)!!
 				mam.query(with = "Kanalik-Testowy@mix.tigase.org").send()
 			}
+			"vcard" -> {
+				val vCardModule = halcyon.getModule<VCardModule>(VCardModule.TYPE)!!
+
+				val vCard = vcard {
+					structuredName {
+						given = "Alice"
+						surname = "Carl"
+					}
+					nickname = "alice"
+					email {
+						parameters {
+							pref = 1
+							+"work"
+						}
+						text = "alice@organisation.com"
+					}
+				}
+
+				vCardModule.publish(vCard).response { result ->
+					result.onSuccess { println("VCard published") }
+					result.onFailure { println("VCard NOT published") }
+				}.send()
+
+				vCardModule.retrieveVCard("someone@server.im".toBareJID()).response { result ->
+					result.onSuccess { vcard ->
+						println(
+							"""
+			Received vcard:
+			Name: ${vcard.formattedName}
+			Name: ${vcard.structuredName?.given} ${vcard.structuredName?.surname}
+			Nick: ${vcard.nickname}
+			Birthday: ${vcard.birthday}
+			TimeZone: ${vcard.timeZone}
+		""".trimIndent()
+						)
+
+						println()
+						vcard.addresses.forEach { addr ->
+							println(
+								"""
+				${addr.street}
+				${addr.locality} ${addr.region} ${addr.code}
+				${addr.country}
+				
+			""".trimIndent()
+							)
+						}
+
+					}
+					result.onFailure {
+						println("Cannot retrieve VCard. Error: $it")
+					}
+				}.send()
+			}
 //			"break" -> {
 //				val pingModule = halcyon.modules.getModule<PingModule>(PingModule.TYPE)
 //				val req = pingModule.ping("jajcus.net".toJID()).response { resp ->
@@ -104,7 +158,7 @@ fun main(args: Array<String>) {
 //				}.send()
 //				(halcyon.connector as SocketConnector).socket.close()
 //			}
-			"x" -> {
+			" x " -> {
 				val pingModule = halcyon.modules.getModule<PingModule>(PingModule.TYPE)
 				val req = pingModule.ping().send()
 //				val result = req.getResultWait()

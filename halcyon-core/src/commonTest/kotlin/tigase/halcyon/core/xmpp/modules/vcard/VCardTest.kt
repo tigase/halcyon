@@ -25,57 +25,197 @@ class VCardTest {
 
 	val sample = """
 		<vcard xmlns="urn:ietf:params:xml:ns:vcard-4.0">
-		  <fn><text>Samantha Mizzi</text></fn>
-		  <n>
-		    <surname>Mizzi</surname>
-		    <given>Samantha</given>
-		    <additional></additional>
-		  </n>
-		  <nickname><text>Sam</text></nickname>
-		  <nickname><text>samizzi</text></nickname>
-		  <geo><uri>geo:39.59,-105.01</uri></geo>
-		  <org>
-		    <parameters><type><text>work</text></type></parameters>
-		    <text>Cisco</text>
-		  </org>
-		  <org>
-		    <parameters><pref><integer>2</integer></pref><type><text>work</text></type></parameters>
-		    <text>Tigase</text>
-		  </org>
-		   <tel>
-			 <parameters>
-			   <type>
-				 <text>work</text>
-				 <text>text</text>
-				 <text>voice</text>
-				 <text>cell</text>
-				 <text>video</text>
-			   </type>
-			 </parameters>
-			 <uri>tel:+1-418-262-6501</uri>
-		   </tel>	
-		  <note>
-		    <text>
-		      My co-author on XEP-0292. She's cool!
-		    </text>
-		  </note>
-		  <impp>
-		    <parameters><type><text>work</text></type></parameters>
-		    <uri>xmpp:samizzi@cisco.com</uri>
-		  </impp>
-		  <photo>
-		    <uri>http://stpeter.im/images/stpeter_oscon.jpg</uri>
-		  </photo>
-		  <photo>
-		    <uri>data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGAAAABgCAYAAADimHc4AAAMI2lDQ1BJQ0MgUHJvZmlsZQAASImVVwdUk8kWnr+kktACoUg</uri>
-		  </photo>
-		</vcard>
+    <fn>
+        <text>Samantha Mizzi</text>
+    </fn>
+    <n>
+        <surname>Mizzi</surname>
+        <given>Samantha</given>
+        <additional></additional>
+    </n>
+    <nickname>
+        <text>Sam</text>
+    </nickname>
+    <nickname>
+        <text>samizzi</text>
+    </nickname>
+    <geo>
+        <uri>geo:39.59,-105.01</uri>
+    </geo>
+    <org>
+        <parameters>
+            <type>
+                <text>work</text>
+            </type>
+        </parameters>
+        <text>Cisco</text>
+    </org>
+    <org>
+        <parameters>
+            <pref>
+                <integer>2</integer>
+            </pref>
+            <type>
+                <text>work</text>
+            </type>
+        </parameters>
+        <text>Tigase</text>
+    </org>
+    <bday>
+        <date>1966-08-06</date>
+    </bday>
+    <adr>
+        <parameters>
+            <type>
+                <text>work</text>
+                <text>voice</text>
+            </type>
+            <pref>
+                <integer>1</integer>
+            </pref>
+        </parameters>
+        <ext>Suite 600</ext>
+        <street>1899 Wynkoop Street</street>
+        <locality>Denver</locality>
+        <region>CO</region>
+        <code>80202</code>
+        <country>USA</country>
+    </adr>
+    <adr>
+        <parameters>
+            <type>
+                <text>home</text>
+            </type>
+        </parameters>
+        <ext></ext>
+        <street></street>
+        <locality>Parker</locality>
+        <region>CO</region>
+        <code>80138</code>
+        <country>USA</country>
+    </adr>
+    <tel>
+        <parameters>
+            <type>
+                <text>work</text>
+                <text>text</text>
+                <text>voice</text>
+                <text>cell</text>
+                <text>video</text>
+            </type>
+        </parameters>
+        <uri>tel:+1-418-262-6501</uri>
+    </tel>
+    <note>
+        <text>
+            My co-author on XEP-0292. She's cool!
+        </text>
+    </note>
+    <impp>
+        <parameters>
+            <type>
+                <text>work</text>
+            </type>
+        </parameters>
+        <uri>xmpp:samizzi@cisco.com</uri>
+    </impp>
+    <photo>
+        <uri>http://stpeter.im/images/stpeter_oscon.jpg</uri>
+    </photo>
+    <photo>
+        <uri>data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGAAAABgCAYAAADimHc4AAAMI2lDQ1BJQ0MgUHJvZmlsZQAASImVVwdUk8kWnr+kktACoUg</uri>
+    </photo>
+    <email>
+        <parameters>
+            <type>
+                <text>work</text>
+            </type>
+        </parameters>
+        <text>psaintan@cisco.com</text>
+    </email>
+    <email>
+        <parameters>
+            <type>
+                <text>home</text>
+            </type>
+        </parameters>
+        <text>stpeter@jabber.org</text>
+    </email>
+    <tz>
+        <text>America/Chicago</text>
+    </tz>
+</vcard>
 	""".trimIndent()
+
+	@Test
+	fun testBDay() {
+		val vCard = VCard(parseXML(sample).element!!)
+		assertFalse(vCard.isEmpty())
+		assertEquals("1966-08-06", vCard.birthday)
+	}
+
+	@Test
+	fun testTimeZone() {
+		val vCard = VCard(parseXML(sample).element!!)
+		assertFalse(vCard.isEmpty())
+		assertEquals("America/Chicago", vCard.timeZone)
+	}
+
+	@Test
+	fun testEmails() {
+		val vCard = VCard(parseXML(sample).element!!)
+		assertFalse(vCard.isEmpty())
+
+		assertNotNull(vCard.emails)[0].let { email ->
+			assertEquals(1, email.parameters.types.size)
+			assertTrue(email.parameters.types.contains("work"))
+			assertEquals("psaintan@cisco.com", email.text)
+		}
+		assertNotNull(vCard.emails)[1].let { email ->
+			assertEquals(1, email.parameters.types.size)
+			assertTrue(email.parameters.types.contains("home"))
+			assertEquals("stpeter@jabber.org", email.text)
+		}
+	}
+
+	@Test
+	fun testAddress() {
+		val vCard = VCard(parseXML(sample).element!!)
+		assertFalse(vCard.isEmpty())
+
+		assertEquals(2, vCard.addresses.size)
+		assertNotNull(vCard.addresses)[0].let { adr ->
+			assertEquals("USA", adr.country)
+			assertEquals("80202", adr.code)
+			assertEquals("CO", adr.region)
+			assertEquals("Denver", adr.locality)
+			assertEquals("1899 Wynkoop Street", adr.street)
+			assertEquals("Suite 600", adr.ext)
+			assertEquals(1, adr.parameters.pref)
+			assertEquals(2, adr.parameters.types.size)
+			assertTrue(adr.parameters.types.contains("work"))
+			assertTrue(adr.parameters.types.contains("voice"))
+		}
+		assertNotNull(vCard.addresses)[1].let { adr ->
+			assertEquals("USA", adr.country)
+			assertEquals("80138", adr.code)
+			assertEquals("CO", adr.region)
+			assertEquals("Parker", adr.locality)
+			assertNull(adr.street)
+			assertNull(adr.ext)
+			assertNull(adr.parameters.pref)
+			assertEquals(1, adr.parameters.types.size)
+			assertTrue(adr.parameters.types.contains("home"))
+		}
+
+	}
 
 	@Test
 	fun testProperties() {
 		val vCard = VCard(parseXML(sample).element!!)
 		assertFalse(vCard.isEmpty())
+
+		println(vCard.element.getAsString())
 
 		assertEquals("Samantha Mizzi", vCard.formattedName)
 		vCard.formattedName = "Genowefa"
@@ -85,41 +225,42 @@ class VCardTest {
 		assertEquals("Samantha", vCard.structuredName?.given)
 		assertNull(vCard.structuredName?.additional)
 
-		val photos = vCard.photos
+		assertNotNull(vCard.photos).let { photos ->
+			assertEquals(2, photos.size)
+			assertTrue(photos[0] is Photo.PhotoUri)
+			assertTrue(photos[1] is Photo.PhotoData)
 
-		assertTrue(photos!![0] is Photo.PhotoUri)
-		assertTrue(photos[1] is Photo.PhotoData)
+			assertEquals("http://stpeter.im/images/stpeter_oscon.jpg", photos[0].uri)
 
-		assertEquals("http://stpeter.im/images/stpeter_oscon.jpg", photos[0].uri)
-
-		assertEquals("image/png", (photos[1] as Photo.PhotoData).imageType)
-		assertEquals(
-			"iVBORw0KGgoAAAANSUhEUgAAAGAAAABgCAYAAADimHc4AAAMI2lDQ1BJQ0MgUHJvZmlsZQAASImVVwdUk8kWnr+kktACoUg",
-			(photos[1] as Photo.PhotoData).data
-		)
+			assertEquals("image/png", (photos[1] as Photo.PhotoData).imageType)
+			assertEquals(
+				"iVBORw0KGgoAAAANSUhEUgAAAGAAAABgCAYAAADimHc4AAAMI2lDQ1BJQ0MgUHJvZmlsZQAASImVVwdUk8kWnr+kktACoUg",
+				(photos[1] as Photo.PhotoData).data
+			)
+		}
 
 		val org = vCard.organizations
-		assertEquals(2, org?.count())
+		assertEquals(2, org.count())
 
-		assertEquals("Cisco", org?.get(0)?.name)
-		assertEquals("Tigase", org?.get(1)?.name)
-		assertEquals(2, org?.get(1)?.parameters?.pref)
+		assertEquals("Cisco", org.get(0).name)
+		assertEquals("Tigase", org.get(1).name)
+		assertEquals(2, org.get(1).parameters.pref)
 
-		org?.get(0)?.name = "Test"
+		org.get(0).name = "Test"
 		assertEquals("Test", vCard.element.findChild("vcard", "org", "text")?.value)
 
-		val tel = vCard.telephones!!.first()
+		val tel = vCard.telephones.first()
 		assertEquals("tel:+1-418-262-6501", tel.uri)
-		assertTrue(tel.parameters.types?.contains("cell") ?: false)
+		assertTrue(tel.parameters.types.contains("cell"))
 
 		tel.parameters.types = listOf("1", "2", "3")
 
-		assertFalse(tel.parameters.types?.contains("cell") ?: false)
-		assertTrue(tel.parameters.types?.contains("1") ?: false)
-		assertTrue(tel.parameters.types?.contains("2") ?: false)
-		assertTrue(tel.parameters.types?.contains("3") ?: false)
+		assertFalse(tel.parameters.types.contains("cell"))
+		assertTrue(tel.parameters.types.contains("1"))
+		assertTrue(tel.parameters.types.contains("2"))
+		assertTrue(tel.parameters.types.contains("3"))
 
-		tel.parameters.types = null
+		tel.parameters.types = emptyList()
 		tel.parameters.pref = null
 
 		println(tel.element.getAsString())

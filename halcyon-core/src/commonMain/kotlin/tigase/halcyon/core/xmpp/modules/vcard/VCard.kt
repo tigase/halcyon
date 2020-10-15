@@ -29,7 +29,7 @@ class Parameters(element: Element) : VCardStruct(element) {
 	var pref: Int? by VCardElement(constPath = arrayOf("parameters", "pref"),
 								   path = arrayOf("integer"),
 								   factory = { it.value?.toInt() })
-	var types: List<String>? by VCardElementsList(
+	var types: List<String> by VCardElementsList(
 		constPath = arrayOf("parameters", "type"),
 		path = arrayOf("text"),
 		factory = {
@@ -43,6 +43,27 @@ class Telephone(element: Element) : VCardStruct(element) {
 	val parameters = Parameters(element)
 
 	var uri: String? by VCardElement(path = arrayOf("uri"), factory = Element::value)
+
+}
+
+class Address(element: Element) : VCardStruct(element) {
+
+	val parameters = Parameters(element)
+
+	var street: String? by VCardElement(path = arrayOf("street"), factory = Element::value)
+	var ext: String? by VCardElement(path = arrayOf("ext"), factory = Element::value)
+	var locality: String? by VCardElement(path = arrayOf("locality"), factory = Element::value)
+	var region: String? by VCardElement(path = arrayOf("region"), factory = Element::value)
+	var code: String? by VCardElement(path = arrayOf("code"), factory = Element::value)
+	var country: String? by VCardElement(path = arrayOf("country"), factory = Element::value)
+
+}
+
+class Email(element: Element) : VCardStruct(element) {
+
+	val parameters = Parameters(element)
+
+	var text: String? by VCardElement(path = arrayOf("text"), factory = Element::value)
 
 }
 
@@ -61,7 +82,6 @@ class Organization(element: Element) : VCardStruct(element) {
 
 	constructor() : this(element("org") {})
 
-	var type: String? by VCardElement(path = arrayOf("parameters", "type", "text"), factory = Element::value)
 	var name: String? by VCardElement(path = arrayOf("text"), factory = Element::value)
 
 }
@@ -88,7 +108,7 @@ sealed class Photo(element: Element) : VCardStruct(element) {
 
 		private fun splitUri(): List<String?> {
 			val z = uri?.split(":", ";", ",") ?: emptyList()
-			return if (z.size < 4) listOf<String?>(null, null, null) else z
+			return if (z.size < 4) listOf<String?>(null, null, null, null) else z
 		}
 
 		val imageType: String?
@@ -97,7 +117,7 @@ sealed class Photo(element: Element) : VCardStruct(element) {
 		val data: String?
 			get() = splitUri()[3]
 
-		fun setData(imageType: String, base64: String) {
+		fun setData(imageType: String, data: String) {
 			uri = "data:$imageType;base64,$data"
 		}
 
@@ -109,20 +129,24 @@ class VCard(element: Element) : VCardStruct(element) {
 
 	fun isEmpty(): Boolean = element.children.isEmpty()
 
-	var structuredName: StructuredName? by VCardElement(path = arrayOf("n"), factory = ::StructuredName)
+	var addresses: List<Address> by VCardElementsList(path = arrayOf("adr"), factory = ::Address)
+	var birthday: String? by VCardElement(path = arrayOf("bday", "date"), factory = Element::value)
+	var emails: List<Email> by VCardElementsList(path = arrayOf("email"), factory = ::Email)
 	var formattedName: String? by VCardElement(path = arrayOf("fn", "text"), factory = Element::value)
 	var nickname: String? by VCardElement(path = arrayOf("nickname", "text"), factory = Element::value)
-	var organizations: List<Organization>? by VCardElementsList(path = arrayOf("org"), factory = ::Organization)
-	var telephones: List<Telephone>? by VCardElementsList(path = arrayOf("tel"), factory = ::Telephone)
+	var organizations: List<Organization> by VCardElementsList(path = arrayOf("org"), factory = ::Organization)
+	var photos: List<Photo> by VCardElementsList(path = arrayOf("photo"), factory = Photo.Companion::create)
 	var role: String? by VCardElement(path = arrayOf("role", "text"), factory = Element::value)
-	var photos: List<Photo>? by VCardElementsList(path = arrayOf("photo"), factory = Photo.Companion::create)
+	var structuredName: StructuredName? by VCardElement(path = arrayOf("n"), factory = ::StructuredName)
+	var telephones: List<Telephone> by VCardElementsList(path = arrayOf("tel"), factory = ::Telephone)
+	var timeZone: String? by VCardElement(path = arrayOf("tz", "text"), factory = Element::value)
 }
 
 class VCardElementsList<T>(
 	val constPath: Array<String> = emptyArray(), val path: Array<String>, val factory: (Element) -> T
-) : ReadWriteProperty<VCardStruct, List<T>?> {
+) : ReadWriteProperty<VCardStruct, List<T>> {
 
-	override fun getValue(thisRef: VCardStruct, property: KProperty<*>): List<T>? {
+	override fun getValue(thisRef: VCardStruct, property: KProperty<*>): List<T> {
 		val root = if (constPath.isEmpty()) thisRef.element else thisRef.element.find(constPath, true)!!
 
 		val result = mutableListOf<T>()
@@ -137,7 +161,7 @@ class VCardElementsList<T>(
 		return result
 	}
 
-	override fun setValue(thisRef: VCardStruct, property: KProperty<*>, value: List<T>?) {
+	override fun setValue(thisRef: VCardStruct, property: KProperty<*>, value: List<T>) {
 		val root = if (constPath.isEmpty()) thisRef.element else thisRef.element.find(constPath, true)!!
 
 		root.children.filter { it.name == path[0] }.toList().forEach {
@@ -194,6 +218,7 @@ open class VCardElement<T>(
 ) : ReadWriteProperty<VCardStruct, T?> {
 
 	override fun getValue(thisRef: VCardStruct, property: KProperty<*>): T? {
+//		return thisRef.element.find(arrayOf(thisRef.element.name)+constPath + path)?.let {
 		return thisRef.element.find(constPath + path)?.let {
 			factory.invoke(it)
 		}
