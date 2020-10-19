@@ -80,13 +80,10 @@ class PresenceModule(override val context: Context) : XmppModule {
 		}
 		context.eventBus.fire(PresenceReceivedEvent(fromJID, presence.type, presence))
 
-		val bestPresence = getBestPresenceOf(fromJID.bareJID)
-		val bestShow = bestPresence?.show
+		val bestPresence = getBestPresenceOf(fromJID.bareJID) ?: presence
 
 		context.eventBus.fire(
-			ContactChangeStatusEvent(
-				fromJID.bareJID, bestPresence?.status, bestPresence ?: presence, presence
-			)
+			ContactChangeStatusEvent(fromJID.bareJID, bestPresence.status, bestPresence, presence)
 		)
 	}
 
