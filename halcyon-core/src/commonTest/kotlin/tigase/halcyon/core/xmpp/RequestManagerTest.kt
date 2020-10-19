@@ -22,6 +22,7 @@ import tigase.halcyon.core.connector.AbstractConnector
 import tigase.halcyon.core.requests.RequestsManager
 import tigase.halcyon.core.requests.XMPPError
 import tigase.halcyon.core.xml.element
+import tigase.halcyon.core.xmpp.modules.vcard.VCardModule
 import kotlin.test.*
 
 class RequestManagerTest {
@@ -212,6 +213,80 @@ class RequestManagerTest {
 			attribute("type", "result")
 			attribute("from", "a@b.c")
 		}))
+	}
+
+	@Test
+	fun testExceptionOnMapping() {
+		var catchedException: Throwable? = null
+		val req = halcyon.request.iq {
+			attribute("id", "1")
+			attribute("type", "get")
+			attribute("from", "my@jid.com")
+			attribute("to", "to@jid.com")
+		}.map {
+			throw XMPPError(null, ErrorCondition.Gone, "TeST")
+		}.response {
+			it.onSuccess {
+				fail("it shouldn't be called at all")
+			}
+			it.onFailure {
+				catchedException = it
+			}
+		}.build()
+		halcyon.requestsManager.register(req)
+		val respStanza = element("iq") {
+			xmlns = "jabber:client"
+			attribute("to", "my@jid.com")
+			attribute("from", "to@jid.com")
+			attribute("type", "result")
+			attribute("id", req.id)
+		}
+		val result = halcyon.requestsManager.findAndExecute(respStanza)
+		assertTrue(result)
+		assertNotNull(catchedException).let {
+			assertTrue(it is XMPPError)
+			assertEquals(ErrorCondition.Gone, it.error)
+			assertEquals("TeST", it.description)
+		}
+	}
+
+	@Test
+	fun testErrorProcessing() {
+		val module = halcyon.getModule<VCardModule>(VCardModule.TYPE)!!
+
+		var catchedException: Throwable? = null
+
+		val req = module.retrieveVCard("to@jid.com".toBareJID()).response {
+			it.onSuccess {
+				fail("it shouldn't be called at all")
+			}
+			it.onFailure {
+				catchedException = it
+			}
+		}.build()
+		halcyon.requestsManager.register(req)
+
+		val respStanza = element("iq") {
+			xmlns = "jabber:client"
+			attribute("to", "my@jid.com")
+			attribute("from", "to@jid.com")
+			attribute("type", "error")
+			attribute("id", req.id)
+			"error"{
+				attribute("type", "cancel")
+				"service-unavailable"{
+					xmlns = "urn:ietf:params:xml:ns:xmpp-stanzas"
+				}
+			}
+		}
+
+		val result = halcyon.requestsManager.findAndExecute(respStanza)
+		assertTrue(result)
+
+		assertNotNull(catchedException).let {
+			assertTrue(it is XMPPError)
+			assertEquals(ErrorCondition.ServiceUnavailable, it.error)
+		}
 
 	}
 
