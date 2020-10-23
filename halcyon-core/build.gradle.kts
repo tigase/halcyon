@@ -42,6 +42,9 @@ kotlin {
 	}
 
 	sourceSets {
+		all {
+			languageSettings.useExperimentalAnnotation("org.mylibrary.OptInAnnotation")
+		}
 		val commonMain by getting {
 			languageSettings.apply {
 				languageVersion = "1.3" // possible values: '1.0', '1.1', '1.2', '1.3'

@@ -17,13 +17,16 @@
  */
 package tigase.halcyon.core.modules
 
+import tigase.halcyon.core.ReflectionModuleManager
 import tigase.halcyon.core.xml.Element
+import kotlin.reflect.KClass
 
 class ModulesManager {
 
 	lateinit var context: tigase.halcyon.core.Context
 
-	private val modules: MutableMap<String, XmppModule> = HashMap()
+	private val modulesByType: MutableMap<String, XmppModule> = HashMap()
+	private val modulesByClass: MutableMap<KClass<*>, XmppModule> = HashMap()
 
 	private val modulesOrdered = mutableListOf<XmppModule>()
 
@@ -33,7 +36,8 @@ class ModulesManager {
 
 	fun register(module: XmppModule) {
 		modulesOrdered.add(module)
-		modules[module.type] = module
+		modulesByType[module.type] = module
+		modulesByClass[module::class] = module
 		modulesToInitialize.add(module)
 	}
 
@@ -52,7 +56,7 @@ class ModulesManager {
 	fun getAvailableFeatures(): Array<String> {
 		val tmp = mutableSetOf<String>()
 
-		modules.values.forEach { xmppModule ->
+		modulesByType.values.forEach { xmppModule ->
 			val fs = xmppModule.features
 			if (fs != null) tmp.addAll(fs)
 		}
@@ -60,21 +64,15 @@ class ModulesManager {
 		return tmp.toTypedArray()
 	}
 
-	fun isRegistered(type: String): Boolean = this.modules.containsKey(type)
+	fun isRegistered(type: String): Boolean = this.modulesByType.containsKey(type)
 
-	@Suppress("UNCHECKED_CAST")
-	fun <T : XmppModule> getModule(type: String): T {
-		val module = this.modules[type]
-			?: throw throw tigase.halcyon.core.exceptions.HalcyonException("Module '$type' not registered!")
-		return module as T
-	}
+	@ReflectionModuleManager
+	fun isRegistered(cls: KClass<*>): Boolean = this.modulesByClass.containsKey(cls)
 
-	fun getModules(): Collection<XmppModule> = this.modules.values.toList()
+	@ReflectionModuleManager
+	inline fun <reified T : XmppModule> isRegistered(): Boolean = isRegistered(T::class)
 
-	@Suppress("UNCHECKED_CAST")
-	fun <T : XmppModule> getModuleOrNull(type: String): T? {
-		return this.modules[type] as T?
-	}
+	fun getModules(): Collection<XmppModule> = this.modulesByType.values.toList()
 
 	fun getModulesFor(element: Element): Array<XmppModule> {
 		return modulesOrdered.filter { xmppModule ->
@@ -98,5 +96,35 @@ class ModulesManager {
 		return tmp
 	}
 
+	@Suppress("UNCHECKED_CAST")
+	fun <T : XmppModule> getModule(type: String): T {
+		val module = this.modulesByType[type] ?: throw throw NullPointerException("Module '$type' not registered!")
+		return module as T
+	}
+
+	@ReflectionModuleManager
+	@Suppress("UNCHECKED_CAST")
+	fun <T : XmppModule> getModule(cls: KClass<T>): T {
+		val module = this.modulesByClass[cls] ?: throw throw NullPointerException("Module not registered!")
+		return module as T
+	}
+
+	@Suppress("UNCHECKED_CAST")
+	fun <T : XmppModule> getModuleOrNull(type: String): T? {
+		return this.modulesByType[type] as T?
+	}
+
+	@ReflectionModuleManager
+	@Suppress("UNCHECKED_CAST")
+	fun <T : XmppModule> getModuleOrNull(cls: KClass<T>): T? {
+		return this.modulesByClass[cls] as T?
+	}
+
+	@ReflectionModuleManager
+	inline fun <reified T : XmppModule> getModule(): T = getModule(T::class)
+
 	operator fun <T : XmppModule> get(type: String): T = getModule(type)
+
+	@ReflectionModuleManager
+	operator fun <T : XmppModule> get(cls: KClass<T>): T = getModule(cls)
 }

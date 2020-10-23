@@ -302,7 +302,7 @@ abstract class AbstractHalcyon : Context, PacketWriter {
 		c.send(request.stanza.getAsString())
 
 
-		if (getModule<StreamManagementModule>(StreamManagementModule.TYPE)?.resumptionContext?.isAckActive != true) {
+		if (!getModule<StreamManagementModule>(StreamManagementModule.TYPE).resumptionContext.isAckActive) {
 			request.markAsSent()
 		}
 		eventBus.fire(SentXMLElementEvent(request.stanza, request))
@@ -312,7 +312,12 @@ abstract class AbstractHalcyon : Context, PacketWriter {
 
 	protected open fun onDisconnecting() {}
 
-	fun <T : XmppModule> getModule(type: String): T? = modules.getModuleOrNull<T>(type)
+	fun <T : XmppModule> getModule(type: String): T = modules.getModule(type)
+
+	fun <T : XmppModule> getModuleOrNull(type: String): T? = modules.getModuleOrNull(type)
+
+	@ReflectionModuleManager
+	inline fun <reified T : XmppModule> getModule(): T = modules.getModule(T::class)
 
 	protected fun startConnector() {
 		if (running) {
@@ -394,8 +399,7 @@ abstract class AbstractHalcyon : Context, PacketWriter {
 
 			modules.getModuleOrNull<StreamManagementModule>(StreamManagementModule.TYPE)?.let {
 				val ackEnabled =
-					getModule<StreamManagementModule>(StreamManagementModule.TYPE)?.resumptionContext?.isAckActive
-						?: false
+					getModule<StreamManagementModule>(StreamManagementModule.TYPE).resumptionContext.isAckActive
 				if (ackEnabled && getConnectorState() == tigase.halcyon.core.connector.State.Connected) {
 					it.sendAck(true)
 				}
