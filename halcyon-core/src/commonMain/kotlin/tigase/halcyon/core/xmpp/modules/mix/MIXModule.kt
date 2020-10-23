@@ -60,6 +60,8 @@ data class JoinResponse(val jid: JID, val nick: String, val nodes: Array<String>
 
 data class CreateResponse(val jid: BareJID, val name: String)
 
+data class Participant(val id: String, val nick: String?, val jid: BareJID?)
+
 class MIXModule(override val context: Context) : XmppModule, RosterItemAnnotationProcessor {
 
 	companion object {
@@ -70,6 +72,8 @@ class MIXModule(override val context: Context) : XmppModule, RosterItemAnnotatio
 
 		const val NODE_ALLOWED = "urn:xmpp:mix:nodes:allowed"
 		const val NODE_BANNED = "urn:xmpp:mix:nodes:banned"
+		const val NODE_PARTICIPANTS = "urn:xmpp:mix:nodes:participants"
+		const val NODE_PRESENCE = "urn:xmpp:mix:nodes:presence"
 	}
 
 	override val criteria: Criteria? = Criterion.element(this@MIXModule::isMIXMessage)
@@ -183,8 +187,8 @@ class MIXModule(override val context: Context) : XmppModule, RosterItemAnnotatio
 						+nick
 					}
 					"subscribe"{ attributes["node"] = "urn:xmpp:mix:nodes:messages" }
-					"subscribe"{ attributes["node"] = "urn:xmpp:mix:nodes:presence" }
-					"subscribe"{ attributes["node"] = "urn:xmpp:mix:nodes:participants" }
+					"subscribe"{ attributes["node"] = NODE_PRESENCE }
+					"subscribe"{ attributes["node"] = NODE_PARTICIPANTS }
 					"subscribe"{ attributes["node"] = "urn:xmpp:mix:nodes:info" }
 					invitation?.let {
 						addChild(invitationToElement(it))
@@ -210,6 +214,16 @@ class MIXModule(override val context: Context) : XmppModule, RosterItemAnnotatio
 				}
 			}
 		}.map { Unit }
+	}
+
+	private fun createParticipant(id: String, p: Element): Participant? {
+		return Participant(id, p.getChildContent("nick"), p.getChildContent("jid")?.toBareJID())
+	}
+
+	fun retrieveParticipants(channel: BareJID): RequestBuilder<Collection<Participant>, IQ> {
+		return pubsubModule.retrieveItem(channel.toJID(), NODE_PARTICIPANTS).map { r ->
+			r.items.mapNotNull { item -> createParticipant(item.id, item.content!!) }
+		}
 	}
 
 	fun message(channel: BareJID, message: String): RequestBuilder<Unit, Message> {

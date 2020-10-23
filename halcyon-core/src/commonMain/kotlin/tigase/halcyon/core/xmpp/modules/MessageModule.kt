@@ -20,17 +20,24 @@ package tigase.halcyon.core.xmpp.modules
 import tigase.halcyon.core.Context
 import tigase.halcyon.core.eventbus.Event
 import tigase.halcyon.core.logger.Logger
+import tigase.halcyon.core.modules.Criteria
 import tigase.halcyon.core.modules.Criterion
 import tigase.halcyon.core.modules.XmppModule
 import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xmpp.JID
+import tigase.halcyon.core.xmpp.modules.mix.MIXModule
+import tigase.halcyon.core.xmpp.modules.mix.isMixMessage
+import tigase.halcyon.core.xmpp.modules.pubsub.PubSubModule
+import tigase.halcyon.core.xmpp.modules.pubsub.isPubSubMessage
 import tigase.halcyon.core.xmpp.stanzas.Message
 import tigase.halcyon.core.xmpp.stanzas.wrap
 
-data class MessageReceivedEvent(val fromJID: JID?, val stanza: Message) : Event(TYPE) { companion object {
+data class MessageReceivedEvent(val fromJID: JID?, val stanza: Message) : Event(TYPE) {
 
-	const val TYPE = "tigase.halcyon.core.xmpp.modules.MessageReceivedEvent"
-}
+	companion object {
+
+		const val TYPE = "tigase.halcyon.core.xmpp.modules.MessageReceivedEvent"
+	}
 }
 
 class MessageModule(override val context: Context) : XmppModule {
@@ -38,8 +45,9 @@ class MessageModule(override val context: Context) : XmppModule {
 	private val log = Logger("tigase.halcyon.core.xmpp.modules.MessageModule")
 
 	override val type = TYPE
-	override val criteria = Criterion.name(Message.NAME)
+	override val criteria: Criteria? = Criterion.element(this@MessageModule::isMessage)
 	override val features: Array<String>? = null
+	//	override val criteria = Criterion.name(Message.NAME)
 
 	companion object {
 
@@ -47,6 +55,12 @@ class MessageModule(override val context: Context) : XmppModule {
 	}
 
 	override fun initialize() {
+	}
+
+	private fun isMessage(message: Element): Boolean = when {
+		context.modules.isRegistered(MIXModule.TYPE) && message.isMixMessage() -> false
+		context.modules.isRegistered(PubSubModule.TYPE) && message.isPubSubMessage() -> false
+		else -> message.name == Message.NAME
 	}
 
 	override fun process(element: Element) {

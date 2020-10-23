@@ -28,7 +28,7 @@ import tigase.halcyon.core.xmpp.BareJID
 import tigase.halcyon.core.xmpp.ErrorCondition
 import tigase.halcyon.core.xmpp.XMPPException
 import tigase.halcyon.core.xmpp.modules.BindModule
-import tigase.halcyon.core.xmpp.modules.pubsub.PubSubEventReceivedEvent
+import tigase.halcyon.core.xmpp.modules.pubsub.PubSubItemEvent
 import tigase.halcyon.core.xmpp.stanzas.IQ
 import tigase.halcyon.core.xmpp.stanzas.IQType
 import tigase.halcyon.core.xmpp.stanzas.iq
@@ -59,7 +59,7 @@ class VCardModule(override val context: Context) : XmppModule {
 	var autoRetrieve: Boolean = false
 
 	override fun initialize() {
-		context.eventBus.register(PubSubEventReceivedEvent.TYPE, this@VCardModule::processEvent)
+		context.eventBus.register(PubSubItemEvent.TYPE, this@VCardModule::processEvent)
 	}
 
 	override fun process(element: Element) = throw XMPPException(ErrorCondition.FeatureNotImplemented)
@@ -99,8 +99,8 @@ class VCardModule(override val context: Context) : XmppModule {
 		return context.request.iq(iq).map { Unit }
 	}
 
-	private fun processEvent(event: PubSubEventReceivedEvent) {
-		if (event.nodeName != NODE) return
+	private fun processEvent(event: PubSubItemEvent) {
+		if (event !is PubSubItemEvent.Published || event.nodeName != NODE) return
 		val jid = event.pubSubJID ?: return
 
 		if (autoRetrieve) {

@@ -44,9 +44,17 @@ import tigase.halcyon.core.xmpp.stanzas.*
  * @param nodeName publisher node name
  * @param items list of received items (extracted from `<items>` element)
  */
-data class PubSubEventReceivedEvent(
-	val pubSubJID: JID?, val stanza: Message, val nodeName: String, val items: List<Element>
+sealed class PubSubItemEvent(
+	val pubSubJID: JID?, val stanza: Message, val nodeName: String
 ) : Event(TYPE) {
+
+	class Published(
+		pubSubJID: JID?, stanza: Message, nodeName: String, val itemId: String?, val content: Element?
+	) : PubSubItemEvent(pubSubJID, stanza, nodeName)
+
+	class Retracted(
+		pubSubJID: JID?, stanza: Message, nodeName: String, val itemId: String?
+	) : PubSubItemEvent(pubSubJID, stanza, nodeName)
 
 	companion object {
 
@@ -328,9 +336,21 @@ class PubSubModule(override val context: Context) : XmppModule {
 		val eventElement = msg.getChildrenNS("event", XMLNS_EVENT)!!
 		val itemsElement = eventElement.getFirstChild("items")!!
 		val nodeName = itemsElement.attributes["node"]!!
-		val itemsList = itemsElement.getChildren("item")
 
-		context.eventBus.fire(PubSubEventReceivedEvent(msg.from, msg, nodeName, itemsList))
+		itemsElement.children.forEach { item ->
+			when (item.name) {
+				"retract" -> {
+					val id = item.attributes["id"]
+					context.eventBus.fire(PubSubItemEvent.Retracted(msg.from, msg, nodeName, id))
+				}
+				"item" -> {
+					val id = item.attributes["id"]
+					context.eventBus.fire(PubSubItemEvent.Published(msg.from, msg, nodeName, id, item.getFirstChild()))
+				}
+				else -> throw XMPPException(ErrorCondition.BadRequest)
+			}
+		}
+
 	}
 
 	/**
@@ -508,3 +528,7 @@ class PubSubModule(override val context: Context) : XmppModule {
 
 }
 
+fun Element.isPubSubMessage(): Boolean {
+	if (this.name != Message.NAME) return false
+	return this.getChildrenNS("event", PubSubModule.XMLNS_EVENT) != null
+}

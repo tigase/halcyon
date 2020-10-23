@@ -28,7 +28,7 @@ import tigase.halcyon.core.requests.RequestBuilder
 import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xml.element
 import tigase.halcyon.core.xmpp.*
-import tigase.halcyon.core.xmpp.modules.pubsub.PubSubEventReceivedEvent
+import tigase.halcyon.core.xmpp.modules.pubsub.PubSubItemEvent
 import tigase.halcyon.core.xmpp.modules.pubsub.PubSubModule
 import tigase.halcyon.core.xmpp.stanzas.IQ
 import tigase.halcyon.core.xmpp.stanzas.Message
@@ -76,13 +76,13 @@ class UserAvatarModule(override val context: Context) : XmppModule {
 
 	override fun initialize() {
 		this.pubSubModule = context.modules.getModule(PubSubModule.TYPE)
-		context.eventBus.register<PubSubEventReceivedEvent>(PubSubEventReceivedEvent.TYPE) { event ->
-			if (event.nodeName == XMLNS_METADATA) {
-				event.items.forEach {
-					val id = it.attributes["id"]
-					val metadata = it.getChildrenNS("metadata", XMLNS_METADATA)
-					if (id != null && metadata != null) processMetadataItem(event.stanza, id, metadata)
-				}
+		context.eventBus.register<PubSubItemEvent>(PubSubItemEvent.TYPE) { event ->
+			if (event.nodeName == XMLNS_METADATA && event is PubSubItemEvent.Published) {
+				val metadata =
+					event.content?.let { if (it.name == "metadata" && it.xmlns == XMLNS_METADATA) it else null }
+				if (event.itemId != null && metadata != null) processMetadataItem(
+					event.stanza, event.itemId, metadata
+				)
 			}
 		}
 	}
