@@ -18,6 +18,7 @@
 package tigase.halcyon.samples
 
 import tigase.halcyon.core.Halcyon
+import tigase.halcyon.core.ReflectionModuleManager
 import tigase.halcyon.core.TickEvent
 import tigase.halcyon.core.connector.ReceivedXMLElementEvent
 import tigase.halcyon.core.connector.SentXMLElementEvent
@@ -27,7 +28,10 @@ import tigase.halcyon.core.requests.XMPPError
 import tigase.halcyon.core.xmpp.modules.PingModule
 import tigase.halcyon.core.xmpp.modules.mam.MAMModule
 import tigase.halcyon.core.xmpp.modules.mix.MIXModule
+import tigase.halcyon.core.xmpp.modules.roster.RosterLoadedEvent
 import tigase.halcyon.core.xmpp.modules.sm.StreamManagementModule
+import tigase.halcyon.core.xmpp.modules.vcard.VCardModule
+import tigase.halcyon.core.xmpp.modules.vcard.vcard
 import tigase.halcyon.core.xmpp.stanzas.message
 import tigase.halcyon.core.xmpp.toBareJID
 import tigase.halcyon.core.xmpp.toJID
@@ -75,7 +79,7 @@ fun main(args: Array<String>) {
 //	halcyon.configurator.userJID = BareJID.parse(args[0])
 //	halcyon.configurator.userPassword = args[1]
 
-	halcyon.getModule<StreamManagementModule>(StreamManagementModule.TYPE)?.resumptionContext
+	halcyon.getModule<StreamManagementModule>(StreamManagementModule.TYPE).resumptionContext
 
 	halcyon.connect()
 
@@ -84,18 +88,18 @@ fun main(args: Array<String>) {
 
 		when (line) {
 			"mix_message" -> {
-				halcyon.getModule<MIXModule>(MIXModule.TYPE)?.let { module ->
+				halcyon.getModule<MIXModule>(MIXModule.TYPE).let { module ->
 					module.message(
 						"Kanalik-Testowy@mix.tigase.org".toBareJID(), "Random message ${currentTimestamp()}"
 					).send()
 				}
 			}
 			"mam" -> {
-				val mam = halcyon.getModule<MAMModule>(MAMModule.TYPE)!!
+				val mam = halcyon.getModule<MAMModule>(MAMModule.TYPE)
 				mam.query(with = "Kanalik-Testowy@mix.tigase.org").send()
 			}
 			"vcard" -> {
-				val vCardModule = halcyon.getModule<VCardModule>(VCardModule.TYPE)!!
+				val vCardModule = halcyon.getModule<VCardModule>(VCardModule.TYPE)
 
 				val vCard = vcard {
 					structuredName {

@@ -19,7 +19,7 @@ package tigase.halcyon.core.eventbus
 
 import tigase.halcyon.core.AbstractHalcyon
 import tigase.halcyon.core.currentTimestamp
-import tigase.halcyon.core.logger.Level
+import tigase.halcyon.core.logger.LoggerFactory
 
 abstract class AbstractEventBus(val context: AbstractHalcyon) {
 
@@ -28,7 +28,7 @@ abstract class AbstractEventBus(val context: AbstractHalcyon) {
 		const val ALL_EVENTS = "EventBus#ALL_EVENTS"
 	}
 
-	protected val log = tigase.halcyon.core.logger.Logger("tigase.halcyon.core.eventbus.EventBus")
+	protected val log = LoggerFactory.logger("tigase.halcyon.core.eventbus.EventBus")
 
 	protected var handlersMap: MutableMap<String, MutableSet<EventHandler<*>>> = createHandlersMap()
 
@@ -61,16 +61,12 @@ abstract class AbstractEventBus(val context: AbstractHalcyon) {
 
 	@Suppress("UNCHECKED_CAST")
 	protected open fun fire(event: Event, handlers: Collection<EventHandler<*>>) {
-		if (log.isLoggable(Level.FINEST)) {
-			log.finest("Firing event $event with ${handlers.size} handlers")
-		}
+		log.finest { "Firing event $event with ${handlers.size} handlers" }
 		handlers.forEach { eventHandler ->
 			try {
 				(eventHandler as EventHandler<Event>).onEvent(event)
 			} catch (e: Exception) {
-				if (log.isLoggable(Level.WARNING)) log.log(
-					Level.WARNING, "Problem on handling event", e
-				)
+				log.warning(e) { "Problem on handling event" }
 			}
 		}
 	}

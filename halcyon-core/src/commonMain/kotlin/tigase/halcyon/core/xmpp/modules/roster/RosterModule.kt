@@ -21,11 +21,10 @@ import kotlinx.serialization.Serializable
 import tigase.halcyon.core.Context
 import tigase.halcyon.core.eventbus.Event
 import tigase.halcyon.core.exceptions.HalcyonException
-import tigase.halcyon.core.logger.Logger
+import tigase.halcyon.core.logger.LoggerFactory
 import tigase.halcyon.core.modules.AbstractXmppIQModule
 import tigase.halcyon.core.modules.Criterion
 import tigase.halcyon.core.requests.RequestBuilder
-
 import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xml.element
 import tigase.halcyon.core.xmpp.BareJID
@@ -97,7 +96,7 @@ class RosterModule(context: Context) : AbstractXmppIQModule(
 	)
 ) {
 
-	private val log = Logger("com.example.modules.roster.RosterModule")
+	private val log = LoggerFactory.logger("com.example.modules.roster.RosterModule")
 
 	companion object {
 
@@ -154,7 +153,7 @@ class RosterModule(context: Context) : AbstractXmppIQModule(
 	}
 
 	private fun processQueryResponse(query: Element): RosterResponse {
-		log.fine("Processing roster data")
+		log.fine { "Processing roster data" }
 		val ver = query.attributes["ver"]
 		query.getChildren("item").map { item ->
 			val ri = parseItem(item)
@@ -167,19 +166,19 @@ class RosterModule(context: Context) : AbstractXmppIQModule(
 	private fun processRosterItem(itemElement: Element, item: RosterItem) {
 		val oldItem: RosterItem? = store.getItem(item.jid)
 		if (oldItem != null && item.subscription == Subscription.Remove) {
-			log.fine("Remove item ${item.jid}")
+			log.fine { "Remove item ${item.jid}" }
 			store.removeItem(item.jid)
 			context.eventBus.fire(RosterEvent.ItemRemoved(itemElement, item))
 		} else if (oldItem == null && item.subscription != Subscription.Remove) {
-			log.fine("Add item ${item.jid}")
+			log.fine { "Add item ${item.jid}" }
 			store.addItem(item.jid, item)
 			context.eventBus.fire(RosterEvent.ItemAdded(itemElement, item))
 		} else if (oldItem != null && item.subscription != Subscription.Remove) {
-			log.fine("Update item ${item.jid}")
+			log.fine { "Update item ${item.jid}" }
 			store.updateItem(item.jid, item)
 			context.eventBus.fire(RosterEvent.ItemUpdated(itemElement, oldItem, item))
 		} else {
-			log.fine("Ignore item ${item.jid}")
+			log.fine { "Ignore item ${item.jid}" }
 		}
 	}
 

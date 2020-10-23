@@ -17,11 +17,11 @@
  */
 package tigase.halcyon.core
 
-import tigase.halcyon.core.logger.Logger
+import tigase.halcyon.core.logger.LoggerFactory
 
 class InternalDataStore {
 
-	private val log = Logger("tigase.halcyon.core.SessionObject")
+	private val log = LoggerFactory.logger("tigase.halcyon.core.SessionObject")
 
 	private val properties: MutableMap<String, Entry> = HashMap()
 
@@ -36,7 +36,7 @@ class InternalDataStore {
 	private fun clear(ordinal: Int) {
 		val scopes = Scope.values().filter { s -> s.ordinal <= ordinal }.toTypedArray()
 		val iterator = this.properties.entries.iterator()
-		log.fine("Clearing ${scopes.asList()}")
+		log.fine { "Clearing ${scopes.asList()}" }
 		while (iterator.hasNext()) {
 			val entry = iterator.next()
 			if (scopes.contains(entry.value.scope)) {

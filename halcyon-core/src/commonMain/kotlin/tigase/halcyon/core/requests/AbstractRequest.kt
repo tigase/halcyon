@@ -177,7 +177,7 @@ abstract class AbstractRequest<V, STT : Stanza<*>>(
 	}
 
 	override fun toString(): String {
-		return "Request[to=$jid, id=$id: ${stanza.getAsString()}]"
+		return "Request[${stanza.getAsString(deep = 2, showValue = false)}]"
 	}
 
 }

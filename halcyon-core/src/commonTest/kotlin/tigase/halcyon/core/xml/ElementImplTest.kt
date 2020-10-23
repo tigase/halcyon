@@ -224,4 +224,28 @@ class ElementImplTest {
 		assertEquals("thread", c.getNextSibling()!!.name)
 	}
 
+	@Test
+	fun testGetAsString() {
+		val e1 = element("a") {
+			attributes["id"] = "123"
+			"b"{
+				"c"{
+					"d"{
+						+"test123"
+					}
+				}
+			}
+		}
+		val e2 = element("a") {
+			attributes["a"] = "b"
+			+"test321"
+		}
+		assertEquals("<a id=\"123\"><b><c><d>test123</d></c></b></a>", e1.getAsString())
+		assertEquals("<a id=\"123\"><b><c><d>/.../</d></c></b></a>", e1.getAsString(showValue = false))
+		assertEquals("<a a=\"b\">test321</a>", e2.getAsString())
+		assertEquals("<a a=\"b\">/.../</a>", e2.getAsString(showValue = false))
+		assertEquals("<a id=\"123\">[...]</a>", e1.getAsString(deep = 0))
+		assertEquals("<a id=\"123\"><b>[...]</b></a>", e1.getAsString(deep = 1))
+	}
+
 }

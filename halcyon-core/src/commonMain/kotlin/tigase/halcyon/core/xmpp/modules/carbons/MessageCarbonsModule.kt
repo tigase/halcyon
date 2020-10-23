@@ -20,11 +20,10 @@ package tigase.halcyon.core.xmpp.modules.carbons
 import getFromAttr
 import tigase.halcyon.core.Context
 import tigase.halcyon.core.eventbus.Event
-import tigase.halcyon.core.logger.Logger
+import tigase.halcyon.core.logger.LoggerFactory
 import tigase.halcyon.core.modules.Criterion
 import tigase.halcyon.core.modules.XmppModule
 import tigase.halcyon.core.requests.RequestBuilder
-
 import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xmpp.ErrorCondition
 import tigase.halcyon.core.xmpp.JID
@@ -48,7 +47,7 @@ sealed class CarbonEvent(val fromJID: JID?, val stanza: Message) : Event(TYPE) {
 class MessageCarbonsModule(override val context: Context, private val forwardHandler: (Message) -> Unit) : XmppModule {
 
 	private var messageModule: MessageModule? = null
-	private val log = Logger("tigase.halcyon.core.xmpp.modules.carbons.MessageCarbonsModule")
+	private val log = LoggerFactory.logger("tigase.halcyon.core.xmpp.modules.carbons.MessageCarbonsModule")
 
 	override val type = TYPE
 	override val criteria = Criterion.chain(Criterion.name(Message.NAME), Criterion.xmlns(XMLNS))

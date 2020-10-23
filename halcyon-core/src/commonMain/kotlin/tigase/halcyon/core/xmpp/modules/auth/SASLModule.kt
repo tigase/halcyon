@@ -21,7 +21,7 @@ import tigase.halcyon.core.Context
 import tigase.halcyon.core.Scope
 import tigase.halcyon.core.eventbus.Event
 import tigase.halcyon.core.exceptions.HalcyonException
-import tigase.halcyon.core.logger.Logger
+import tigase.halcyon.core.logger.LoggerFactory
 import tigase.halcyon.core.modules.Criterion
 import tigase.halcyon.core.modules.XmppModule
 import tigase.halcyon.core.xml.Element
@@ -137,7 +137,7 @@ class SASLModule(override val context: Context) : XmppModule {
 
 	}
 
-	private val log = Logger("tigase.halcyon.core.xmpp.modules.auth.SASLModule")
+	private val log = LoggerFactory.logger("tigase.halcyon.core.xmpp.modules.auth.SASLModule")
 	override val type = TYPE
 	override val criteria = Criterion.or(
 		Criterion.nameAndXmlns("success", XMLNS),
@@ -158,9 +158,9 @@ class SASLModule(override val context: Context) : XmppModule {
 
 	private fun selectMechanism(): SASLMechanism {
 		for (mechanism in mechanisms) {
-			log.finest("Checking mechanism ${mechanism.name}")
+			log.finest { "Checking mechanism ${mechanism.name}" }
 			if (mechanism.isAllowedToUse(context.config, saslContext)) {
-				log.fine("Selected mechanism: ${mechanism.name}")
+				log.fine { "Selected mechanism: ${mechanism.name}" }
 				return mechanism
 			}
 		}

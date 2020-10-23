@@ -18,7 +18,6 @@
 package tigase.halcyon.core.eventbus
 
 import tigase.halcyon.core.AbstractHalcyon
-import tigase.halcyon.core.logger.Level
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Executors
 
@@ -52,9 +51,7 @@ actual class EventBus actual constructor(context: AbstractHalcyon) : AbstractEve
 					event
 				)
 			} catch (e: Exception) {
-				if (log.isLoggable(Level.WARNING)) log.log(
-					Level.WARNING, "Problem on handling event", e
-				)
+				log.warning(e) { "Problem on handling event" }
 			}
 		}
 	}
@@ -66,9 +63,7 @@ actual class EventBus actual constructor(context: AbstractHalcyon) : AbstractEve
 				try {
 					(eventHandler as EventHandler<Event>).onEvent(event)
 				} catch (e: Exception) {
-					if (log.isLoggable(Level.WARNING)) log.log(
-						Level.WARNING, "Problem on handling event", e
-					)
+					log.warning(e) { "Problem on handling event" }
 				}
 			}
 		}
@@ -83,18 +78,14 @@ actual class EventBus actual constructor(context: AbstractHalcyon) : AbstractEve
 						event
 					)
 				} catch (e: Exception) {
-					if (log.isLoggable(Level.WARNING)) log.log(
-						Level.WARNING, "Problem on handling event", e
-					)
+					log.warning(e) { "Problem on handling event" }
 				}
 			}
 		}
 	}
 
 	override fun fire(event: Event, handlers: Collection<EventHandler<*>>) {
-		if (log.isLoggable(Level.FINEST)) {
-			log.finest("Firing event $event with ${handlers.size} handlers")
-		}
+		log.finest { "Firing event $event with ${handlers.size} handlers" }
 
 		when (mode) {
 			Mode.NoThread -> fireNoThread(event, handlers)

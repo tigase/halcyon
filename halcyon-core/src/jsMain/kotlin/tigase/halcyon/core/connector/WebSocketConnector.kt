@@ -23,8 +23,7 @@ import org.w3c.dom.events.Event
 import tigase.halcyon.core.Halcyon
 import tigase.halcyon.core.exceptions.HalcyonException
 import tigase.halcyon.core.excutor.TickExecutor
-import tigase.halcyon.core.logger.Level
-import tigase.halcyon.core.logger.Logger
+import tigase.halcyon.core.logger.LoggerFactory
 import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xml.parser.StreamParser
 import tigase.halcyon.core.xmpp.SessionController
@@ -33,7 +32,7 @@ class WebSocketConnectionErrorEvent(description: String) : ConnectionErrorEvent(
 
 class WebSocketConnector(halcyon: Halcyon) : AbstractConnector(halcyon) {
 
-	private val log = Logger("tigase.halcyon.core.connector.WebSocketConnector")
+	private val log = LoggerFactory.logger("tigase.halcyon.core.connector.WebSocketConnector")
 
 	private var config: WebSocketConnectorConfig = halcyon.config.connectorConfig as WebSocketConnectorConfig
 
@@ -41,22 +40,22 @@ class WebSocketConnector(halcyon: Halcyon) : AbstractConnector(halcyon) {
 
 	private val parser = object : StreamParser() {
 		override fun onNextElement(element: Element) {
-			log.finest("Received element ${element.getAsString()}")
+			log.finest { "Received element ${element.getAsString()}" }
 			halcyon.eventBus.fire(ReceivedXMLElementEvent(element))
 		}
 
 		override fun onStreamClosed() {
-			log.finest("Stream closed")
+			log.finest { "Stream closed" }
 			halcyon.eventBus.fire(StreamTerminatedEvent())
 		}
 
 		override fun onStreamStarted(attrs: Map<String, String>) {
-			log.finest("Stream started: $attrs")
+			log.finest { "Stream started: $attrs" }
 			halcyon.eventBus.fire(StreamStartedEvent(attrs))
 		}
 
 		override fun onParseError(errorMessage: String) {
-			log.finest("Parse error: $errorMessage")
+			log.finest { "Parse error: $errorMessage" }
 			halcyon.eventBus.fire(ParseErrorEvent(errorMessage))
 		}
 	}
@@ -66,11 +65,11 @@ class WebSocketConnector(halcyon: Halcyon) : AbstractConnector(halcyon) {
 	override fun createSessionController(): SessionController = WebSocketSessionController(halcyon, this)
 
 	override fun send(data: CharSequence) {
-		if (log.isLoggable(Level.FINEST)) log.log(Level.FINEST, "Sending: $data")
+		log.finest { "Sending: $data" }
 		try {
 			this.ws.send(data.toString())
 		} catch (e: Throwable) {
-			log.log(Level.WARNING, "Cannot send data.", e)
+			log.warning(e) { "Cannot send data." }
 			halcyon.eventBus.fire(WebSocketConnectionErrorEvent("Cannot send data"))
 			throw e
 		}
@@ -83,16 +82,16 @@ class WebSocketConnector(halcyon: Halcyon) : AbstractConnector(halcyon) {
 	}
 
 	override fun start() {
-		log.log(Level.FINE, "Starting WebSocket connector")
+		log.fine { "Starting WebSocket connector" }
 		state = State.Connecting
 
 		val url = config.webSocketUrl ?: "ws://${getDomain()}:5290/"
 
-		log.log(Level.FINER, "Connecting to $url")
+		log.finer { "Connecting to $url" }
 
 		this.ws = WebSocket(url, "xmpp")
 
-		log.log(Level.FINEST, "Created WS: $ws")
+		log.finest { "Created WS: $ws" }
 
 		ws.onmessage = this::onSocketMessageEvent
 		ws.onerror = this::onSocketError
@@ -102,7 +101,7 @@ class WebSocketConnector(halcyon: Halcyon) : AbstractConnector(halcyon) {
 	}
 
 	private fun onSocketClose(event: Event): dynamic {
-		log.fine("Socket is closed: $event")
+		log.fine { "Socket is closed: $event" }
 		var oldState = state
 		state = State.Disconnected
 		if (oldState == State.Connected) halcyon.eventBus.fire(WebSocketConnectionErrorEvent("Socket unexpectedly disconnected."))
@@ -110,7 +109,7 @@ class WebSocketConnector(halcyon: Halcyon) : AbstractConnector(halcyon) {
 	}
 
 	private fun onSocketOpen(event: Event): dynamic {
-		log.fine("Socket opened $event")
+		log.fine { "Socket opened $event" }
 		state = State.Connected
 		whitespacePingExecutor.start()
 
@@ -120,7 +119,7 @@ class WebSocketConnector(halcyon: Halcyon) : AbstractConnector(halcyon) {
 	}
 
 	private fun onSocketError(event: Event): dynamic {
-		log.warning("Socket error: $event")
+		log.warning { "Socket error: $event" }
 		state = State.Disconnected
 
 		halcyon.eventBus.fire(WebSocketConnectionErrorEvent("Unknown error"))
@@ -128,14 +127,14 @@ class WebSocketConnector(halcyon: Halcyon) : AbstractConnector(halcyon) {
 	}
 
 	private fun onSocketMessageEvent(event: MessageEvent): dynamic {
-		log.fine("Received: ${event.data}")
+		log.fine { "Received: ${event.data}" }
 		parser.parse(event.data.toString())
 
 		return true
 	}
 
 	override fun stop() {
-		log.info("Stopping WebSocket connector")
+		log.info { "Stopping WebSocket connector" }
 		whitespacePingExecutor.stop()
 		if (state == State.Connected) closeStream()
 		state = State.Disconnecting
@@ -147,7 +146,7 @@ class WebSocketConnector(halcyon: Halcyon) : AbstractConnector(halcyon) {
 	}
 
 	fun restartStream() {
-		log.finest("Send new stream")
+		log.finest { "Send new stream" }
 		val userJid = halcyon.config.userJID
 
 		val sb = buildString {
@@ -165,7 +164,7 @@ class WebSocketConnector(halcyon: Halcyon) : AbstractConnector(halcyon) {
 
 	private fun onTick() {
 		if (state == State.Connected) {
-			log.fine("Whitespace ping")
+			log.fine { "Whitespace ping" }
 			this.ws.send("")
 		}
 	}

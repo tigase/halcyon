@@ -19,7 +19,7 @@ package tigase.halcyon.core.xmpp.modules.jingle
 
 import tigase.halcyon.core.AbstractHalcyon
 import tigase.halcyon.core.eventbus.Event
-import tigase.halcyon.core.logger.Logger
+import tigase.halcyon.core.logger.LoggerFactory
 import tigase.halcyon.core.xmpp.BareJID
 import tigase.halcyon.core.xmpp.JID
 import tigase.halcyon.core.xmpp.modules.presence.ContactChangeStatusEvent
@@ -29,7 +29,7 @@ abstract class AbstractJingleSessionManager<S : AbstractJingleSession>(
 	name: String, private val sessionFactory: SessionFactory<S>
 ) : Jingle.SessionManager {
 
-	private val log: Logger = Logger(name)
+	private val log = LoggerFactory.logger(name)
 
 	protected var sessions: List<S> = emptyList()
 
@@ -39,7 +39,7 @@ abstract class AbstractJingleSessionManager<S : AbstractJingleSession>(
 			Action.sessionAccept -> sessionAccepted(event)
 			Action.transportInfo -> transportInfo(event)
 			Action.sessionTerminate -> sessionTerminated(event)
-			else -> log.warning("unsupported event: " + event.action.name)
+			else -> log.warning { "unsupported event: " + event.action.name }
 		}
 	}
 	private val contactChangeStatusEventHandler: (ContactChangeStatusEvent) -> Unit = { event ->
@@ -55,7 +55,7 @@ abstract class AbstractJingleSessionManager<S : AbstractJingleSession>(
 			is MessageInitiationAction.Propose -> {
 				if (session(account, event.jid, event.action.id) == null) {
 					val session = open(
-						event.context.getModule<JingleModule>(JingleModule.TYPE)!!,
+						event.context.getModule<JingleModule>(JingleModule.TYPE),
 						account,
 						event.jid,
 						event.action.id,
@@ -122,7 +122,7 @@ abstract class AbstractJingleSessionManager<S : AbstractJingleSession>(
 			session.accepted(event.contents, event.bundle)
 		} ?: {
 			val session = open(
-				event.context.getModule<JingleModule>(JingleModule.TYPE)!!,
+				event.context.getModule<JingleModule>(JingleModule.TYPE),
 				account,
 				event.jid,
 				event.sid,

@@ -52,11 +52,7 @@ class PresenceTest {
 	fun testPrioritySet() {
 		val p = presence {}
 		p.priority = 17
-
-		println(p.getAsString())
-
 		assertEquals("17", p.getFirstChild("priority")?.value)
-
 	}
 
 	@Test

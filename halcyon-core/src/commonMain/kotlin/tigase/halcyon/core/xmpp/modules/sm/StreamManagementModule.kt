@@ -26,8 +26,7 @@ import tigase.halcyon.core.connector.ReceivedXMLElementEvent
 import tigase.halcyon.core.connector.SentXMLElementEvent
 import tigase.halcyon.core.eventbus.Event
 import tigase.halcyon.core.exceptions.HalcyonException
-import tigase.halcyon.core.logger.Level
-import tigase.halcyon.core.logger.Logger
+import tigase.halcyon.core.logger.LoggerFactory
 import tigase.halcyon.core.modules.Criterion
 import tigase.halcyon.core.modules.XmppModule
 import tigase.halcyon.core.requests.AbstractRequest
@@ -117,7 +116,7 @@ class StreamManagementModule(override val context: Context) : XmppModule {
 	override val features = arrayOf(XMLNS)
 	override val criteria = Criterion.xmlns(XMLNS)
 
-	private val log = Logger("tigase.halcyon.core.xmpp.modules.sm.StreamManagementModule")
+	private val log = LoggerFactory.logger("tigase.halcyon.core.xmpp.modules.sm.StreamManagementModule")
 
 	private val queue = ArrayList<Any>()
 
@@ -130,7 +129,7 @@ class StreamManagementModule(override val context: Context) : XmppModule {
 		}
 		context.eventBus.register<ClearedEvent>(ClearedEvent.TYPE) {
 			if (it.scopes.contains(Scope.Connection)) {
-				log.fine("Disabling ACK")
+				log.fine { "Disabling ACK" }
 				resumptionContext.isActive = false
 			}
 		}
@@ -199,7 +198,7 @@ class StreamManagementModule(override val context: Context) : XmppModule {
 		val h = element.attributes["h"]?.toLong() ?: 0
 		var lh = resumptionContext.outgoingH
 
-		if (log.isLoggable(Level.FINE)) log.fine("Expected h=$lh, received h=$h, queue=${queue.size}")
+		log.fine { "Expected h=$lh, received h=$h, queue=${queue.size}" }
 
 		if (lh >= h) {
 			lh = resumptionContext.outgoingH
@@ -234,7 +233,7 @@ class StreamManagementModule(override val context: Context) : XmppModule {
 			queue.remove(x)
 			if (x is AbstractRequest<*, *>) {
 				x.markAsSent()
-				log.fine("Marked as 'delivered to server': $x")
+				log.fine { "Marked as 'delivered to server': $x" }
 			}
 		}
 	}
@@ -282,7 +281,7 @@ class StreamManagementModule(override val context: Context) : XmppModule {
 
 	fun request() {
 		if (resumptionContext.isAckActive) {
-			log.fine("Sending ACK request")
+			log.fine { "Sending ACK request" }
 			context.writer.writeDirectly(element("r") { xmlns = XMLNS })
 		}
 	}

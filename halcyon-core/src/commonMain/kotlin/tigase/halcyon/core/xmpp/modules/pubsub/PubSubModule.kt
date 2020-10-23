@@ -22,7 +22,7 @@ import kotlinx.serialization.Serializable
 import tigase.halcyon.core.Context
 import tigase.halcyon.core.eventbus.Event
 import tigase.halcyon.core.exceptions.HalcyonException
-import tigase.halcyon.core.logger.Logger
+import tigase.halcyon.core.logger.LoggerFactory
 import tigase.halcyon.core.modules.Criterion
 import tigase.halcyon.core.modules.XmppModule
 import tigase.halcyon.core.requests.RequestBuilder
@@ -132,7 +132,7 @@ data class Subscription(
  */
 class PubSubModule(override val context: Context) : XmppModule {
 
-	private val log = Logger("tigase.halcyon.core.xmpp.modules.pubsub.PubSubModule")
+	private val log = LoggerFactory.logger("tigase.halcyon.core.xmpp.modules.pubsub.PubSubModule")
 
 	override val type = TYPE
 	override val criteria = Criterion.chain(Criterion.name(Message.NAME), Criterion.nameAndXmlns("event", XMLNS_EVENT))

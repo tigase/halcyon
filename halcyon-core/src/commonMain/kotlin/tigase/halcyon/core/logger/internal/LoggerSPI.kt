@@ -15,17 +15,14 @@
  * along with this program. Look for COPYING file in the top folder.
  * If not, see http://www.gnu.org/licenses/.
  */
-package tigase.halcyon.core.logger
+package tigase.halcyon.core.logger.internal
 
-enum class Level(val value: Int) {
+import tigase.halcyon.core.logger.Level
 
-	OFF(Int.MAX_VALUE),
-	SEVERE(1000),
-	WARNING(900),
-	INFO(800),
-	CONFIG(700),
-	FINE(500),
-	FINER(400),
-	FINEST(300),
-	ALL(Int.MIN_VALUE),
+expect class LoggerSPI(name: String, enabled: Boolean) {
+
+	fun isLoggable(level: Level): Boolean
+	fun log(level: Level, msg: String)
+	fun log(level: Level, msg: String, caught: Throwable)
+
 }

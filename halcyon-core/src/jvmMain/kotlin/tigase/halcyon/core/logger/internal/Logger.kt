@@ -15,12 +15,13 @@
  * along with this program. Look for COPYING file in the top folder.
  * If not, see http://www.gnu.org/licenses/.
  */
-package tigase.halcyon.core.logger
+package tigase.halcyon.core.logger.internal
 
+import tigase.halcyon.core.logger.Level
 import java.util.logging.LogRecord
 
 @Suppress("NOTHING_TO_INLINE")
-actual class Logger actual constructor(name: String, val enabled: Boolean) {
+actual class LoggerSPI actual constructor(name: String, val enabled: Boolean) {
 
 	private val log = java.util.logging.Logger.getLogger(name)
 
@@ -72,34 +73,6 @@ actual class Logger actual constructor(name: String, val enabled: Boolean) {
 
 	actual fun log(level: Level, msg: String, caught: Throwable) {
 		doLog(level, msg, caught)
-	}
-
-	actual fun fine(msg: String) {
-		doLog(Level.FINE, msg, null)
-	}
-
-	actual fun finer(msg: String) {
-		doLog(Level.FINER, msg, null)
-	}
-
-	actual fun finest(msg: String) {
-		doLog(Level.FINEST, msg, null)
-	}
-
-	actual fun config(msg: String) {
-		doLog(Level.CONFIG, msg, null)
-	}
-
-	actual fun info(msg: String) {
-		doLog(Level.INFO, msg, null)
-	}
-
-	actual fun warning(msg: String) {
-		doLog(Level.WARNING, msg, null)
-	}
-
-	actual fun severe(msg: String) {
-		doLog(Level.SEVERE, msg, null)
 	}
 
 }

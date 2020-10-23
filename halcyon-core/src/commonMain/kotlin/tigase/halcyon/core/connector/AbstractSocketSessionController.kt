@@ -21,6 +21,7 @@ import tigase.halcyon.core.Halcyon
 import tigase.halcyon.core.Scope
 import tigase.halcyon.core.eventbus.Event
 import tigase.halcyon.core.eventbus.EventHandler
+import tigase.halcyon.core.logger.LoggerFactory
 import tigase.halcyon.core.xmpp.SessionController
 import tigase.halcyon.core.xmpp.modules.BindModule
 import tigase.halcyon.core.xmpp.modules.StreamErrorEvent
@@ -34,7 +35,7 @@ import tigase.halcyon.core.xmpp.modules.sm.StreamManagementModule
 
 abstract class AbstractSocketSessionController(protected val halcyon: Halcyon, loggerName: String) : SessionController {
 
-	protected val log = tigase.halcyon.core.logger.Logger(loggerName)
+	protected val log = LoggerFactory.logger(loggerName)
 
 	private val eventsHandler: EventHandler<Event> = object : EventHandler<Event> {
 		override fun onEvent(event: Event) {
@@ -43,11 +44,10 @@ abstract class AbstractSocketSessionController(protected val halcyon: Halcyon, l
 	}
 
 	protected open fun processStreamFeaturesEvent(event: StreamFeaturesEvent) {
-		val authState = halcyon.getModule<SASLModule>(SASLModule.TYPE)?.saslContext?.state ?: SASLModule.State.Unknown
+		val authState = halcyon.getModule<SASLModule>(SASLModule.TYPE).saslContext.state
 		val isResumptionAvailable =
-			halcyon.getModule<StreamManagementModule>(StreamManagementModule.TYPE)?.resumptionContext?.isResumptionAvailable()
-				?: false
-		log.fine("authState=$authState; isResumptionAvailable=$isResumptionAvailable")
+			halcyon.getModule<StreamManagementModule>(StreamManagementModule.TYPE).resumptionContext.isResumptionAvailable()
+		log.fine { "authState=$authState; isResumptionAvailable=$isResumptionAvailable" }
 		if (authState == SASLModule.State.Unknown) {
 			if (!isResumptionAvailable) {
 				halcyon.modules.getModuleOrNull<StreamManagementModule>(StreamManagementModule.TYPE)?.reset()
@@ -88,10 +88,9 @@ abstract class AbstractSocketSessionController(protected val halcyon: Halcyon, l
 
 	private fun processConnectorStateChangeEvent(event: ConnectorStateChangeEvent) {
 		if (event.oldState == State.Connected && (event.newState == State.Disconnected || event.newState == State.Disconnecting)) {
-			log.fine("Checking conditions to force timeout")
+			log.fine { "Checking conditions to force timeout" }
 			val isResumptionAvailable =
-				halcyon.getModule<StreamManagementModule>(StreamManagementModule.TYPE)?.resumptionContext?.isResumptionAvailable()
-					?: false
+				halcyon.getModule<StreamManagementModule>(StreamManagementModule.TYPE).resumptionContext.isResumptionAvailable()
 			if (!isResumptionAvailable) {
 				halcyon.requestsManager.timeoutAll()
 			}

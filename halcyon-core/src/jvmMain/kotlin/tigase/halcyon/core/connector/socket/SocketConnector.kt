@@ -23,8 +23,7 @@ import org.minidns.hla.SrvType
 import tigase.halcyon.core.Halcyon
 import tigase.halcyon.core.connector.*
 import tigase.halcyon.core.excutor.TickExecutor
-import tigase.halcyon.core.logger.Level
-import tigase.halcyon.core.logger.Logger
+import tigase.halcyon.core.logger.LoggerFactory
 import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xml.element
 import tigase.halcyon.core.xml.parser.StreamParser
@@ -62,7 +61,7 @@ class SocketConnector(halcyon: Halcyon) : AbstractConnector(halcyon) {
 	var secured: Boolean = false
 		private set
 
-	private val log = Logger("tigase.halcyon.core.connector.socket.SocketConnector")
+	private val log = LoggerFactory.logger("tigase.halcyon.core.connector.socket.SocketConnector")
 
 	private lateinit var socket: Socket
 
@@ -80,23 +79,23 @@ class SocketConnector(halcyon: Halcyon) : AbstractConnector(halcyon) {
 		}
 
 		override fun onStreamClosed() {
-			log.finest("Stream closed")
+			log.finest { "Stream closed" }
 			halcyon.eventBus.fire(StreamTerminatedEvent())
 		}
 
 		override fun onStreamStarted(attrs: Map<String, String>) {
-			log.finest("Stream started: $attrs")
+			log.finest { "Stream started: $attrs" }
 			halcyon.eventBus.fire(StreamStartedEvent(attrs))
 		}
 
 		override fun onParseError(errorMessage: String) {
-			log.finest("Parse error: $errorMessage")
+			log.finest { "Parse error: $errorMessage" }
 			halcyon.eventBus.fire(ParseErrorEvent(errorMessage))
 		}
 	}
 
 	private fun processReceivedElement(element: Element) {
-		log.finest("Received element ${element.getAsString()}")
+		log.finest { "Received element ${element.getAsString()}" }
 		when (element.xmlns) {
 			XMLNS_START_TLS -> processTLSStanza(element)
 			else -> halcyon.eventBus.fire(ReceivedXMLElementEvent(element))
@@ -109,7 +108,7 @@ class SocketConnector(halcyon: Halcyon) : AbstractConnector(halcyon) {
 				proceedTLS()
 			}
 			"failure" -> {
-				log.warning("Cannot establish TLS connection!")
+				log.warning { "Cannot establish TLS connection!" }
 				halcyon.eventBus.fire(SocketConnectionErrorEvent.TLSFailureEvent())
 			}
 			else -> throw XMPPException(ErrorCondition.BadRequest)
@@ -125,10 +124,10 @@ class SocketConnector(halcyon: Halcyon) : AbstractConnector(halcyon) {
 	}
 
 	private fun proceedTLS() {
-		log.info("Proceeding TLS")
+		log.info { "Proceeding TLS" }
 		try {
 			val userJid = halcyon.config.userJID!!
-			log.finest("Disabling whitespace ping")
+			log.finest { "Disabling whitespace ping" }
 			whiteSpaceEnabled = false
 
 			val factory = getSocketFactory()
@@ -139,7 +138,7 @@ class SocketConnector(halcyon: Halcyon) : AbstractConnector(halcyon) {
 			s1.tcpNoDelay = true
 			s1.useClientMode = true
 			s1.addHandshakeCompletedListener { handshakeCompletedEvent ->
-				log.info("Handshake completed $handshakeCompletedEvent")
+				log.info { "Handshake completed $handshakeCompletedEvent" }
 				secured = true
 			}
 
@@ -152,7 +151,7 @@ class SocketConnector(halcyon: Halcyon) : AbstractConnector(halcyon) {
 			state = State.Disconnecting
 			halcyon.eventBus.fire(createSocketConnectionErrorEvent(e))
 		} finally {
-			log.finest("Enabling whitespace ping")
+			log.finest { "Enabling whitespace ping" }
 			whiteSpaceEnabled = true
 		}
 	}
@@ -160,8 +159,7 @@ class SocketConnector(halcyon: Halcyon) : AbstractConnector(halcyon) {
 	override fun createSessionController(): SessionController = SocketSessionController(halcyon, this)
 
 	private fun createSocket(): Socket {
-		val location =
-			halcyon.getModule<StreamManagementModule>(StreamManagementModule.TYPE)?.resumptionContext?.location
+		val location = halcyon.getModule<StreamManagementModule>(StreamManagementModule.TYPE).resumptionContext.location
 		if (location != null) {
 			return Socket(InetAddress.getByName(location), config.port)
 		}
@@ -208,7 +206,7 @@ class SocketConnector(halcyon: Halcyon) : AbstractConnector(halcyon) {
 			socket.soTimeout = 0
 			socket.keepAlive = false
 			socket.tcpNoDelay = true
-			log.fine("Opening socket connection to ${this.socket.inetAddress}")
+			log.fine { "Opening socket connection to ${this.socket.inetAddress}" }
 
 			this.worker = SocketWorker(socket, parser)
 			this.worker.onError = { exception -> onWorkerException(exception) }
@@ -243,7 +241,7 @@ class SocketConnector(halcyon: Halcyon) : AbstractConnector(halcyon) {
 
 	override fun stop() {
 		if ((state != State.Disconnected)) {
-			log.fine("Stopping...")
+			log.fine { "Stopping..." }
 			try {
 				if (state == State.Connected) closeStream()
 				state = State.Disconnecting
@@ -269,13 +267,11 @@ class SocketConnector(halcyon: Halcyon) : AbstractConnector(halcyon) {
 
 	override fun send(data: CharSequence) {
 		try {
-			if (log.isLoggable(Level.FINEST)) log.log(
-				Level.FINEST, "Sending (${worker.socket.isConnected}, ${!worker.socket.isOutputShutdown}): $data"
-			)
+			log.finest { "Sending (${worker.socket.isConnected}, ${!worker.socket.isOutputShutdown}): $data" }
 			worker.writer.write(data.toString())
 			worker.writer.flush()
 		} catch (e: Exception) {
-			log.log(Level.WARNING, "Cannot send data to server", e)
+			log.warning(e) { "Cannot send data to server" }
 			state = State.Disconnecting
 			halcyon.eventBus.fire(createSocketConnectionErrorEvent(e))
 			throw e
@@ -296,14 +292,14 @@ class SocketConnector(halcyon: Halcyon) : AbstractConnector(halcyon) {
 
 	private fun onTick() {
 		if (state == State.Connected && whiteSpaceEnabled) {
-			log.fine("Whitespace ping")
+			log.fine { "Whitespace ping" }
 			worker.writer.write(' '.toInt())
 			worker.writer.flush()
 		}
 	}
 
 	fun startTLS() {
-		log.info("Running StartTLS")
+		log.info { "Running StartTLS" }
 		whiteSpaceEnabled = false
 		val element = element("starttls") {
 			xmlns = XMLNS_START_TLS

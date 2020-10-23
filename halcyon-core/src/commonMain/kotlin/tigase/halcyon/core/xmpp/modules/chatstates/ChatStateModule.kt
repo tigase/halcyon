@@ -86,7 +86,7 @@ data class ChatStateEvent(val jid: JID, val state: ChatState) : Event(TYPE) { co
 }
 
 class ChatStateModule(override val context: Context) : XmppModule {
-//	private val log = Logger("tigase.halcyon.core.xmpp.modules.chatstates.ChatStateModule")
+//	private val log LoggerFactory.logger("tigase.halcyon.core.xmpp.modules.chatstates.ChatStateModule")
 
 	override val type = TYPE
 	override val criteria: Criteria? = null

@@ -17,6 +17,7 @@
  */
 package tigase.halcyon.core.xml.parser
 
+import tigase.halcyon.core.logger.LoggerFactory
 import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xml.ElementBuilder
 
@@ -33,7 +34,7 @@ class XMPPDomHandler(
 
 	}
 
-	private val log = tigase.halcyon.core.logger.Logger("tigase.halcyon.core.xml.parser.XMPPDomHandler", false)
+	private val log = LoggerFactory.logger("tigase.halcyon.core.xml.parser.XMPPDomHandler", false)
 
 	private val namespaces = HashMap<String, String>()
 
@@ -42,9 +43,7 @@ class XMPPDomHandler(
 	private var elementBuilder: ElementBuilder? = null
 
 	override fun endElement(name: String): Boolean {
-		if (log.isLoggable(tigase.halcyon.core.logger.Level.FINEST)) {
-			log.finest("End element name: " + name)
-		}
+		log.finest { "End element name: $name" }
 
 		val tmp_name = name.toString()
 
@@ -69,10 +68,11 @@ class XMPPDomHandler(
 	}
 
 	override fun startElement(name: String, attr_names: Array<String?>?, attr_values: Array<String?>?) {
-		if (log.isLoggable(tigase.halcyon.core.logger.Level.FINEST)) {
-			log.finest("Start element name: " + name)
-			log.finest("Element attributes names: " + attr_names?.joinToString { " " })
-			log.finest("Element attributes values: " + attr_values?.joinToString { " " })
+		log.finest {
+			"""Start element name: $name
+			Element attributes names: ${attr_names?.joinToString { " " }}
+			Element attributes values: ${attr_values?.joinToString { " " }}	
+		""".trimIndent()
 		}
 
 		// Look for 'xmlns:' declarations:
@@ -93,9 +93,7 @@ class XMPPDomHandler(
 						attr_names[i]!!.substring("xmlns:".length, attr_names[i]!!.length), attr_values!![i].toString()
 					)
 
-					if (log.isLoggable(tigase.halcyon.core.logger.Level.FINEST)) {
-						log.finest("Namespace found: " + attr_values[i].toString())
-					}
+					log.finest { "Namespace found: ${attr_values[i].toString()}" }
 				} // end of if (att_name.startsWith("xmlns:"))
 			} // end of for (String att_name : attnames)
 		} // end of if (attr_names != null)
@@ -128,9 +126,7 @@ class XMPPDomHandler(
 		if (idx > 0) {
 			tmp_name_prefix = tmp_name.substring(0, idx)
 
-			if (log.isLoggable(tigase.halcyon.core.logger.Level.FINEST)) {
-				log.finest("Found prefixed element name, prefix: " + tmp_name_prefix)
-			}
+			log.finest { "Found prefixed element name, prefix: $tmp_name_prefix" }
 		}
 
 		if (tmp_name_prefix != null) {
@@ -140,9 +136,7 @@ class XMPPDomHandler(
 					tmp_name = tmp_name.substring(pref.length + 1, tmp_name.length)
 					prefix = pref
 
-					if (log.isLoggable(tigase.halcyon.core.logger.Level.FINEST)) {
-						log.finest("new_xmlns = " + new_xmlns!!)
-					}
+					log.finest { "new_xmlns = $new_xmlns" }
 				} // end of if (tmp_name.startsWith(xmlns))
 			} // end of for (String xmlns: namespaces.keys())
 		}
@@ -165,10 +159,7 @@ class XMPPDomHandler(
 		if (new_xmlns != null) {
 			elementBuilder!!.xmlns(new_xmlns)
 			attribs.remove("xmlns:" + prefix!!)
-
-			if (log.isLoggable(tigase.halcyon.core.logger.Level.FINEST)) {
-				log.finest("new_xmlns assigned: " + elementBuilder!!.currentElement.getAsString())
-			}
+			log.finest { "new_xmlns assigned: ${elementBuilder!!.currentElement.getAsString()}" }
 		}
 
 		elementBuilder!!.attributes(attribs)
@@ -186,17 +177,13 @@ class XMPPDomHandler(
 	}
 
 	override fun otherXML(other: String) {
-		if (log.isLoggable(tigase.halcyon.core.logger.Level.FINEST)) {
-			log.finest("Other XML content: " + other)
-		}
+		log.finest { "Other XML content: $other" }
 	}
 
 	override fun error(errorMessage: String) {
-		log.warning("XML content parse error.")
+		log.warning { "XML content parse error." }
 
-		if (log.isLoggable(tigase.halcyon.core.logger.Level.FINE)) {
-			log.fine(errorMessage)
-		}
+		log.fine { errorMessage }
 
 		onParseError.invoke(errorMessage)
 	}

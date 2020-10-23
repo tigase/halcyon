@@ -20,7 +20,7 @@ package tigase.halcyon.core.xmpp.modules.presence
 import getFromAttr
 import tigase.halcyon.core.Context
 import tigase.halcyon.core.eventbus.Event
-import tigase.halcyon.core.logger.Logger
+import tigase.halcyon.core.logger.LoggerFactory
 import tigase.halcyon.core.modules.Criterion
 import tigase.halcyon.core.modules.XmppModule
 import tigase.halcyon.core.requests.RequestBuilder
@@ -49,7 +49,7 @@ data class ContactChangeStatusEvent(
 
 class PresenceModule(override val context: Context) : XmppModule {
 
-	private val log = Logger("tigase.halcyon.core.xmpp.modules.presence.PresenceModule")
+	private val log = LoggerFactory.logger("tigase.halcyon.core.xmpp.modules.presence.PresenceModule")
 
 	override val type = TYPE
 	override val criteria = Criterion.name(Presence.NAME)
@@ -68,7 +68,7 @@ class PresenceModule(override val context: Context) : XmppModule {
 	override fun process(element: Element) {
 		val presence: Presence = wrap(element)
 		val fromJID = presence.getFromAttr()
-		log.finest("Presence received from $fromJID :: ${presence.getAsString()}")
+		log.finest { "Presence received from $fromJID :: ${presence.getAsString()}" }
 		if (fromJID == null) {
 			return
 		}

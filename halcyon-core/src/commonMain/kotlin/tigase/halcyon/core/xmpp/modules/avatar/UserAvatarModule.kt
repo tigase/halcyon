@@ -20,11 +20,10 @@ package tigase.halcyon.core.xmpp.modules.avatar
 import kotlinx.serialization.Serializable
 import tigase.halcyon.core.Context
 import tigase.halcyon.core.eventbus.Event
-import tigase.halcyon.core.logger.Logger
+import tigase.halcyon.core.logger.LoggerFactory
 import tigase.halcyon.core.modules.Criteria
 import tigase.halcyon.core.modules.XmppModule
 import tigase.halcyon.core.requests.RequestBuilder
-
 import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xml.element
 import tigase.halcyon.core.xmpp.*
@@ -48,7 +47,7 @@ class UserAvatarModule(override val context: Context) : XmppModule {
 		const val XMLNS_METADATA = "urn:xmpp:avatar:metadata"
 	}
 
-	private val log = Logger("tigase.halcyon.core.xmpp.modules.avatar.UserAvatarModule")
+	private val log = LoggerFactory.logger("tigase.halcyon.core.xmpp.modules.avatar.UserAvatarModule")
 
 	override val criteria: Criteria? = null
 	override val features: Array<String> = arrayOf("$XMLNS_METADATA+notify")
@@ -110,7 +109,7 @@ class UserAvatarModule(override val context: Context) : XmppModule {
 		if (!stored) {
 			retrieveAvatar(userJID.toString().toJID(), avatarID).response {
 				if (it.isSuccess) {
-					log.fine("Storing UserAvatar data $avatarID" + it.getOrNull())
+					log.fine { "Storing UserAvatar data $avatarID" + it.getOrNull() }
 					val avatar = it.getOrNull()?.let {
 						if (it.base64Data == null) {
 							null
@@ -119,7 +118,7 @@ class UserAvatarModule(override val context: Context) : XmppModule {
 						}
 					}
 					store.store(userJID, avatarID, avatar)
-					log.fine("Stored data! $userJID")
+					log.fine { "Stored data! $userJID" }
 					context.eventBus.fire(UserAvatarUpdatedEvent(userJID, avatarID))
 				}
 			}.send()

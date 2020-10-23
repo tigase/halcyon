@@ -18,8 +18,7 @@
 package tigase.halcyon.core.connector.socket
 
 import tigase.halcyon.core.connector.ConnectorException
-import tigase.halcyon.core.logger.Level
-import tigase.halcyon.core.logger.Logger
+import tigase.halcyon.core.logger.LoggerFactory
 import tigase.halcyon.core.xml.parser.StreamParser
 import java.io.InputStreamReader
 import java.io.OutputStreamWriter
@@ -28,7 +27,7 @@ import java.net.Socket
 
 class SocketWorker(s: Socket, private val parser: StreamParser) : Thread() {
 
-	private val log = Logger("tigase.halcyon.core.connector.socket.SocketWorker")
+	private val log = LoggerFactory.logger("tigase.halcyon.core.connector.socket.SocketWorker")
 
 	var onActiveChange: ((Boolean) -> Unit)? = null
 
@@ -62,32 +61,32 @@ class SocketWorker(s: Socket, private val parser: StreamParser) : Thread() {
 	}
 
 	override fun run() {
-		log.fine("Socket Worker Started")
+		log.fine { "Socket Worker Started" }
 		val buffer = CharArray(10240)
 		try {
 			isActive = true
 			while (isActive && !interrupted() && isAlive) {
 				val len = reader.read(buffer)
 				if (len == -1) {
-					log.finest("Nothing more to read")
+					log.finest { "Nothing more to read" }
 					break
 				}
 
 				parser.parse(buffer, 0, len - 1)
 			}
 			if (isActive) {
-				log.log(Level.WARNING, "Unexpected stop!")
+				log.warning { "Unexpected stop!" }
 				onError?.invoke(ConnectorException("Unexpected stop!"))
 			}
 		} catch (e: Exception) {
-			log.fine("Exception in worker: isActive=$isActive interrupted=${!interrupted()} socket=${!socket.isClosed}")
+			log.fine { "Exception in worker: isActive=$isActive interrupted=${!interrupted()} socket=${!socket.isClosed}" }
 			if (isActive) {
-				log.log(Level.FINE, "Exception in Socket Worker", e)
+				log.fine(e) { "Exception in Socket Worker" }
 				onError?.invoke(e)
 			}
 		} finally {
 			isActive = false
-			log.fine("Socket Worker Stopped")
+			log.fine { "Socket Worker Stopped" }
 		}
 	}
 

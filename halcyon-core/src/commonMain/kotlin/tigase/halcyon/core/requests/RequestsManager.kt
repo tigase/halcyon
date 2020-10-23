@@ -19,12 +19,12 @@ package tigase.halcyon.core.requests
 
 import getFromAttr
 import tigase.halcyon.core.currentTimestamp
-import tigase.halcyon.core.logger.Level
+import tigase.halcyon.core.logger.LoggerFactory
 import tigase.halcyon.core.xml.Element
 
 class RequestsManager {
 
-	private val log = tigase.halcyon.core.logger.Logger("tigase.halcyon.core.requests.RequestsManager")
+	private val log = LoggerFactory.logger("tigase.halcyon.core.requests.RequestsManager")
 
 	private val executor = tigase.halcyon.core.excutor.Executor()
 
@@ -80,13 +80,13 @@ class RequestsManager {
 			try {
 				runnable.invoke()
 			} catch (e: Throwable) {
-				log.log(Level.WARNING, "Error on processing response", e)
+				log.warning(e) { "Error on processing response" }
 			}
 		}
 	}
 
 	fun timeoutAll(maxCreationTimestamp: Long = Long.MAX_VALUE) {
-		log.info("Timeout all waiting requests")
+		log.info { "Timeout all waiting requests" }
 		val iterator = requests.entries.iterator()
 		while (iterator.hasNext()) {
 			val request = iterator.next().value

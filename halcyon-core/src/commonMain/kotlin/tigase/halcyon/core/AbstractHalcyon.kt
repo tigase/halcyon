@@ -27,8 +27,7 @@ import tigase.halcyon.core.eventbus.Event
 import tigase.halcyon.core.eventbus.EventBus
 import tigase.halcyon.core.eventbus.EventHandler
 import tigase.halcyon.core.exceptions.HalcyonException
-import tigase.halcyon.core.logger.Level
-import tigase.halcyon.core.logger.Logger
+import tigase.halcyon.core.logger.LoggerFactory
 import tigase.halcyon.core.modules.ModulesManager
 import tigase.halcyon.core.modules.XmppModule
 import tigase.halcyon.core.requests.AbstractRequest
@@ -80,7 +79,7 @@ abstract class AbstractHalcyon : Context, PacketWriter {
 	var running: Boolean = false
 		private set
 
-	private val log = Logger("tigase.halcyon.core.AbstractHalcyon")
+	private val log = LoggerFactory.logger("tigase.halcyon.core.AbstractHalcyon")
 
 	enum class State { Connecting,
 		Connected,
@@ -184,7 +183,7 @@ abstract class AbstractHalcyon : Context, PacketWriter {
 
 			val modules = modules.getModulesFor(element)
 			if (modules.isEmpty()) {
-				log.fine("Unsupported stanza: " + element.getAsString())
+				log.fine { "Unsupported stanza: " + element.getAsString(3, false) }
 				sendErrorBack(element, XMPPException(ErrorCondition.FeatureNotImplemented))
 				return
 			}
@@ -195,22 +194,16 @@ abstract class AbstractHalcyon : Context, PacketWriter {
 						it.process(element)
 					}
 				} catch (e: XMPPException) {
-					if (log.isLoggable(Level.FINEST)) log.log(
-						Level.FINEST, "Error ${e.condition} during processing stanza " + element.getAsString(), e
-					)
+					log.finest(e) { "Error ${e.condition} during processing stanza ${element.getAsString(showValue = false)}" }
 					sendErrorBack(element, e)
 				} catch (e: Exception) {
-					if (log.isLoggable(Level.FINEST)) log.log(
-						Level.FINEST, "Problem on processing element " + element.getAsString(), e
-					)
+					log.finest(e) { "Problem on processing element ${element.getAsString(showValue = false)}" }
 					sendErrorBack(element, e)
 				}
 			}
 
 		} catch (e: Exception) {
-			if (log.isLoggable(Level.INFO)) log.log(
-				Level.INFO, "Problem on processing element " + element.getAsString(), e
-			)
+			log.info(e) { "Problem on processing element ${element.getAsString(showValue = false)}" }
 			sendErrorBack(element, e)
 		}
 	}
@@ -260,7 +253,7 @@ abstract class AbstractHalcyon : Context, PacketWriter {
 		when (element.name) {
 			"iq", "presence", "message" -> {
 				if (element.attributes["type"] == "error") {
-					log.fine("Ignoring unexpected error response")
+					log.fine { "Ignoring unexpected error response" }
 					return
 				}
 				createError(element, exception)?.apply {
@@ -321,7 +314,7 @@ abstract class AbstractHalcyon : Context, PacketWriter {
 
 	protected fun startConnector() {
 		if (running) {
-			log.fine("Starting connector")
+			log.fine { "Starting connector" }
 
 			stopConnector()
 
@@ -335,7 +328,7 @@ abstract class AbstractHalcyon : Context, PacketWriter {
 
 	protected fun stopConnector(doAfterDisconnected: (() -> Unit)? = null) {
 		if (connector != null || sessionController != null) {
-			log.fine("Stopping connector${if (doAfterDisconnected != null) " (with action after disconnect)" else ""}")
+			log.fine { "Stopping connector${if (doAfterDisconnected != null) " (with action after disconnect)" else ""}" }
 			if (doAfterDisconnected != null) connector?.let {
 				waitForDisconnect(it, doAfterDisconnected)
 			}
@@ -347,9 +340,9 @@ abstract class AbstractHalcyon : Context, PacketWriter {
 	}
 
 	protected fun waitForDisconnect(connector: AbstractConnector?, handler: () -> Unit) {
-		log.finer("Waiting for disconnection")
+		log.finer { "Waiting for disconnection" }
 		if (connector == null) {
-			log.finest("No connector. Calling handler.")
+			log.finest { "No connector. Calling handler." }
 			handler.invoke()
 		} else {
 			var fired = false
@@ -358,7 +351,7 @@ abstract class AbstractHalcyon : Context, PacketWriter {
 					if (!fired && event.newState == tigase.halcyon.core.connector.State.Disconnected) {
 						connector.halcyon.eventBus.unregister(this)
 						fired = true
-						log.finest("State changed. Calling handler.")
+						log.finest { "State changed. Calling handler." }
 						handler.invoke()
 					}
 				}
@@ -368,7 +361,7 @@ abstract class AbstractHalcyon : Context, PacketWriter {
 				if (!fired && connector.state == tigase.halcyon.core.connector.State.Disconnected) {
 					connector.halcyon.eventBus.unregister(h)
 					fired = true
-					log.finest("State is Disconnected already. Calling handler.")
+					log.finest { "State is Disconnected already. Calling handler." }
 					handler.invoke()
 				}
 			} finally {
@@ -380,7 +373,7 @@ abstract class AbstractHalcyon : Context, PacketWriter {
 		clear(Scope.Session)
 		this.running = true
 		modules.initModules()
-		log.info("Connecting")
+		log.info { "Connecting" }
 		state = State.Connecting
 		onConnecting()
 		try {
@@ -395,7 +388,7 @@ abstract class AbstractHalcyon : Context, PacketWriter {
 	fun disconnect() {
 		try {
 			this.running = false
-			log.info("Disconnecting")
+			log.info { "Disconnecting" }
 
 			modules.getModuleOrNull<StreamManagementModule>(StreamManagementModule.TYPE)?.let {
 				val ackEnabled =
