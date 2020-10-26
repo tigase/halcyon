@@ -23,6 +23,7 @@ import org.minidns.hla.SrvType
 import tigase.halcyon.core.Halcyon
 import tigase.halcyon.core.connector.*
 import tigase.halcyon.core.excutor.TickExecutor
+import tigase.halcyon.core.logger.Level
 import tigase.halcyon.core.logger.LoggerFactory
 import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xml.element
@@ -74,7 +75,21 @@ class SocketConnector(halcyon: Halcyon) : AbstractConnector(halcyon) {
 	private var config: SocketConnectorConfig = halcyon.config.connectorConfig as SocketConnectorConfig
 
 	private val parser = object : StreamParser() {
+
+		private fun logReceivedStanza(element: Element) {
+			when {
+				log.isLoggable(Level.FINEST) -> log.finest("Received element ${element.getAsString()}")
+				log.isLoggable(Level.FINER) -> log.finer(
+					"Received element ${element.getAsString(deep = 3, showValue = false)}"
+				)
+				log.isLoggable(Level.FINE) -> log.fine(
+					"Received element ${element.getAsString(deep = 2, showValue = false)}"
+				)
+			}
+		}
+
 		override fun onNextElement(element: Element) {
+			logReceivedStanza(element)
 			processReceivedElement(element)
 		}
 
@@ -95,7 +110,6 @@ class SocketConnector(halcyon: Halcyon) : AbstractConnector(halcyon) {
 	}
 
 	private fun processReceivedElement(element: Element) {
-		log.finest { "Received element ${element.getAsString()}" }
 		when (element.xmlns) {
 			XMLNS_START_TLS -> processTLSStanza(element)
 			else -> halcyon.eventBus.fire(ReceivedXMLElementEvent(element))

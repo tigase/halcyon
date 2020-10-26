@@ -27,6 +27,7 @@ import tigase.halcyon.core.eventbus.Event
 import tigase.halcyon.core.eventbus.EventBus
 import tigase.halcyon.core.eventbus.EventHandler
 import tigase.halcyon.core.exceptions.HalcyonException
+import tigase.halcyon.core.logger.Level
 import tigase.halcyon.core.logger.LoggerFactory
 import tigase.halcyon.core.modules.ModulesManager
 import tigase.halcyon.core.modules.XmppModule
@@ -280,10 +281,23 @@ abstract class AbstractHalcyon : Context, PacketWriter {
 	protected fun getConnectorState(): tigase.halcyon.core.connector.State =
 		this.connector?.state ?: tigase.halcyon.core.connector.State.Disconnected
 
+	private fun logSendingStanza(element: Element) {
+		when {
+			log.isLoggable(Level.FINEST) -> log.finest("Sending: ${element.getAsString()}")
+			log.isLoggable(Level.FINER) -> log.finer(
+				"Sending: ${element.getAsString(deep = 3, showValue = false)}"
+			)
+			log.isLoggable(Level.FINE) -> log.fine(
+				"Sending: ${element.getAsString(deep = 2, showValue = false)}"
+			)
+		}
+	}
+
 	override fun writeDirectly(stanza: Element) {
 		val c = this.connector ?: throw HalcyonException("Connector is not initialized")
 		if (c.state != tigase.halcyon.core.connector.State.Connected) throw HalcyonException("Connector is not connected")
 		val toSend = modules.processSendInterceptors(stanza)
+		logSendingStanza(toSend)
 		c.send(toSend.getAsString())
 		eventBus.fire(SentXMLElementEvent(toSend, null))
 	}
@@ -292,8 +306,8 @@ abstract class AbstractHalcyon : Context, PacketWriter {
 		val c = this.connector ?: throw HalcyonException("Connector is not initialized")
 		if (c.state != tigase.halcyon.core.connector.State.Connected) throw HalcyonException("Connector is not connected")
 		requestsManager.register(request)
+		logSendingStanza(request.stanza)
 		c.send(request.stanza.getAsString())
-
 
 		if (!getModule<StreamManagementModule>(StreamManagementModule.TYPE).resumptionContext.isAckActive) {
 			request.markAsSent()

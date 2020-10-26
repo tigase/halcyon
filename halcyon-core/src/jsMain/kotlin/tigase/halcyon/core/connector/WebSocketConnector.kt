@@ -23,6 +23,7 @@ import org.w3c.dom.events.Event
 import tigase.halcyon.core.Halcyon
 import tigase.halcyon.core.exceptions.HalcyonException
 import tigase.halcyon.core.excutor.TickExecutor
+import tigase.halcyon.core.logger.Level
 import tigase.halcyon.core.logger.LoggerFactory
 import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xml.parser.StreamParser
@@ -39,8 +40,20 @@ class WebSocketConnector(halcyon: Halcyon) : AbstractConnector(halcyon) {
 	private val whitespacePingExecutor = TickExecutor(halcyon.eventBus, 25000) { onTick() }
 
 	private val parser = object : StreamParser() {
+		private fun logReceivedStanza(element: Element) {
+			when {
+				log.isLoggable(Level.FINEST) -> log.finest("Received element ${element.getAsString()}")
+				log.isLoggable(Level.FINER) -> log.finer(
+					"Received element ${element.getAsString(deep = 3, showValue = false)}"
+				)
+				log.isLoggable(Level.FINE) -> log.fine(
+					"Received element ${element.getAsString(deep = 2, showValue = false)}"
+				)
+			}
+		}
+
 		override fun onNextElement(element: Element) {
-			log.finest { "Received element ${element.getAsString()}" }
+			logReceivedStanza(element)
 			halcyon.eventBus.fire(ReceivedXMLElementEvent(element))
 		}
 
