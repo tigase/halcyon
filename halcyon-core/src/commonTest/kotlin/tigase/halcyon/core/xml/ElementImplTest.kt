@@ -241,11 +241,33 @@ class ElementImplTest {
 			+"test321"
 		}
 		assertEquals("<a id=\"123\"><b><c><d>test123</d></c></b></a>", e1.getAsString())
-		assertEquals("<a id=\"123\"><b><c><d>/.../</d></c></b></a>", e1.getAsString(showValue = false))
+		assertEquals("<a id=\"123\"><b><c><d>...</d></c></b></a>", e1.getAsString(showValue = false))
 		assertEquals("<a a=\"b\">test321</a>", e2.getAsString())
-		assertEquals("<a a=\"b\">/.../</a>", e2.getAsString(showValue = false))
-		assertEquals("<a id=\"123\">[...]</a>", e1.getAsString(deep = 0))
-		assertEquals("<a id=\"123\"><b>[...]</b></a>", e1.getAsString(deep = 1))
+		assertEquals("<a a=\"b\">...</a>", e2.getAsString(showValue = false))
+		assertEquals("<a id=\"123\">...</a>", e1.getAsString(deep = 0))
+		assertEquals("<a id=\"123\"><b>...</b></a>", e1.getAsString(deep = 1))
+
+		val e3 = element("a") {
+			attributes["id"] = "123"
+			"b"{
+				"c"{
+					"d"{
+						+"test123"
+					}
+					"e"{
+						+"test123"
+					}
+					"f"{
+						+"test123"
+					}
+				}
+			}
+		}
+		assertEquals(
+			"<a id=\"123\"><b><c><d>...</d><e>...</e><f>...</f></c></b></a>",
+			e3.getAsString(deep = 3, showValue = false)
+		)
+
 	}
 
 }
