@@ -18,7 +18,9 @@
 package tigase.halcyon.core.eventbus
 
 import tigase.halcyon.core.AbstractHalcyon
+import tigase.halcyon.core.TickEvent
 import tigase.halcyon.core.currentTimestamp
+import tigase.halcyon.core.logger.Level
 import tigase.halcyon.core.logger.LoggerFactory
 
 abstract class AbstractEventBus(val context: AbstractHalcyon) {
@@ -61,7 +63,7 @@ abstract class AbstractEventBus(val context: AbstractHalcyon) {
 
 	@Suppress("UNCHECKED_CAST")
 	protected open fun fire(event: Event, handlers: Collection<EventHandler<*>>) {
-		log.finest { "Firing event $event with ${handlers.size} handlers" }
+		if (event !is TickEvent || log.isLoggable(Level.FINEST)) log.fine { "Firing event $event with ${handlers.size} handlers" }
 		handlers.forEach { eventHandler ->
 			try {
 				(eventHandler as EventHandler<Event>).onEvent(event)

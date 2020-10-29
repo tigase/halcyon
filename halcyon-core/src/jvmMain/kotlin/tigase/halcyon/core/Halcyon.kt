@@ -23,15 +23,19 @@ import tigase.halcyon.core.connector.socket.SocketConnectorConfig
 import tigase.halcyon.core.eventbus.EventBus
 import tigase.halcyon.core.eventbus.EventHandler
 import tigase.halcyon.core.exceptions.HalcyonException
+import tigase.halcyon.core.logger.LoggerFactory
 import java.util.*
 
 actual class Halcyon actual constructor() : AbstractHalcyon() {
+
+	private val log = LoggerFactory.logger("tigase.halcyon.core.Halcyon")
 
 	override fun createConnector(): AbstractConnector {
 		return SocketConnector(this)
 	}
 
 	override fun reconnect(immediately: Boolean) {
+		log.finer { "Called reconnect. immediately=$immediately" }
 		if (!immediately) Thread.sleep(3000)
 		state = State.Connecting
 		startConnector()

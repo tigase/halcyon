@@ -158,7 +158,7 @@ class SASLModule(override val context: Context) : XmppModule {
 
 	private fun selectMechanism(): SASLMechanism {
 		for (mechanism in mechanisms) {
-			log.finest { "Checking mechanism ${mechanism.name}" }
+			log.finer { "Checking mechanism ${mechanism.name}" }
 			if (mechanism.isAllowedToUse(context.config, saslContext)) {
 				log.fine { "Selected mechanism: ${mechanism.name}" }
 				return mechanism

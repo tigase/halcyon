@@ -64,7 +64,7 @@ class ClearableValue<T>(
 	private fun clear(event: ClearedEvent) {
 		if (event.scopes.contains(scope)) {
 			this.value = initialValueFactory.invoke()
-			log.finest { "Restoring initial value. Scope=$scope; value=$value" }
+			log.fine { "Restoring initial value. Scope=$scope; value=$value" }
 		}
 	}
 

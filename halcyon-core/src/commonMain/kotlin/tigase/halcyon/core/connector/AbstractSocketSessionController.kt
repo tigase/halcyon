@@ -147,9 +147,11 @@ abstract class AbstractSocketSessionController(protected val halcyon: Halcyon, l
 
 	override fun start() {
 		halcyon.eventBus.register(handler = eventsHandler)
+		log.info { "Started session controller" }
 	}
 
 	override fun stop() {
 		halcyon.eventBus.unregister(eventsHandler)
+		log.info { "Stopped session controller" }
 	}
 }

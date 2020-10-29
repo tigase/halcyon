@@ -68,7 +68,7 @@ class PresenceModule(override val context: Context) : XmppModule {
 	override fun process(element: Element) {
 		val presence: Presence = wrap(element)
 		val fromJID = presence.getFromAttr()
-		log.finest { "Presence received from $fromJID :: ${presence.getAsString()}" }
+		log.fine { "Presence received from $fromJID :: ${presence.getAsString()}" }
 		if (fromJID == null) {
 			return
 		}

@@ -109,7 +109,7 @@ class UserAvatarModule(override val context: Context) : XmppModule {
 		if (!stored) {
 			retrieveAvatar(userJID.toString().toJID(), avatarID).response {
 				if (it.isSuccess) {
-					log.fine { "Storing UserAvatar data $avatarID" + it.getOrNull() }
+					log.finest { "Storing UserAvatar data $avatarID " + it.getOrNull() }
 					val avatar = it.getOrNull()?.let {
 						if (it.base64Data == null) {
 							null

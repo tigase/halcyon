@@ -28,8 +28,8 @@ interface SessionController {
 			const val TYPE = "tigase.halcyon.core.xmpp.SessionController.SessionControllerEvents"
 		}
 
-		class ErrorStop(val message: String) : SessionControllerEvents()
-		class ErrorReconnect(
+		data class ErrorStop(val message: String) : SessionControllerEvents()
+		data class ErrorReconnect(
 			val message: String, val immediately: Boolean = false, val force: Boolean = false
 		) : SessionControllerEvents()
 
