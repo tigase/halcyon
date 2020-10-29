@@ -87,26 +87,27 @@ class RequestsManager {
 
 	fun timeoutAll(maxCreationTimestamp: Long = Long.MAX_VALUE) {
 		log.info { "Timeout all waiting requests" }
-		val iterator = requests.entries.iterator()
-		while (iterator.hasNext()) {
-			val request = iterator.next().value
-			if (request.creationTimestamp < maxCreationTimestamp) {
-				iterator.remove()
-				if (!request.isCompleted) execute { request.markTimeout() }
+
+		requests.entries.filter {
+			it.value.creationTimestamp < maxCreationTimestamp
+		}.forEach {
+			requests.remove(it.key)
+			if (!it.value.isCompleted) {
+				execute { it.value.markTimeout() }
 			}
 		}
 	}
 
 	fun findOutdated() {
 		val now = currentTimestamp()
-
-		requests.values.filter { request -> request.isCompleted || request.creationTimestamp + request.timeoutDelay <= now }
-			.forEach {
-				requests.remove(it.id)
-				if (it.creationTimestamp + it.timeoutDelay <= now) {
-					execute { it.markTimeout() }
-				}
+		requests.entries.filter {
+			it.value.isCompleted || it.value.creationTimestamp + it.value.timeoutDelay <= now
+		}.forEach {
+			requests.remove(it.key)
+			if (it.value.creationTimestamp + it.value.timeoutDelay <= now) {
+				execute { it.value.markTimeout() }
 			}
+		}
 	}
 
 	fun getWaitingRequestsSize(): Int = requests.size
