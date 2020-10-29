@@ -27,6 +27,7 @@ import tigase.halcyon.core.parseISO8601
 import tigase.halcyon.core.requests.RequestBuilder
 import tigase.halcyon.core.timestampToISO8601
 import tigase.halcyon.core.xml.Element
+import tigase.halcyon.core.xmpp.BareJID
 import tigase.halcyon.core.xmpp.IdGenerator
 import tigase.halcyon.core.xmpp.forms.FieldType
 import tigase.halcyon.core.xmpp.forms.FormType
@@ -116,11 +117,12 @@ class MAMModule(override val context: Context) : XmppModule {
 	}
 
 	fun query(
-		rsm: RSM? = null, with: String? = null, start: Long? = null, end: Long? = null
+		to: BareJID? = null, rsm: RSM? = null, with: String? = null, start: Long? = null, end: Long? = null
 	): RequestBuilder<Fin, IQ> {
 		val queryId = IdGenerator.nextId()
 		val form: Element? = prepareForm(with, start, end)
 		val stanza = iq {
+			if (to != null) this.to = to.toJID()
 			type = IQType.Set
 			query(XMLNS) {
 				attribute("queryid", queryId)
