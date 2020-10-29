@@ -99,18 +99,14 @@ class RequestsManager {
 
 	fun findOutdated() {
 		val now = currentTimestamp()
-		val iterator = requests.entries.iterator()
-		while (iterator.hasNext()) {
-			val request = iterator.next().value
-			if (request.isCompleted) {
-				iterator.remove()
-			} else if (request.creationTimestamp + request.timeoutDelay <= now) {
-				iterator.remove()
-				execute {
-					request.markTimeout()
+
+		requests.values.filter { request -> request.isCompleted || request.creationTimestamp + request.timeoutDelay <= now }
+			.forEach {
+				requests.remove(it.id)
+				if (it.creationTimestamp + it.timeoutDelay <= now) {
+					execute { it.markTimeout() }
 				}
 			}
-		}
 	}
 
 	fun getWaitingRequestsSize(): Int = requests.size
