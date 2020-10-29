@@ -68,23 +68,24 @@ class PresenceModule(override val context: Context) : XmppModule {
 	override fun process(element: Element) {
 		val presence: Presence = wrap(element)
 		val fromJID = presence.getFromAttr()
-		log.fine { "Presence received from $fromJID :: ${presence.getAsString()}" }
+		log.finer { "Presence received $presence" }
 		if (fromJID == null) {
 			return
 		}
 
 		if (presence.type == PresenceType.Unavailable) {
 			store.removePresence(fromJID)
-		} else if (presence.type == null) {
+		} else if (presence.type == null || presence.type == PresenceType.Error) {
 			store.setPresence(presence)
 		}
 		context.eventBus.fire(PresenceReceivedEvent(fromJID, presence.type, presence))
 
-		val bestPresence = getBestPresenceOf(fromJID.bareJID) ?: presence
-
-		context.eventBus.fire(
-			ContactChangeStatusEvent(fromJID.bareJID, bestPresence.status, bestPresence, presence)
-		)
+		if (presence.type == null || presence.type == PresenceType.Unavailable || presence.type == PresenceType.Error) {
+			val bestPresence = getBestPresenceOf(fromJID.bareJID) ?: presence
+			context.eventBus.fire(
+				ContactChangeStatusEvent(fromJID.bareJID, bestPresence.status, bestPresence, presence)
+			)
+		}
 	}
 
 	fun sendInitialPresence() {
@@ -117,23 +118,7 @@ class PresenceModule(override val context: Context) : XmppModule {
 	fun getBestPresenceOf(jid: BareJID): Presence? {
 		data class Envelope(val presence: Presence) {
 
-			val comp: String by lazy {
-				val weight = when (presence.type) {
-					null -> {
-						when (presence.show) {
-							Show.Chat -> 1
-							null -> 2
-							Show.DnD -> 3
-							Show.Away -> 4
-							Show.XA -> 5
-						}
-					}
-					PresenceType.Unavailable -> 10
-					else -> 19
-				}
-
-				"${(500 - presence.priority)}:${100 + weight}"
-			}
+			val comp: String by lazy { "${(500 - presence.priority)}:${100 + presence.typeAndShow().ordinal}" }
 		}
 
 		return store.getPresences(jid).filter { presence -> presence.type == null }

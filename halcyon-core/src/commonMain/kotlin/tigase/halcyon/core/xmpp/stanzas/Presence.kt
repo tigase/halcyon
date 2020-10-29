@@ -27,28 +27,28 @@ import tigase.halcyon.core.xmpp.XMPPException
 /**
  * Availability sub-state
  */
-enum class Show(val weight: Int, val value: String) {
+enum class Show(val value: String) {
 
 	/**
 	 * The entity or resource is actively interested in chatting.
 	 */
-	Chat(5, "chat"),
+	Chat("chat"),
 
 	/**
 	 * The entity or resource is temporarily away.
 	 */
-	Away(3, "away"),
+	Away("away"),
 
 	/**
 	 * The entity or resource is away for an extended period (xa =
 	 * "eXtended Away").
 	 */
-	XA(2, "xa"),
+	XA("xa"),
 
 	/**
 	 * The entity or resource is busy (dnd = "Do Not Disturb").
 	 */
-	DnD(1, "dnd"),
+	DnD("dnd"),
 
 }
 

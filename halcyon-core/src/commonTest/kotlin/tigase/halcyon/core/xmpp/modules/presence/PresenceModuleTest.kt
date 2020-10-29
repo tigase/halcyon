@@ -19,6 +19,7 @@ package tigase.halcyon.core.xmpp.modules.presence
 
 import tigase.halcyon.core.AbstractHalcyon
 import tigase.halcyon.core.connector.AbstractConnector
+import tigase.halcyon.core.xmpp.stanzas.Presence
 import tigase.halcyon.core.xmpp.stanzas.PresenceType
 import tigase.halcyon.core.xmpp.stanzas.Show
 import tigase.halcyon.core.xmpp.stanzas.presence
@@ -128,6 +129,31 @@ class PresenceModuleTest {
 			show = Show.DnD
 		})
 		assertEquals(Show.XA, module.getBestPresenceOf("a@b.c".toBareJID())!!.show)
+	}
+
+	@Test
+	fun testTypeAndShow() {
+		assertEquals(TypeAndShow.Error, presence {
+			type = PresenceType.Error
+			show = Show.Chat
+		}.typeAndShow())
+
+		assertEquals(TypeAndShow.Chat, presence {
+			show = Show.Chat
+		}.typeAndShow())
+
+		assertEquals(TypeAndShow.Unknown, presence {
+			type = PresenceType.Subscribed
+		}.typeAndShow())
+
+		assertEquals(TypeAndShow.Offline, presence {
+			type = PresenceType.Unavailable
+		}.typeAndShow())
+
+		assertEquals(TypeAndShow.Online, presence { }.typeAndShow())
+
+		val p: Presence? = null
+		assertEquals(TypeAndShow.Offline, p.typeAndShow())
 	}
 
 }
