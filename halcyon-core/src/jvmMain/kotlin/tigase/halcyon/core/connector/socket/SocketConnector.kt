@@ -239,13 +239,20 @@ class SocketConnector(halcyon: Halcyon) : AbstractConnector(halcyon) {
 		} catch (e: Exception) {
 			state = State.Disconnected
 			halcyon.eventBus.fire(createSocketConnectionErrorEvent(e))
+			eventsEnabled = false
 		}
 	}
 
 	private fun onWorkerException(cause: Exception) {
 		cause.printStackTrace()
-		state = State.Disconnecting
 		halcyon.eventBus.fire(createSocketConnectionErrorEvent(cause))
+		state = when (state) {
+			State.Connecting -> State.Disconnected
+			State.Connected -> State.Disconnecting
+			State.Disconnecting -> State.Disconnected
+			State.Disconnected -> State.Disconnected
+		}
+		if (state == State.Disconnected) eventsEnabled = false
 	}
 
 	private fun createSocketConnectionErrorEvent(cause: Throwable): SocketConnectionErrorEvent = when (cause) {
@@ -267,10 +274,10 @@ class SocketConnector(halcyon: Halcyon) : AbstractConnector(halcyon) {
 				}
 				worker.interrupt()
 
-
 				while (worker.isActive) Thread.sleep(32)
 			} finally {
 				state = State.Disconnected
+				eventsEnabled = false
 			}
 		}
 	}

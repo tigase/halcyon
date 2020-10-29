@@ -18,9 +18,12 @@
 package tigase.halcyon.core.connector
 
 import tigase.halcyon.core.Halcyon
+import tigase.halcyon.core.eventbus.Event
 import tigase.halcyon.core.xmpp.SessionController
 
 abstract class AbstractConnector(val halcyon: Halcyon) {
+
+	protected var eventsEnabled = true
 
 	var state: State = State.Disconnected
 		protected set(value) {
@@ -37,4 +40,7 @@ abstract class AbstractConnector(val halcyon: Halcyon) {
 
 	abstract fun stop()
 
+	protected fun fire(e: () -> Event) {
+		if (eventsEnabled) halcyon.eventBus.fire(e.invoke())
+	}
 }

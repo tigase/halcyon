@@ -116,8 +116,9 @@ class WebSocketConnector(halcyon: Halcyon) : AbstractConnector(halcyon) {
 	private fun onSocketClose(event: Event): dynamic {
 		log.fine { "Socket is closed: $event" }
 		var oldState = state
-		state = State.Disconnected
 		if (oldState == State.Connected) halcyon.eventBus.fire(WebSocketConnectionErrorEvent("Socket unexpectedly disconnected."))
+		state = State.Disconnected
+		eventsEnabled = false
 		return true
 	}
 
@@ -133,9 +134,14 @@ class WebSocketConnector(halcyon: Halcyon) : AbstractConnector(halcyon) {
 
 	private fun onSocketError(event: Event): dynamic {
 		log.warning { "Socket error: $event" }
-		state = State.Disconnected
-
 		halcyon.eventBus.fire(WebSocketConnectionErrorEvent("Unknown error"))
+		state = when (state) {
+			State.Connecting -> State.Disconnected
+			State.Connected -> State.Disconnecting
+			State.Disconnecting -> State.Disconnected
+			State.Disconnected -> State.Disconnected
+		}
+		if (state == State.Disconnected) eventsEnabled = false
 		return true
 	}
 
