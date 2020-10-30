@@ -16,8 +16,8 @@
  * If not, see http://www.gnu.org/licenses/.
  */
 plugins {
-	kotlin("multiplatform") version "1.3.72"
-	kotlin("plugin.serialization") version "1.3.72"
+	kotlin("multiplatform") version "1.4.10"
+	kotlin("plugin.serialization") version "1.4.10"
 	id("maven-publish")
 	id("org.asciidoctor.jvm.convert") version "3.1.0"
 }
@@ -56,7 +56,7 @@ kotlin {
 			}
 			dependencies {
 				implementation(kotlin("stdlib-common"))
-				implementation("org.jetbrains.kotlinx:kotlinx-serialization-runtime-common:0.20.0")
+				implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.0.0")
 				implementation("com.soywiz.korlibs.krypto:krypto:1.10.1")
 			}
 		}
@@ -69,7 +69,6 @@ kotlin {
 		jvm().compilations["main"].defaultSourceSet {
 			dependencies {
 				implementation(kotlin("stdlib-jdk8"))
-				implementation("org.jetbrains.kotlinx:kotlinx-serialization-runtime:0.20.0")
 				implementation("com.soywiz.korlibs.krypto:krypto-jvm:1.10.1")
 				implementation("org.minidns:minidns-hla:0.3.1")
 			}
@@ -82,7 +81,6 @@ kotlin {
 		js().compilations["main"].defaultSourceSet {
 			dependencies {
 				implementation(kotlin("stdlib-js"))
-				implementation("org.jetbrains.kotlinx:kotlinx-serialization-runtime-js:0.20.0")
 				implementation("com.soywiz.korlibs.krypto:krypto-js:1.10.1")
 			}
 		}
@@ -102,18 +100,6 @@ asciidoctorj {
 }
 
 tasks {
-//	"asciidoctor"(org.asciidoctor.gradle.jvm.AsciidoctorTask::class) {
-//		sources {
-//			inc
-//		}
-//		options(mapOf("doctype" to "book", "ruby" to "erubis"))
-//		attributes(
-//			mapOf(
-//				"source-highlighter" to "coderay", "toc" to "", "idprefix" to "", "idseparator" to "-"
-//			)
-//		)
-//	}
-
 	asciidoctor {
 		baseDirFollowsSourceDir()
 		setSourceDir(file("src/docs/asciidoc"))
@@ -123,5 +109,4 @@ tasks {
 		options(mapOf("doctype" to "book", "ruby" to "erubis"))
 		attributes(mapOf("source-highlighter" to "coderay", "toc" to "", "idprefix" to "", "idseparator" to "-"))
 	}
-
 }

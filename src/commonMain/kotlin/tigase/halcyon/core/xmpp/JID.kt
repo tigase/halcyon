@@ -17,10 +17,16 @@
  */
 package tigase.halcyon.core.xmpp
 
-import kotlinx.serialization.*
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.descriptors.PrimitiveKind
+import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
+import kotlinx.serialization.descriptors.SerialDescriptor
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
 import kotlin.jvm.JvmStatic
 
-@Serializable
+@Serializable(with = JIDSerializer::class)
 data class JID(val bareJID: BareJID, val resource: String?) {
 
 	constructor(localpart: String? = null, domain: String, resource: String? = null) : this(
@@ -35,18 +41,28 @@ data class JID(val bareJID: BareJID, val resource: String?) {
 
 	override fun toString(): String = bareJID.toString() + if (resource != null) "/$resource" else ""
 
-	@Serializer(forClass = JID::class)
-	companion object : KSerializer<JID> {
+	companion object {
 
 		@JvmStatic
 		fun parse(jid: String): JID {
 			val x = parseJID(jid)
 			return JID(BareJID(x[0], x[1]!!), x[2])
 		}
+	}
+}
 
-		override val descriptor: SerialDescriptor = PrimitiveDescriptor("JID", PrimitiveKind.STRING)
-		override fun serialize(encoder: Encoder, obj: JID) = encoder.encodeString(obj.toString())
-		override fun deserialize(decoder: Decoder): JID = JID.parse(decoder.decodeString())
+object JIDSerializer : KSerializer<JID> {
+
+	override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("JID", PrimitiveKind.STRING)
+
+	override fun serialize(encoder: Encoder, value: JID) {
+		val string = value.toString()
+		encoder.encodeString(string)
+	}
+
+	override fun deserialize(decoder: Decoder): JID {
+		val string = decoder.decodeString()
+		return JID.parse(string)
 	}
 }
 

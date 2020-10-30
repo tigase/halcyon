@@ -17,9 +17,9 @@
  */
 package tigase.halcyon.core
 
+import kotlinx.browser.window
 import tigase.halcyon.core.connector.WebSocketConnector
 import tigase.halcyon.core.connector.WebSocketConnectorConfig
-import kotlin.browser.window
 
 actual class Halcyon actual constructor() : tigase.halcyon.core.AbstractHalcyon() {
 

@@ -131,7 +131,7 @@ class SimpleParser {
 				parser_state.state = State.ERROR
 			}
 
-			STATE@ when (parser_state!!.state) {
+			when (parser_state!!.state) {
 				SimpleParser.State.START -> if (chr == OPEN_BRACKET) {
 					parser_state.state = State.OPEN_BRACKET
 					parser_state.slash_found = false
