@@ -32,8 +32,6 @@ import tigase.halcyon.core.xml.getChildContent
 import tigase.halcyon.core.xmpp.BareJID
 import tigase.halcyon.core.xmpp.JID
 import tigase.halcyon.core.xmpp.modules.BindModule
-import tigase.halcyon.core.xmpp.modules.mam.MAMMessageEvent
-import tigase.halcyon.core.xmpp.modules.mix.MIXModule.Companion.MISC_XMLNS
 import tigase.halcyon.core.xmpp.modules.pubsub.PubSubModule
 import tigase.halcyon.core.xmpp.modules.roster.RosterItemAnnotation
 import tigase.halcyon.core.xmpp.modules.roster.RosterItemAnnotationProcessor
@@ -86,11 +84,10 @@ class MIXModule(override val context: Context) : XmppModule, RosterItemAnnotatio
 	override fun initialize() {
 		rosterModule = context.modules.getModule(RosterModule.TYPE)
 		pubsubModule = context.modules.getModule(PubSubModule.TYPE)
-		context.eventBus.register<MAMMessageEvent>(MAMMessageEvent.TYPE, this@MIXModule::process)
 	}
 
 	private fun isMIXMessage(message: Element): Boolean {
-		if (message.name != Message.NAME || message.attributes["type"] != MessageType.Groupchat.value) return false
+		if (message.name != Message.NAME) return false
 		val fromJid = message.attributes["from"]?.toBareJID() ?: return false
 		val item = rosterModule.store.getItem(fromJid) ?: return false
 		return item.annotations.any { it is MIXRosterItemAnnotation }
@@ -98,11 +95,6 @@ class MIXModule(override val context: Context) : XmppModule, RosterItemAnnotatio
 
 	override fun process(element: Element) {
 		process(wrap(element), currentTimestamp())
-	}
-
-	private fun process(event: MAMMessageEvent) {
-		if (!isMIXMessage(event.forwardedStanza.stanza)) return
-		process(event.forwardedStanza.stanza, event.forwardedStanza.timestamp ?: currentTimestamp())
 	}
 
 	private fun process(message: Message, time: Long) {
@@ -251,12 +243,12 @@ class MIXModule(override val context: Context) : XmppModule, RosterItemAnnotatio
 data class MixAnnotation(val nick: String, val jid: BareJID?)
 
 fun Element.isMixMessage(): Boolean {
-	if (this.name != Message.NAME || this.attributes["type"] != MessageType.Groupchat.value) return false
+	if (this.name != Message.NAME) return false
 	return this.getChildrenNS("mix", MIXModule.XMLNS) != null
 }
 
 fun Element.getMixAnnotation(): MixAnnotation? {
-	if (this.name != Message.NAME || this.attributes["type"] != MessageType.Groupchat.value) return null
+	if (this.name != Message.NAME) return null
 	return this.getChildrenNS("mix", MIXModule.XMLNS)?.let {
 		val nick = it.getFirstChild("nick")!!.value!!
 		val jid = it.getFirstChild("jid")?.value?.toBareJID()
@@ -264,7 +256,7 @@ fun Element.getMixAnnotation(): MixAnnotation? {
 	}
 }
 
-fun Element.getMixInvitation(): MIXInvitation? = this.getChildrenNS("invitation", MISC_XMLNS)?.let {
+fun Element.getMixInvitation(): MIXInvitation? = this.getChildrenNS("invitation", MIXModule.MISC_XMLNS)?.let {
 	val inviter = it.getChildContent("inviter") ?: return null
 	val invitee = it.getChildContent("invitee") ?: return null
 	val channel = it.getChildContent("channel") ?: return null
