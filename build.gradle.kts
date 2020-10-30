@@ -19,14 +19,18 @@ plugins {
 	kotlin("multiplatform") version "1.3.72"
 	kotlin("plugin.serialization") version "1.3.72"
 	id("maven-publish")
+	id("org.asciidoctor.jvm.convert") version "3.1.0"
 }
 
 group = "tigase.halcyon"
 version = "0.0.1"
 
-
 repositories {
 	mavenCentral()
+	mavenLocal()
+	maven(url = "http://maven-repo.tigase.org/repository/release")
+	maven(url = "http://maven-repo.tigase.org/repository/snapshot")
+	jcenter()
 }
 
 kotlin {
@@ -91,73 +95,33 @@ kotlin {
 	}
 }
 
-//kotlin {
-//	jvm()
-//	js()
-//	// For ARM, should be changed to iosArm32 or iosArm64
-//	// For Linux, should be changed to e.g. linuxX64
-//	// For MacOS, should be changed to e.g. macosX64
-//	// For Windows, should be changed to e.g. mingwX64
-////	macosX64("macos")
-//
-//	targets {
-//		jvm()
-//		fromPreset(presets.js, "js") {
-//			compileKotlinJs {
-//				kotlinOptions.metaInfo = true
-//				kotlinOptions.outputFile = "$project.buildDir.path/js/${project.name}.js"
-//				kotlinOptions.sourceMap = true
-//				kotlinOptions.moduleKind = "commonjs"
-//				kotlinOptions.main = "call"
-//			}
+asciidoctorj {
+	modules {
+		diagram.use()
+	}
+}
+
+tasks {
+//	"asciidoctor"(org.asciidoctor.gradle.jvm.AsciidoctorTask::class) {
+//		sources {
+//			inc
 //		}
+//		options(mapOf("doctype" to "book", "ruby" to "erubis"))
+//		attributes(
+//			mapOf(
+//				"source-highlighter" to "coderay", "toc" to "", "idprefix" to "", "idseparator" to "-"
+//			)
+//		)
 //	}
-//
-//	sourceSets {
-//		commonMain {
-//			dependencies {
-//				implementation kotlin('stdlib-common')
-//				implementation "org.jetbrains.kotlinx:kotlinx-serialization-runtime-common:$serialization_version"
-//				implementation "com.soywiz.korlibs.krypto:krypto:1.10.1"
-//			}
-//		}
-//		commonTest {
-//			dependencies {
-//				implementation kotlin('test-common')
-//				implementation kotlin('test-annotations-common')
-//			}
-//		}
-//		jvmMain {
-//			dependencies {
-//				implementation kotlin('stdlib-jdk8')
-//				implementation "org.jetbrains.kotlinx:kotlinx-serialization-runtime:$serialization_version"
-//				implementation "com.soywiz.korlibs.krypto:krypto-jvm:1.10.1"
-//
-//				implementation 'org.minidns:minidns-hla:0.3.1'
-//			}
-//		}
-//		jvmTest {
-//			dependencies {
-//				implementation kotlin('test')
-//				implementation kotlin('test-junit')
-//			}
-//		}
-//		jsMain {
-//			dependencies {
-//				implementation kotlin('stdlib-js')
-//				implementation "org.jetbrains.kotlinx:kotlinx-serialization-runtime-js:$serialization_version"
-//				implementation "com.soywiz.korlibs.krypto:krypto-js:1.10.1"
-//
-//			}
-//		}
-//		jsTest {
-//			dependencies {
-//				implementation kotlin('test-js')
-//			}
-//		}
-////		macosMain {
-////		}
-////		macosTest {
-////		}
-//	}
-//}
+
+	asciidoctor {
+		baseDirFollowsSourceDir()
+		setSourceDir(file("src/docs/asciidoc"))
+		sources(delegateClosureOf<PatternSet> {
+			include("index.asciidoc")
+		})
+		options(mapOf("doctype" to "book", "ruby" to "erubis"))
+		attributes(mapOf("source-highlighter" to "coderay", "toc" to "", "idprefix" to "", "idseparator" to "-"))
+	}
+
+}

@@ -73,7 +73,7 @@ If you didn't find an answer in the resources above, feel free to submit your qu
 
     ./gradlew assemble
 
-Jar file will be stored in `./halcyon-core/build/libs/`, JavaScript files - in `./halcyon-core/build/js/`.
+Jar file will be stored in `./build/libs/`, JavaScript files - in `./build/js/`.
 
 # License
 
