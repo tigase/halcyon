@@ -117,7 +117,12 @@ class MAMModule(override val context: Context) : XmppModule {
 	}
 
 	fun query(
-		to: BareJID? = null, rsm: RSM? = null, with: String? = null, start: Long? = null, end: Long? = null
+		to: BareJID? = null,
+		node: String? = null,
+		rsm: RSM? = null,
+		with: String? = null,
+		start: Long? = null,
+		end: Long? = null
 	): RequestBuilder<Fin, IQ> {
 		val queryId = IdGenerator.nextId()
 		val form: Element? = prepareForm(with, start, end)
@@ -126,14 +131,13 @@ class MAMModule(override val context: Context) : XmppModule {
 			type = IQType.Set
 			query(XMLNS) {
 				attribute("queryid", queryId)
+				if (node != null) attribute("node", node)
 				if (form != null) addChild(form)
 				if (rsm != null) addChild(rsm.toElement())
 			}
 		}
 		val q = RegisteredQuery(queryId, currentTimestamp(), currentTimestamp() + 30000)
 		requests.put(queryId, q)
-
-
 		return context.request.iq(stanza).map { element -> createResponse(element, q) }
 	}
 

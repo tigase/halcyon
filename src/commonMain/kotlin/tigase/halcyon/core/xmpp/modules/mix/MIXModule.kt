@@ -32,6 +32,8 @@ import tigase.halcyon.core.xml.getChildContent
 import tigase.halcyon.core.xmpp.BareJID
 import tigase.halcyon.core.xmpp.JID
 import tigase.halcyon.core.xmpp.modules.BindModule
+import tigase.halcyon.core.xmpp.modules.RSM
+import tigase.halcyon.core.xmpp.modules.mam.MAMModule
 import tigase.halcyon.core.xmpp.modules.pubsub.PubSubModule
 import tigase.halcyon.core.xmpp.modules.roster.RosterItemAnnotation
 import tigase.halcyon.core.xmpp.modules.roster.RosterItemAnnotationProcessor
@@ -72,6 +74,7 @@ class MIXModule(override val context: Context) : XmppModule, RosterItemAnnotatio
 		const val NODE_BANNED = "urn:xmpp:mix:nodes:banned"
 		const val NODE_PARTICIPANTS = "urn:xmpp:mix:nodes:participants"
 		const val NODE_PRESENCE = "urn:xmpp:mix:nodes:presence"
+		const val NODE_MESSAGES = "urn:xmpp:mix:nodes:messages"
 	}
 
 	override val criteria: Criteria? = Criterion.element(this@MIXModule::isMIXMessage)
@@ -80,10 +83,12 @@ class MIXModule(override val context: Context) : XmppModule, RosterItemAnnotatio
 
 	private lateinit var rosterModule: RosterModule
 	private lateinit var pubsubModule: PubSubModule
+	private lateinit var mamModule: MAMModule
 
 	override fun initialize() {
 		rosterModule = context.modules.getModule(RosterModule.TYPE)
 		pubsubModule = context.modules.getModule(PubSubModule.TYPE)
+		mamModule = context.modules.getModule(MAMModule.TYPE)
 	}
 
 	private fun isMIXMessage(message: Element): Boolean {
@@ -178,7 +183,7 @@ class MIXModule(override val context: Context) : XmppModule, RosterItemAnnotatio
 					"nick"{
 						+nick
 					}
-					"subscribe"{ attributes["node"] = "urn:xmpp:mix:nodes:messages" }
+					"subscribe"{ attributes["node"] = NODE_MESSAGES }
 					"subscribe"{ attributes["node"] = NODE_PRESENCE }
 					"subscribe"{ attributes["node"] = NODE_PARTICIPANTS }
 					"subscribe"{ attributes["node"] = "urn:xmpp:mix:nodes:info" }
@@ -236,6 +241,13 @@ class MIXModule(override val context: Context) : XmppModule, RosterItemAnnotatio
 		return item.getChildrenNS("channel", "urn:xmpp:mix:roster:0")?.let { channel ->
 			MIXRosterItemAnnotation(channel.attributes["participant-id"]!!)
 		}
+	}
+
+	fun retrieveHistory(
+		fromChannel: BareJID? = null, with: String? = null, rsm: RSM? = null, start: Long? = null, end: Long? = null
+	): RequestBuilder<MAMModule.Fin, IQ> {
+		val node = if (fromChannel == null) null else NODE_MESSAGES
+		return mamModule.query(fromChannel, node, rsm, with, start, end)
 	}
 
 }
