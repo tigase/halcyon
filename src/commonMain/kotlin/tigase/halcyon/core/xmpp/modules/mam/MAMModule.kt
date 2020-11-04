@@ -25,10 +25,10 @@ import tigase.halcyon.core.modules.Criterion
 import tigase.halcyon.core.modules.XmppModule
 import tigase.halcyon.core.parseISO8601
 import tigase.halcyon.core.requests.RequestBuilder
+import tigase.halcyon.core.requests.XMPPError
 import tigase.halcyon.core.timestampToISO8601
 import tigase.halcyon.core.xml.Element
-import tigase.halcyon.core.xmpp.BareJID
-import tigase.halcyon.core.xmpp.IdGenerator
+import tigase.halcyon.core.xmpp.*
 import tigase.halcyon.core.xmpp.forms.FieldType
 import tigase.halcyon.core.xmpp.forms.FormType
 import tigase.halcyon.core.xmpp.forms.JabberDataForm
@@ -65,6 +65,26 @@ class ForwardedStanza<TYPE : Stanza<*>>(private val element: Element) : Element 
 	}
 
 }
+
+enum class DefaultBehaviour(val xmppValue: String) {
+
+	/**
+	 * All messages are archived by default.
+	 */
+	Always("always"),
+
+	/**
+	 * Messages are never archived by default.
+	 */
+	Never("never"),
+
+	/**
+	 * Messages are archived only if the contact's bare JID is in the user's roster.
+	 */
+	Roster("roster")
+}
+
+data class Preferences(val default: DefaultBehaviour, val always: Collection<BareJID>, val never: Collection<BareJID>)
 
 class MAMModule(override val context: Context) : XmppModule {
 
@@ -153,6 +173,47 @@ class MAMModule(override val context: Context) : XmppModule {
 			"1", "true" -> true
 			else -> false
 		}
+	}
+
+	private fun parsePreferences(iq: IQ): Preferences {
+		val prefs =
+			iq.getChildrenNS("prefs", XMLNS) ?: throw XMPPError(iq, ErrorCondition.BadRequest, "No 'prefs' element")
+		val always = prefs.getChildren("always").mapNotNull { p -> p.getFirstChild("jid")?.value?.toBareJID() }.toList()
+		val never = prefs.getChildren("never").mapNotNull { p -> p.getFirstChild("jid")?.value?.toBareJID() }.toList()
+		val b = prefs.attributes["default"]
+		val default = DefaultBehaviour.values().find { db -> db.xmppValue == b } ?: throw XMPPException(
+			ErrorCondition.BadRequest, "Unknown default value: ${b}"
+		)
+		return Preferences(default, always, never)
+	}
+
+	fun retrievePreferences(): RequestBuilder<Preferences, IQ> {
+		return context.request.iq {
+			type = IQType.Get
+			"prefs"{
+				xmlns = XMLNS
+			}
+		}.map(this@MAMModule::parsePreferences)
+	}
+
+	fun updatePreferences(preferences: Preferences): RequestBuilder<Unit, IQ> {
+		return context.request.iq {
+			type = IQType.Set
+			"prefs"{
+				xmlns = XMLNS
+				attributes["default"] = preferences.default.xmppValue
+				"always"{
+					preferences.always.forEach { jid ->
+						"jid"{ +"$jid" }
+					}
+				}
+				"never"{
+					preferences.never.forEach { jid ->
+						"jid"{ +"$jid" }
+					}
+				}
+			}
+		}.map { Unit }
 	}
 
 }
