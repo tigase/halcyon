@@ -17,12 +17,24 @@
  */
 package tigase.halcyon.core.logger
 
-import tigase.halcyon.core.logger.internal.LoggerSPI
+import tigase.halcyon.core.logger.internal.DefaultLoggerSPI
+
+/**
+ * Service Provider Interface.
+ */
+interface LoggerSPI {
+
+	fun isLoggable(level: Level): Boolean
+	fun log(level: Level, msg: String, caught: Throwable?)
+
+}
 
 object LoggerFactory {
 
+	var spiFactory: ((String, Boolean) -> LoggerSPI) = { name, enabled -> DefaultLoggerSPI(name, enabled) }
+
 	fun logger(name: String, enabled: Boolean = true): Logger {
-		return SimpleLogger(LoggerSPI(name, enabled))
+		return SimpleLogger(spiFactory.invoke(name, enabled))
 	}
 
 }
@@ -63,7 +75,7 @@ class SimpleLogger(private val spi: LoggerSPI) : Logger {
 
 	override fun isLoggable(level: Level): Boolean = spi.isLoggable(level)
 
-	override fun log(level: Level, msg: String) = spi.log(level, msg)
+	override fun log(level: Level, msg: String) = spi.log(level, msg, null)
 
 	override fun log(level: Level, msg: String, caught: Throwable) = spi.log(level, msg, caught)
 

@@ -18,10 +18,11 @@
 package tigase.halcyon.core.logger.internal
 
 import tigase.halcyon.core.logger.Level
+import tigase.halcyon.core.logger.LoggerSPI
 import java.util.logging.LogRecord
 
 @Suppress("NOTHING_TO_INLINE")
-actual class LoggerSPI actual constructor(name: String, val enabled: Boolean) {
+actual class DefaultLoggerSPI actual constructor(name: String, val enabled: Boolean) : LoggerSPI {
 
 	private val log = java.util.logging.Logger.getLogger(name)
 
@@ -37,7 +38,7 @@ actual class LoggerSPI actual constructor(name: String, val enabled: Boolean) {
 		Level.ALL -> java.util.logging.Level.ALL
 	}
 
-	actual fun isLoggable(level: Level): Boolean {
+	actual override fun isLoggable(level: Level): Boolean {
 		return log.isLoggable(cnv(level))
 	}
 
@@ -67,11 +68,7 @@ actual class LoggerSPI actual constructor(name: String, val enabled: Boolean) {
 		}
 	}
 
-	actual fun log(level: Level, msg: String) {
-		doLog(level, msg, null)
-	}
-
-	actual fun log(level: Level, msg: String, caught: Throwable) {
+	actual override fun log(level: Level, msg: String, caught: Throwable?) {
 		doLog(level, msg, caught)
 	}
 

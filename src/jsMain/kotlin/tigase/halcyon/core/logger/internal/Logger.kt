@@ -18,9 +18,10 @@
 package tigase.halcyon.core.logger.internal
 
 import tigase.halcyon.core.logger.Level
+import tigase.halcyon.core.logger.LoggerSPI
 import kotlin.js.Date
 
-actual class LoggerSPI actual constructor(val name: String, val enabled: Boolean) {
+actual class DefaultLoggerSPI actual constructor(val name: String, val enabled: Boolean) : LoggerSPI {
 
 	companion object {
 
@@ -28,9 +29,9 @@ actual class LoggerSPI actual constructor(val name: String, val enabled: Boolean
 		var nameFilter: String? = null
 	}
 
-	actual fun isLoggable(level: Level): Boolean = levelFilter.value <= level.value
+	actual override fun isLoggable(level: Level): Boolean = levelFilter.value <= level.value
 
-	actual fun log(level: Level, msg: String) {
+	private fun log(level: Level, msg: String) {
 //		if (nameFilter != null && !name.matches(nameFilter!!)) {
 //			return
 //		}
@@ -49,8 +50,8 @@ actual class LoggerSPI actual constructor(val name: String, val enabled: Boolean
 		}
 	}
 
-	actual fun log(level: Level, msg: String, caught: Throwable) {
-		log(level, msg + '\n' + caught.toString())
+	actual override fun log(level: Level, msg: String, caught: Throwable?) {
+		if (caught == null) log(level, msg) else log(level, msg + '\n' + caught.toString())
 	}
 
 }
