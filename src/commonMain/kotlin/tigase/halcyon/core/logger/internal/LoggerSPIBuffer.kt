@@ -1,0 +1,58 @@
+/*
+ * Tigase Halcyon XMPP Library
+ * Copyright (C) 2018 Tigase, Inc. (office@tigase.com)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
+ * the Free Software Foundation, version 3 of the License.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. Look for COPYING file in the top folder.
+ * If not, see http://www.gnu.org/licenses/.
+ */
+package tigase.halcyon.core.logger.internal
+
+import tigase.halcyon.core.currentTimestamp
+import tigase.halcyon.core.logger.Level
+import tigase.halcyon.core.logger.LoggerSPI
+
+class LoggerSPIBuffer(val bufferSize: Int = 100) {
+
+	data class Entry(
+		val timestamp: Long, val level: Level, val loggerName: String, val msg: String, val caught: Throwable?
+	)
+
+	var spiFactory: ((String, Boolean) -> LoggerSPI) = { name, enabled -> DefaultLoggerSPI(name, enabled) }
+
+	private val buffer = mutableListOf<Entry>()
+
+	var callback: ((Entry) -> Unit)? = null
+
+	private fun add(entry: Entry) {
+		buffer.add(entry)
+		if (buffer.size > bufferSize) {
+			buffer.removeAt(0)
+		}
+		callback?.invoke(entry)
+	}
+
+	fun getBuffer(): List<Entry> = buffer
+
+	fun create(name: String, enabled: Boolean): LoggerSPI {
+		val spi = spiFactory.invoke(name, enabled)
+		return object : LoggerSPI {
+			override fun isLoggable(level: Level): Boolean = spi.isLoggable(level)
+
+			override fun log(level: Level, msg: String, caught: Throwable?) {
+				add(Entry(currentTimestamp(), level, name, msg, caught))
+				spi.log(level, msg, caught)
+			}
+		}
+	}
+
+}
