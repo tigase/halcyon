@@ -35,7 +35,7 @@ repositories {
 
 kotlin {
 	jvm() // Creates a JVM target with the default name 'jvm'
-	js {
+	js(BOTH) {
 		browser {
 			testTask {
 				useKarma {
@@ -57,7 +57,7 @@ kotlin {
 			dependencies {
 				implementation(kotlin("stdlib-common"))
 				implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.0.0")
-				implementation("com.soywiz.korlibs.krypto:krypto:1.10.1")
+				implementation("com.soywiz.korlibs.krypto:krypto:2.0.0-rc3")
 			}
 		}
 		val commonTest by getting {
@@ -69,7 +69,7 @@ kotlin {
 		jvm().compilations["main"].defaultSourceSet {
 			dependencies {
 				implementation(kotlin("stdlib-jdk8"))
-				implementation("com.soywiz.korlibs.krypto:krypto-jvm:1.10.1")
+//				implementation("com.soywiz.korlibs.krypto:krypto-jvm:1.10.1")
 				implementation("org.minidns:minidns-hla:0.3.1")
 			}
 		}
@@ -81,7 +81,7 @@ kotlin {
 		js().compilations["main"].defaultSourceSet {
 			dependencies {
 				implementation(kotlin("stdlib-js"))
-				implementation("com.soywiz.korlibs.krypto:krypto-js:1.10.1")
+//				implementation("com.soywiz.korlibs.krypto:krypto-js:1.10.1")
 			}
 		}
 		js().compilations["test"].defaultSourceSet {

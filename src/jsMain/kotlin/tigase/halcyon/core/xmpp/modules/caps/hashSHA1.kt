@@ -20,5 +20,5 @@ package tigase.halcyon.core.xmpp.modules.caps
 import com.soywiz.krypto.sha1
 
 actual fun hashSHA1(buffer: ByteArray): ByteArray {
-	return buffer.sha1()
+	return buffer.sha1().bytes
 }
