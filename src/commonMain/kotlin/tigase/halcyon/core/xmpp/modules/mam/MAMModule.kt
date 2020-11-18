@@ -20,11 +20,14 @@ package tigase.halcyon.core.xmpp.modules.mam
 import tigase.halcyon.core.Context
 import tigase.halcyon.core.currentTimestamp
 import tigase.halcyon.core.eventbus.Event
+import tigase.halcyon.core.logger.LoggerFactory
 import tigase.halcyon.core.modules.Criteria
 import tigase.halcyon.core.modules.Criterion
 import tigase.halcyon.core.modules.XmppModule
 import tigase.halcyon.core.parseISO8601
+import tigase.halcyon.core.requests.ConsumerPublisher
 import tigase.halcyon.core.requests.RequestBuilder
+import tigase.halcyon.core.requests.RequestConsumerBuilder
 import tigase.halcyon.core.requests.XMPPError
 import tigase.halcyon.core.timestampToISO8601
 import tigase.halcyon.core.xml.Element
@@ -90,7 +93,12 @@ class MAMModule(override val context: Context) : XmppModule {
 
 	data class Fin(val complete: Boolean = false, val rsm: RSM?)
 
-	private data class RegisteredQuery(val queryId: String, val createdTimestamp: Long, var validUntil: Long)
+	private data class RegisteredQuery(
+		val queryId: String,
+		val createdTimestamp: Long,
+		var validUntil: Long,
+		var publisher: ConsumerPublisher<ForwardedStanza<Message>>? = null
+	)
 
 	companion object {
 
@@ -104,6 +112,8 @@ class MAMModule(override val context: Context) : XmppModule {
 	override val features = arrayOf(XMLNS)
 
 	private val requests = ExpiringMap<String, RegisteredQuery>()
+
+	private val log = LoggerFactory.logger("tigase.halcyon.core.xmpp.modules.mam.MAMModule")
 
 	override fun initialize() {
 		requests.expirationChecker = {
@@ -122,7 +132,13 @@ class MAMModule(override val context: Context) : XmppModule {
 
 		val msg = forwarded.getFirstChild("message") ?: return
 
-		context.eventBus.fire(MAMMessageEvent(wrap(element), queryId, resultId, ForwardedStanza(forwarded)))
+		val forwardedStanza = ForwardedStanza<Message>(forwarded)
+		try {
+			query.publisher?.publish(forwardedStanza)
+		} catch (e: Exception) {
+			log.warning(e) { "Error on calling consumer for ${element.getAsString(deep = 2, showValue = false)}" }
+		}
+		context.eventBus.fire(MAMMessageEvent(wrap(element), queryId, resultId, forwardedStanza))
 	}
 
 	private fun prepareForm(with: String? = null, start: Long? = null, end: Long? = null): Element? {
@@ -143,7 +159,7 @@ class MAMModule(override val context: Context) : XmppModule {
 		with: String? = null,
 		start: Long? = null,
 		end: Long? = null
-	): RequestBuilder<Fin, IQ> {
+	): RequestConsumerBuilder<ForwardedStanza<Message>, Fin, IQ> {
 		val queryId = IdGenerator.nextId()
 		val form: Element? = prepareForm(with, start, end)
 		val stanza = iq {
@@ -156,9 +172,16 @@ class MAMModule(override val context: Context) : XmppModule {
 				if (rsm != null) addChild(rsm.toElement())
 			}
 		}
+
 		val q = RegisteredQuery(queryId, currentTimestamp(), currentTimestamp() + 30000)
 		requests.put(queryId, q)
-		return context.request.iq(stanza).map { element -> createResponse(element, q) }
+
+		val builder = RequestConsumerBuilder<ForwardedStanza<Message>, IQ, IQ>(
+			context, stanza
+		) { it as IQ }.map { element -> createResponse(element, q) }
+		q.publisher = builder.publisher
+
+		return builder
 	}
 
 	private fun createResponse(responseStanza: Element, registeredQuery: RegisteredQuery): Fin {

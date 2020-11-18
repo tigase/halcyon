@@ -26,6 +26,7 @@ import tigase.halcyon.core.modules.Criteria
 import tigase.halcyon.core.modules.Criterion
 import tigase.halcyon.core.modules.XmppModule
 import tigase.halcyon.core.requests.RequestBuilder
+import tigase.halcyon.core.requests.RequestConsumerBuilder
 import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xml.element
 import tigase.halcyon.core.xml.getChildContent
@@ -33,6 +34,7 @@ import tigase.halcyon.core.xmpp.BareJID
 import tigase.halcyon.core.xmpp.JID
 import tigase.halcyon.core.xmpp.modules.BindModule
 import tigase.halcyon.core.xmpp.modules.RSM
+import tigase.halcyon.core.xmpp.modules.mam.ForwardedStanza
 import tigase.halcyon.core.xmpp.modules.mam.MAMModule
 import tigase.halcyon.core.xmpp.modules.pubsub.PubSubModule
 import tigase.halcyon.core.xmpp.modules.roster.RosterItemAnnotation
@@ -245,7 +247,7 @@ class MIXModule(override val context: Context) : XmppModule, RosterItemAnnotatio
 
 	fun retrieveHistory(
 		fromChannel: BareJID? = null, with: String? = null, rsm: RSM? = null, start: Long? = null, end: Long? = null
-	): RequestBuilder<MAMModule.Fin, IQ> {
+	): RequestConsumerBuilder<ForwardedStanza<Message>, MAMModule.Fin, IQ> {
 		val node = if (fromChannel == null) null else NODE_MESSAGES
 		return mamModule.query(fromChannel, node, rsm, with, start, end)
 	}

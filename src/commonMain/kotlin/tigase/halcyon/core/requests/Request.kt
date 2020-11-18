@@ -24,7 +24,7 @@ import tigase.halcyon.core.xmpp.XMPPException
 import tigase.halcyon.core.xmpp.stanzas.Stanza
 import tigase.halcyon.core.xmpp.stanzas.wrap
 
-abstract class AbstractRequest<V, STT : Stanza<*>>(
+class Request<V, STT : Stanza<*>>(
 	val jid: JID?,
 	val id: String,
 	val creationTimestamp: Long,
@@ -32,7 +32,7 @@ abstract class AbstractRequest<V, STT : Stanza<*>>(
 	var timeoutDelay: Long,
 	private val handler: ResultHandler<V>?,
 	private val transform: (value: Any) -> V,
-	private val parentRequest: AbstractRequest<*, STT>? = null,
+	private val parentRequest: Request<*, STT>? = null,
 	private val callHandlerOnSent: Boolean
 ) {
 
@@ -59,10 +59,10 @@ abstract class AbstractRequest<V, STT : Stanza<*>>(
 
 	internal var stanzaHandler: ResponseStanzaHandler<STT>? = null
 
-	private fun requestStack(): List<AbstractRequest<*, STT>> {
-		val result = mutableListOf<AbstractRequest<*, STT>>()
+	private fun requestStack(): List<Request<*, STT>> {
+		val result = mutableListOf<Request<*, STT>>()
 
-		var tmp: AbstractRequest<*, STT>? = this
+		var tmp: Request<*, STT>? = this
 		while (tmp != null) {
 			result.add(0, tmp)
 			tmp = tmp.parentRequest

@@ -18,7 +18,7 @@
 package tigase.halcyon.core.connector
 
 import tigase.halcyon.core.eventbus.Event
-import tigase.halcyon.core.requests.AbstractRequest
+import tigase.halcyon.core.requests.Request
 import tigase.halcyon.core.xml.Element
 
 data class ConnectorStateChangeEvent(val oldState: State, val newState: State) : Event(TYPE) {
@@ -61,7 +61,7 @@ data class ParseErrorEvent(val errorMessage: String) : Event(TYPE) {
 	}
 }
 
-data class SentXMLElementEvent(val element: Element, val request: AbstractRequest<*, *>?) : Event(TYPE) {
+data class SentXMLElementEvent(val element: Element, val request: Request<*, *>?) : Event(TYPE) {
 
 	companion object {
 

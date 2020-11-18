@@ -29,7 +29,7 @@ import tigase.halcyon.core.exceptions.HalcyonException
 import tigase.halcyon.core.logger.LoggerFactory
 import tigase.halcyon.core.modules.Criterion
 import tigase.halcyon.core.modules.XmppModule
-import tigase.halcyon.core.requests.AbstractRequest
+import tigase.halcyon.core.requests.Request
 import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xml.element
 import tigase.halcyon.core.xmpp.ErrorCondition
@@ -150,7 +150,7 @@ class StreamManagementModule(override val context: Context) : XmppModule {
 		++resumptionContext.incomingH
 	}
 
-	private fun processElementSent(element: Element, request: AbstractRequest<*, *>?) {
+	private fun processElementSent(element: Element, request: Request<*, *>?) {
 		if (!resumptionContext.isAckActive) return
 		if (element.xmlns == XMLNS) return
 
@@ -231,7 +231,7 @@ class StreamManagementModule(override val context: Context) : XmppModule {
 		while (queue.size > left) {
 			val x = queue.get(0)
 			queue.remove(x)
-			if (x is AbstractRequest<*, *>) {
+			if (x is Request<*, *>) {
 				x.markAsSent()
 				log.fine { "Marked as 'delivered to server': $x" }
 			}
@@ -253,7 +253,7 @@ class StreamManagementModule(override val context: Context) : XmppModule {
 
 		unacked.forEach {
 			when (it) {
-				is AbstractRequest<*, *> -> context.writer.write(it)
+				is Request<*, *> -> context.writer.write(it)
 				is Element -> context.writer.writeDirectly(it)
 			}
 		}

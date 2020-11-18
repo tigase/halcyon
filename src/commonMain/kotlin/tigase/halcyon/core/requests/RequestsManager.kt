@@ -28,16 +28,16 @@ class RequestsManager {
 
 	private val executor = tigase.halcyon.core.excutor.Executor()
 
-	private val requests = HashMap<String, AbstractRequest<*, *>>()
+	private val requests = HashMap<String, Request<*, *>>()
 
-	internal fun register(request: AbstractRequest<*, *>) {
+	internal fun register(request: Request<*, *>) {
 		requests[key(request.stanza)] = request
 	}
 
 	private fun key(element: Element): String = "${element.name}:${element.attributes["id"]}"
 
 	@Suppress("UNCHECKED_CAST")
-	fun getRequest(response: Element): AbstractRequest<*, *>? {
+	fun getRequest(response: Element): Request<*, *>? {
 		val id = key(response)
 //		val from = response.attributes["from"]
 
@@ -51,7 +51,7 @@ class RequestsManager {
 		}
 	}
 
-	private fun verify(entry: AbstractRequest<*, *>, response: Element): Boolean {
+	private fun verify(entry: Request<*, *>, response: Element): Boolean {
 		val jid = response.getFromAttr()
 
 		if (jid != null && entry.jid != null && jid.bareJID == entry.jid.bareJID) {
@@ -70,7 +70,7 @@ class RequestsManager {
 	}
 
 	fun findAndExecute(response: Element): Boolean {
-		val r: AbstractRequest<*, *> = getRequest(response) ?: return false
+		val r: Request<*, *> = getRequest(response) ?: return false
 		execute { r.setResponseStanza(response) }
 		return true
 	}
