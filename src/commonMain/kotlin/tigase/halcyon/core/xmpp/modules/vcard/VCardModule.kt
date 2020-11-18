@@ -92,9 +92,7 @@ class VCardModule(override val context: Context) : XmppModule {
 			ownJid?.let {
 				to = it.toString().toJID()
 			}
-			"vcard"{
-				xmlns = XMLNS
-			}
+			addChild(vcard.element)
 		}
 		return context.request.iq(iq).map { Unit }
 	}
