@@ -17,6 +17,7 @@
  */
 package tigase.halcyon.core.requests
 
+import tigase.halcyon.core.logger.LoggerFactory
 import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xmpp.ErrorCondition
 import tigase.halcyon.core.xmpp.JID
@@ -36,9 +37,13 @@ class Request<V, STT : Stanza<*>>(
 	private val callHandlerOnSent: Boolean
 ) {
 
+	private val log = LoggerFactory.logger("tigase.halcyon.core.requests.Request")
+
 	data class Error(val condition: ErrorCondition, val message: String?)
 
 	private val data = HashMap<String, Any>()
+
+	internal var requestName: String? = null
 
 	/**
 	 * `true` when no response for IQ or when stanza is not delivered to server (StreamManagement must be enabled)
@@ -71,7 +76,7 @@ class Request<V, STT : Stanza<*>>(
 		return result
 	}
 
-	fun processStack() {
+	private fun processStack() {
 		val requests = requestStack()
 
 		// Currently returned value. Will be updated by map()'s from stack.
@@ -86,9 +91,12 @@ class Request<V, STT : Stanza<*>>(
 				when (response!!.attributes["type"]) {
 					"result" -> {
 						try {
+							log.finest { "Mapping response in ${this@Request}" }
 							tmpValue = req.transform.invoke(tmpValue!!)
+							log.finest { "Mapping response finished in ${this@Request}" }
 							Result.success(tmpValue)
 						} catch (e: XMPPError) {
+							log.warning(e) { "Mapping response error in ${this@Request}" }
 							Result.failure<XMPPError>(e)
 						}
 					}
@@ -109,26 +117,29 @@ class Request<V, STT : Stanza<*>>(
 	}
 
 	internal fun setResponseStanza(response: Element, processStack: Boolean = true) {
+		log.finest { "Setting response in ${this@Request}" }
 		this.response = wrap(response)
 		isCompleted = true
 		if (processStack) processStack() else callHandlers()
 	}
 
-	internal open fun markAsSent(processStack: Boolean = true) {
+	internal fun markAsSent(processStack: Boolean = true) {
 		var tmp: Any? = Unit
 		requestStack().forEach { req ->
+			log.finest { "Marking as sent ${this@Request}" }
 			req.isSent = true
 
 			if (callHandlerOnSent) {
 				tmp = req.transform.invoke(tmp!!)
 				val res = Result.success(tmp!!)
 				req.calculatedResult = res as (Result<Nothing>)
-				req.handler?.invoke(res)
+				req.callResponseHandler(res)
 			}
 		}
 	}
 
 	internal fun markTimeout(processStack: Boolean = true) {
+		log.finest { "Marking as timeout ${this@Request}" }
 		isCompleted = true
 		isTimeout = true
 		if (processStack) processStack() else callHandlers()
@@ -138,7 +149,21 @@ class Request<V, STT : Stanza<*>>(
 		callResponseStanzaHandler()
 		val tmp = calculatedResult
 		if (tmp == null) throw RuntimeException("No calculated result")
-		handler?.invoke(tmp)
+		callResponseHandler(tmp)
+	}
+
+	private fun callResponseHandler(tmp: Result<V>) {
+		handler?.let { h ->
+			try {
+				log.finest { "Executing handler in ${this@Request}" }
+				h.invoke(tmp)
+				log.finest { "Executing handler finished in ${this@Request}" }
+			} catch (e: Throwable) {
+				log.warning(e) {
+					"Problem inside handler in ${this@Request}"
+				}
+			}
+		}
 	}
 
 	private fun findCondition(stanza: Element): Error {
@@ -157,9 +182,14 @@ class Request<V, STT : Stanza<*>>(
 	}
 
 	private fun callResponseStanzaHandler() {
-		try {
-			stanzaHandler?.invoke(this, response)
-		} catch (e: Throwable) {
+		stanzaHandler?.let { h ->
+			try {
+				log.finest { "Executing stanza handler in ${this@Request}" }
+				h.invoke(this, response)
+				log.finest { "Executing stanza handler finished in ${this@Request}" }
+			} catch (e: Throwable) {
+				log.warning(e) { "Problem inside stanza handler in ${this@Request}" }
+			}
 		}
 	}
 
@@ -177,7 +207,15 @@ class Request<V, STT : Stanza<*>>(
 	}
 
 	override fun toString(): String {
-		return "Request[${stanza.getAsString(deep = 2, showValue = false)}]"
+		return buildString {
+			append("Request(")
+			requestName?.let {
+				append("name='$requestName', ")
+			}
+			append("stanza=")
+			append(stanza.getAsString(deep = 2, showValue = false))
+			append(")")
+		}
 	}
 
 }

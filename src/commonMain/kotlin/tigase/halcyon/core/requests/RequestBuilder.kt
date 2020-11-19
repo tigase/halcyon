@@ -69,6 +69,8 @@ class RequestBuilder<V, STT : Stanza<*>>(
 	private val transform: (value: Any) -> V
 ) {
 
+	private var requestName: String? = null
+
 	private var parentBuilder: RequestBuilder<*, STT>? = null
 
 	private var timeoutDelay: Long = 30000
@@ -91,6 +93,7 @@ class RequestBuilder<V, STT : Stanza<*>>(
 			callHandlerOnSent
 		).apply {
 			this.stanzaHandler = responseStanzaHandler
+			this.requestName = this@RequestBuilder.requestName
 		}
 	}
 
@@ -104,13 +107,15 @@ class RequestBuilder<V, STT : Stanza<*>>(
 		return res
 	}
 
-	fun handleResponseStanza(handler: ResponseStanzaHandler<STT>): RequestBuilder<V, STT> {
+	fun handleResponseStanza(name: String? = null, handler: ResponseStanzaHandler<STT>): RequestBuilder<V, STT> {
 		this.responseStanzaHandler = handler
+		if (requestName != null) this.requestName = requestName
 		return this
 	}
 
-	fun response(handler: ResultHandler<V>): RequestBuilder<V, STT> {
+	fun response(requestName: String? = null, handler: ResultHandler<V>): RequestBuilder<V, STT> {
 		this.resultHandler = handler
+		if (requestName != null) this.requestName = requestName
 		return this
 	}
 
@@ -123,6 +128,11 @@ class RequestBuilder<V, STT : Stanza<*>>(
 		val req = build()
 		halcyon.writer.write(req)
 		return req
+	}
+
+	fun name(requestName: String): RequestBuilder<V, STT> {
+		this.requestName = requestName
+		return this
 	}
 
 }
@@ -143,6 +153,8 @@ class RequestConsumerBuilder<CSR, V, STT : Stanza<*>>(
 	private val callHandlerOnSent: Boolean = false,
 	private val transform: (value: Any) -> V
 ) {
+
+	private var requestName: String? = null
 
 	internal val publisher = ConsumerPublisher<CSR>()
 
@@ -168,6 +180,7 @@ class RequestConsumerBuilder<CSR, V, STT : Stanza<*>>(
 			callHandlerOnSent
 		).apply {
 			this.stanzaHandler = responseStanzaHandler
+			this.requestName = this@RequestConsumerBuilder.requestName
 		}
 	}
 
@@ -181,13 +194,17 @@ class RequestConsumerBuilder<CSR, V, STT : Stanza<*>>(
 		return res
 	}
 
-	fun handleResponseStanza(handler: ResponseStanzaHandler<STT>): RequestConsumerBuilder<CSR, V, STT> {
+	fun handleResponseStanza(
+		requestName: String? = null, handler: ResponseStanzaHandler<STT>
+	): RequestConsumerBuilder<CSR, V, STT> {
 		this.responseStanzaHandler = handler
+		if (requestName != null) this.requestName = requestName
 		return this
 	}
 
-	fun response(handler: ResultHandler<V>): RequestConsumerBuilder<CSR, V, STT> {
+	fun response(requestName: String? = null, handler: ResultHandler<V>): RequestConsumerBuilder<CSR, V, STT> {
 		this.resultHandler = handler
+		if (requestName != null) this.requestName = requestName
 		return this
 	}
 
@@ -205,6 +222,11 @@ class RequestConsumerBuilder<CSR, V, STT : Stanza<*>>(
 		val req = build()
 		halcyon.writer.write(req)
 		return req
+	}
+
+	fun name(requestName: String): RequestConsumerBuilder<CSR, V, STT> {
+		this.requestName = requestName
+		return this
 	}
 
 }
