@@ -142,7 +142,7 @@ class MAMModule(override val context: Context) : XmppModule {
 	}
 
 	private fun prepareForm(with: String? = null, start: Long? = null, end: Long? = null): Element? {
-		val form = JabberDataForm(FormType.Submit)
+		val form = JabberDataForm.create(FormType.Submit)
 		form.addField("FORM_TYPE", FieldType.Hidden).fieldValue = "urn:xmpp:mam:2"
 
 		if (start != null) form.addField("start", FieldType.TextSingle).fieldValue = timestampToISO8601(start)

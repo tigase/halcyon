@@ -73,7 +73,7 @@ class JabberDataFormTest {
 
 	@Test
 	fun testType() {
-		val form = JabberDataForm(FormType.Submit)
+		val form = JabberDataForm.create(FormType.Submit)
 		assertEquals(FormType.Submit, form.type)
 		assertEquals("submit", form.element.attributes["type"])
 		form.type = FormType.Form
@@ -232,7 +232,7 @@ class JabberDataFormTest {
 
 	@Test
 	fun testFormCreate() {
-		val form = JabberDataForm(FormType.Form)
+		val form = JabberDataForm.create(FormType.Form)
 		form.addField("a", FieldType.Hidden).fieldValue = "abc"
 		form.addField(null, FieldType.Fixed).fieldValue = "TEST"
 

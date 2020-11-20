@@ -21,7 +21,9 @@ import tigase.halcyon.core.xml.*
 import tigase.halcyon.core.xmpp.ErrorCondition
 import tigase.halcyon.core.xmpp.XMPPException
 
-enum class FieldType(val xmppValue: String) { Bool("boolean"),
+enum class FieldType(val xmppValue: String) {
+
+	Bool("boolean"),
 	Fixed("fixed"),
 	Hidden("hidden"),
 	JidMulti("jid-multi"),
@@ -101,10 +103,12 @@ class Field(val element: Element) {
 
 }
 
-enum class FormType(val xmppValue: String) { /**
- * The form-processing entity is asking the form-submitting entity to complete a form.
- */
-Form("form"),
+enum class FormType(val xmppValue: String) {
+
+	/**
+	 * The form-processing entity is asking the form-submitting entity to complete a form.
+	 */
+	Form("form"),
 
 	/**
 	 * The form-submitting entity is submitting data to the form-processing entity.
@@ -126,15 +130,16 @@ Form("form"),
 
 }
 
-class JabberDataForm constructor(val element: Element) {
+class JabberDataForm(val element: Element) {
 
 	companion object {
 
 		const val XMLNS = "jabber:x:data"
-	}
 
-	constructor(type: FormType) : this(element("x") { xmlns = XMLNS }) {
-		this.type = type
+		fun create(type: FormType): JabberDataForm = JabberDataForm(element("x") { xmlns = XMLNS }).apply {
+			this.type = type
+		}
+
 	}
 
 	var type: FormType
