@@ -35,21 +35,63 @@ actual fun timestampToISO8601(timestamp: Long, utc: Boolean): String {
 
 actual fun parseISO8601(date: String): Long {
 	val r =
-		"^(\\d\\d\\d\\d)-(\\d\\d)-(\\d\\d)T(\\d\\d):(\\d\\d):(\\d\\d)(\\.(\\d+))?(([+-]\\d\\d:?\\d\\d)|Z)?$".toRegex()
+		"^(\\d{4})-(\\d\\d)-(\\d\\d)([T ](\\d\\d):(\\d\\d):(\\d\\d)(\\.\\d+)?(Z|([+-])(\\d\\d)(:(\\d\\d))?)?)?\$".toRegex()
 	val mr = r.find(date) ?: throw HalcyonException("Invalid ISO-8601 date.")
-	val yyyy: Int = mr.groupValues[1].toInt()
-	val MM: Int = mr.groupValues[2].toInt()
-	val dd: Int = mr.groupValues[3].toInt()
-	val hh: Int = mr.groupValues[4].toInt()
-	val mm: Int = mr.groupValues[5].toInt()
-	val ss: Int = mr.groupValues[6].toInt()
-	val ms: Int = mr.groupValues[8].let { if (it.isNotEmpty()) it.toInt() else 0 }
-	val tzValue: String = mr.groupValues[9]
 
-	return Calendar.getInstance(if (tzValue == "Z") TimeZone.getTimeZone("UTC") else TimeZone.getTimeZone("GMT$tzValue"))
-		.also {
-			it.clear()
-			it.set(yyyy, MM - 1, dd, hh, mm, ss)
-			it.set(Calendar.MILLISECOND, ms)
-		}.timeInMillis
+	val year = mr.groupValues[1].toInt()
+	val month = mr.groupValues[2].toInt() - 1
+	val day = mr.groupValues[3].toInt()
+
+	if (mr.groupValues[4].isEmpty()) {
+		val c = Calendar.getInstance(TimeZone.getTimeZone("UTC"))
+		c.set(Calendar.YEAR, year)
+		c.set(Calendar.MONTH, month)
+		c.set(Calendar.DAY_OF_MONTH, day)
+		c.set(Calendar.HOUR_OF_DAY, 0)
+		c.set(Calendar.MINUTE, 0)
+		c.set(Calendar.SECOND, 0)
+		c.set(Calendar.MILLISECOND, 0)
+
+
+		return c.time.time
+	}
+
+	var hour = mr.groupValues[5].toInt()
+	var minute = mr.groupValues[6].toInt()
+	val second = mr.groupValues[7].toInt()
+	val ms = mr.groupValues[8].let { if (it.isNotEmpty()) "${it}000".substring(1, 4).toInt() else 0 }
+
+	if (mr.groupValues[9].isEmpty()) {
+		val c = Calendar.getInstance(TimeZone.getTimeZone("UTC"))
+		c.set(Calendar.YEAR, year)
+		c.set(Calendar.MONTH, month)
+		c.set(Calendar.DAY_OF_MONTH, day)
+		c.set(Calendar.HOUR_OF_DAY, hour)
+		c.set(Calendar.MINUTE, minute)
+		c.set(Calendar.SECOND, second)
+		c.set(Calendar.MILLISECOND, ms)
+
+
+		return c.time.time
+	}
+
+	val oh = if (mr.groupValues[11].isNotEmpty()) mr.groupValues[11].toInt()
+		.let { if (mr.groupValues[10] == "-") -it else it } else 0
+	val om = if (mr.groupValues[13].isNotEmpty()) mr.groupValues[13].toInt()
+		.let { if (mr.groupValues[10] == "-") -it else it } else 0
+
+	hour -= oh
+	minute -= om
+
+	val c = Calendar.getInstance(TimeZone.getTimeZone("UTC"))
+	c.set(Calendar.YEAR, year)
+	c.set(Calendar.MONTH, month)
+	c.set(Calendar.DAY_OF_MONTH, day)
+	c.set(Calendar.HOUR_OF_DAY, hour)
+	c.set(Calendar.MINUTE, minute)
+	c.set(Calendar.SECOND, second)
+	c.set(Calendar.MILLISECOND, ms)
+
+
+	return c.time.time
 }
