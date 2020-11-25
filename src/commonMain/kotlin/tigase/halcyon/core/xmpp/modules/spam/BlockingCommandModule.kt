@@ -46,6 +46,11 @@ enum class Reason {
 	Abuse
 }
 
+/**
+ * Event fired when server push information about changes in list of blocked contacts
+ *
+ * Note, that server push those information only when entity retrieved previously list of blocked contacts!
+ */
 sealed class BlockingCommandEvent : Event(TYPE) {
 
 	companion object {
@@ -53,11 +58,27 @@ sealed class BlockingCommandEvent : Event(TYPE) {
 		const val TYPE = "tigase.halcyon.core.xmpp.modules.spam.BlockingCommandEvent"
 	}
 
+	/**
+	 * Event fired when new contact was blocked.
+	 */
 	data class Blocked(val jid: BareJID, val reason: Reason, val text: String?) : BlockingCommandEvent()
+
+	/**
+	 * Event fired, when contact was unblocked.
+	 */
 	data class Unblocked(val jid: BareJID) : BlockingCommandEvent()
+
+	/**
+	 * Event fired when all contacts was unblocked.
+	 */
 	class UnblockedAll : BlockingCommandEvent()
 }
 
+/**
+ * Blocking command module.
+ *
+ * Module implements [Blocking Command](https://xmpp.org/extensions/xep-0191.html) and [Spam Reporting](https://xmpp.org/extensions/xep-0377.html) extension.
+ */
 class BlockingCommandModule(override val context: Context) : AbstractXmppIQModule(
 	context, TYPE, arrayOf(XMLNS), Criterion.chain(Criterion.name(IQ.NAME), Criterion.xmlns(XMLNS))
 ) {
@@ -103,6 +124,10 @@ class BlockingCommandModule(override val context: Context) : AbstractXmppIQModul
 		}
 	}
 
+	/**
+	 *  Prepares retrieving blocked contacts request.
+	 *  @return request builder provides list of blocked [BareJID]s.
+	 */
 	fun retrieveList(): RequestBuilder<List<BareJID>, IQ> = context.request.iq {
 		type = IQType.Get
 		"blocklist"{
@@ -115,6 +140,12 @@ class BlockingCommandModule(override val context: Context) : AbstractXmppIQModul
 			?.map { it.attributes["jid"]!!.toBareJID() } ?: emptyList()
 	}
 
+	/**
+	 * Prepare request to block contact or report as SPAM.
+	 * @param jid [BareJID] to be blocked.
+	 * @param reason [Reason] of block. By default it is [NotSpecified][Reason.NotSpecified].
+	 * @param text human readable description of blocking reason. Used only if [reason] is equals to [Abuse][Reason.Abuse] or [Spam][Reason.Spam]
+	 */
 	fun block(jid: BareJID, reason: Reason = Reason.NotSpecified, text: String? = null): RequestBuilder<Unit, IQ> =
 		context.request.iq {
 			type = IQType.Set
@@ -137,6 +168,10 @@ class BlockingCommandModule(override val context: Context) : AbstractXmppIQModul
 			}
 		}.map { Unit }
 
+	/**
+	 * Prepares request to unblock specific contacts.
+	 * @param jids [BareJID]s to unblock. If not provided, then all blocked contacts will be unblocked!
+	 */
 	fun unblock(vararg jids: BareJID): RequestBuilder<Unit, IQ> = context.request.iq {
 		type = IQType.Set
 		"unblock"{
@@ -147,8 +182,11 @@ class BlockingCommandModule(override val context: Context) : AbstractXmppIQModul
 				}
 			}
 		}
-	}.map { Unit }
+	}.map { }
 
+	/**
+	 * Prepares request to unblock all blocked contacts.
+	 */
 	fun unblockAll(): RequestBuilder<Unit, IQ> = unblock()
 
 }
