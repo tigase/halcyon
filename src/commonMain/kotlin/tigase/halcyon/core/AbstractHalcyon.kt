@@ -44,6 +44,7 @@ import tigase.halcyon.core.xmpp.modules.auth.SASLModule
 import tigase.halcyon.core.xmpp.modules.avatar.UserAvatarModule
 import tigase.halcyon.core.xmpp.modules.caps.EntityCapabilitiesModule
 import tigase.halcyon.core.xmpp.modules.carbons.MessageCarbonsModule
+import tigase.halcyon.core.xmpp.modules.chatmarkers.ChatMarkersModule
 import tigase.halcyon.core.xmpp.modules.chatstates.ChatStateModule
 import tigase.halcyon.core.xmpp.modules.discovery.DiscoveryModule
 import tigase.halcyon.core.xmpp.modules.mam.MAMModule
@@ -141,6 +142,7 @@ abstract class AbstractHalcyon : Context, PacketWriter {
 		modules.register(VCardModule(this))
 		modules.register(DeliveryReceiptsModule(this))
 		modules.register(ChatStateModule(this))
+		modules.register(ChatMarkersModule(this))
 		modules.register(UniqueStableStanzaIdModule(this))
 		modules.register(BlockingCommandModule(this))
 	}
