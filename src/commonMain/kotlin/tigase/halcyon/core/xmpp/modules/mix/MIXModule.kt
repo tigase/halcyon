@@ -79,7 +79,7 @@ class MIXModule(override val context: Context) : XmppModule, RosterItemAnnotatio
 		const val NODE_MESSAGES = "urn:xmpp:mix:nodes:messages"
 	}
 
-	override val criteria: Criteria? = Criterion.element(this@MIXModule::isMIXMessage)
+	override val criteria: Criteria? = Criterion.element(this@MIXModule::checkCriteria)
 	override val type = TYPE
 	override val features = arrayOf(XMLNS)
 
@@ -93,8 +93,9 @@ class MIXModule(override val context: Context) : XmppModule, RosterItemAnnotatio
 		mamModule = context.modules.getModule(MAMModule.TYPE)
 	}
 
-	private fun isMIXMessage(message: Element): Boolean {
+	private fun checkCriteria(message: Element): Boolean {
 		if (message.name != Message.NAME) return false
+		if (message.getChildrenNS("mix", XMLNS) == null) return false
 		val fromJid = message.attributes["from"]?.toBareJID() ?: return false
 		val item = rosterModule.store.getItem(fromJid) ?: return false
 		return item.annotations.any { it is MIXRosterItemAnnotation }
