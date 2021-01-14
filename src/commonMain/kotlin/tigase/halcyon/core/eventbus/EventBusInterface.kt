@@ -17,14 +17,21 @@
  */
 package tigase.halcyon.core.eventbus
 
-import tigase.halcyon.core.AbstractHalcyon
-import tigase.halcyon.core.currentTimestamp
+interface EventBusInterface {
 
-abstract class AbstractEventBus(val context: AbstractHalcyon) : NoContextEventBus() {
+	companion object {
 
-	override fun updateBeforeFire(event: Event) {
-		event.eventTime = currentTimestamp()
-		event.context = context
+		const val ALL_EVENTS = "EventBus#ALL_EVENTS"
 	}
+
+	fun fire(event: Event)
+
+	fun <T : Event> register(eventType: String = ALL_EVENTS, handler: EventHandler<T>)
+
+	fun <T : Event> register(eventType: String = ALL_EVENTS, handler: (T) -> Unit)
+
+	fun unregister(eventType: String = ALL_EVENTS, handler: EventHandler<*>)
+
+	fun unregister(handler: EventHandler<*>)
 
 }

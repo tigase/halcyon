@@ -20,6 +20,7 @@ package tigase.halcyon.core.eventbus
 import org.junit.Assert
 import org.junit.Test
 import tigase.halcyon.core.Halcyon
+import tigase.halcyon.core.eventbus.EventBusInterface.Companion.ALL_EVENTS
 import java.util.concurrent.ConcurrentLinkedQueue
 
 class EventBusMultiThreadTest {
@@ -38,7 +39,7 @@ class EventBusMultiThreadTest {
 
 		eventBus.register<TestEvent>(TestEvent.TYPE) { }
 
-		eventBus.register<TestEvent>(AbstractEventBus.ALL_EVENTS) { event ->
+		eventBus.register<TestEvent>(ALL_EVENTS) { event ->
 			try {
 				result0.add(event.value)
 			} catch (e: Exception) {
