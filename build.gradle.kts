@@ -1,5 +1,5 @@
 /*
- * Tigase Halcyon XMPP Library
+ * halcyon-core
  * Copyright (C) 2018 Tigase, Inc. (office@tigase.com)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -23,14 +23,30 @@ plugins {
 }
 
 group = "tigase.halcyon"
-version = "0.0.1"
+version = findProperty("halcyonVersion").toString()
 
 repositories {
 	mavenCentral()
 	mavenLocal()
-	maven(url = "http://maven-repo.tigase.org/repository/release")
-	maven(url = "http://maven-repo.tigase.org/repository/snapshot")
+	maven(url = findProperty("tigaseMavenRepoRelease").toString())
+	maven(url = findProperty("tigaseMavenRepoSnapshot").toString())
 	jcenter()
+}
+
+publishing {
+	repositories {
+		maven {
+			url = if (project.version.toString().endsWith("-SNAPSHOT", ignoreCase = true)) {
+				uri(findProperty("tigaseMavenRepoSnapshot").toString())
+			} else {
+				uri(findProperty("tigaseMavenRepoRelease").toString())
+			}
+			credentials {
+				username = findProperty("mavenUsername").toString()
+				password = findProperty("mavenPassword").toString()
+			}
+		}
+	}
 }
 
 kotlin {
