@@ -1,5 +1,5 @@
 /*
- * Tigase Halcyon XMPP Library
+ * halcyon-core
  * Copyright (C) 2018 Tigase, Inc. (office@tigase.com)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -17,7 +17,7 @@
  */
 package tigase.halcyon.core.connector.socket
 
-import tigase.halcyon.core.Halcyon
+import tigase.halcyon.core.AbstractHalcyon
 import tigase.halcyon.core.Scope
 import tigase.halcyon.core.connector.AbstractSocketSessionController
 import tigase.halcyon.core.connector.ConnectionErrorEvent
@@ -30,7 +30,7 @@ import tigase.halcyon.core.xmpp.modules.StreamErrorEvent
 import tigase.halcyon.core.xmpp.modules.StreamFeaturesEvent
 import tigase.halcyon.core.xmpp.modules.auth.SASLEvent
 
-class SocketSessionController(halcyon: Halcyon, private val connector: SocketConnector) :
+class SocketSessionController(halcyon: AbstractHalcyon, private val connector: SocketConnector) :
 	AbstractSocketSessionController(halcyon, "tigase.halcyon.core.connector.socket.SocketSessionController") {
 
 	var seeOtherHostUrl: String? = null

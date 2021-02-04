@@ -1,5 +1,5 @@
 /*
- * Tigase Halcyon XMPP Library
+ * halcyon-core
  * Copyright (C) 2018 Tigase, Inc. (office@tigase.com)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -19,10 +19,12 @@ package tigase.halcyon.core
 
 import tigase.halcyon.core.eventbus.Event
 
-enum class Scope { /**
- * Properties in this scope are cleared when server sends new stream.
- */
-Stream,
+enum class Scope {
+
+	/**
+	 * Properties in this scope are cleared when server sends new stream.
+	 */
+	Stream,
 
 	/**
 	 * Properties in this scope are cleared when connector is disconnected.

@@ -1,5 +1,5 @@
 /*
- * Tigase Halcyon XMPP Library
+ * halcyon-core
  * Copyright (C) 2018 Tigase, Inc. (office@tigase.com)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -17,11 +17,11 @@
  */
 package tigase.halcyon.core.connector
 
-import tigase.halcyon.core.Halcyon
+import tigase.halcyon.core.AbstractHalcyon
 import tigase.halcyon.core.eventbus.Event
 import tigase.halcyon.core.xmpp.SessionController
 
-abstract class AbstractConnector(val halcyon: Halcyon) {
+abstract class AbstractConnector(val halcyon: AbstractHalcyon) {
 
 	protected var eventsEnabled = true
 

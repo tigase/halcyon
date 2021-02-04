@@ -1,5 +1,5 @@
 /*
- * Tigase Halcyon XMPP Library
+ * halcyon-core
  * Copyright (C) 2018 Tigase, Inc. (office@tigase.com)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -16,6 +16,8 @@
  * If not, see http://www.gnu.org/licenses/.
  */
 package tigase.halcyon.core.xmpp
+
+import tigase.halcyon.core.xmpp.stanzas.Stanza
 
 enum class ErrorCondition(val elementName: String, val type: String?, val errorCode: Int?) { /**
  * the sender has sent XML that is malformed or that cannot be processed
@@ -194,4 +196,10 @@ BadRequest("bad-request", "modify", 400),
 		): ErrorCondition = ErrorCondition.values().firstOrNull { it.elementName == name } ?: Unknown
 	}
 
+}
+
+fun Stanza<*>.getErrorConditionOrNull(): ErrorCondition? {
+	val er = this.getChildren("error").firstOrNull() ?: return null
+	val c = er.getChildrenNS(XMPPException.XMLNS).firstOrNull() ?: return null
+	return ErrorCondition.getByElementName(c.name)
 }

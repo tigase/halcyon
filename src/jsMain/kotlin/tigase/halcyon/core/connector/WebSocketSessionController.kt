@@ -1,5 +1,5 @@
 /*
- * Tigase Halcyon XMPP Library
+ * halcyon-core
  * Copyright (C) 2018 Tigase, Inc. (office@tigase.com)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -17,12 +17,12 @@
  */
 package tigase.halcyon.core.connector
 
-import tigase.halcyon.core.Halcyon
+import tigase.halcyon.core.AbstractHalcyon
 import tigase.halcyon.core.Scope
 import tigase.halcyon.core.xmpp.SessionController
 import tigase.halcyon.core.xmpp.modules.auth.SASLEvent
 
-class WebSocketSessionController(halcyon: Halcyon, private val connector: WebSocketConnector) :
+class WebSocketSessionController(halcyon: AbstractHalcyon, private val connector: WebSocketConnector) :
 	AbstractSocketSessionController(halcyon, "tigase.halcyon.core.connector.WebSocketSessionController") {
 
 	override fun processAuthSuccessfull(event: SASLEvent.SASLSuccess) {
