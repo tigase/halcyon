@@ -1,5 +1,5 @@
 /*
- * Tigase Halcyon XMPP Library
+ * halcyon-core
  * Copyright (C) 2018 Tigase, Inc. (office@tigase.com)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -46,6 +46,7 @@ import tigase.halcyon.core.xmpp.modules.caps.EntityCapabilitiesModule
 import tigase.halcyon.core.xmpp.modules.carbons.MessageCarbonsModule
 import tigase.halcyon.core.xmpp.modules.chatmarkers.ChatMarkersModule
 import tigase.halcyon.core.xmpp.modules.chatstates.ChatStateModule
+import tigase.halcyon.core.xmpp.modules.commands.CommandsModule
 import tigase.halcyon.core.xmpp.modules.discovery.DiscoveryModule
 import tigase.halcyon.core.xmpp.modules.mam.MAMModule
 import tigase.halcyon.core.xmpp.modules.mix.MIXModule
@@ -144,6 +145,7 @@ abstract class AbstractHalcyon : Context, PacketWriter {
 		modules.register(ChatStateModule(this))
 		modules.register(ChatMarkersModule(this))
 		modules.register(UniqueStableStanzaIdModule(this))
+		modules.register(CommandsModule(this))
 		modules.register(BlockingCommandModule(this))
 	}
 
