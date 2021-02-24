@@ -16,3 +16,5 @@ include::text/Quickstart.asciidoc[]
 include::text/WorkingWithRequests.asciidoc[]
 include::text/WorkingWithEvents.asciidoc[]
 include::text/Modules.asciidoc[]
+
+include::text/JabberDataForm.asciidoc[]

@@ -1,5 +1,5 @@
 /*
- * Tigase Halcyon XMPP Library
+ * halcyon-core
  * Copyright (C) 2018 Tigase, Inc. (office@tigase.com)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -17,8 +17,28 @@
  */
 package tigase.halcyon.core.xmpp.forms
 
+import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xml.element
 import kotlin.test.*
+
+fun assertContains(expected: Element, actual: Element, message: String? = null) {
+	fun check(expected: Element, actual: Element): Boolean {
+		if (expected.name != actual.name) return false
+		if (expected.value != null && expected.value != actual.value) return false
+		if (!expected.attributes.filter { it.key != "id" }
+				.all { e -> actual.attributes[e.key] == e.value }) return false
+		if (!expected.children.all { e ->
+				actual.children.any { a -> check(e, a) }
+			}) return false
+		return true
+	}
+
+	fun messagePrefix(message: String?) = if (message == null) "" else "$message. "
+
+	if (!check(expected, actual)) {
+		fail(messagePrefix(message) + "Expected all of ${expected.getAsString()}, actual ${actual.getAsString()}.")
+	}
+}
 
 class JabberDataFormTest {
 
@@ -233,14 +253,16 @@ class JabberDataFormTest {
 	@Test
 	fun testFormCreate() {
 		val form = JabberDataForm.create(FormType.Form)
+		form.title = "TeSt"
 		form.addField("a", FieldType.Hidden).fieldValue = "abc"
 		form.addField(null, FieldType.Fixed).fieldValue = "TEST"
+		form.addField("password", FieldType.TextPrivate).apply {
+			fieldValue = "123"
+			fieldDesc = "Password here"
+			fieldRequired = true
+		}
 
-		val pwd = form.addField("password", FieldType.TextPrivate)
-		pwd.fieldValue = "123"
-		pwd.fieldDesc = "Password here"
-		pwd.fieldRequired = true
-
+		assertEquals("TeSt", form.element.getFirstChild("title")?.value)
 		assertEquals("123", form.getFieldByVar("password")?.fieldValue)
 		assertEquals("Password here", form.getFieldByVar("password")?.fieldDesc)
 	}
@@ -261,7 +283,169 @@ class JabberDataFormTest {
 		assertEquals(
 			"1234567890", submit.children.first { it.attributes["var"] == "password" }.getFirstChild("value")?.value
 		)
-
 	}
 
+	@Test
+	fun testMultipleItemsRead() {
+		val form = JabberDataForm(element("x") {
+			xmlns = "jabber:x:data"
+			attribute("type", "result")
+			"title"{ +"Bot Configuration" }
+			"reported"{
+				"field"{ attributes["var"] = "name" }
+				"field"{ attributes["var"] = "url" }
+			}
+			"item"{
+				"field"{
+					attributes["var"] = "name"
+					"value"{ +"Comune di Verona - Benvenuti nel sito ufficiale" }
+				}
+				"field"{
+					attributes["var"] = "url"
+					"value"{ +"http://www.comune.verona.it/" }
+				}
+			}
+			"item"{
+				"field"{
+					attributes["var"] = "name"
+					"value"{ +"Universita degli Studi di Verona - Home Page" }
+				}
+				"field"{
+					attributes["var"] = "url"
+					"value"{ +"http://www.univr.it/" }
+				}
+			}
+			"item"{
+				"field"{
+					attributes["var"] = "name"
+					"value"{ +"Aeroporti del Garda" }
+				}
+				"field"{
+					attributes["var"] = "url"
+					"value"{ +"http://www.aeroportoverona.it/" }
+				}
+			}
+			"item"{
+				"field"{
+					attributes["var"] = "name"
+					"value"{ +"Veronafiere - fiera di Verona" }
+				}
+				"field"{
+					attributes["var"] = "url"
+					"value"{ +"http://www.veronafiere.it/" }
+				}
+			}
+		})
+		assertTrue(form.multipleItems)
+		assertEquals(4, form.itemsCount)
+		assertEquals(2, form.getReportedColumns().size)
+		assertEquals("name", form.getReportedColumns()[0].fieldName)
+		assertEquals("url", form.getReportedColumns()[1].fieldName)
+
+		val items = form.getItems()
+		assertEquals(4, items.size)
+
+		assertEquals("Comune di Verona - Benvenuti nel sito ufficiale", items[0].getValue("name").fieldValue)
+		assertEquals("http://www.comune.verona.it/", items[0].getValue("url").fieldValue)
+		assertEquals("Veronafiere - fiera di Verona", items[3].getValue("name").fieldValue)
+		assertEquals("http://www.veronafiere.it/", items[3].getValue("url").fieldValue)
+
+		assertFailsWith<IllegalStateException> { items[0].getValue("not exists") }
+	}
+
+	@Test
+	fun testMultipleItemsCreate() {
+		val form = JabberDataForm.create(FormType.Result)
+		form.title = "Bot Configuration"
+		form.setReportedColumns(listOf(Field.create("name"), Field.create("url")))
+
+		assertTrue(form.multipleItems)
+		assertEquals(2, form.getReportedColumns().size)
+
+		form.addItem(
+			listOf(Field.create("name").apply { fieldValue = "Comune di Verona - Benvenuti nel sito ufficiale" },
+				   Field.create("url").apply { fieldValue = "http://www.comune.verona.it/" })
+		)
+		form.addItem(
+			listOf(Field.create("name").apply { fieldValue = "Universita degli Studi di Verona - Home Page" },
+				   Field.create("url").apply { fieldValue = "http://www.univr.it/" })
+		)
+		form.addItem(
+			listOf(Field.create("name").apply { fieldValue = "Aeroporti del Garda" },
+				   Field.create("url").apply { fieldValue = "http://www.aeroportoverona.it/" })
+		)
+		form.addItem(
+			listOf(Field.create("name").apply { fieldValue = "Veronafiere - fiera di Verona" },
+				   Field.create("url").apply { fieldValue = "http://www.veronafiere.it/" })
+		)
+
+		assertFailsWith<IllegalArgumentException> {
+			form.addItem(listOf(Field.create("name").apply { fieldValue = "1" },
+								Field.create("oops").apply { fieldValue = "2" })
+			)
+		}
+		assertFailsWith<IllegalArgumentException> {
+			form.addItem(
+				listOf(Field.create("name").apply { fieldValue = "1" },
+					   Field.create("url").apply { fieldValue = "2" },
+					   Field.create("oops").apply { fieldValue = "3" })
+			)
+		}
+		assertFailsWith<IllegalArgumentException> {
+			form.addItem(listOf(Field.create("name").apply { fieldValue = "1" }))
+		}
+
+		assertEquals(4, form.getItems().size)
+
+		assertContains(element("x") {
+			xmlns = "jabber:x:data"
+			attribute("type", "result")
+			"title"{ +"Bot Configuration" }
+			"reported"{
+				"field"{ attributes["var"] = "name" }
+				"field"{ attributes["var"] = "url" }
+			}
+			"item"{
+				"field"{
+					attributes["var"] = "name"
+					"value"{ +"Comune di Verona - Benvenuti nel sito ufficiale" }
+				}
+				"field"{
+					attributes["var"] = "url"
+					"value"{ +"http://www.comune.verona.it/" }
+				}
+			}
+			"item"{
+				"field"{
+					attributes["var"] = "name"
+					"value"{ +"Universita degli Studi di Verona - Home Page" }
+				}
+				"field"{
+					attributes["var"] = "url"
+					"value"{ +"http://www.univr.it/" }
+				}
+			}
+			"item"{
+				"field"{
+					attributes["var"] = "name"
+					"value"{ +"Aeroporti del Garda" }
+				}
+				"field"{
+					attributes["var"] = "url"
+					"value"{ +"http://www.aeroportoverona.it/" }
+				}
+			}
+			"item"{
+				"field"{
+					attributes["var"] = "name"
+					"value"{ +"Veronafiere - fiera di Verona" }
+				}
+				"field"{
+					attributes["var"] = "url"
+					"value"{ +"http://www.veronafiere.it/" }
+				}
+			}
+		}, form.element)
+	}
 }
+

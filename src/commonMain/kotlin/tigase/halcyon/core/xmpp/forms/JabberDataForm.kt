@@ -1,5 +1,5 @@
 /*
- * Tigase Halcyon XMPP Library
+ * halcyon-core
  * Copyright (C) 2018 Tigase, Inc. (office@tigase.com)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -56,6 +56,10 @@ class Field(val element: Element) {
 		set(value) = element.setChildContent("desc", value)
 		get() = element.getChildContent("desc")
 
+	var fieldName: String?
+		get() = element.attributes["var"]
+		set(value) = element.setAtt("var", value)
+
 	var fieldValues: List<String>
 		set(value) = setValuesInt(value)
 		get() = element.children.filter { it.name == "value" }.mapNotNull { it.value }.toList()
@@ -101,6 +105,18 @@ class Field(val element: Element) {
 		}
 	}
 
+	companion object {
+
+		fun create(varName: String?, type: FieldType? = null): Field {
+			val field = element("field") {
+				varName?.let { attribute("var", it) }
+				type?.let { attribute("type", it.xmppValue) }
+			}
+			return Field(field)
+		}
+
+	}
+
 }
 
 enum class FormType(val xmppValue: String) {
@@ -142,6 +158,12 @@ class JabberDataForm(val element: Element) {
 
 	}
 
+	val multipleItems: Boolean
+		get() = element.getFirstChild("reported") != null
+
+	val itemsCount: Int
+		get() = element.getChildren("item").size
+
 	var type: FormType
 		set(value) = element.attributes.set("type", value.xmppValue)
 		get() = element.attributes["type"]?.let { typeName ->
@@ -149,6 +171,33 @@ class JabberDataForm(val element: Element) {
 				ErrorCondition.BadRequest, "Unknown form type '$typeName'."
 			)
 		} ?: throw XMPPException(ErrorCondition.BadRequest, "Empty form type.")
+
+	var title: String?
+		set(value) = internalSetChildrenValue("title", value)
+		get() = internalGetChildrenValue("title")
+
+	var description: String?
+		set(value) = internalSetChildrenValue("description", value)
+		get() = internalGetChildrenValue("description")
+
+	private fun internalGetChildrenValue(elementName: String): String? {
+		return element.getFirstChild(elementName)?.value
+	}
+
+	private fun internalSetChildrenValue(elementName: String, value: String?) {
+		var e = element.getFirstChild(elementName)
+		if (e != null && value == null) element.remove(e)
+		else if (e == null) {
+			e = element(elementName) { +"$value" }
+			element.add(e)
+		} else {
+			e.value = value
+		}
+	}
+
+	fun getAllFields(): List<Field> {
+		return element.getChildren("field").map { Field(it) }
+	}
 
 	fun getFieldByVar(varName: String): Field? {
 		val fieldElement = element.getChildren("field").firstOrNull { field ->
@@ -158,17 +207,19 @@ class JabberDataForm(val element: Element) {
 	}
 
 	fun addField(varName: String?, type: FieldType?): Field {
-		val field = element("field") {
-			varName?.let { attribute("var", it) }
-			type?.let { attribute("type", it.xmppValue) }
-		}
-		if (varName != null) {
-			element.getChildren("field").firstOrNull { it.attributes["var"] == varName }?.let {
+		val field = Field.create(varName, type)
+		addField(field)
+		return field
+	}
+
+	fun addField(field: Field): Field {
+		if (field.fieldName != null) {
+			element.getChildren("field").firstOrNull { it.attributes["var"] == field.fieldName }?.let {
 				element.remove(it)
 			}
 		}
-		element.add(field)
-		return Field(field)
+		element.add(field.element)
+		return field
 	}
 
 	/**
@@ -205,6 +256,50 @@ class JabberDataForm(val element: Element) {
 				}
 			}
 		}
+	}
+
+	fun getReportedColumns(): List<Field> {
+		return checkNotNull(element.getFirstChild("reported")) { "This is not Multiple Items form." }.getChildren("field")
+			.map { Field(it) }
+	}
+
+	fun setReportedColumns(columns: List<Field>) {
+		element.getFirstChild("reported")?.let { r -> element.remove(r) }
+
+		val reported = element("reported") {
+			columns.forEach {
+				addChild(it.element)
+			}
+		}
+		element.add(reported)
+	}
+
+	fun addItem(fields: List<Field>) {
+		val allowedFields = getReportedColumns().map { r -> r.fieldName!! }
+		val fieldNames = fields.map { r -> r.fieldName!! }
+
+		if (!allowedFields.containsAll(fieldNames) || !fieldNames.containsAll(allowedFields)) {
+			throw IllegalArgumentException("Fields vars doesn't match to declared columns.")
+		}
+
+		element.add(element("item") {
+			fields.forEach { addChild(it.element) }
+		})
+	}
+
+	fun getItems(): List<Item> {
+		val columns = getReportedColumns()
+		return element.getChildren("item").map { Item(columns, it) }
+	}
+
+}
+
+class Item(private val columns: List<Field>, private val element: Element) {
+
+	fun getValue(name: String): Field {
+		val e = element.children.find { element -> element.attributes["var"] == name }
+			?: throw IllegalStateException("Column $name does not exists.")
+		return Field(e)
 	}
 
 }
