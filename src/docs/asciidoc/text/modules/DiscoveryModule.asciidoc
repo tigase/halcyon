@@ -29,14 +29,14 @@ Client asks for those features automatically.
 
 === ``info(JID, String)``
 
-Method prepares disco#info request.
+Method prepares `disco#info` request.
 As parameters it takes JID of entity and node name.
 Both are optional.
 In response returns object ``Info`` contains JID of entity, node name, list of identities and list of features.
 
 === ``items(JID, String)``
 
-Method prepares disco@items request.
+Method prepares `disco#items` request.
 As parameters it takes JID of entity and node name.
 Both are optional.
 In response returns object ``Items`` contains JID of entity, node name and list of items.

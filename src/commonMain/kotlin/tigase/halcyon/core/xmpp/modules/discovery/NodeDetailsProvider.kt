@@ -1,5 +1,5 @@
 /*
- * Tigase Halcyon XMPP Library
+ * halcyon-core
  * Copyright (C) 2018 Tigase, Inc. (office@tigase.com)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -17,10 +17,12 @@
  */
 package tigase.halcyon.core.xmpp.modules.discovery
 
+import tigase.halcyon.core.xmpp.BareJID
+
 interface NodeDetailsProvider {
 
-	fun getIdentities(node: String?): List<DiscoveryModule.Identity>
-	fun getFeatures(node: String?): List<String>
-	fun getItems(node: String?): List<DiscoveryModule.Item>
+	fun getIdentities(sender: BareJID?, node: String?): List<DiscoveryModule.Identity>
+	fun getFeatures(sender: BareJID?, node: String?): List<String>
+	fun getItems(sender: BareJID?, node: String?): List<DiscoveryModule.Item>
 
 }

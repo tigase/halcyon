@@ -1,5 +1,5 @@
 /*
- * Tigase Halcyon XMPP Library
+ * halcyon-core
  * Copyright (C) 2018 Tigase, Inc. (office@tigase.com)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -27,16 +27,13 @@ import tigase.halcyon.core.requests.RequestBuilder
 
 import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xml.response
-import tigase.halcyon.core.xmpp.ErrorCondition
-import tigase.halcyon.core.xmpp.JID
-import tigase.halcyon.core.xmpp.XMPPException
+import tigase.halcyon.core.xmpp.*
 import tigase.halcyon.core.xmpp.modules.BindModule
 import tigase.halcyon.core.xmpp.modules.caps.EntityCapabilitiesModule
 import tigase.halcyon.core.xmpp.stanzas.IQ
 import tigase.halcyon.core.xmpp.stanzas.IQType
 import tigase.halcyon.core.xmpp.stanzas.iq
 import tigase.halcyon.core.xmpp.stanzas.wrap
-import tigase.halcyon.core.xmpp.toJID
 
 class DiscoveryModule(override val context: Context) : XmppModule {
 
@@ -78,13 +75,13 @@ class DiscoveryModule(override val context: Context) : XmppModule {
 
 	inner class DefaultNodeDetailsProvider : NodeDetailsProvider {
 
-		override fun getIdentities(node: String?): List<Identity> =
+		override fun getIdentities(sender: BareJID?, node: String?): List<Identity> =
 			if (node == null) listOf(getClientIdentity()) else emptyList()
 
-		override fun getFeatures(node: String?): List<String> =
+		override fun getFeatures(sender: BareJID?, node: String?): List<String> =
 			if (node == null) context.modules.getAvailableFeatures().toList() else emptyList()
 
-		override fun getItems(node: String?): List<Item> = emptyList()
+		override fun getItems(sender: BareJID?, node: String?): List<Item> = emptyList()
 
 	}
 
@@ -113,8 +110,8 @@ class DiscoveryModule(override val context: Context) : XmppModule {
 		val features = mutableListOf<String>()
 
 		detailsProviders.forEach { provider ->
-			features.addAll(provider.getFeatures(node))
-			identities.addAll(provider.getIdentities(node))
+			features.addAll(provider.getFeatures(iq.from?.bareJID, node))
+			identities.addAll(provider.getIdentities(iq.from?.bareJID, node))
 		}
 
 		if (identities.isEmpty() || features.isEmpty()) throw XMPPException(ErrorCondition.ItemNotFound)
@@ -145,9 +142,16 @@ class DiscoveryModule(override val context: Context) : XmppModule {
 	}
 
 	private fun processGetItems(iq: IQ) {
-		val items = mutableListOf<Item>()
-
 		val node = iq.getChildrenNS("query", XMLNS_ITEMS)?.attributes?.get("node")
+		val items = detailsProviders.map { it.getItems(iq.from?.bareJID, node) }.flatten()
+
+//		if (node == CommandsModule.NODE) {
+//			val module = context.modules.getModuleOrNull<CommandsModule>(CommandsModule.TYPE) ?: throw XMPPException(
+//				ErrorCondition.ItemNotFound
+//			)
+//			items.addAll(module.getDiscoItems(iq.from!!.bareJID))
+//		}
+
 		context.writer.writeDirectly(response(iq) {
 			"query"{
 				xmlns = XMLNS_ITEMS

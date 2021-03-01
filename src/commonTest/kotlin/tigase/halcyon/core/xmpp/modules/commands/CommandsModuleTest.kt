@@ -24,12 +24,17 @@ import tigase.halcyon.core.connector.State
 import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xml.element
 import tigase.halcyon.core.xml.parser.parseXML
+import tigase.halcyon.core.xmpp.BareJID
 import tigase.halcyon.core.xmpp.SessionController
+import tigase.halcyon.core.xmpp.forms.Field
 import tigase.halcyon.core.xmpp.forms.FieldType
+import tigase.halcyon.core.xmpp.forms.FormType
 import tigase.halcyon.core.xmpp.forms.JabberDataForm
+import tigase.halcyon.core.xmpp.modules.BindModule
 import tigase.halcyon.core.xmpp.modules.discovery.DiscoveryModule
 import tigase.halcyon.core.xmpp.stanzas.IQType
 import tigase.halcyon.core.xmpp.stanzas.iq
+import tigase.halcyon.core.xmpp.toBareJID
 import tigase.halcyon.core.xmpp.toJID
 import kotlin.test.*
 
@@ -98,6 +103,7 @@ class CommandsModuleTest {
 			override fun createConnector(): AbstractConnector = MockConnector(this, tmp)
 		}
 		halcyon.connect()
+		halcyon.getModule<BindModule>(BindModule.TYPE).boundJID = "requester@domain/123".toJID()
 	}
 
 	private fun processReceived(stanza: Element) {
@@ -224,9 +230,9 @@ class CommandsModuleTest {
 	fun simpleExecutionTest() {
 		val module = halcyon.getModule<CommandsModule>(CommandsModule.TYPE)
 
-		var response: AdHocResponse? = null
+		var result: AdHocResult? = null
 		val reqId = module.executeCommand("responder@domain".toJID(), "list").response {
-			it.onSuccess { response = it }
+			it.onSuccess { result = it }
 		}.send().id
 
 		assertContains(iq {
@@ -266,7 +272,7 @@ class CommandsModuleTest {
 			}
 		})
 
-		assertNotNull(response).let { resp ->
+		assertNotNull(result).let { resp ->
 			assertEquals(Status.Completed, resp.status)
 			assertEquals("list", resp.node)
 			assertNull(resp.defaultAction)
@@ -286,9 +292,9 @@ class CommandsModuleTest {
 	fun multipleStagesExecutionTest() {
 		val module = halcyon.getModule<CommandsModule>(CommandsModule.TYPE)
 
-		var response: AdHocResponse? = null
+		var result: AdHocResult? = null
 		var reqId = module.executeCommand("responder@domain".toJID(), "config").response {
-			it.onSuccess { response = it }
+			it.onSuccess { result = it }
 		}.send().id
 
 		processReceived(iq {
@@ -324,7 +330,7 @@ class CommandsModuleTest {
 		})
 
 		var frm: JabberDataForm? = null
-		assertNotNull(response).let { resp ->
+		assertNotNull(result).let { resp ->
 			assertEquals(Status.Executing, resp.status)
 			assertEquals("config", resp.node)
 			assertEquals(Action.Next, resp.defaultAction)
@@ -342,13 +348,13 @@ class CommandsModuleTest {
 		}
 
 
-		response = null
+		result = null
 
 		frm!!.getFieldByVar("service")!!.fieldValue = "httpd"
 		reqId = module.executeCommand(
 			"responder@domain".toJID(), "config", frm!!.createSubmitForm(), null, "config:20020923T213616Z-700"
 		).response {
-			it.onSuccess { response = it }
+			it.onSuccess { result = it }
 		}.send().id
 
 
@@ -402,7 +408,7 @@ class CommandsModuleTest {
 			}
 		})
 
-		assertNotNull(response).let { resp ->
+		assertNotNull(result).let { resp ->
 			assertEquals(Status.Executing, resp.status)
 			assertEquals("config", resp.node)
 			assertEquals(Action.Complete, resp.defaultAction)
@@ -413,7 +419,7 @@ class CommandsModuleTest {
 			assertEquals(Action.Complete, resp.actions[1])
 		}
 
-		reqId = module.executeCommand(response!!.jid, response!!.node, element("x") {
+		reqId = module.executeCommand(result!!.jid, result!!.node, element("x") {
 			xmlns = "jabber:x:data"
 			attributes["type"] = "submit"
 			"field"{
@@ -421,7 +427,7 @@ class CommandsModuleTest {
 				"value"{ +"on" }
 			}
 		}, null, "config:20020923T213616Z-700").response {
-			it.onSuccess { response = it }
+			it.onSuccess { result = it }
 		}.send().id
 
 		processReceived(iq {
@@ -441,7 +447,7 @@ class CommandsModuleTest {
 			}
 		})
 
-		assertNotNull(response).let { resp ->
+		assertNotNull(result).let { resp ->
 			assertEquals(Status.Completed, resp.status)
 			assertEquals(1, resp.notes.size)
 			assertTrue(resp.notes[0] is Note.Info)
@@ -453,9 +459,9 @@ class CommandsModuleTest {
 	fun cancelingTest() {
 		val module = halcyon.getModule<CommandsModule>(CommandsModule.TYPE)
 
-		var response: AdHocResponse? = null
+		var result: AdHocResult? = null
 		var reqId = module.executeCommand("responder@domain".toJID(), "config").response {
-			it.onSuccess { response = it }
+			it.onSuccess { result = it }
 		}.send().id
 
 		processReceived(iq {
@@ -489,11 +495,10 @@ class CommandsModuleTest {
 			}
 		})
 
-		reqId =
-			module.executeCommand(response!!.jid, response!!.node, null, Action.Cancel, "config:20020923T213616Z-700")
-				.response {
-					it.onSuccess { response = it }
-				}.send().id
+		reqId = module.executeCommand(result!!.jid, result!!.node, null, Action.Cancel, "config:20020923T213616Z-700")
+			.response {
+				it.onSuccess { result = it }
+			}.send().id
 
 		assertContains(iq {
 			type = IQType.Set
@@ -520,9 +525,296 @@ class CommandsModuleTest {
 			}
 		})
 
-		assertNotNull(response).let { resp ->
+		assertNotNull(result).let { resp ->
 			assertEquals(Status.Canceled, resp.status)
 		}
+
+	}
+
+	@Test
+	fun testCustomAdHocDisco() {
+		val module = halcyon.getModule<CommandsModule>(CommandsModule.TYPE)
+		module.registerAdHocCommand(object : AdHocCommand {
+			override fun isAllowed(jid: BareJID): Boolean = jid == "responder@domain".toBareJID()
+			override val name = "Testowy"
+			override val node = "test"
+			override fun process(request: AdHocRequest, response: AdHocResponse) = TODO("Not yet implemented")
+		})
+
+		processReceived(iq {
+			to = "requester@domain".toJID()
+			from = "responder@domain".toJID()
+			type = IQType.Get
+			"query"{
+				xmlns = "http://jabber.org/protocol/disco#items"
+				attributes["node"] = "http://jabber.org/protocol/commands"
+			}
+		})
+		assertContains(iq {
+			type = IQType.Result
+			to = "responder@domain".toJID()
+			"query"{
+				xmlns = "http://jabber.org/protocol/disco#items"
+				attributes["node"] = "http://jabber.org/protocol/commands"
+				"item"{
+					attributes["node"] = "test"
+					attributes["name"] = "Testowy"
+				}
+			}
+		}, sentElements.removeLast(), "Invalid output stanza,")
+
+		processReceived(iq {
+			to = "requester@domain".toJID()
+			from = "mallet@domain".toJID()
+			type = IQType.Get
+			"query"{
+				xmlns = "http://jabber.org/protocol/disco#items"
+				attributes["node"] = "http://jabber.org/protocol/commands"
+			}
+		})
+		assertNotNull(sentElements.removeLast()).let {
+			assertEquals(0, it.getFirstChild("query")!!.children.size)
+		}
+
+		processReceived(iq {
+			to = "requester@domain".toJID()
+			from = "responder@domain".toJID()
+			type = IQType.Get
+			"query"{
+				xmlns = "http://jabber.org/protocol/disco#info"
+				attributes["node"] = "test"
+			}
+		})
+		assertContains(iq {
+			type = IQType.Result
+			to = "responder@domain".toJID()
+			"query"{
+				xmlns = "http://jabber.org/protocol/disco#info"
+				attributes["node"] = "test"
+				"identity"{
+					attributes["name"] = "Testowy"
+					attributes["category"] = "automation"
+					attributes["type"] = "command-node"
+				}
+				"feature"{ attributes["var"] = "http://jabber.org/protocol/commands" }
+				"feature"{ attributes["var"] = "jabber:x:data" }
+			}
+		}, sentElements.removeLast(), "Invalid output stanza,")
+
+		processReceived(iq {
+			to = "requester@domain".toJID()
+			from = "mallet@domain".toJID()
+			type = IQType.Get
+			"query"{
+				xmlns = "http://jabber.org/protocol/disco#info"
+				attributes["node"] = "test"
+			}
+		})
+		assertContains(iq {
+			type = IQType.Error
+			to = "mallet@domain".toJID()
+			"error"{
+				attributes["type"] = "auth"
+				"forbidden"{
+					xmlns = "urn:ietf:params:xml:ns:xmpp-stanzas"
+				}
+			}
+		}, sentElements.removeLast(), "Invalid output stanza,")
+
+	}
+
+	@Test
+	fun testCustomAdHocMultipleStagesExecution() {
+		val module = halcyon.getModule<CommandsModule>(CommandsModule.TYPE)
+		module.registerAdHocCommand(object : AdHocCommand {
+			override fun isAllowed(jid: BareJID): Boolean = jid == "responder@domain".toBareJID()
+			override val name = "Testowy"
+			override val node = "test"
+			override fun process(request: AdHocRequest, response: AdHocResponse) {
+				if (request.getSession().values["stage"] == "requestSent" && (request.action == Action.Next || request.action == null)) {
+					assertEquals("8756334", request.form?.getFieldByVar("otp")?.fieldValue)
+					response.notes = arrayOf(Note.Info("Done"))
+					response.status = Status.Completed
+				} else {
+					val form = JabberDataForm.create(FormType.Form).apply {
+						title = "Auth"
+						addField("otp", FieldType.TextPrivate).apply {
+							fieldLabel = "Enter OneTimePassword number"
+						}
+					}
+					request.getSession().values["stage"] = "requestSent"
+					response.form = form
+					response.actions = arrayOf(Action.Next)
+					response.defaultAction = Action.Next
+					response.status = Status.Executing
+				}
+			}
+		})
+
+		processReceived(iq {
+			to = "requester@domain".toJID()
+			from = "responder@domain".toJID()
+			type = IQType.Set
+			"command"{
+				xmlns = "http://jabber.org/protocol/commands"
+				attributes["node"] = "test"
+				attributes["action"] = "execute"
+			}
+		})
+		val respStanza = sentElements.removeLast()
+		val sessionId = respStanza.getFirstChild("command")?.attributes?.get("sessionid") ?: fail("Missing sessionid")
+		assertContains(iq {
+			type = IQType.Result
+			"command"{
+				xmlns = "http://jabber.org/protocol/commands"
+				attributes["node"] = "test"
+				attributes["status"] = "executing"
+				"actions"{
+					attributes["execute"] = "next"
+					"next"{}
+				}
+				"x"{
+					xmlns = "jabber:x:data"
+					attributes["type"] = "form"
+					"title"{ +"Auth" }
+					"field"{
+						attributes["type"] = "text-private"
+						attributes["var"] = "otp"
+						attributes["label"] = "Enter OneTimePassword number"
+					}
+				}
+			}
+		}, respStanza, "Invalid output stanza,")
+
+		processReceived(iq {
+			to = "requester@domain".toJID()
+			from = "responder@domain".toJID()
+			type = IQType.Set
+			"command"{
+				xmlns = "http://jabber.org/protocol/commands"
+				attributes["node"] = "test"
+				attributes["sessionid"] = sessionId
+				"x"{
+					xmlns = "jabber:x:data"
+					attributes["type"] = "submit"
+					"field"{
+						attributes["var"] = "otp"
+						"value"{ +"8756334" }
+					}
+				}
+			}
+		})
+
+		assertContains(iq {
+			type = IQType.Result
+			"command"{
+				xmlns = "http://jabber.org/protocol/commands"
+				attributes["node"] = "test"
+				attributes["sessionid"] = sessionId
+				attributes["status"] = "completed"
+				"note"{
+					attributes["type"] = "info"
+					+"Done"
+				}
+			}
+		}, sentElements.removeLast(), "Invalid output stanza,")
+
+	}
+
+	class TestAdHoc : AdHocCommand {
+
+		override fun isAllowed(jid: BareJID): Boolean = jid == "owner@example.com".toBareJID()
+
+		override val node: String = "command-node-name"
+		override val name: String = "Example command"
+
+		override fun process(request: AdHocRequest, response: AdHocResponse) {
+			response.notes = arrayOf(Note.Info("Everything is OK"))
+			response.status = Status.Completed
+		}
+	}
+
+	@Test
+	fun testCustomAdHocExecution() {
+		val module = halcyon.getModule<CommandsModule>(CommandsModule.TYPE)
+		module.registerAdHocCommand(object : AdHocCommand {
+			override fun isAllowed(jid: BareJID): Boolean = jid == "responder@domain".toBareJID()
+			override val name = "Testowy"
+			override val node = "test"
+			override fun process(request: AdHocRequest, response: AdHocResponse) {
+				val form = JabberDataForm.create(FormType.Result).apply {
+					title = "Available Services"
+					setReportedColumns(
+						listOf(Field.create("service").apply { fieldLabel = "Service" },
+							   Field.create("status").apply { fieldLabel = "Status" })
+					)
+					addItem(
+						listOf(Field.create("service").apply { fieldValue = "httpd" },
+							   Field.create("status").apply { fieldValue = "on" })
+					)
+					addItem(
+						listOf(Field.create("service").apply { fieldValue = "postgresql" },
+							   Field.create("status").apply { fieldValue = "off" })
+					)
+				}
+				response.form = form
+				response.status = Status.Completed
+			}
+		})
+
+		processReceived(iq {
+			to = "requester@domain".toJID()
+			from = "responder@domain".toJID()
+			type = IQType.Set
+			"command"{
+				xmlns = "http://jabber.org/protocol/commands"
+				attributes["node"] = "test"
+				attributes["action"] = "execute"
+			}
+		})
+		assertContains(iq {
+			type = IQType.Result
+			"command"{
+				xmlns = "http://jabber.org/protocol/commands"
+				attributes["node"] = "test"
+				attributes["status"] = "completed"
+				"x"{
+					xmlns = "jabber:x:data"
+					attributes["type"] = "result"
+					"title"{ +"Available Services" }
+					"reported"{
+						"field"{
+							attributes["var"] = "service"
+							attributes["label"] = "Service"
+						}
+						"field"{
+							attributes["var"] = "status"
+							attributes["label"] = "Status"
+						}
+					}
+					"item"{
+						"field"{
+							attributes["var"] = "service"
+							"value"{ +"httpd" }
+						}
+						"field"{
+							attributes["var"] = "status"
+							"value"{ +"on" }
+						}
+					}
+					"item"{
+						"field"{
+							attributes["var"] = "service"
+							"value"{ +"postgresql" }
+						}
+						"field"{
+							attributes["var"] = "status"
+							"value"{ +"off" }
+						}
+					}
+				}
+			}
+		}, sentElements.removeLast(), "Invalid output stanza,")
 
 	}
 

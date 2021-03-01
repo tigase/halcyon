@@ -36,5 +36,6 @@ include::modules/SASLModule.asciidoc[]
 //include::modules/UserAvatarModule.asciidoc[]
 include::modules/VCard4Module.asciidoc[]
 include::modules/BlockingCommandModule.asciidoc[]
+include::modules/CommandModule.asciidoc[]
 
 :leveloffset: -2

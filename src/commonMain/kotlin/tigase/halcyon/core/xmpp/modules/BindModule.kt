@@ -1,5 +1,5 @@
 /*
- * Tigase Halcyon XMPP Library
+ * halcyon-core
  * Copyright (C) 2018 Tigase, Inc. (office@tigase.com)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -43,7 +43,7 @@ class BindModule(override val context: Context) : XmppModule {
 	override val features = arrayOf(XMLNS)
 
 	var boundJID: JID? by propertySimple(Scope.Session, null)
-		private set
+		internal set
 
 	override fun initialize() {}
 

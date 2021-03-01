@@ -1,5 +1,5 @@
 /*
- * Tigase Halcyon XMPP Library
+ * halcyon-core
  * Copyright (C) 2018 Tigase, Inc. (office@tigase.com)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -25,6 +25,7 @@ import tigase.halcyon.core.modules.StanzaInterceptor
 import tigase.halcyon.core.modules.XmppModule
 import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xml.element
+import tigase.halcyon.core.xmpp.BareJID
 import tigase.halcyon.core.xmpp.ErrorCondition
 import tigase.halcyon.core.xmpp.JID
 import tigase.halcyon.core.xmpp.XMPPException
@@ -64,7 +65,7 @@ class EntityCapabilitiesModule(override val context: Context) : XmppModule, HasI
 
 	inner class CapsNodeDetailsProvider : NodeDetailsProvider {
 
-		override fun getIdentities(node: String?): List<DiscoveryModule.Identity> {
+		override fun getIdentities(sender: BareJID?, node: String?): List<DiscoveryModule.Identity> {
 			val ver = getVerificationString()
 			return if (node == "${this@EntityCapabilitiesModule.node}#$ver") {
 				listOf(discoModule.getClientIdentity())
@@ -73,13 +74,13 @@ class EntityCapabilitiesModule(override val context: Context) : XmppModule, HasI
 			}
 		}
 
-		override fun getFeatures(node: String?): List<String> {
+		override fun getFeatures(sender: BareJID?, node: String?): List<String> {
 			val ver = getVerificationString()
 			return if (node == "${this@EntityCapabilitiesModule.node}#$ver") context.modules.getAvailableFeatures()
 				.toList() else emptyList()
 		}
 
-		override fun getItems(node: String?): List<DiscoveryModule.Item> = emptyList()
+		override fun getItems(sender: BareJID?, node: String?): List<DiscoveryModule.Item> = emptyList()
 
 	}
 
