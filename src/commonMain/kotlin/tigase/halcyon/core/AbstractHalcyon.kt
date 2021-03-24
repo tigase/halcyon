@@ -50,6 +50,7 @@ import tigase.halcyon.core.xmpp.modules.commands.CommandsModule
 import tigase.halcyon.core.xmpp.modules.discovery.DiscoveryModule
 import tigase.halcyon.core.xmpp.modules.mam.MAMModule
 import tigase.halcyon.core.xmpp.modules.mix.MIXModule
+import tigase.halcyon.core.xmpp.modules.muc.MUCModule
 import tigase.halcyon.core.xmpp.modules.presence.PresenceModule
 import tigase.halcyon.core.xmpp.modules.pubsub.PubSubModule
 import tigase.halcyon.core.xmpp.modules.receipts.DeliveryReceiptsModule
@@ -147,6 +148,7 @@ abstract class AbstractHalcyon : Context, PacketWriter {
 		modules.register(UniqueStableStanzaIdModule(this))
 		modules.register(CommandsModule(this))
 		modules.register(BlockingCommandModule(this))
+		modules.register(MUCModule(this))
 	}
 
 	fun configure(cfg: ConfigDsl.() -> Unit) {

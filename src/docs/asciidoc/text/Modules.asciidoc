@@ -37,5 +37,6 @@ include::modules/SASLModule.asciidoc[]
 include::modules/VCard4Module.asciidoc[]
 include::modules/BlockingCommandModule.asciidoc[]
 include::modules/CommandModule.asciidoc[]
+include::modules/MUCModule.asciidoc[]
 
 :leveloffset: -2
