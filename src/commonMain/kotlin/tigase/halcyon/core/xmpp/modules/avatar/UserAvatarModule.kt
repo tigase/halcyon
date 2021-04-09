@@ -1,5 +1,5 @@
 /*
- * Tigase Halcyon XMPP Library
+ * halcyon-core
  * Copyright (C) 2018 Tigase, Inc. (office@tigase.com)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -71,7 +71,7 @@ class UserAvatarModule(override val context: Context) : XmppModule {
 		override fun isStored(userJID: BareJID, avatarID: String): Boolean = items.containsKey(avatarID)
 	}
 
-	lateinit var pubSubModule: PubSubModule
+	private lateinit var pubSubModule: PubSubModule
 
 	override fun initialize() {
 		this.pubSubModule = context.modules.getModule(PubSubModule.TYPE)
@@ -79,9 +79,7 @@ class UserAvatarModule(override val context: Context) : XmppModule {
 			if (event.nodeName == XMLNS_METADATA && event is PubSubItemEvent.Published) {
 				val metadata =
 					event.content?.let { if (it.name == "metadata" && it.xmlns == XMLNS_METADATA) it else null }
-				if (event.itemId != null && metadata != null) processMetadataItem(
-					event.stanza, event.itemId, metadata
-				)
+				if (event.itemId != null && metadata != null) processMetadataItem(event.stanza, metadata)
 			}
 		}
 	}
@@ -97,7 +95,7 @@ class UserAvatarModule(override val context: Context) : XmppModule {
 		)
 	}
 
-	private fun processMetadataItem(stanza: Message, avatarID: String, metadata: Element) {
+	private fun processMetadataItem(stanza: Message, metadata: Element) {
 		val userJID = stanza.from?.bareJID ?: return
 		val info = metadata.getFirstChild("info")?.let { parseInfo(it) }
 		if (info == null) {
@@ -105,25 +103,25 @@ class UserAvatarModule(override val context: Context) : XmppModule {
 			return
 		}
 
-		val stored = store.isStored(userJID, avatarID)
+		val stored = store.isStored(userJID, info.id)
 		if (!stored) {
-			retrieveAvatar(userJID.toString().toJID(), avatarID).response {
+			retrieveAvatar(userJID.toString().toJID(), info.id).response {
 				if (it.isSuccess) {
-					log.finest { "Storing UserAvatar data $avatarID " + it.getOrNull() }
-					val avatar = it.getOrNull()?.let {
-						if (it.base64Data == null) {
+					log.finest { "Storing UserAvatar data $info.id " + it.getOrNull() }
+					val avatar = it.getOrNull()?.let { data ->
+						if (data.base64Data == null) {
 							null
 						} else {
-							Avatar(info, it)
+							Avatar(info, data)
 						}
 					}
-					store.store(userJID, avatarID, avatar)
+					store.store(userJID, info.id, avatar)
 					log.fine { "Stored data! $userJID" }
-					context.eventBus.fire(UserAvatarUpdatedEvent(userJID, avatarID))
+					context.eventBus.fire(UserAvatarUpdatedEvent(userJID, info.id))
 				}
 			}.send()
 		} else {
-			context.eventBus.fire(UserAvatarUpdatedEvent(userJID, avatarID))
+			context.eventBus.fire(UserAvatarUpdatedEvent(userJID, info.id))
 		}
 	}
 
@@ -139,12 +137,11 @@ class UserAvatarModule(override val context: Context) : XmppModule {
 	)
 
 	fun retrieveAvatar(jid: JID, avatarID: String): RequestBuilder<AvatarData, IQ> {
-		val x = pubSubModule.retrieveItem(JID.parse(jid.bareJID.toString()), XMLNS_DATA, avatarID).map { response ->
+		return pubSubModule.retrieveItem(JID.parse(jid.bareJID.toString()), XMLNS_DATA, avatarID).map { response ->
 			val item = response.items.first()
 			val data = item.content!!.value
 			AvatarData(avatarID, data)
 		}
-		return x
 	}
 
 	override fun process(element: Element) = throw XMPPException(ErrorCondition.FeatureNotImplemented)
