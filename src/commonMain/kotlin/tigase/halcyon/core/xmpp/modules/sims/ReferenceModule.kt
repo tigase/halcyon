@@ -15,30 +15,22 @@
  * along with this program. Look for COPYING file in the top folder.
  * If not, see http://www.gnu.org/licenses/.
  */
-package tigase.halcyon.core.xmpp.stanzas
+package tigase.halcyon.core.xmpp.modules.sims
 
+import tigase.halcyon.core.Context
+import tigase.halcyon.core.modules.AbstractXmppModule
 import tigase.halcyon.core.xml.Element
-import tigase.halcyon.core.xml.attributeProp
 import tigase.halcyon.core.xmpp.ErrorCondition
 import tigase.halcyon.core.xmpp.XMPPException
 
-enum class IQType(val value: String) { Error("error"),
-	Get("get"),
-	Result("result"),
-	Set("set")
-}
-
-class IQ(wrappedElement: Element) : Stanza<IQType>(wrappedElement) {
+class ReferenceModule(context: Context) : AbstractXmppModule(context, TYPE, arrayOf(XMLNS)) {
 
 	companion object {
 
-		const val NAME = "iq"
+		const val XMLNS = "urn:xmpp:reference:0"
+		const val TYPE = XMLNS
 	}
 
-	override var type: IQType by attributeProp(stringToValue = { v ->
-		v?.let {
-			IQType.values().firstOrNull { te -> te.value == it }
-		} ?: throw XMPPException(ErrorCondition.BadRequest, "Unknown stanza type '$v'")
-	}, valueToString = { v -> v.value })
+	override fun process(element: Element) = throw XMPPException(ErrorCondition.FeatureNotImplemented)
 
 }

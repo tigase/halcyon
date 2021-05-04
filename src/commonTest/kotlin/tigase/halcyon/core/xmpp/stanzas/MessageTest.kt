@@ -1,5 +1,5 @@
 /*
- * Tigase Halcyon XMPP Library
+ * halcyon-core
  * Copyright (C) 2018 Tigase, Inc. (office@tigase.com)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -41,6 +41,17 @@ class MessageTest {
 		val e = element("message") { }
 		val p = wrap<Message>(e)
 		assertNull(p.type)
+	}
+
+	@Test
+	fun testBodySet() {
+		val e = message {
+			"body"{ +"192562" }
+		}
+		assertEquals("192562", e.body)
+		e.body = "9876"
+		assertEquals("9876", e.body)
+		assertEquals("9876", e.getFirstChild("body")?.value)
 	}
 
 	@Test

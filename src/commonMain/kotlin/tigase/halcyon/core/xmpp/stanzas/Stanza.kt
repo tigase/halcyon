@@ -1,5 +1,5 @@
 /*
- * Tigase Halcyon XMPP Library
+ * halcyon-core
  * Copyright (C) 2018 Tigase, Inc. (office@tigase.com)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -18,27 +18,15 @@
 package tigase.halcyon.core.xmpp.stanzas
 
 import tigase.halcyon.core.xml.Element
-import tigase.halcyon.core.xml.setAtt
+import tigase.halcyon.core.xml.jidAttributeProperty
+import tigase.halcyon.core.xml.stringAttributeProperty
 import tigase.halcyon.core.xmpp.JID
 
 abstract class Stanza<STANZA_TYPE> protected constructor(protected val element: Element) : Element by element {
 
-	private fun getJID(attName: String): JID? {
-		val att = element.attributes[attName]
-		return if (att == null) null else JID.parse(att)
-	}
-
-	var to: JID?
-		get() = getJID("to")
-		set(value) = setAtt("to", value?.toString())
-
-	var from: JID?
-		get() = getJID("from")
-		set(value) = setAtt("from", value?.toString())
-
-	var id: String?
-		get() = attributes["id"]
-		set(value) = setAtt("id", value)
+	var to: JID? by jidAttributeProperty()
+	var from: JID? by jidAttributeProperty()
+	var id: String? by stringAttributeProperty()
 
 	abstract var type: STANZA_TYPE
 

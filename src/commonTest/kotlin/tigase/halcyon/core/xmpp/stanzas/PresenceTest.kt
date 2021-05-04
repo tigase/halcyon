@@ -1,5 +1,5 @@
 /*
- * Tigase Halcyon XMPP Library
+ * halcyon-core
  * Copyright (C) 2018 Tigase, Inc. (office@tigase.com)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -49,10 +49,22 @@ class PresenceTest {
 	}
 
 	@Test
+	fun testShowSet() {
+		val p = presence {
+			"show"{ +"dnd" }
+		}
+		assertEquals(Show.DnD, p.show)
+		p.show = Show.Away
+		assertEquals(Show.Away, p.show)
+		assertEquals("away", p.getFirstChild("show")?.value)
+	}
+
+	@Test
 	fun testPrioritySet() {
 		val p = presence {}
 		p.priority = 17
 		assertEquals("17", p.getFirstChild("priority")?.value)
+		assertEquals(17, p.priority)
 	}
 
 	@Test

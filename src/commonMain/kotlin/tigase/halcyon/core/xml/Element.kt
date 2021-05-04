@@ -1,5 +1,5 @@
 /*
- * Tigase Halcyon XMPP Library
+ * halcyon-core
  * Copyright (C) 2018 Tigase, Inc. (office@tigase.com)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -183,30 +183,5 @@ class ElementImpl(override val name: String) : Element {
 
 	override fun toString(): String {
 		return "XMLElement[name='$name' hash='${hashCode()}']"
-	}
-}
-
-fun Element.setAtt(attName: String, value: String?) {
-	if (value == null) {
-		this.attributes.remove(attName)
-	} else {
-		this.attributes[attName] = value
-	}
-}
-
-fun Element.getChildContent(childName: String, defaultValue: String? = null): String? {
-	return this.getFirstChild(childName)?.value ?: defaultValue
-}
-
-fun Element.setChildContent(childName: String, value: String?) {
-	var c = getFirstChild(childName)
-	if (value == null && c != null) {
-		this.remove(c)
-	} else if (value != null && c != null) {
-		c.value = value
-	} else if (value != null && c == null) {
-		c = ElementImpl(childName)
-		c.value = value
-		add(c)
 	}
 }

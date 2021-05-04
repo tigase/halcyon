@@ -1,5 +1,5 @@
 /*
- * Tigase Halcyon XMPP Library
+ * halcyon-core
  * Copyright (C) 2018 Tigase, Inc. (office@tigase.com)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -377,9 +377,9 @@ class PubSubModule(override val context: Context) : XmppModule {
 	 * @param node PubSub node name.
 	 * @param itemId ID of published item.
 	 */
-	fun deleteItem(jid: JID, node: String, itemId: String): RequestBuilder<Unit, IQ> {
+	fun deleteItem(jid: JID?, node: String, itemId: String): RequestBuilder<Unit, IQ> {
 		val iq = iq {
-			to = jid
+			if (jid != null) to = jid
 			type = IQType.Set
 			"pubsub"{
 				xmlns = XMLNS
@@ -388,6 +388,20 @@ class PubSubModule(override val context: Context) : XmppModule {
 					"item"{
 						attribute("id", itemId)
 					}
+				}
+			}
+		}
+		return context.request.iq(iq).map { Unit }
+	}
+
+	fun deleteNode(jid: JID?, node: String): RequestBuilder<Unit, IQ> {
+		val iq = iq {
+			if (jid != null) to = jid
+			type = IQType.Set
+			"pubsub"{
+				xmlns = XMLNS_OWNER
+				"delete"{
+					attribute("node", node)
 				}
 			}
 		}
@@ -404,10 +418,10 @@ class PubSubModule(override val context: Context) : XmppModule {
 	 * @return [RetrieveResponse] what contains list of published items.
 	 */
 	fun retrieveItem(
-		jid: JID, node: String, itemId: String? = null
+		jid: JID?, node: String, itemId: String? = null
 	): RequestBuilder<RetrieveResponse, IQ> {
 		val iq = iq {
-			to = jid
+			if (jid != null) to = jid
 			type = IQType.Get
 			"pubsub"{
 				xmlns = XMLNS

@@ -1,5 +1,5 @@
 /*
- * Tigase Halcyon XMPP Library
+ * halcyon-core
  * Copyright (C) 2018 Tigase, Inc. (office@tigase.com)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -17,10 +17,7 @@
  */
 package tigase.halcyon.core.xmpp.stanzas
 
-import tigase.halcyon.core.xml.Element
-import tigase.halcyon.core.xml.getChildContent
-import tigase.halcyon.core.xml.setAtt
-import tigase.halcyon.core.xml.setChildContent
+import tigase.halcyon.core.xml.*
 import tigase.halcyon.core.xmpp.ErrorCondition
 import tigase.halcyon.core.xmpp.XMPPException
 
@@ -52,7 +49,9 @@ enum class Show(val value: String) {
 
 }
 
-enum class PresenceType(val value: String) { Error("error"),
+enum class PresenceType(val value: String) {
+
+	Error("error"),
 	Probe("probe"),
 	Subscribe("subscribe"),
 	Subscribed("subscribed"),
@@ -68,32 +67,23 @@ class Presence(wrappedElement: Element) : Stanza<PresenceType?>(wrappedElement) 
 		const val NAME = "presence"
 	}
 
-	override var type: PresenceType?
-		set(value) = setAtt("type", value?.value)
-		get() = attributes["type"]?.let {
+	override var type: PresenceType? by attributeProp(valueToString = { v -> v?.value }, stringToValue = { s ->
+		s?.let {
 			PresenceType.values().firstOrNull { te -> te.value == it } ?: throw XMPPException(
 				ErrorCondition.BadRequest, "Unknown stanza type '$it'"
 			)
 		}
+	})
 
-	private fun getShowValue(): Show? {
-		return getChildContent("show")?.let {
+	var show: Show? by elementProperty(stringToValue = { s ->
+		s?.let {
 			Show.values().firstOrNull { s -> s.value == it } ?: throw XMPPException(
 				ErrorCondition.BadRequest, "Unknown show value: '$it'"
 			)
 		}
-	}
 
-	var show: Show?
-		set(value) = setChildContent("show", value?.value)
-		get() = getShowValue()
-
-	var priority: Int
-		set(value) = setChildContent("priority", value.toString())
-		get() = getChildContent("priority", "0")!!.toInt()
-
-	var status: String?
-		set(value) = setChildContent("status", value)
-		get() = getChildContent("status")
+	}, valueToString = { v -> v?.value })
+	var priority: Int by intWithDefaultElementProperty(defaultValue = 0)
+	var status: String? by stringElementProperty()
 
 }

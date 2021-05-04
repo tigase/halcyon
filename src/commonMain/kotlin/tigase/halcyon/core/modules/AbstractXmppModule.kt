@@ -1,5 +1,5 @@
 /*
- * Tigase Halcyon XMPP Library
+ * halcyon-core
  * Copyright (C) 2018 Tigase, Inc. (office@tigase.com)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -23,7 +23,7 @@ abstract class AbstractXmppModule(
 	override val context: Context,
 	final override val type: String,
 	final override val features: Array<String>,
-	final override val criteria: Criteria
+	final override val criteria: Criteria? = null
 ) : XmppModule {
 
 	override fun initialize() {

@@ -1,5 +1,5 @@
 /*
- * Tigase Halcyon XMPP Library
+ * halcyon-core
  * Copyright (C) 2018 Tigase, Inc. (office@tigase.com)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -18,9 +18,8 @@
 package tigase.halcyon.core.xmpp.stanzas
 
 import tigase.halcyon.core.xml.Element
-import tigase.halcyon.core.xml.getChildContent
-import tigase.halcyon.core.xml.setAtt
-import tigase.halcyon.core.xml.setChildContent
+import tigase.halcyon.core.xml.attributeProp
+import tigase.halcyon.core.xml.stringElementProperty
 import tigase.halcyon.core.xmpp.ErrorCondition
 import tigase.halcyon.core.xmpp.XMPPException
 
@@ -36,16 +35,14 @@ class Message(wrappedElement: Element) : Stanza<MessageType?>(wrappedElement) { 
 	const val NAME = "message"
 }
 
-	override var type: MessageType?
-		set(value) = setAtt("type", value?.value)
-		get() = attributes["type"]?.let {
+	override var type: MessageType? by attributeProp(valueToString = { v -> v?.value }, stringToValue = { s: String? ->
+		s?.let {
 			MessageType.values().firstOrNull { te -> te.value == it } ?: throw XMPPException(
 				ErrorCondition.BadRequest, "Unknown stanza type '$it'"
 			)
 		}
+	})
 
-	var body: String?
-		set(value) = setChildContent("body", value)
-		get() = getChildContent("body")
+	var body: String? by stringElementProperty()
 
 }

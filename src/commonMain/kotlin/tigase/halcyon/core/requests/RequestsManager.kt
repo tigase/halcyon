@@ -1,5 +1,5 @@
 /*
- * Tigase Halcyon XMPP Library
+ * halcyon-core
  * Copyright (C) 2018 Tigase, Inc. (office@tigase.com)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -21,6 +21,7 @@ import getFromAttr
 import tigase.halcyon.core.currentTimestamp
 import tigase.halcyon.core.logger.LoggerFactory
 import tigase.halcyon.core.xml.Element
+import tigase.halcyon.core.xmpp.JID
 
 class RequestsManager {
 
@@ -34,12 +35,13 @@ class RequestsManager {
 		requests[key(request.stanza)] = request
 	}
 
+	var boundJID: JID? = null
+
 	private fun key(element: Element): String = "${element.name}:${element.attributes["id"]}"
 
 	@Suppress("UNCHECKED_CAST")
 	fun getRequest(response: Element): Request<*, *>? {
 		val id = key(response)
-//		val from = response.attributes["from"]
 
 		val request = requests[id] ?: return null
 
@@ -53,19 +55,11 @@ class RequestsManager {
 
 	private fun verify(entry: Request<*, *>, response: Element): Boolean {
 		val jid = response.getFromAttr()
+		val bareBoundJID = boundJID?.bareJID
 
-		if (jid != null && entry.jid != null && jid.bareJID == entry.jid.bareJID) {
-			return true
-		} else if (entry.jid == null && jid == null) {
-			return true
-		}
-		// TODO
-//		else {
-//			val userJID = sessionObject.getProperty(ResourceBinderModule.BINDED_RESOURCE_JID)
-//			if (entry.jid == null && userJID != null && jid.bareJID.equals(userJID!!.bareJId)) {
-//				return true
-//			}
-//		}
+		if (jid == entry.jid) return true
+		else if (entry.jid == null && bareBoundJID != null && jid?.bareJID == bareBoundJID) return true
+
 		return false
 	}
 

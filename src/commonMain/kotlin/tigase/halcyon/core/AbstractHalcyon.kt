@@ -55,6 +55,7 @@ import tigase.halcyon.core.xmpp.modules.presence.PresenceModule
 import tigase.halcyon.core.xmpp.modules.pubsub.PubSubModule
 import tigase.halcyon.core.xmpp.modules.receipts.DeliveryReceiptsModule
 import tigase.halcyon.core.xmpp.modules.roster.RosterModule
+import tigase.halcyon.core.xmpp.modules.sims.ReferenceModule
 import tigase.halcyon.core.xmpp.modules.sm.StreamManagementModule
 import tigase.halcyon.core.xmpp.modules.spam.BlockingCommandModule
 import tigase.halcyon.core.xmpp.modules.uniqueId.UniqueStableStanzaIdModule
@@ -149,6 +150,7 @@ abstract class AbstractHalcyon : Context, PacketWriter {
 		modules.register(CommandsModule(this))
 		modules.register(BlockingCommandModule(this))
 		modules.register(MUCModule(this))
+		modules.register(ReferenceModule(this))
 	}
 
 	fun configure(cfg: ConfigDsl.() -> Unit) {
@@ -161,8 +163,13 @@ abstract class AbstractHalcyon : Context, PacketWriter {
 			is SessionController.SessionControllerEvents.ErrorStop, is SessionController.SessionControllerEvents.ErrorReconnect -> processControllerErrorEvent(
 				event
 			)
-			is SessionController.SessionControllerEvents.Successful -> state = State.Connected
+			is SessionController.SessionControllerEvents.Successful -> onSessionEstablished()
 		}
+	}
+
+	private fun onSessionEstablished() {
+		state = State.Connected
+		requestsManager.boundJID = getModule<BindModule>(BindModule.TYPE).boundJID
 	}
 
 	private fun processControllerErrorEvent(event: SessionController.SessionControllerEvents) {

@@ -1,5 +1,5 @@
 /*
- * Tigase Halcyon XMPP Library
+ * halcyon-core
  * Copyright (C) 2018 Tigase, Inc. (office@tigase.com)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -35,6 +35,97 @@ class RequestManagerTest {
 		override fun createConnector(): AbstractConnector {
 			TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
 		}
+	}
+
+	@Test
+	fun testFindingResponseForRequestWithoutTo() {
+		val rm = RequestsManager()
+		rm.boundJID = "a@b.c/123".toJID()
+
+		val e = element("iq") {
+			attribute("id", "1")
+			attribute("type", "get")
+		}
+		val rq = halcyon.request.iq(e).build()
+		rm.register(rq)
+
+		val resp = element("iq") {
+			attribute("id", "1")
+			attribute("type", "result")
+			attribute("from", "a@b.c")
+		}
+		val handler = rm.getRequest(resp)
+
+		assertNotNull(handler)
+	}
+
+	@Test
+	fun testFindingResponseFromUnknownForRequestWithoutTo() {
+		val rm = RequestsManager()
+		rm.boundJID = "a@b.c/123".toJID()
+
+		val e = element("iq") {
+			attribute("id", "1")
+			attribute("type", "get")
+		}
+
+		val rq = halcyon.request.iq(e).build()
+		rm.register(rq)
+
+		val resp = element("iq") {
+			attribute("id", "1")
+			attribute("type", "result")
+			attribute("from", "mallet@badguys.org")
+		}
+		val handler = rm.getRequest(resp)
+
+		assertNull(handler)
+	}
+
+	@Test
+	fun testFindingResponseFromUnknownForRequest() {
+		val rm = RequestsManager()
+		rm.boundJID = "a@b.c/123".toJID()
+
+		val e = element("iq") {
+			attribute("id", "1")
+			attribute("type", "get")
+			attribute("to", "a@b.c")
+		}
+
+		val rq = halcyon.request.iq(e).build()
+		rm.register(rq)
+
+		val resp = element("iq") {
+			attribute("id", "1")
+			attribute("type", "result")
+			attribute("from", "mallet@badguys.org")
+		}
+		val handler = rm.getRequest(resp)
+
+		assertNull(handler)
+	}
+
+	@Test
+	fun testFindingResponseWithoutFromForRequestWithoutTo() {
+		val rm = RequestsManager()
+		rm.boundJID = "a@b.c/123".toJID()
+
+		val e = element("iq") {
+			attribute("id", "1")
+			attribute("type", "get")
+		}
+
+		val rq = halcyon.request.iq(e).build()
+		rm.register(rq)
+
+		val resp = element("iq") {
+			attribute("id", "1")
+			attribute("type", "result")
+		}
+		val handler = rm.getRequest(resp)
+
+		assertNotNull(handler)
 	}
 
 	@Test
@@ -252,7 +343,7 @@ class RequestManagerTest {
 
 	@Test
 	fun testErrorProcessing() {
-		val module = halcyon.getModule<VCardModule>(VCardModule.TYPE)!!
+		val module = halcyon.getModule<VCardModule>(VCardModule.TYPE)
 
 		var catchedException: Throwable? = null
 

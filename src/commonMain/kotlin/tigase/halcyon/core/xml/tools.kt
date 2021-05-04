@@ -15,30 +15,29 @@
  * along with this program. Look for COPYING file in the top folder.
  * If not, see http://www.gnu.org/licenses/.
  */
-package tigase.halcyon.core.xmpp.stanzas
+package tigase.halcyon.core.xml
 
-import tigase.halcyon.core.xml.Element
-import tigase.halcyon.core.xml.attributeProp
-import tigase.halcyon.core.xmpp.ErrorCondition
-import tigase.halcyon.core.xmpp.XMPPException
-
-enum class IQType(val value: String) { Error("error"),
-	Get("get"),
-	Result("result"),
-	Set("set")
+fun Element.setAtt(attName: String, value: String?) {
+	if (value == null) {
+		this.attributes.remove(attName)
+	} else {
+		this.attributes[attName] = value
+	}
 }
 
-class IQ(wrappedElement: Element) : Stanza<IQType>(wrappedElement) {
+fun Element.getChildContent(childName: String, defaultValue: String? = null): String? {
+	return this.getFirstChild(childName)?.value ?: defaultValue
+}
 
-	companion object {
-
-		const val NAME = "iq"
+fun Element.setChildContent(childName: String, value: String?) {
+	var c = getFirstChild(childName)
+	if (value == null && c != null) {
+		this.remove(c)
+	} else if (value != null && c != null) {
+		c.value = value
+	} else if (value != null && c == null) {
+		c = ElementImpl(childName)
+		c.value = value
+		add(c)
 	}
-
-	override var type: IQType by attributeProp(stringToValue = { v ->
-		v?.let {
-			IQType.values().firstOrNull { te -> te.value == it }
-		} ?: throw XMPPException(ErrorCondition.BadRequest, "Unknown stanza type '$v'")
-	}, valueToString = { v -> v.value })
-
 }
