@@ -39,5 +39,6 @@ include::modules/BlockingCommandModule.asciidoc[]
 include::modules/CommandModule.asciidoc[]
 include::modules/MUCModule.asciidoc[]
 include::modules/SIMSModule.asciidoc[]
+include::modules/MAMModule.asciidoc[]
 
 :leveloffset: -2

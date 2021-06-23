@@ -1,5 +1,5 @@
 /*
- * Tigase Halcyon XMPP Library
+ * halcyon-core
  * Copyright (C) 2018 Tigase, Inc. (office@tigase.com)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -49,7 +49,7 @@ data class MAMMessageEvent(
 	}
 }
 
-class ForwardedStanza<TYPE : Stanza<*>>(private val element: Element) : Element by element {
+class ForwardedStanza<TYPE : Stanza<*>>(val resultId: String, private val element: Element) : Element by element {
 
 	val timestamp: Long? by lazy(this::getXmppDelay)
 
@@ -96,8 +96,7 @@ class MAMModule(override val context: Context) : XmppModule {
 	private data class RegisteredQuery(
 		val queryId: String,
 		val createdTimestamp: Long,
-		var validUntil: Long,
-		var publisher: ConsumerPublisher<ForwardedStanza<Message>>? = null
+		var validUntil: Long, var publisher: ConsumerPublisher<ForwardedStanza<Message>>? = null
 	)
 
 	companion object {
@@ -107,7 +106,7 @@ class MAMModule(override val context: Context) : XmppModule {
 	}
 
 	override val type = TYPE
-	override val criteria: Criteria? =
+	override val criteria: Criteria =
 		Criterion.chain(Criterion.name(Message.NAME), Criterion.nameAndXmlns("result", XMLNS))
 	override val features = arrayOf(XMLNS)
 
@@ -132,7 +131,7 @@ class MAMModule(override val context: Context) : XmppModule {
 
 		val msg = forwarded.getFirstChild("message") ?: return
 
-		val forwardedStanza = ForwardedStanza<Message>(forwarded)
+		val forwardedStanza = ForwardedStanza<Message>(resultId, forwarded)
 		try {
 			query.publisher?.publish(forwardedStanza)
 		} catch (e: Exception) {
@@ -236,7 +235,7 @@ class MAMModule(override val context: Context) : XmppModule {
 					}
 				}
 			}
-		}.map { Unit }
+		}.map { }
 	}
 
 }
