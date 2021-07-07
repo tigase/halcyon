@@ -1,5 +1,5 @@
 /*
- * Tigase Halcyon XMPP Library
+ * halcyon-core
  * Copyright (C) 2018 Tigase, Inc. (office@tigase.com)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -21,69 +21,103 @@ import tigase.halcyon.core.exceptions.HalcyonException
 import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xml.element
 
-fun parseRSM(element: Element): RSM {
-	if (element.name != RSM.NAME) throw HalcyonException("Invalid RSM element name")
-	if (element.xmlns != RSM.XMLNS) throw HalcyonException("Invalid RSM element XMLNS")
-	var index: Int? = null
-	var first: String? = null
-	var last: String? = null
-	var count: Int? = null
-	var max: Int? = null
-
-	element.getFirstChild("first")?.let {
-		first = it.value
-		index = it.attributes["index"]?.toInt()
-	}
-	element.getFirstChild("last")?.let { last = it.value }
-	element.getFirstChild("count")?.let { count = it.value?.toInt() }
-	element.getFirstChild("max")?.let { max = it.value?.toInt() }
-
-	return RSM(index, first, last, null, null, count, max)
-}
-
-data class RSM(
-	val index: Int? = null,
-	val first: String? = null,
-	val last: String? = null,
-	val after: String? = null,
-	val before: String? = null,
-	val count: Int? = null,
-	val max: Int? = null
-//	var retrieveLastPage: Boolean = false
-) {
+class RSM private constructor() {
 
 	companion object {
 
 		const val XMLNS = "http://jabber.org/protocol/rsm"
 		const val NAME = "set"
-		fun fromElement(element: Element): RSM = parseRSM(element)
+
+		fun parseResult(element: Element): Result {
+			if (element.name != NAME) throw HalcyonException("Invalid RSM element name")
+			if (element.xmlns != XMLNS) throw HalcyonException("Invalid RSM element XMLNS")
+			var index: Int? = null
+			var first: String? = null
+			var last: String? = null
+			var count: Int? = null
+
+			element.getFirstChild("first")?.let {
+				first = it.value
+				index = it.attributes["index"]?.toInt()
+			}
+			element.getFirstChild("last")?.let { last = it.value }
+			element.getFirstChild("count")?.let { count = it.value?.toInt() }
+
+			return Result(first, last, index, count)
+		}
+
+		fun query(init: QueryBuilder.() -> Unit): Query {
+			val q = QueryBuilder()
+			q.init()
+			return q.build()
+		}
+
 	}
 
-	fun toElement(): Element {
-		return element(NAME) {
-			xmlns = XMLNS
+	class QueryBuilder internal constructor() {
 
-			after?.let {
-				"after"{
-					+it
-				}
-			}
-			before?.let {
-				"before"{
-					+it
-				}
-			}
-			index?.let {
-				"index"{
-					+"$it"
-				}
-			}
-			max?.let {
-				"max"{
-					+"$it"
-				}
-			}
+		private var after: String? = null
+		private var before: String? = null
+		private var index: Int? = null
+		private var max: Int? = null
 
+		fun after(value: String = "") {
+			this.after = value
+		}
+
+		fun before(value: String = "") {
+			this.before = value
+		}
+
+		fun index(value: Int) {
+			this.index = value
+		}
+
+		fun max(value: Int) {
+			this.max = value
+		}
+
+		fun build(): Query = Query(after, before, index, max)
+	}
+
+	data class Result(
+		val first: String? = null, val last: String? = null, val index: Int? = null, val count: Int? = null
+	)
+
+	data class Query(
+		val after: String? = null, val before: String? = null, val index: Int? = null, val max: Int? = null
+	) {
+
+		fun toElement(): Element {
+			return element("set") {
+				xmlns = XMLNS
+
+				after?.let { v ->
+					"after"{
+						if (v.isNotBlank()) {
+							+v
+						}
+					}
+				}
+				before?.let { v ->
+					"before"{
+						if (v.isNotBlank()) {
+							+v
+						}
+					}
+				}
+				max?.let {
+					"max"{
+						+"$it"
+					}
+				}
+				index?.let {
+					"index"{
+						+"$it"
+					}
+				}
+			}
 		}
 	}
+
 }

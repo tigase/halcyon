@@ -1,5 +1,5 @@
 /*
- * Tigase Halcyon XMPP Library
+ * halcyon-core
  * Copyright (C) 2018 Tigase, Inc. (office@tigase.com)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -247,7 +247,11 @@ class MIXModule(override val context: Context) : XmppModule, RosterItemAnnotatio
 	}
 
 	fun retrieveHistory(
-		fromChannel: BareJID? = null, with: String? = null, rsm: RSM? = null, start: Long? = null, end: Long? = null
+		fromChannel: BareJID? = null,
+		with: String? = null,
+		rsm: RSM.Query? = null,
+		start: Long? = null,
+		end: Long? = null
 	): RequestConsumerBuilder<ForwardedStanza<Message>, MAMModule.Fin, IQ> {
 		val node = if (fromChannel == null) null else NODE_MESSAGES
 		return mamModule.query(fromChannel, node, rsm, with, start, end)

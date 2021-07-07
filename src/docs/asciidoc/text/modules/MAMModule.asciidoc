@@ -17,7 +17,7 @@ This event contains fields:
 
 == Methods
 
-=== `query(to: BareJID? = null, node: String? = null, rsm: RSM? = null, with: String? = null, start: Long? = null, end: Long? = null)`
+=== `query(to: BareJID? = null, node: String? = null, rsm: RSM.Query? = null, with: String? = null, start: Long? = null, end: Long? = null)`
 
 Main method to retrieve chat history from archive.
 
@@ -55,7 +55,7 @@ It can be done by asking server for all messages since, last received message:
 [source,kotlin]
 ----
 val mamModule = halcyon.getModule<MAMModule>(MAMModule.TYPE)
-fun ask(q: RSM? = null) {
+fun ask(q: RSM.Query? = null) {
     mamModule.query(
         with = "someone@tigase.org",
         start = lastReceivedMessageTimestatmp,
@@ -65,7 +65,7 @@ fun ask(q: RSM? = null) {
             println("Complete: ${it.complete} :: ${it.rsm}")
 
             if (!it.complete) {
-                ask(RSM(after = it.rsm!!.last))
+                ask(RSM.Query(after = it.rsm!!.last))
             }
         }
     }.consume { forwardedStanza: ForwardedStanza<Message> ->
@@ -79,7 +79,7 @@ ask()
 
 Because MAM server has defined maximum amount of returned messages, we have to ask until query is not complete.
 In example it is done by recurrent execution of method `ask()` with filled Result Set Management object.
-`RSM(after = it.rsm!!.last)` means that in result must be included only messages located after last message identifier from currently received package of messages.
+`RSM.Query(after = it.rsm!!.last)` means that in result must be included only messages located after last message identifier from currently received package of messages.
 
 Note, that parameter `with` of method `query()` is optional, so you can ask for all messages since specific time exchanged with specific JID, or you can ask for all messages stored in archive.
 
@@ -88,7 +88,7 @@ The second way to retrieve messages from archive is asking for messages located 
 [source,kotlin]
 ----
 val mamModule = halcyon.getModule<MAMModule>(MAMModule.TYPE)
-fun ask(q: RSM? = null) {
+fun ask(q: RSM.Query? = null) {
     mamModule.query(
         with = "someone@tigase.org",
         rsm = q
@@ -97,7 +97,7 @@ fun ask(q: RSM? = null) {
             println("Complete: ${it.complete} :: ${it.rsm}")
 
             if (!it.complete) {
-                ask(RSM(after = it.rsm!!.last))
+                ask(RSM.Query(after = it.rsm!!.last))
             }
         }
     }.consume { forwardedStanza: ForwardedStanza<Message> ->
@@ -131,7 +131,7 @@ The same mechanism you can use to load older messages in history (not loaded yet
 ----
 mamModule.query(
     with = "someone@tigase.org",
-    rsm = RSM(before = "2753e4a8-9150-4e34-8757-4cd5e8419159", max = 20)
+    rsm = RSM.Query(before = "2753e4a8-9150-4e34-8757-4cd5e8419159", max = 20)
 ).response { res ->
     res.onSuccess {
         println("Complete: ${it.complete} :: ${it.rsm}")

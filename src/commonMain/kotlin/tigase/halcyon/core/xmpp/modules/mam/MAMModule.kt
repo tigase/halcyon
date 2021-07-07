@@ -36,7 +36,6 @@ import tigase.halcyon.core.xmpp.forms.FieldType
 import tigase.halcyon.core.xmpp.forms.FormType
 import tigase.halcyon.core.xmpp.forms.JabberDataForm
 import tigase.halcyon.core.xmpp.modules.RSM
-import tigase.halcyon.core.xmpp.modules.parseRSM
 import tigase.halcyon.core.xmpp.stanzas.*
 
 data class MAMMessageEvent(
@@ -91,12 +90,13 @@ data class Preferences(val default: DefaultBehaviour, val always: Collection<Bar
 
 class MAMModule(override val context: Context) : XmppModule {
 
-	data class Fin(val complete: Boolean = false, val rsm: RSM?)
+	data class Fin(val complete: Boolean = false, val rsm: RSM.Result?)
 
 	private data class RegisteredQuery(
 		val queryId: String,
 		val createdTimestamp: Long,
-		var validUntil: Long, var publisher: ConsumerPublisher<ForwardedStanza<Message>>? = null
+		var validUntil: Long,
+		var publisher: ConsumerPublisher<ForwardedStanza<Message>>? = null
 	)
 
 	companion object {
@@ -154,7 +154,7 @@ class MAMModule(override val context: Context) : XmppModule {
 	fun query(
 		to: BareJID? = null,
 		node: String? = null,
-		rsm: RSM? = null,
+		rsm: RSM.Query? = null,
 		with: String? = null,
 		start: Long? = null,
 		end: Long? = null
@@ -186,7 +186,7 @@ class MAMModule(override val context: Context) : XmppModule {
 	private fun createResponse(responseStanza: Element, registeredQuery: RegisteredQuery): Fin {
 		val fin = responseStanza.getChildrenNS("fin", XMLNS)
 		registeredQuery.validUntil = currentTimestamp() + 10000
-		val rsm: RSM? = fin?.getChildrenNS(RSM.NAME, RSM.XMLNS)?.let(::parseRSM)
+		val rsm: RSM.Result? = fin?.getChildrenNS(RSM.NAME, RSM.XMLNS)?.let { p -> RSM.parseResult(p) }
 		return Fin(complete = fin?.attributes?.get("complete").toBool(), rsm = rsm)
 	}
 

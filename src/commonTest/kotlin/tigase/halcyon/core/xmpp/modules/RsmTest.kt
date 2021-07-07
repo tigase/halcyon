@@ -1,5 +1,5 @@
 /*
- * Tigase Halcyon XMPP Library
+ * halcyon-core
  * Copyright (C) 2018 Tigase, Inc. (office@tigase.com)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -20,12 +20,14 @@ package tigase.halcyon.core.xmpp.modules
 import tigase.halcyon.core.xml.element
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 
 class RsmTest {
 
 	@Test
 	fun testToElement() {
-		val rsm1 = RSM(index = 73, before = "b191", after = "a714", max = 99)
+		val rsm1 = RSM.Query(index = 73, before = "b191", after = "a714", max = 99)
 		val e1 = rsm1.toElement()
 
 		assertEquals("73", e1.getFirstChild("index")?.value)
@@ -34,6 +36,37 @@ class RsmTest {
 		assertEquals("99", e1.getFirstChild("max")?.value)
 		assertEquals("http://jabber.org/protocol/rsm", e1.xmlns)
 		assertEquals("set", e1.name)
+	}
+
+	@Test
+	fun testQueryBuilder() {
+		val rsm1 = RSM.Query(index = 73, before = "b191", after = "a714", max = 99)
+		val rsm2 = RSM.query {
+			index(73)
+			before("b191")
+			after("a714")
+			max(99)
+		}
+		assertEquals(rsm1, rsm2)
+	}
+
+	@Test
+	fun testQueryBuilderEmptyBefore() {
+		val rsm = RSM.query {
+			before()
+		}
+		assertNull(rsm.after)
+		assertNotNull(rsm.before)
+		assertNull(rsm.index)
+		assertNull(rsm.max)
+
+		val e = rsm.toElement()
+		assertNotNull(e.getFirstChild("before")) { before ->
+			assertNull(before.value)
+		}
+		assertNull(e.getFirstChild("after"))
+		assertNull(e.getFirstChild("index"))
+		assertNull(e.getFirstChild("max"))
 	}
 
 	@Test
@@ -51,7 +84,7 @@ class RsmTest {
 				+"800"
 			}
 		}
-		val rsm = parseRSM(e)
+		val rsm = RSM.parseResult(e)
 
 		assertEquals(1, rsm.index)
 		assertEquals("stpeter@jabber.org", rsm.first)
