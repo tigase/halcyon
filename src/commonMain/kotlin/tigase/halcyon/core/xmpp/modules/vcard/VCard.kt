@@ -1,5 +1,5 @@
 /*
- * Tigase Halcyon XMPP Library
+ * halcyon-core
  * Copyright (C) 2018 Tigase, Inc. (office@tigase.com)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -168,26 +168,34 @@ class VCardElementsList<T>(
 			root.remove(it)
 		}
 
-		if (value == null) {
-			root.parent?.remove(root)
-			return
-		}
-
 		value.forEach { v -> insertValue(v, path, root) }
 	}
 }
 
 private fun <T> insertValue(v: T, path: Array<String>, element: Element) {
-	if (v is Int) {
-		val c = element.crt(path)
-		c.value = v.toString()
-	} else if (v is String) {
-		val c = element.crt(path)
-		c.value = v
-	} else if (v is VCardStruct) {
-		val c = element.crt(path.copyOfRange(0, path.size - 1))
-		c.add(v.element)
-	} else throw RuntimeException("Unsupported type")
+
+	when {
+		v is VCardStruct && (v.element.children.isEmpty() && v.element.value.isNullOrEmpty()) -> {
+			return
+		}
+		v !is VCardStruct && (v == null || v.toString().isBlank()) -> {
+			return
+		}
+		v is Int -> {
+			val c = element.crt(path)
+			c.value = v.toString()
+		}
+		v is String -> {
+			val c = element.crt(path)
+			c.value = v
+		}
+		v is VCardStruct -> {
+			val c = element.crt(path.copyOfRange(0, path.size - 1))
+			c.add(v.element)
+		}
+		else -> throw RuntimeException("Unsupported type")
+	}
+
 }
 
 private fun Element.crt(path: Array<String>): Element {
@@ -229,7 +237,19 @@ open class VCardElement<T>(
 		root.children.filter { it.name == path[0] }.toList().forEach {
 			root.remove(it)
 		}
-		if (value != null) insertValue(value, path, root)
+
+		insertValue(value, path, root)
+//		if (value is VCardStruct &&( value.element.children.isNotEmpty() || !value.element.value.isNullOrEmpty()  )) {
+//			insertValue(value, path, root)
+//		} else if (value !is VCardStruct && value != null && value.toString().isNotEmpty()) {
+//			insertValue(value, path, root)
+//		} else {
+//			// check
+//			if (root.children.isEmpty()) {
+//				root.parent?.remove(root)
+//			}
+//		}
+
 	}
 
 }

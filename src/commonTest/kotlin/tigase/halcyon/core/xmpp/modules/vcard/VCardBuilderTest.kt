@@ -1,5 +1,5 @@
 /*
- * Tigase Halcyon XMPP Library
+ * halcyon-core
  * Copyright (C) 2018 Tigase, Inc. (office@tigase.com)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -32,7 +32,37 @@ class VCardBuilderTest {
 			"<vcard xmlns=\"urn:ietf:params:xml:ns:vcard-4.0\"><nickname><text>ala</text></nickname></vcard>",
 			c.element.getAsString()
 		)
+		assertEquals(1, c.element.children.size)
+		assertEquals("nickname", c.element.children[0].name)
 		assertEquals("ala", c.element.findChild("vcard", "nickname", "text")?.value)
+	}
+
+	@Test
+	fun testVCardEmptyDataBuild() {
+		val c = vcard {
+			structuredName {
+				given = ""
+				surname = ""
+				additional = ""
+			}
+			nickname = "Alice"
+			birthday = ""
+			org {
+				name = ""
+			}
+			telephone { }
+			telephone {
+				uri = ""
+				parameters { }
+			}
+			address {
+				code = ""
+				ext = ""
+			}
+		}
+
+		assertEquals(1, c.element.children.size)
+		assertEquals("nickname", c.element.children[0].name)
 	}
 
 	@Test
@@ -96,8 +126,6 @@ class VCardBuilderTest {
 			}
 		}
 
-		println(c.element.getAsString())
-
 		assertEquals("Alice", c.element.findChild("vcard", "nickname", "text")?.value)
 		assertEquals("Alice", c.nickname)
 		assertEquals("Friday", c.element.findChild("vcard", "bday", "date")?.value)
@@ -160,7 +188,6 @@ class VCardBuilderTest {
 
 		assertEquals("http://123", photos[0].findChild("photo", "uri")?.value)
 		assertEquals("data:a/b;base64,cccc", photos[1].findChild("photo", "uri")?.value)
-
 	}
 
 }

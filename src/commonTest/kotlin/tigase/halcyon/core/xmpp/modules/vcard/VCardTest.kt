@@ -1,5 +1,5 @@
 /*
- * Tigase Halcyon XMPP Library
+ * halcyon-core
  * Copyright (C) 2018 Tigase, Inc. (office@tigase.com)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -268,6 +268,23 @@ class VCardTest {
 	}
 
 	@Test
+	fun testEmptyVCard() {
+		val vCard = VCard(element("vcard") {
+			xmlns = VCardModule.XMLNS
+		}).apply {
+			formattedName = "Genowefa"
+			nickname = ""
+			structuredName = StructuredName().apply {
+				additional = ""
+			}
+			organizations = listOf(Organization().apply { })
+		}
+		println(vCard.element.getAsString())
+		assertEquals(1, vCard.element.children.size)
+		assertEquals("fn", vCard.element.children[0].name)
+	}
+
+	@Test
 	fun testFormattedName() {
 		val vCard = VCard(element("vcard") {
 			xmlns = VCardModule.XMLNS
@@ -308,8 +325,6 @@ class VCardTest {
 		sn.surname = "Saint-Andre"
 		sn.given = "Peter"
 		vCard.structuredName = sn
-
-		println(vCard.element.getAsString())
 
 		assertEquals("Saint-Andre", vCard.element.findChild("vcard", "n", "surname")?.value)
 		assertEquals("Peter", vCard.element.findChild("vcard", "n", "given")?.value)

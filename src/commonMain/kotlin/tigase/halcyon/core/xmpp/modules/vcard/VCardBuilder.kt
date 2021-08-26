@@ -1,5 +1,5 @@
 /*
- * Tigase Halcyon XMPP Library
+ * halcyon-core
  * Copyright (C) 2018 Tigase, Inc. (office@tigase.com)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -19,6 +19,10 @@ package tigase.halcyon.core.xmpp.modules.vcard
 
 import tigase.halcyon.core.xml.element
 
+@DslMarker
+annotation class VCardTagMarker
+
+@VCardTagMarker
 class VCB(val vcard: VCard) {
 
 	//	var addresses: List<Address> by VCardElementsList(path = arrayOf("adr"), factory = ::Address)
@@ -56,6 +60,7 @@ class VCB(val vcard: VCard) {
 		}
 		get() = vcard.timeZone
 
+	@VCardTagMarker
 	class ParametersBldr(private val params: Parameters) {
 
 		var pref: Int?
@@ -70,6 +75,7 @@ class VCB(val vcard: VCard) {
 
 	}
 
+	@VCardTagMarker
 	class AddressBldr(private val addr: Address) {
 
 		var street: String?
@@ -118,9 +124,13 @@ class VCB(val vcard: VCard) {
 		val res = Address(el)
 		val a = AddressBldr(res)
 		a.init()
+		if (el.children.isEmpty() && el.value.isNullOrBlank()) {
+			vcard.element.remove(el)
+		}
 		return res
 	}
 
+	@VCardTagMarker
 	class EmailBldr(private val email: Email) {
 
 		var text: String?
@@ -144,9 +154,14 @@ class VCB(val vcard: VCard) {
 		val res = Email(el)
 		val a = EmailBldr(res)
 		a.init()
+		if (el.children.isEmpty() && el.value.isNullOrBlank()) {
+			vcard.element.remove(el)
+		}
+
 		return res
 	}
 
+	@VCardTagMarker
 	class OrgBldr(private val org: Organization) {
 
 		var name: String?
@@ -170,9 +185,13 @@ class VCB(val vcard: VCard) {
 		val res = Organization(el)
 		val a = OrgBldr(res)
 		a.init()
+		if (el.children.isEmpty() && el.value.isNullOrBlank()) {
+			vcard.element.remove(el)
+		}
 		return res
 	}
 
+	@VCardTagMarker
 	class StructuredNameBldr(private val n: StructuredName) {
 
 		var additional: String?
@@ -195,14 +214,14 @@ class VCB(val vcard: VCard) {
 	}
 
 	fun structuredName(init: StructuredNameBldr.() -> Unit): StructuredName {
-		val el = element("n") {}
-		vcard.element.add(el)
-		val res = StructuredName(el)
+		val res = StructuredName()
 		val a = StructuredNameBldr(res)
 		a.init()
+		vcard.structuredName = res
 		return res
 	}
 
+	@VCardTagMarker
 	class TelephoneBldr(private val tel: Telephone) {
 
 		var uri: String?
@@ -226,9 +245,13 @@ class VCB(val vcard: VCard) {
 		val res = Telephone(el)
 		val a = TelephoneBldr(res)
 		a.init()
+		if (el.children.isEmpty() && el.value.isNullOrBlank()) {
+			vcard.element.remove(el)
+		}
 		return res
 	}
 
+	@VCardTagMarker
 	class PhotoUriBldr(private val photo: Photo.PhotoUri) {
 
 		var uri: String?
@@ -244,9 +267,13 @@ class VCB(val vcard: VCard) {
 		val res = Photo.PhotoUri(el)
 		val a = PhotoUriBldr(res)
 		a.init()
+		if (el.children.isEmpty() && el.value.isNullOrBlank()) {
+			vcard.element.remove(el)
+		}
 		return res
 	}
 
+	@VCardTagMarker
 	class PhotoDataBldr(private val photo: Photo.PhotoData) {
 
 		var imageType: String? = photo.imageType
@@ -269,11 +296,15 @@ class VCB(val vcard: VCard) {
 		val res = Photo.PhotoData(el)
 		val a = PhotoDataBldr(res)
 		a.init()
+		if (el.children.isEmpty() && el.value.isNullOrBlank()) {
+			vcard.element.remove(el)
+		}
 		return res
 	}
 
 }
 
+@VCardTagMarker
 fun vcard(init: VCB.() -> Unit): VCard {
 	val vcard = VCB(VCard(element("vcard") {
 		xmlns = VCardModule.XMLNS
