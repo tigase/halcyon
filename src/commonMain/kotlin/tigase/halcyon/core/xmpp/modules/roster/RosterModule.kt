@@ -1,5 +1,5 @@
 /*
- * Tigase Halcyon XMPP Library
+ * halcyon-core
  * Copyright (C) 2018 Tigase, Inc. (office@tigase.com)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -53,6 +53,15 @@ class RosterLoadedEvent : Event(TYPE) {
 	companion object {
 
 		const val TYPE = "tigase.halcyon.core.xmpp.modules.roster.RosterLoadedEvent"
+	}
+
+}
+
+class RosterUpdatedEvent : Event(TYPE) {
+
+	companion object {
+
+		const val TYPE = "tigase.halcyon.core.xmpp.modules.roster.RosterUpdatedEvent"
 	}
 
 }
@@ -121,6 +130,7 @@ class RosterModule(context: Context) : AbstractXmppIQModule(
 			val result =
 				it.getChildrenNS("query", XMLNS)?.let(this@RosterModule::processQueryResponse) ?: RosterResponse(null)
 			context.eventBus.fire(RosterLoadedEvent())
+			context.eventBus.fire(RosterUpdatedEvent())
 			result
 		}
 	}
@@ -222,6 +232,7 @@ class RosterModule(context: Context) : AbstractXmppIQModule(
 			throw XMPPException(ErrorCondition.NotAllowed)
 		}
 		element.getChildrenNS("query", XMLNS)?.let(this@RosterModule::processQueryResponse)
+		context.eventBus.fire(RosterUpdatedEvent())
 	}
 
 	/**
