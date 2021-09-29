@@ -124,13 +124,15 @@ class MIXModule(override val context: Context) : XmppModule, RosterItemAnnotatio
 		}
 	}
 
-	fun create(mixComponent: BareJID, name: String): RequestBuilder<CreateResponse, IQ> {
+	fun create(mixComponent: BareJID, name: String?): RequestBuilder<CreateResponse, IQ> {
 		return context.request.iq {
 			type = IQType.Set
 			to = mixComponent.toJID()
 			"create"{
 				xmlns = XMLNS
-				attributes["channel"] = name
+				name?.let {
+					attributes["channel"] = it
+				}
 			}
 		}.map {
 			val cr = it.getChildrenNS("create", XMLNS)!!
