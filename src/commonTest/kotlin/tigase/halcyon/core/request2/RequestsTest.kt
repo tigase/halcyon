@@ -45,6 +45,7 @@ class RequestsTest {
 	@Test
 	fun testMap2Stacking() {
 		var rr1: Result<Long>? = null
+		var rr12: Result<Long>? = null
 		var rr2: Result<Long>? = null
 
 		var respCounter1 = 0
@@ -67,6 +68,9 @@ class RequestsTest {
 		}.response { result ->
 			++respCounter1
 			rr1 = result
+		}.response { result ->
+			++respCounter1
+			rr12 = result
 		}.map { value ->
 			++mapCounter3
 			value + 1
@@ -93,15 +97,21 @@ class RequestsTest {
 		}
 		req.setResponseStanza(response)
 
-		val rr1NotNull = assertNotNull(rr1)
-		assertTrue(rr1NotNull.isSuccess)
-		assertEquals(1234, rr1NotNull.getOrNull())
+		assertNotNull(rr1).let {
+			assertTrue(it.isSuccess)
+			assertEquals(1234, it.getOrNull())
+		}
+		assertNotNull(rr12).let {
+			assertTrue(it.isSuccess)
+			assertEquals(1234, it.getOrNull())
+		}
 
-		val rr2NotNull = assertNotNull(rr2)
-		assertTrue(rr2NotNull.isSuccess)
-		assertEquals(1236, rr2NotNull.getOrNull())
+		assertNotNull(rr2).let {
+			assertTrue(it.isSuccess)
+			assertEquals(1236, it.getOrNull())
+		}
 
-		assertEquals(1, respCounter1, "Response handler must be called once!")
+		assertEquals(2, respCounter1, "Response handler must be called twice!")
 		assertEquals(1, respCounter2, "Response handler must be called once!")
 		assertEquals(1, mapCounter1, "Mapping must be executed once!")
 		assertEquals(1, mapCounter2, "Mapping must be executed once!")
@@ -194,6 +204,70 @@ class RequestsTest {
 
 		val rrNotNull = assertNotNull(rr)
 		assertTrue(rrNotNull.isSuccess)
+	}
+
+	@Test
+	fun testRequestManyHandlersSuccess() {
+		var rr1: Result<IQ>? = null
+		var rr2: Result<IQ>? = null
+		var rr3: Result<IQ>? = null
+
+		val req = factory.iq {
+			to = "a@b".toJID()
+			from = "x@y".toJID()
+			type = IQType.Get
+		}.response { rr1 = it }.response { rr2 = it }.response { rr3 = it }.build()
+
+		val response = iq {
+			from = "a@b".toJID()
+			to = "x@y".toJID()
+			type = IQType.Result
+			"response"{
+				xmlns = "test"
+				+"1234"
+			}
+		}
+		req.setResponseStanza(response)
+
+		assertNotNull(rr1).let {
+			assertTrue(it.isSuccess)
+		}
+		assertNotNull(rr2).let {
+			assertTrue(it.isSuccess)
+		}
+		assertNotNull(rr3).let {
+			assertTrue(it.isSuccess)
+		}
+	}
+
+	@Test
+	fun testRequestManyHandlersError() {
+		var rr1: Result<IQ>? = null
+		var rr2: Result<IQ>? = null
+		var rr3: Result<IQ>? = null
+
+		val req = factory.iq {
+			to = "a@b".toJID()
+			from = "x@y".toJID()
+			type = IQType.Get
+		}.response { rr1 = it }.response { rr2 = it }.response { rr3 = it }.build()
+
+		val response = iq {
+			from = "a@b".toJID()
+			to = "x@y".toJID()
+			type = IQType.Error
+		}
+		req.setResponseStanza(response)
+
+		assertNotNull(rr1).let {
+			assertTrue(it.isFailure)
+		}
+		assertNotNull(rr2).let {
+			assertTrue(it.isFailure)
+		}
+		assertNotNull(rr3).let {
+			assertTrue(it.isFailure)
+		}
 	}
 
 	@Test

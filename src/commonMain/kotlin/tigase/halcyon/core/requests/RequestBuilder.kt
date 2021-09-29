@@ -24,10 +24,28 @@ import tigase.halcyon.core.xml.ElementImpl
 import tigase.halcyon.core.xmpp.ErrorCondition
 import tigase.halcyon.core.xmpp.stanzas.*
 
-typealias ResultHandler<V> = (Result<V>) -> Unit
+//typealias ResultHandler<V> = (Result<V>) -> Unit
 typealias ResponseStanzaHandler<STT> = (Request<*, STT>, STT?) -> Unit
 
 class XMPPError(val response: Stanza<*>?, val error: ErrorCondition, val description: String?) : Exception(description)
+
+typealias RHandler<V> = (Result<V>) -> Unit
+
+class ResultHandler<V> {
+
+	private val handlers: MutableList<RHandler<V>> = mutableListOf()
+
+	fun add(handler: RHandler<V>) {
+		this.handlers.add(handler)
+	}
+
+	fun invoke(tmp: Result<V>) {
+		handlers.forEach {
+			it.invoke(tmp)
+		}
+	}
+
+}
 
 class RequestBuilderFactory(private val context: Context) {
 
@@ -122,9 +140,10 @@ class RequestBuilder<V, STT : Stanza<*>>(
 		return this
 	}
 
-	fun response(requestName: String? = null, handler: ResultHandler<V>): RequestBuilder<V, STT> {
+	fun response(requestName: String? = null, handler: RHandler<V>): RequestBuilder<V, STT> {
 		check(!writeDirectly) { "Response handler cannot be added to directly writable request." }
-		this.resultHandler = handler
+		if (this.resultHandler == null) this.resultHandler = ResultHandler()
+		this.resultHandler?.add(handler)
 		if (requestName != null) this.requestName = requestName
 		return this
 	}
@@ -214,8 +233,9 @@ class RequestConsumerBuilder<CSR, V, STT : Stanza<*>>(
 		return this
 	}
 
-	fun response(requestName: String? = null, handler: ResultHandler<V>): RequestConsumerBuilder<CSR, V, STT> {
-		this.resultHandler = handler
+	fun response(requestName: String? = null, handler: RHandler<V>): RequestConsumerBuilder<CSR, V, STT> {
+		if (this.resultHandler == null) this.resultHandler = ResultHandler()
+		this.resultHandler?.add(handler)
 		if (requestName != null) this.requestName = requestName
 		return this
 	}
