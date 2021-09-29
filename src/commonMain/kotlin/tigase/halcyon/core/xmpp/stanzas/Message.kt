@@ -17,6 +17,7 @@
  */
 package tigase.halcyon.core.xmpp.stanzas
 
+import tigase.halcyon.core.parseISO8601
 import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xml.attributeProp
 import tigase.halcyon.core.xml.stringElementProperty
@@ -45,4 +46,10 @@ class Message(wrappedElement: Element) : Stanza<MessageType?>(wrappedElement) { 
 
 	var body: String? by stringElementProperty()
 
+}
+
+fun Message.getTimestampOrNull(): Long? {
+	return this.getChildrenNS("delay", "urn:xmpp:delay")?.let {
+		it.attributes["stamp"]?.let { stamp -> parseISO8601(stamp) }
+	}
 }
