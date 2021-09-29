@@ -121,8 +121,8 @@ class VCardBuilderTest {
 				uri = "http://123"
 			}
 			photoData {
-				imageType = "a/b"
-				data = "cccc"
+				imageType = "image/png"
+				data = "iVBORw0KGgoAAAANSUhEUgAAAGAAAABgCAYAAADimHc4AAAMI2lDQ1BJQ0MgUHJvZmlsZQAASImVVwdUk8kWnr+kktACoUg"
 			}
 		}
 
@@ -187,7 +187,10 @@ class VCardBuilderTest {
 		assertEquals(2, photos.size)
 
 		assertEquals("http://123", photos[0].findChild("photo", "uri")?.value)
-		assertEquals("data:a/b;base64,cccc", photos[1].findChild("photo", "uri")?.value)
+		assertEquals(
+			"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGAAAABgCAYAAADimHc4AAAMI2lDQ1BJQ0MgUHJvZmlsZQAASImVVwdUk8kWnr+kktACoUg",
+			photos[1].findChild("photo", "uri")?.value
+		)
 	}
 
 }
