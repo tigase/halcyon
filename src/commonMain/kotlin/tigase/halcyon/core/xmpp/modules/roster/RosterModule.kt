@@ -105,7 +105,7 @@ class RosterModule(context: Context) : AbstractXmppIQModule(
 	)
 ) {
 
-	private val log = LoggerFactory.logger("com.example.modules.roster.RosterModule")
+	private val log = LoggerFactory.logger("tigase.halcyon.core.xmpp.modules.roster.RosterModule")
 
 	companion object {
 
