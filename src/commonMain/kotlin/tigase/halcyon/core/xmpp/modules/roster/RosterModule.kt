@@ -120,9 +120,7 @@ class RosterModule(context: Context) : AbstractXmppIQModule(
 			type = IQType.Get
 			"query"{
 				xmlns = XMLNS
-				store.getVersion()?.let {
-					attribute("ver", it)
-				}
+				attribute("ver", store.getVersion() ?: "")
 			}
 		}
 		updateRequest(iq)
