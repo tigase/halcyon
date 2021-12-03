@@ -1,5 +1,5 @@
 /*
- * Tigase Halcyon XMPP Library
+ * halcyon-core
  * Copyright (C) 2018 Tigase, Inc. (office@tigase.com)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -122,7 +122,7 @@ class PresenceModule(override val context: Context) : XmppModule {
 		}
 
 		return store.getPresences(jid).filter { presence -> presence.type == null }
-			.map { presence -> Envelope(presence) }.minBy { envelope -> envelope.comp }?.presence
+			.map { presence -> Envelope(presence) }.minByOrNull { envelope -> envelope.comp }?.presence
 	}
 
 	fun getPresenceOf(jid: JID): Presence? {

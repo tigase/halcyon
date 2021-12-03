@@ -16,8 +16,8 @@
  * If not, see http://www.gnu.org/licenses/.
  */
 plugins {
-	kotlin("multiplatform") version "1.4.10"
-	kotlin("plugin.serialization") version "1.4.10"
+	kotlin("multiplatform") version "1.5.31"
+	kotlin("plugin.serialization") version "1.5.31"
 	id("maven-publish")
 	id("org.asciidoctor.jvm.convert") version "3.1.0"
 }
@@ -63,12 +63,12 @@ kotlin {
 
 	sourceSets {
 		all {
-			languageSettings.useExperimentalAnnotation("org.mylibrary.OptInAnnotation")
+//			languageSettings.optIn("org.mylibrary.OptInAnnotation")
 		}
 		val commonMain by getting {
 			languageSettings.apply {
-				languageVersion = "1.3" // possible values: '1.0', '1.1', '1.2', '1.3'
-				apiVersion = "1.3" // possible values: '1.0', '1.1', '1.2', '1.3'
+				languageVersion = "1.5" // possible values: '1.0', '1.1', '1.2', '1.3'
+				apiVersion = "1.5" // possible values: '1.0', '1.1', '1.2', '1.3'
 			}
 			dependencies {
 				implementation(kotlin("stdlib-common"))
