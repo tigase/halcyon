@@ -1,5 +1,5 @@
 /*
- * Tigase Halcyon XMPP Library
+ * halcyon-core
  * Copyright (C) 2018 Tigase, Inc. (office@tigase.com)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -23,12 +23,14 @@ import tigase.halcyon.core.modules.Criteria
 import tigase.halcyon.core.modules.HasInterceptors
 import tigase.halcyon.core.modules.StanzaInterceptor
 import tigase.halcyon.core.modules.XmppModule
+import tigase.halcyon.core.requests.RequestBuilder
 import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xml.element
 import tigase.halcyon.core.xmpp.ErrorCondition
 import tigase.halcyon.core.xmpp.JID
 import tigase.halcyon.core.xmpp.XMPPException
 import tigase.halcyon.core.xmpp.stanzas.Message
+import tigase.halcyon.core.xmpp.stanzas.MessageNode
 import tigase.halcyon.core.xmpp.stanzas.MessageType
 import tigase.halcyon.core.xmpp.stanzas.message
 import tigase.halcyon.core.xmpp.toJID
@@ -52,19 +54,21 @@ class DeliveryReceiptsModule(override val context: Context) : XmppModule, HasInt
 	override val type = TYPE
 	override val stanzaInterceptors: Array<StanzaInterceptor> = arrayOf(this)
 
+	var autoSendReceived = false
+
 	override fun initialize() {
 	}
 
 	override fun process(element: Element) = throw XMPPException(ErrorCondition.FeatureNotImplemented)
 
-	override fun afterReceive(element: Element): Element? {
+	override fun afterReceive(element: Element): Element {
 		if (element.name != Message.NAME) return element
 		if (element.attributes["type"] == MessageType.Error.value) return element
 		val from = element.attributes["from"]?.toJID() ?: return element
 
 		element.getReceiptReceivedID()?.let { id -> context.eventBus.fire(MessageDeliveryReceiptEvent(from, id)) }
 
-		element.getChildrenNS("request", XMLNS)?.let {
+		if (autoSendReceived) element.getChildrenNS("request", XMLNS)?.let {
 			element.attributes["id"]?.let { id ->
 				val resp = message {
 					element.attributes["from"]?.let {
@@ -81,10 +85,16 @@ class DeliveryReceiptsModule(override val context: Context) : XmppModule, HasInt
 				context.writer.writeDirectly(resp)
 			}
 		}
-
-
 		return element
 	}
+
+	fun received(jid: JID, originId: String): RequestBuilder<Unit, Message> = context.request.message(message {
+		to = jid
+		"received"{
+			xmlns = XMLNS
+			attribute("id", originId)
+		}
+	}, true)
 
 	override fun beforeSend(element: Element): Element {
 		if (element.name != Message.NAME) return element
@@ -99,8 +109,14 @@ class DeliveryReceiptsModule(override val context: Context) : XmppModule, HasInt
 		})
 		return element
 	}
-
 }
+
+fun MessageNode.addDeliveryReceiptRequest() = this.element.add(tigase.halcyon.core.xml.element("request") {
+	xmlns = DeliveryReceiptsModule.XMLNS
+})
+
+fun Element?.isDeliveryReceiptRequested(): Boolean =
+	this != null && this.getChildrenNS("request", DeliveryReceiptsModule.XMLNS) != null
 
 fun Element.getReceiptReceivedID(): String? {
 	return this.getChildrenNS("received", DeliveryReceiptsModule.XMLNS)?.let { it.attributes["id"] }

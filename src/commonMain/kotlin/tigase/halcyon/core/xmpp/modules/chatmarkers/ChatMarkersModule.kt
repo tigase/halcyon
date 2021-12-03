@@ -1,5 +1,5 @@
 /*
- * Tigase Halcyon XMPP Library
+ * halcyon-core
  * Copyright (C) 2018 Tigase, Inc. (office@tigase.com)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -30,11 +30,14 @@ import tigase.halcyon.core.xmpp.JID
 import tigase.halcyon.core.xmpp.XMPPException
 import tigase.halcyon.core.xmpp.modules.caps.EntityCapabilitiesModule
 import tigase.halcyon.core.xmpp.modules.presence.PresenceModule
+import tigase.halcyon.core.xmpp.modules.uniqueId.getOriginID
 import tigase.halcyon.core.xmpp.stanzas.Message
 import tigase.halcyon.core.xmpp.stanzas.MessageType
+import tigase.halcyon.core.xmpp.stanzas.wrap
 import tigase.halcyon.core.xmpp.toJID
 
-data class ChatMarkerEvent(val jid: JID, val msgId: String, val marker: ChatMarkersModule.Marker) : Event(TYPE) {
+data class ChatMarkerEvent(val jid: JID, val msgId: String, val stanza: Message, val marker: ChatMarkersModule.Marker) :
+	Event(TYPE) {
 
 	companion object {
 
@@ -99,6 +102,7 @@ class ChatMarkersModule(override val context: Context) : XmppModule, HasIntercep
 	override val stanzaInterceptors: Array<StanzaInterceptor> = arrayOf(this)
 
 	var mode: Mode = Mode.Auto
+	var autoSendReceived = false
 
 	override fun initialize() {
 
@@ -131,20 +135,33 @@ class ChatMarkersModule(override val context: Context) : XmppModule, HasIntercep
 		val command = element.getChildrenNS(XMLNS).firstOrNull() ?: return element
 		when (command.name) {
 			"markable" -> {
-				val id = element.attributes["id"]
-				if (id != null) markMessage(from, id, Marker.Received).send()
+				if (autoSendReceived) element.getOriginID() ?: element.attributes["id"]?.let { id ->
+					markMessage(from, id, Marker.Received).send()
+				}
 			}
 			Marker.Received.xmppValue -> {
 				val id = command.attributes["id"]
-				if (id != null) context.eventBus.fire(ChatMarkerEvent(from, id, Marker.Received))
+				if (id != null) context.eventBus.fire(
+					ChatMarkerEvent(
+						from, id, wrap<Message>(element), Marker.Received
+					)
+				)
 			}
 			Marker.Acknowledged.xmppValue -> {
 				val id = command.attributes["id"]
-				if (id != null) context.eventBus.fire(ChatMarkerEvent(from, id, Marker.Acknowledged))
+				if (id != null) context.eventBus.fire(
+					ChatMarkerEvent(
+						from, id, wrap<Message>(element), Marker.Acknowledged
+					)
+				)
 			}
 			Marker.Displayed.xmppValue -> {
 				val id = command.attributes["id"]
-				if (id != null) context.eventBus.fire(ChatMarkerEvent(from, id, Marker.Displayed))
+				if (id != null) context.eventBus.fire(
+					ChatMarkerEvent(
+						from, id, wrap<Message>(element), Marker.Displayed
+					)
+				)
 			}
 			else -> throw XMPPException(
 				ErrorCondition.FeatureNotImplemented, "Unsupported chat marker '${command.name}'"
@@ -181,5 +198,29 @@ class ChatMarkersModule(override val context: Context) : XmppModule, HasIntercep
 	}
 }
 
+sealed class ChatMarker(val marker: ChatMarkersModule.Marker, val originId: String, val sender: JID) {
+
+	class Received(originId: String, sender: JID) : ChatMarker(ChatMarkersModule.Marker.Received, originId, sender)
+	class Acknowledged(originId: String, sender: JID) :
+		ChatMarker(ChatMarkersModule.Marker.Acknowledged, originId, sender)
+
+	class Displayed(originId: String, sender: JID) : ChatMarker(ChatMarkersModule.Marker.Displayed, originId, sender)
+}
+
 fun Element?.isChatMarkerRequested(): Boolean =
 	this != null && this.getChildrenNS("markable", ChatMarkersModule.XMLNS) != null
+
+fun Element.getChatMarkerOrNull(): ChatMarker? {
+	if (this.name != Message.NAME) return null
+	if (this.attributes["type"] == MessageType.Error.value) return null
+	val from = this.attributes["from"]?.toJID() ?: return null
+	val command = this.getChildrenNS(ChatMarkersModule.XMLNS).firstOrNull() ?: return null
+	val id = command.attributes["id"] ?: return null
+
+	return when (command.name) {
+		ChatMarkersModule.Marker.Displayed.xmppValue -> ChatMarker.Displayed(id, from)
+		ChatMarkersModule.Marker.Acknowledged.xmppValue -> ChatMarker.Acknowledged(id, from)
+		ChatMarkersModule.Marker.Received.xmppValue -> ChatMarker.Received(id, from)
+		else -> null
+	}
+}
