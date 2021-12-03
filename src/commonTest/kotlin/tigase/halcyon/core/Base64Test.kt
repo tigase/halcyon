@@ -1,5 +1,5 @@
 /*
- * Tigase Halcyon XMPP Library
+ * halcyon-core
  * Copyright (C) 2018 Tigase, Inc. (office@tigase.com)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -31,6 +31,21 @@ class Base64Test {
 		assertEquals("foob", Base64.decodeToString("Zm9vYg=="))
 		assertEquals("fooba", Base64.decodeToString("Zm9vYmE="))
 		assertEquals("foobar", Base64.decodeToString("Zm9vYmFy"))
+	}
+
+	@Test
+	fun encodeDecodeToByteArray() {
+		val byteArray = IntRange(0, 10240).map { it.toByte() }.shuffled().toByteArray()
+		val enc = Base64.encode(byteArray)
+		val dec = Base64.decodeToByteArray(enc)
+		val dec2 = Base64.decode(enc).map(Char::toByte).toByteArray()
+
+		assertEquals(byteArray.size, dec.size)
+		assertEquals(byteArray.size, dec2.size)
+
+		dec.forEachIndexed { index, byte -> assertEquals(byteArray[index], byte) }
+		dec2.forEachIndexed { index, byte -> assertEquals(byteArray[index], byte) }
+		dec2.forEachIndexed { index, byte -> assertEquals(dec[index], byte) }
 	}
 
 	@ExperimentalStdlibApi

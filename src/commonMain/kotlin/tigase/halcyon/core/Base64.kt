@@ -1,5 +1,5 @@
 /*
- * Tigase Halcyon XMPP Library
+ * halcyon-core
  * Copyright (C) 2018 Tigase, Inc. (office@tigase.com)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -120,7 +120,7 @@ object Base64 {
 
 	fun decodeToString(s: String): String {
 		val buf = tigase.halcyon.core.Base64.decode(s)
-		return String(buf)
+		return buf.concatToString()
 	}
 
 	/**
@@ -154,7 +154,7 @@ object Base64 {
 			}
 			2 -> output[--a] = '='
 		}
-		return String(output)
+		return output.concatToString()
 	}
 
 	fun encode(buf: ByteArray): String {
@@ -181,7 +181,7 @@ object Base64 {
 			}
 			2 -> output[--a] = '='
 		}
-		return String(output)
+		return output.concatToString()
 	}
 
 	private fun findNexIt(s: String, idx: Int): Int {
@@ -196,5 +196,80 @@ object Base64 {
 		} while (c2 == -1 && i < sl)
 
 		return i
+	}
+
+	fun decodeToByteArray(s: String): ByteArray {
+		var separatorsCounter = 0
+		val inputLen = s.length
+		for (i in 0 until inputLen) {
+			val c = tigase.halcyon.core.Base64.ALPHABET_1[s[i].toInt()]
+			if (c < 0 && c != '='.toInt()) {
+				separatorsCounter++
+			}
+		}
+
+		var deltas = 0
+		var i = inputLen - 1
+		while (i > 1 && tigase.halcyon.core.Base64.ALPHABET_1[s[i].toInt()] <= 0) {
+			if (s[i] == '=') {
+				++deltas
+			}
+			--i
+		}
+
+		val outputLen = (inputLen - separatorsCounter) * 3 / 4 - deltas
+
+		val buffer = ByteArray(outputLen)
+		val mask = 0xFF
+		var index = 0
+		var o: Int
+		o = 0
+		while (o < s.length) {
+
+			var c0 = tigase.halcyon.core.Base64.ALPHABET_1[s[o++].toInt()]
+			if (c0 == -1) {
+				o = tigase.halcyon.core.Base64.findNexIt(s, --o)
+				c0 = tigase.halcyon.core.Base64.ALPHABET_1[s[o++].toInt()]
+				if (c0 == -1) {
+					break
+				}
+			}
+			var c1 = tigase.halcyon.core.Base64.ALPHABET_1[s[o++].toInt()]
+			if (c1 == -1) {
+				o = tigase.halcyon.core.Base64.findNexIt(s, --o)
+				c1 = tigase.halcyon.core.Base64.ALPHABET_1[s[o++].toInt()]
+				if (c1 == -1) {
+					break
+				}
+			}
+
+			buffer[index++] = (c0 shl 2 or (c1 shr 4) and mask).toByte()
+			if (index >= buffer.size) {
+				break
+			}
+			var c2 = tigase.halcyon.core.Base64.ALPHABET_1[s[o++].toInt()]
+			if (c2 == -1) {
+				o = tigase.halcyon.core.Base64.findNexIt(s, --o)
+				c2 = tigase.halcyon.core.Base64.ALPHABET_1[s[o++].toInt()]
+				if (c2 == -1) {
+					break
+				}
+			}
+			buffer[index++] = (c1 shl 4 or (c2 shr 2) and mask).toByte()
+			if (index >= buffer.size) {
+				break
+			}
+			var c3 = tigase.halcyon.core.Base64.ALPHABET_1[s[o++].toInt()]
+			if (c3 == -1) {
+				o = tigase.halcyon.core.Base64.findNexIt(s, --o)
+				c3 = tigase.halcyon.core.Base64.ALPHABET_1[s[o++].toInt()]
+				if (c3 == -1) {
+					break
+				}
+			}
+			buffer[index++] = (c2 shl 6 or c3 and mask).toByte()
+		}
+
+		return buffer
 	}
 }
