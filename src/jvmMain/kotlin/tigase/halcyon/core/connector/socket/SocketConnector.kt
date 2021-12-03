@@ -1,5 +1,5 @@
 /*
- * Tigase Halcyon XMPP Library
+ * halcyon-core
  * Copyright (C) 2018 Tigase, Inc. (office@tigase.com)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -313,7 +313,8 @@ class SocketConnector(halcyon: Halcyon) : AbstractConnector(halcyon) {
 
 	private fun onTick() {
 		if (state == State.Connected && whiteSpaceEnabled) {
-			log.fine { "Whitespace ping" }
+			log.finer { "Whitespace ping" }
+			log.finer { "Whitespace ping" }
 			worker.writer.write(' '.toInt())
 			worker.writer.flush()
 		}
