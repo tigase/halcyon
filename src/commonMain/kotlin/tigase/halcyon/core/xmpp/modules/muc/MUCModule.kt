@@ -30,6 +30,7 @@ import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xmpp.*
 import tigase.halcyon.core.xmpp.forms.JabberDataForm
 import tigase.halcyon.core.xmpp.modules.PingModule
+import tigase.halcyon.core.xmpp.modules.mix.isMixMessage
 import tigase.halcyon.core.xmpp.stanzas.*
 
 enum class State {
@@ -220,6 +221,7 @@ class MUCModule(override val context: Context) : XmppModule {
 	}
 
 	private fun calculateAction(element: Element, checkRoomStore: Boolean = true): Action {
+		if (element.isMixMessage()) return Action.Skip
 		val from: BareJID = element.attributes["from"]?.toBareJID() ?: return Action.Skip
 		if (element.name == Message.NAME) {
 			val type = element.attributes["type"]
