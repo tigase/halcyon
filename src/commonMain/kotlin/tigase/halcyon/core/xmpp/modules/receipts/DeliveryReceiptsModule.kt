@@ -43,6 +43,10 @@ data class MessageDeliveryReceiptEvent(val jid: JID, val msgId: String) : Event(
 
 class DeliveryReceiptsModule(override val context: Context) : XmppModule, HasInterceptors, StanzaInterceptor {
 
+	enum class Mode { All,
+		Off
+	}
+
 	companion object {
 
 		const val XMLNS = "urn:xmpp:receipts"
@@ -55,6 +59,7 @@ class DeliveryReceiptsModule(override val context: Context) : XmppModule, HasInt
 	override val stanzaInterceptors: Array<StanzaInterceptor> = arrayOf(this)
 
 	var autoSendReceived = false
+	var mode: Mode = Mode.All
 
 	override fun initialize() {
 	}
@@ -104,14 +109,14 @@ class DeliveryReceiptsModule(override val context: Context) : XmppModule, HasInt
 		if (element.getChildrenNS("received", XMLNS) != null) return element
 		if (element.getFirstChild("body") == null) return element
 
-		element.add(element("request") {
+		if (mode == Mode.All) element.add(element("request") {
 			xmlns = XMLNS
 		})
 		return element
 	}
 }
 
-fun MessageNode.addDeliveryReceiptRequest() = this.element.add(tigase.halcyon.core.xml.element("request") {
+fun MessageNode.deliveryReceiptRequest() = this.element.add(tigase.halcyon.core.xml.element("request") {
 	xmlns = DeliveryReceiptsModule.XMLNS
 })
 

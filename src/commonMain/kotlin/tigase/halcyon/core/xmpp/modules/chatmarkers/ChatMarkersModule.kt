@@ -32,6 +32,7 @@ import tigase.halcyon.core.xmpp.modules.caps.EntityCapabilitiesModule
 import tigase.halcyon.core.xmpp.modules.presence.PresenceModule
 import tigase.halcyon.core.xmpp.modules.uniqueId.getOriginID
 import tigase.halcyon.core.xmpp.stanzas.Message
+import tigase.halcyon.core.xmpp.stanzas.MessageNode
 import tigase.halcyon.core.xmpp.stanzas.MessageType
 import tigase.halcyon.core.xmpp.stanzas.wrap
 import tigase.halcyon.core.xmpp.toJID
@@ -191,6 +192,7 @@ class ChatMarkersModule(override val context: Context) : XmppModule, HasIntercep
 	override fun beforeSend(element: Element): Element {
 		if (element.name != Message.NAME) return element
 		val to = element.attributes["to"]?.toJID() ?: return element
+		if (element.getFirstChild("body") == null) return element
 
 		if (isMarkable(to)) element.add(tigase.halcyon.core.xml.element("markable") { xmlns = XMLNS })
 
@@ -206,6 +208,10 @@ sealed class ChatMarker(val marker: ChatMarkersModule.Marker, val originId: Stri
 
 	class Displayed(originId: String, sender: JID) : ChatMarker(ChatMarkersModule.Marker.Displayed, originId, sender)
 }
+
+fun MessageNode.markable() = this.element.add(tigase.halcyon.core.xml.element("markable") {
+	xmlns = ChatMarkersModule.XMLNS
+})
 
 fun Element?.isChatMarkerRequested(): Boolean =
 	this != null && this.getChildrenNS("markable", ChatMarkersModule.XMLNS) != null
