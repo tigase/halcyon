@@ -1,16 +1,13 @@
 <h1>
   <div style="text-align: center">Halcyon</div>
-  <img src="halcyon-docs/src/docs/asciidoc/images/badge_pbt_dn_s.png" alt="Powered By Tigase"/>
 </h1>
-
-
 
 > :warning: **THIS SOFTWARE IS NOT FINISHED YET**:
 > This library is under active development. We cannot ensure API stability.
 >
 > You can use it at your own risk.
 
-<img src="https://tc.tigase.net/app/rest/builds/buildType:(id:Halcyon_BuildArtur)/statusIcon" width="100"/>
+<img src="https://tc.tigase.net/app/rest/builds/buildType:(id:Halcyon_BuildArtur)/statusIcon" width="100"/> ![CI Status](https://github.com/tigase/halcyon/actions/workflows/gradle.yml/badge.svg)
 
 # What it is
 
