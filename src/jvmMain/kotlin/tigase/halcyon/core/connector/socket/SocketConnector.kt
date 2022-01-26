@@ -44,7 +44,12 @@ sealed class SocketConnectionErrorEvent : ConnectionErrorEvent() {
 
 	class TLSFailureEvent : SocketConnectionErrorEvent()
 	class HostNotFount : SocketConnectionErrorEvent()
-	class Unknown(val caught: Throwable) : SocketConnectionErrorEvent()
+	class Unknown(val caught: Throwable) : SocketConnectionErrorEvent() {
+
+		override fun toString(): String {
+			return "tigase.halcyon.core.connector.socket.SocketConnectionErrorEvent.Unknown: " + caught.message
+		}
+	}
 
 }
 
@@ -217,7 +222,7 @@ class SocketConnector(halcyon: Halcyon) : AbstractConnector(halcyon) {
 
 		try {
 			this.socket = createSocket()
-			socket.soTimeout = 0
+			socket.soTimeout = 20 * 1000
 			socket.keepAlive = false
 			socket.tcpNoDelay = true
 			log.fine { "Opening socket connection to ${this.socket.inetAddress}" }
@@ -315,7 +320,7 @@ class SocketConnector(halcyon: Halcyon) : AbstractConnector(halcyon) {
 		if (state == State.Connected && whiteSpaceEnabled) {
 			log.finer { "Whitespace ping" }
 			log.finer { "Whitespace ping" }
-			worker.writer.write(' '.toInt())
+			worker.writer.write(' '.code)
 			worker.writer.flush()
 		}
 	}

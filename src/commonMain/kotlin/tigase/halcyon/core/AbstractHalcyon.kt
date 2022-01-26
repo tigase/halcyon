@@ -347,6 +347,8 @@ abstract class AbstractHalcyon : Context, PacketWriter {
 
 			stopConnector()
 
+			sessionController?.stop()
+			sessionController = null
 			connector = createConnector()
 			sessionController = connector!!.createSessionController()
 
@@ -361,8 +363,10 @@ abstract class AbstractHalcyon : Context, PacketWriter {
 			if (doAfterDisconnected != null) connector?.let {
 				waitForDisconnect(it, doAfterDisconnected)
 			}
-			sessionController?.stop()
-			sessionController = null
+			if (!running) {
+				sessionController?.stop()
+				sessionController = null
+			}
 			connector?.stop()
 			connector = null
 		}
