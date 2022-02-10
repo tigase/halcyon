@@ -17,6 +17,7 @@
  */
 package tigase.halcyon.core.xmpp.modules.muc
 
+import kotlinx.datetime.Instant
 import tigase.halcyon.core.Context
 import tigase.halcyon.core.eventbus.Event
 import tigase.halcyon.core.exceptions.HalcyonException
@@ -57,7 +58,7 @@ open class Room(
 	var nickname: String,
 	var password: String?,
 	var state: State = State.NotJoined,
-	var lastMessageTimestamp: Long? = null
+	var lastMessageTimestamp: Instant? = null
 ) {
 
 	internal val _occupants = mutableMapOf<String, Occupant>()

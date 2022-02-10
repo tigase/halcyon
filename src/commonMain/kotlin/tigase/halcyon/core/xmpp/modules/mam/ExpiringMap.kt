@@ -1,5 +1,5 @@
 /*
- * Tigase Halcyon XMPP Library
+ * halcyon-core
  * Copyright (C) 2018 Tigase, Inc. (office@tigase.com)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -17,12 +17,16 @@
  */
 package tigase.halcyon.core.xmpp.modules.mam
 
+import kotlinx.datetime.Instant
 import tigase.halcyon.core.TickEvent
 import tigase.halcyon.core.eventbus.EventBus
 import tigase.halcyon.core.eventbus.EventHandler
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.seconds
 
-class ExpiringMap<K, V>(private val map: MutableMap<K, V> = mutableMapOf(), private val minimalTime: Long = 30000) :
-	MutableMap<K, V> by map {
+class ExpiringMap<K, V>(
+	private val map: MutableMap<K, V> = mutableMapOf(), private val minimalTime: Duration = 30.seconds
+) : MutableMap<K, V> by map {
 
 	var expirationChecker: ((V) -> Boolean)? = null
 
@@ -32,7 +36,7 @@ class ExpiringMap<K, V>(private val map: MutableMap<K, V> = mutableMapOf(), priv
 		}
 	}
 
-	private var lastCallTime = -1L
+	private var lastCallTime = Instant.DISTANT_PAST
 
 	var eventBus: EventBus? = null
 		set(value) {

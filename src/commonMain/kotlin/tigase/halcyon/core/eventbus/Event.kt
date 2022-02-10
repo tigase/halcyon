@@ -1,5 +1,5 @@
 /*
- * Tigase Halcyon XMPP Library
+ * halcyon-core
  * Copyright (C) 2018 Tigase, Inc. (office@tigase.com)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -17,6 +17,7 @@
  */
 package tigase.halcyon.core.eventbus
 
+import kotlinx.datetime.Instant
 import tigase.halcyon.core.AbstractHalcyon
 
 abstract class Event(val eventType: String) {
@@ -24,7 +25,7 @@ abstract class Event(val eventType: String) {
 	lateinit var context: AbstractHalcyon
 		internal set
 
-	var eventTime: Long = Long.MIN_VALUE
+	var eventTime: Instant = Instant.DISTANT_PAST
 		internal set
 
 }

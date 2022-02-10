@@ -1,5 +1,5 @@
 /*
- * Tigase Halcyon XMPP Library
+ * halcyon-core
  * Copyright (C) 2018 Tigase, Inc. (office@tigase.com)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -17,7 +17,7 @@
  */
 package tigase.halcyon.core.xmpp
 
-import tigase.halcyon.core.currentTimestamp
+import kotlinx.datetime.Clock
 import kotlin.math.absoluteValue
 
 class IdGenerator {
@@ -27,7 +27,7 @@ class IdGenerator {
 	private val seed = createSeed()
 
 	private fun createSeed(): IntArray {
-		var t = currentTimestamp()
+		var t = Clock.System.now().toEpochMilliseconds()
 		var result = IntArray(0)
 		while (t > 0) {
 			val c = t % ALPHABET.length

@@ -17,9 +17,10 @@
  */
 package tigase.halcyon.core.xmpp.modules.mix
 
+import kotlinx.datetime.Clock
+import kotlinx.datetime.Instant
 import kotlinx.serialization.Serializable
 import tigase.halcyon.core.Context
-import tigase.halcyon.core.currentTimestamp
 import tigase.halcyon.core.eventbus.Event
 import tigase.halcyon.core.exceptions.HalcyonException
 import tigase.halcyon.core.modules.Criteria
@@ -50,7 +51,7 @@ data class MIXRosterItemAnnotation(val participantId: String) : RosterItemAnnota
 @Serializable
 data class MIXInvitation(val inviter: BareJID, val invitee: BareJID, val channel: BareJID, val token: String?)
 
-data class MIXMessageEvent(val channel: BareJID, val stanza: Message, val timestamp: Long) : Event(TYPE) {
+data class MIXMessageEvent(val channel: BareJID, val stanza: Message, val timestamp: Instant) : Event(TYPE) {
 
 	companion object {
 
@@ -102,10 +103,10 @@ class MIXModule(override val context: Context) : XmppModule, RosterItemAnnotatio
 	}
 
 	override fun process(element: Element) {
-		process(wrap(element), currentTimestamp())
+		process(wrap(element), Clock.System.now())
 	}
 
-	private fun process(message: Message, time: Long) {
+	private fun process(message: Message, time: Instant) {
 		context.eventBus.fire(MIXMessageEvent(message.from!!.bareJID, message, time))
 	}
 
@@ -252,8 +253,8 @@ class MIXModule(override val context: Context) : XmppModule, RosterItemAnnotatio
 		fromChannel: BareJID? = null,
 		with: String? = null,
 		rsm: RSM.Query? = null,
-		start: Long? = null,
-		end: Long? = null
+		start: Instant? = null,
+		end: Instant? = null
 	): RequestConsumerBuilder<ForwardedStanza<Message>, MAMModule.Fin, IQ> {
 		val node = if (fromChannel == null) null else NODE_MESSAGES
 		return mamModule.query(fromChannel, node, rsm, with, start, end)

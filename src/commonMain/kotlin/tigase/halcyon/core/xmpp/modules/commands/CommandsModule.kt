@@ -17,8 +17,9 @@
  */
 package tigase.halcyon.core.xmpp.modules.commands
 
+import kotlinx.datetime.Clock
+import kotlinx.datetime.Instant
 import tigase.halcyon.core.Context
-import tigase.halcyon.core.currentTimestamp
 import tigase.halcyon.core.exceptions.HalcyonException
 import tigase.halcyon.core.logger.LoggerFactory
 import tigase.halcyon.core.modules.Criteria
@@ -224,8 +225,8 @@ class CommandsModule(override val context: Context) : XmppModule {
 		override val sessionId: String, override val values: MutableMap<String, Any> = mutableMapOf()
 	) : AdHocSession {
 
-		val creationDate: Long = currentTimestamp()
-		var lastAccessDate: Long = currentTimestamp()
+		val creationDate: Instant = Clock.System.now()
+		var lastAccessDate: Instant = Clock.System.now()
 
 	}
 
@@ -285,7 +286,7 @@ class CommandsModule(override val context: Context) : XmppModule {
 		val adHocRequest = AdHocRequestImpl(stanza, adHoc, form, action)
 		cmdElement.attributes["sessionid"]?.let { sessionId -> sessions[sessionId] }?.let {
 			adHocRequest.adHocSession = it
-			it.lastAccessDate = currentTimestamp()
+			it.lastAccessDate = Clock.System.now()
 		}
 		val adHocResponse = AdHocResponseImpl()
 

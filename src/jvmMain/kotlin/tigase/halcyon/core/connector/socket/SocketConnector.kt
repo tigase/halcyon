@@ -39,6 +39,7 @@ import java.security.SecureRandom
 import javax.net.ssl.SSLContext
 import javax.net.ssl.SSLSocket
 import javax.net.ssl.SSLSocketFactory
+import kotlin.time.Duration.Companion.seconds
 
 sealed class SocketConnectionErrorEvent : ConnectionErrorEvent() {
 
@@ -73,7 +74,7 @@ class SocketConnector(halcyon: Halcyon) : AbstractConnector(halcyon) {
 
 	private lateinit var worker: SocketWorker
 
-	private val whitespacePingExecutor = TickExecutor(halcyon.eventBus, 30000) { onTick() }
+	private val whitespacePingExecutor = TickExecutor(halcyon.eventBus, 30.seconds) { onTick() }
 
 	private var whiteSpaceEnabled: Boolean = true
 

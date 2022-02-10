@@ -28,6 +28,7 @@ import tigase.halcyon.core.logger.LoggerFactory
 import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xml.parser.StreamParser
 import tigase.halcyon.core.xmpp.SessionController
+import kotlin.time.Duration.Companion.seconds
 
 class WebSocketConnectionErrorEvent(description: String) : ConnectionErrorEvent()
 
@@ -37,7 +38,7 @@ class WebSocketConnector(halcyon: Halcyon) : AbstractConnector(halcyon) {
 
 	private var config: WebSocketConnectorConfig = halcyon.config.connectorConfig as WebSocketConnectorConfig
 
-	private val whitespacePingExecutor = TickExecutor(halcyon.eventBus, 25000) { onTick() }
+	private val whitespacePingExecutor = TickExecutor(halcyon.eventBus, 25.seconds) { onTick() }
 
 	private val parser = object : StreamParser() {
 		private fun logReceivedStanza(element: Element) {

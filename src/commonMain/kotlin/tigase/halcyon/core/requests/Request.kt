@@ -1,5 +1,5 @@
 /*
- * Tigase Halcyon XMPP Library
+ * halcyon-core
  * Copyright (C) 2018 Tigase, Inc. (office@tigase.com)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -17,6 +17,7 @@
  */
 package tigase.halcyon.core.requests
 
+import kotlinx.datetime.Instant
 import tigase.halcyon.core.logger.LoggerFactory
 import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xmpp.ErrorCondition
@@ -24,13 +25,14 @@ import tigase.halcyon.core.xmpp.JID
 import tigase.halcyon.core.xmpp.XMPPException
 import tigase.halcyon.core.xmpp.stanzas.Stanza
 import tigase.halcyon.core.xmpp.stanzas.wrap
+import kotlin.time.Duration
 
 class Request<V, STT : Stanza<*>>(
 	val jid: JID?,
 	val id: String,
-	val creationTimestamp: Long,
+	val creationTimestamp: Instant,
 	val stanza: STT,
-	var timeoutDelay: Long,
+	var timeoutDelay: Duration,
 	private val handler: ResultHandler<V>?,
 	private val transform: (value: Any) -> V,
 	private val parentRequest: Request<*, STT>? = null,

@@ -17,6 +17,7 @@
  */
 package tigase.halcyon.core.xmpp.stanzas
 
+import kotlinx.datetime.Instant
 import tigase.halcyon.core.parseISO8601
 import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xml.attributeProp
@@ -48,7 +49,7 @@ class Message(wrappedElement: Element) : Stanza<MessageType?>(wrappedElement) { 
 
 }
 
-fun Message.getTimestampOrNull(): Long? {
+fun Message.getTimestampOrNull(): Instant? {
 	return this.getChildrenNS("delay", "urn:xmpp:delay")?.let {
 		it.attributes["stamp"]?.let { stamp -> parseISO8601(stamp) }
 	}

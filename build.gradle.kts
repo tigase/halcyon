@@ -56,7 +56,7 @@ kotlin {
 		}
 		withJava()
 		testRuns["test"].executionTask.configure {
-			useJUnitPlatform()
+			useJUnit()
 		}
 	}
 	js(BOTH) {
@@ -78,6 +78,7 @@ kotlin {
 			dependencies {
 				implementation(kotlin("stdlib-common"))
 				implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.3.2")
+				implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.3.2")
 				implementation("com.soywiz.korlibs.krypto:krypto:2.4.12")
 			}
 		}

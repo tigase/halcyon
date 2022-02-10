@@ -17,8 +17,9 @@
  */
 package tigase.halcyon.core.xmpp.modules.mam
 
+import kotlinx.datetime.Clock
+import kotlinx.datetime.Instant
 import tigase.halcyon.core.Context
-import tigase.halcyon.core.currentTimestamp
 import tigase.halcyon.core.eventbus.Event
 import tigase.halcyon.core.logger.LoggerFactory
 import tigase.halcyon.core.modules.Criteria
@@ -37,6 +38,7 @@ import tigase.halcyon.core.xmpp.forms.FormType
 import tigase.halcyon.core.xmpp.forms.JabberDataForm
 import tigase.halcyon.core.xmpp.modules.RSM
 import tigase.halcyon.core.xmpp.stanzas.*
+import kotlin.time.Duration.Companion.seconds
 
 data class MAMMessageEvent(
 	val resultStanza: Message, val queryId: String, val id: String, val forwardedStanza: ForwardedStanza<Message>
@@ -50,12 +52,12 @@ data class MAMMessageEvent(
 
 class ForwardedStanza<TYPE : Stanza<*>>(val resultId: String, private val element: Element) : Element by element {
 
-	val timestamp: Long? by lazy(this::getXmppDelay)
+	val timestamp: Instant? by lazy(this::getXmppDelay)
 
 	val stanza: TYPE
 		get() = getForwardedStanza()
 
-	private fun getXmppDelay(): Long? {
+	private fun getXmppDelay(): Instant? {
 		return element.getChildrenNS("delay", "urn:xmpp:delay")?.let {
 			it.attributes["stamp"]?.let { stamp -> parseISO8601(stamp) }
 		}
@@ -94,8 +96,8 @@ class MAMModule(override val context: Context) : XmppModule {
 
 	private data class RegisteredQuery(
 		val queryId: String,
-		val createdTimestamp: Long,
-		var validUntil: Long,
+		val createdTimestamp: Instant,
+		var validUntil: Instant,
 		var publisher: ConsumerPublisher<ForwardedStanza<Message>>? = null
 	)
 
@@ -116,7 +118,7 @@ class MAMModule(override val context: Context) : XmppModule {
 
 	override fun initialize() {
 		requests.expirationChecker = {
-			it.validUntil < currentTimestamp()
+			it.validUntil < Clock.System.now()
 		}
 		requests.eventBus = context.eventBus
 	}
@@ -140,7 +142,7 @@ class MAMModule(override val context: Context) : XmppModule {
 		context.eventBus.fire(MAMMessageEvent(wrap(element), queryId, resultId, forwardedStanza))
 	}
 
-	private fun prepareForm(with: String? = null, start: Long? = null, end: Long? = null): Element? {
+	private fun prepareForm(with: String? = null, start: Instant? = null, end: Instant? = null): Element? {
 		val form = JabberDataForm.create(FormType.Submit)
 		form.addField("FORM_TYPE", FieldType.Hidden).fieldValue = "urn:xmpp:mam:2"
 
@@ -156,8 +158,8 @@ class MAMModule(override val context: Context) : XmppModule {
 		node: String? = null,
 		rsm: RSM.Query? = null,
 		with: String? = null,
-		start: Long? = null,
-		end: Long? = null
+		start: Instant? = null,
+		end: Instant? = null
 	): RequestConsumerBuilder<ForwardedStanza<Message>, Fin, IQ> {
 		val queryId = IdGenerator.nextId()
 		val form: Element? = prepareForm(with, start, end)
@@ -172,7 +174,7 @@ class MAMModule(override val context: Context) : XmppModule {
 			}
 		}
 
-		val q = RegisteredQuery(queryId, currentTimestamp(), currentTimestamp() + 30000)
+		val q = RegisteredQuery(queryId, Clock.System.now(), Clock.System.now() + 30.seconds)
 		requests.put(queryId, q)
 
 		val builder = RequestConsumerBuilder<ForwardedStanza<Message>, IQ, IQ>(
@@ -185,7 +187,7 @@ class MAMModule(override val context: Context) : XmppModule {
 
 	private fun createResponse(responseStanza: Element, registeredQuery: RegisteredQuery): Fin {
 		val fin = responseStanza.getChildrenNS("fin", XMLNS)
-		registeredQuery.validUntil = currentTimestamp() + 10000
+		registeredQuery.validUntil = Clock.System.now() + 10.seconds
 		val rsm: RSM.Result? = fin?.getChildrenNS(RSM.NAME, RSM.XMLNS)?.let { p -> RSM.parseResult(p) }
 		return Fin(complete = fin?.attributes?.get("complete").toBool(), rsm = rsm)
 	}

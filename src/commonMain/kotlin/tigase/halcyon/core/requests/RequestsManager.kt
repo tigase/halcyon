@@ -18,7 +18,8 @@
 package tigase.halcyon.core.requests
 
 import getFromAttr
-import tigase.halcyon.core.currentTimestamp
+import kotlinx.datetime.Clock
+import kotlinx.datetime.Instant
 import tigase.halcyon.core.logger.LoggerFactory
 import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xmpp.JID
@@ -79,7 +80,7 @@ class RequestsManager {
 		}
 	}
 
-	fun timeoutAll(maxCreationTimestamp: Long = Long.MAX_VALUE) {
+	fun timeoutAll(maxCreationTimestamp: Instant = Instant.DISTANT_FUTURE) {
 		log.info { "Timeout all waiting requests" }
 
 		requests.entries.filter {
@@ -93,7 +94,7 @@ class RequestsManager {
 	}
 
 	fun findOutdated() {
-		val now = currentTimestamp()
+		val now = Clock.System.now()
 		requests.entries.filter {
 			it.value.isCompleted || it.value.creationTimestamp + it.value.timeoutDelay <= now
 		}.forEach {

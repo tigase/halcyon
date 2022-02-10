@@ -1,5 +1,5 @@
 /*
- * Tigase Halcyon XMPP Library
+ * halcyon-core
  * Copyright (C) 2018 Tigase, Inc. (office@tigase.com)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -17,13 +17,13 @@
  */
 package tigase.halcyon.core.eventbus
 
+import kotlinx.datetime.Clock
 import tigase.halcyon.core.AbstractHalcyon
-import tigase.halcyon.core.currentTimestamp
 
 abstract class AbstractEventBus(val context: AbstractHalcyon) : NoContextEventBus() {
 
 	override fun updateBeforeFire(event: Event) {
-		event.eventTime = currentTimestamp()
+		event.eventTime = Clock.System.now()
 		event.context = context
 	}
 

@@ -1,5 +1,5 @@
 /*
- * Tigase Halcyon XMPP Library
+ * halcyon-core
  * Copyright (C) 2018 Tigase, Inc. (office@tigase.com)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -17,12 +17,13 @@
  */
 package tigase.halcyon.core.xmpp.modules.chatstates
 
+import kotlinx.datetime.Clock
 import tigase.halcyon.core.TickEvent
-import tigase.halcyon.core.currentTimestamp
 import tigase.halcyon.core.eventbus.Event
 import tigase.halcyon.core.eventbus.EventBus
 import tigase.halcyon.core.eventbus.EventHandler
 import tigase.halcyon.core.xmpp.BareJID
+import kotlin.time.Duration.Companion.seconds
 
 data class OwnChatStateChangeEvent(
 	val jid: BareJID, val oldState: ChatState, val state: ChatState, val sendUpdate: Boolean
@@ -39,11 +40,11 @@ class ChatStateMachine(val jid: BareJID, private val eventBus: EventBus, var sen
 
 	var currentState: ChatState = ChatState.Inactive
 		private set
-	private var updateTime = currentTimestamp()
+	private var updateTime = Clock.System.now()
 
 	private fun setNewState(newState: ChatState, allowedToSendUpdate: Boolean) {
 		val oldState = currentState
-		updateTime = currentTimestamp()
+		updateTime = Clock.System.now()
 		if (currentState != newState) {
 			currentState = newState
 			eventBus.fire(OwnChatStateChangeEvent(jid, oldState, newState, sendUpdates && allowedToSendUpdate))
@@ -51,11 +52,11 @@ class ChatStateMachine(val jid: BareJID, private val eventBus: EventBus, var sen
 	}
 
 	fun update() {
-		val now = currentTimestamp()
+		val now = Clock.System.now()
 		when {
-			currentState == ChatState.Active && updateTime < now - 2 * 60_000 -> ChatState.Inactive
-			currentState == ChatState.Inactive && updateTime < now - 10 * 60_000 -> ChatState.Gone
-			currentState == ChatState.Composing && updateTime < now - 30 * 1_000 -> ChatState.Paused
+			currentState == ChatState.Active && updateTime < now - 120.seconds -> ChatState.Inactive
+			currentState == ChatState.Inactive && updateTime < now - 600.seconds -> ChatState.Gone
+			currentState == ChatState.Composing && updateTime < now - 30.seconds -> ChatState.Paused
 			else -> null
 		}?.let { calculatedState ->
 			setNewState(calculatedState, true)

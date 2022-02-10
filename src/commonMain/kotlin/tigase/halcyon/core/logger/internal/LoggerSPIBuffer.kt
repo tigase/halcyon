@@ -1,5 +1,5 @@
 /*
- * Tigase Halcyon XMPP Library
+ * halcyon-core
  * Copyright (C) 2018 Tigase, Inc. (office@tigase.com)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -17,14 +17,15 @@
  */
 package tigase.halcyon.core.logger.internal
 
-import tigase.halcyon.core.currentTimestamp
+import kotlinx.datetime.Clock
+import kotlinx.datetime.Instant
 import tigase.halcyon.core.logger.Level
 import tigase.halcyon.core.logger.LoggerSPI
 
 class LoggerSPIBuffer(val bufferSize: Int = 100) {
 
 	data class Entry(
-		val timestamp: Long, val level: Level, val loggerName: String, val msg: String, val caught: Throwable?
+		val timestamp: Instant, val level: Level, val loggerName: String, val msg: String, val caught: Throwable?
 	)
 
 	var spiFactory: ((String, Boolean) -> LoggerSPI) = { name, enabled -> DefaultLoggerSPI(name, enabled) }
@@ -49,7 +50,7 @@ class LoggerSPIBuffer(val bufferSize: Int = 100) {
 			override fun isLoggable(level: Level): Boolean = spi.isLoggable(level)
 
 			override fun log(level: Level, msg: String, caught: Throwable?) {
-				add(Entry(currentTimestamp(), level, name, msg, caught))
+				add(Entry(Clock.System.now(), level, name, msg, caught))
 				spi.log(level, msg, caught)
 			}
 		}

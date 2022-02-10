@@ -1,5 +1,5 @@
 /*
- * Tigase Halcyon XMPP Library
+ * halcyon-core
  * Copyright (C) 2018 Tigase, Inc. (office@tigase.com)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -17,12 +17,15 @@
  */
 package tigase.halcyon.core.requests
 
+import kotlinx.datetime.Clock
 import tigase.halcyon.core.Context
-import tigase.halcyon.core.currentTimestamp
 import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xml.ElementImpl
 import tigase.halcyon.core.xmpp.ErrorCondition
 import tigase.halcyon.core.xmpp.stanzas.*
+import kotlin.time.Duration
+import kotlin.time.DurationUnit
+import kotlin.time.toDuration
 
 //typealias ResultHandler<V> = (Result<V>) -> Unit
 typealias ResponseStanzaHandler<STT> = (Request<*, STT>, STT?) -> Unit
@@ -98,7 +101,7 @@ class RequestBuilder<V, STT : Stanza<*>>(
 
 	private var parentBuilder: RequestBuilder<*, STT>? = null
 
-	private var timeoutDelay: Long = 30000
+	private var timeoutDelay = 30.toDuration(DurationUnit.SECONDS)
 
 	private var resultHandler: ResultHandler<V>? = null
 
@@ -109,7 +112,7 @@ class RequestBuilder<V, STT : Stanza<*>>(
 		return Request(
 			stanza.to,
 			stanza.id!!,
-			currentTimestamp(),
+			Clock.System.now(),
 			stanza,
 			timeoutDelay,
 			resultHandler,
@@ -149,7 +152,12 @@ class RequestBuilder<V, STT : Stanza<*>>(
 	}
 
 	fun timeToLive(time: Long): RequestBuilder<V, STT> {
-		timeoutDelay = time
+		timeoutDelay = time.toDuration(DurationUnit.MILLISECONDS)
+		return this
+	}
+
+	fun timeToLive(duration: Duration): RequestBuilder<V, STT> {
+		timeoutDelay = duration
 		return this
 	}
 
@@ -191,7 +199,7 @@ class RequestConsumerBuilder<CSR, V, STT : Stanza<*>>(
 
 	private var parentBuilder: RequestConsumerBuilder<CSR, *, STT>? = null
 
-	private var timeoutDelay: Long = 30000
+	private var timeoutDelay = 30.toDuration(DurationUnit.SECONDS)
 
 	private var resultHandler: ResultHandler<V>? = null
 
@@ -202,7 +210,7 @@ class RequestConsumerBuilder<CSR, V, STT : Stanza<*>>(
 		return Request(
 			stanza.to,
 			stanza.id!!,
-			currentTimestamp(),
+			Clock.System.now(),
 			stanza,
 			timeoutDelay,
 			resultHandler,
@@ -246,7 +254,12 @@ class RequestConsumerBuilder<CSR, V, STT : Stanza<*>>(
 	}
 
 	fun timeToLive(time: Long): RequestConsumerBuilder<CSR, V, STT> {
-		timeoutDelay = time
+		timeoutDelay = time.toDuration(DurationUnit.MILLISECONDS)
+		return this
+	}
+
+	fun timeToLive(duration: Duration): RequestConsumerBuilder<CSR, V, STT> {
+		timeoutDelay = duration
 		return this
 	}
 

@@ -1,5 +1,5 @@
 /*
- * Tigase Halcyon XMPP Library
+ * halcyon-core
  * Copyright (C) 2018 Tigase, Inc. (office@tigase.com)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -17,12 +17,14 @@
  */
 package tigase.halcyon.core.excutor
 
+import kotlinx.datetime.Instant
 import tigase.halcyon.core.TickEvent
 import tigase.halcyon.core.eventbus.AbstractEventBus
 import tigase.halcyon.core.eventbus.EventHandler
+import kotlin.time.Duration
 
 class TickExecutor(
-	private val eventBus: AbstractEventBus, val minimalTime: Long, private val runnable: () -> Unit
+	private val eventBus: AbstractEventBus, val minimalTime: Duration, private val runnable: () -> Unit
 ) {
 
 	private val handler: EventHandler<TickEvent> = object : EventHandler<TickEvent> {
@@ -35,7 +37,7 @@ class TickExecutor(
 		start()
 	}
 
-	private var lastCallTime = -1L
+	private var lastCallTime = Instant.DISTANT_PAST
 
 	private fun onTick(event: TickEvent) {
 		if (lastCallTime + minimalTime <= event.eventTime) {
