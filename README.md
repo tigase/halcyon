@@ -1,21 +1,23 @@
-<h1>
-  <div style="text-align: center">Halcyon</div>
-</h1>
+Halcyon
+=======
 
 > :warning: **THIS SOFTWARE IS NOT FINISHED YET**:
 > This library is under active development. We cannot ensure API stability.
 >
 > You can use it at your own risk.
 
-<img src="https://tc.tigase.net/app/rest/builds/buildType:(id:Halcyon_BuildArtur)/statusIcon" width="100"/> ![CI Status](https://github.com/tigase/halcyon/actions/workflows/gradle.yml/badge.svg)
+![TC build](https://tc.tigase.net/app/rest/builds/buildType:(id:Halcyon_BuildArtur)/statusIcon)
+![CI Status](https://github.com/tigase/halcyon/actions/workflows/TEST.yml/badge.svg?branch=master)
 
 # What it is
 
-Halcyon is an [XMPP](https://xmpp.org) client library written in a [Kotlin](https://kotlinlang.org/) programming language. 
-It provides implementation of core of the XMPP standard and processing XML. Additionally it provides support for many popular extensions (XEP's).
+Halcyon is an [XMPP](https://xmpp.org) client library written in a [Kotlin](https://kotlinlang.org/) programming
+language. It provides implementation of core of the XMPP standard and processing XML. Additionally it provides support
+for many popular extensions (XEP's).
 
-Library using [Kotlin Multiplatform](https://kotlinlang.org/docs/reference/multiplatform.html) feature to provide XMPP library for as many platforms as possible.
-Currently we are focused on
+Library using [Kotlin Multiplatform](https://kotlinlang.org/docs/reference/multiplatform.html) feature to provide XMPP
+library for as many platforms as possible. Currently we are focused on
+
 * JVM
 * JavaScript
 * Android
