@@ -19,7 +19,7 @@ package tigase.halcyon.core.connector.socket
 
 import org.minidns.dnssec.DnssecValidationFailedException
 import org.minidns.hla.DnssecResolverApi
-import org.minidns.hla.SrvType
+import org.minidns.hla.srv.SrvType
 import tigase.halcyon.core.Halcyon
 import tigase.halcyon.core.connector.*
 import tigase.halcyon.core.excutor.TickExecutor
