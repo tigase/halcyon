@@ -12,7 +12,7 @@ on:
     branches: [ master ]
   push:
     branches:
-      - *
+      - '*'
     paths-ignore:
       - 'README.md'
       - '.gitignore'
