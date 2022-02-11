@@ -1,5 +1,5 @@
 /*
- * Tigase Halcyon XMPP Library
+ * halcyon-core
  * Copyright (C) 2018 Tigase, Inc. (office@tigase.com)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -15,7 +15,7 @@
  * along with this program. Look for COPYING file in the top folder.
  * If not, see http://www.gnu.org/licenses/.
  */
-package tigase.halcyon.core.xmpp
+package tigase.halcyon.core.connector
 
 import tigase.halcyon.core.eventbus.Event
 
@@ -25,12 +25,12 @@ interface SessionController {
 
 		companion object {
 
-			const val TYPE = "tigase.halcyon.core.xmpp.SessionController.SessionControllerEvents"
+			const val TYPE = "tigase.halcyon.core.connector.SessionController.SessionControllerEvents"
 		}
 
 		data class ErrorStop(val message: String) : SessionControllerEvents()
 		data class ErrorReconnect(
-			val message: String, val immediately: Boolean = false, val force: Boolean = false
+			val message: String, val immediately: Boolean = false, val force: Boolean = false,
 		) : SessionControllerEvents()
 
 		class Successful : SessionControllerEvents()

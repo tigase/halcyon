@@ -192,8 +192,8 @@ BadRequest("bad-request", "modify", 400),
 		protected val conditions = HashMap<String, ErrorCondition>()
 
 		fun getByElementName(
-			name: String
-		): ErrorCondition = ErrorCondition.values().firstOrNull { it.elementName == name } ?: Unknown
+			name: String,
+		): ErrorCondition = values().firstOrNull { it.elementName == name } ?: Unknown
 	}
 
 }

@@ -1,5 +1,5 @@
 /*
- * Tigase Halcyon XMPP Library
+ * halcyon-core
  * Copyright (C) 2018 Tigase, Inc. (office@tigase.com)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -35,21 +35,21 @@ class Candidate(
 	val relAddr: String?,
 	val relPort: Int?,
 	val type: CandidateType?,
-	val tcpType: String?
+	val tcpType: String?,
 ) {
 
-	enum class ProtocolType { udp,
-		tcp
+	enum class ProtocolType {
+
+		UDP,
+		TCP
 	}
 
-	enum class CandidateType { host,
-		prlfx,
-		relay,
-		srflx
-	}
+	enum class CandidateType {
 
-	init {
-
+		Host,
+		Prlfx,
+		Relay,
+		Srflx
 	}
 
 	fun toElement(): Element {
@@ -98,21 +98,19 @@ class Candidate(
 			val cancidateType = el.attributes["type"]?.let { CandidateType.valueOf(it) }
 			val tcpType = el.attributes["tcptype"]
 
-			return Candidate(
-				component,
-				foundation,
-				generation,
-				id,
-				ip,
-				network,
-				port,
-				priority,
-				protocolType,
-				relAddr,
-				relPort,
-				cancidateType,
-				tcpType
-			)
+			return Candidate(component,
+							 foundation,
+							 generation,
+							 id,
+							 ip,
+							 network,
+							 port,
+							 priority,
+							 protocolType,
+							 relAddr,
+							 relPort,
+							 cancidateType,
+							 tcpType)
 		}
 	}
 }

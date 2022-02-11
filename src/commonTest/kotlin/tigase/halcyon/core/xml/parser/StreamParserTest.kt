@@ -1,5 +1,5 @@
 /*
- * Tigase Halcyon XMPP Library
+ * halcyon-core
  * Copyright (C) 2018 Tigase, Inc. (office@tigase.com)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -55,16 +55,14 @@ class StreamParserTest {
 	@Test
 	fun testParse0() {
 		val input = "<x>ok</x>"
-		var tmp = parse(input)
-		assertEquals(input, tmp.element!!.getAsString())
+		assertEquals(input, parse(input).element!!.getAsString())
 	}
 
 	@Test
 	fun testParse() {
 		val input =
 			"<message><body>body</body><html><body><p><em>Wow</em>*, I&apos;m* <span>green</span>with <strong>envy</strong>!</p></body></html></message>"
-		var tmp = parse(input)
-		assertNotEquals(input, tmp.element!!.getAsString())
+		assertNotEquals(input, parse(input).element!!.getAsString())
 	}
 
 	@Test

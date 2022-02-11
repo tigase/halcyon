@@ -29,7 +29,6 @@ import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xml.element
 import tigase.halcyon.core.xml.parser.StreamParser
 import tigase.halcyon.core.xmpp.ErrorCondition
-import tigase.halcyon.core.xmpp.SessionController
 import tigase.halcyon.core.xmpp.XMPPException
 import tigase.halcyon.core.xmpp.modules.sm.StreamManagementModule
 import java.net.InetAddress
@@ -85,12 +84,12 @@ class SocketConnector(halcyon: Halcyon) : AbstractConnector(halcyon) {
 		private fun logReceivedStanza(element: Element) {
 			when {
 				log.isLoggable(Level.FINEST) -> log.finest("Received element ${element.getAsString()}")
-				log.isLoggable(Level.FINER) -> log.finer(
-					"Received element ${element.getAsString(deep = 3, showValue = false)}"
-				)
-				log.isLoggable(Level.FINE) -> log.fine(
-					"Received element ${element.getAsString(deep = 2, showValue = false)}"
-				)
+				log.isLoggable(Level.FINER) -> log.finer("Received element ${
+					element.getAsString(deep = 3, showValue = false)
+				}")
+				log.isLoggable(Level.FINE) -> log.fine("Received element ${
+					element.getAsString(deep = 2, showValue = false)
+				}")
 			}
 		}
 

@@ -1,5 +1,5 @@
 /*
- * Tigase Halcyon XMPP Library
+ * halcyon-core
  * Copyright (C) 2018 Tigase, Inc. (office@tigase.com)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -17,7 +17,10 @@
  */
 package tigase.halcyon.core.xmpp
 
-import kotlin.test.*
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertNotEquals
+import kotlin.test.assertNull
 
 class BareJIDTest {
 
@@ -30,8 +33,8 @@ class BareJIDTest {
 		assertNotEquals(BareJID("a", "c"), BareJID("a", "b"))
 		assertNotEquals(BareJID("b", "b"), BareJID("a", "b"))
 
-		assertTrue(BareJID("a", "b") == BareJID.parse("a@b"))
-		assertFalse(BareJID("b", "b") == BareJID.parse("a@b"))
+		assertEquals(BareJID("a", "b"), BareJID.parse("a@b"))
+		assertNotEquals(BareJID("b", "b"), BareJID.parse("a@b"))
 
 		assertEquals(BareJID.parse("a@b"), BareJID.parse("a@b"))
 		assertEquals(BareJID.parse("a@b"), BareJID("a", "b"))

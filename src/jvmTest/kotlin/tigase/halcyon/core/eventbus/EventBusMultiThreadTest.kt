@@ -1,5 +1,5 @@
 /*
- * Tigase Halcyon XMPP Library
+ * halcyon-core
  * Copyright (C) 2018 Tigase, Inc. (office@tigase.com)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -101,7 +101,7 @@ class EventBusMultiThreadTest {
 		Assert.assertEquals(THREADS * EVENTS, result2.size)
 	}
 
-	internal class TestEvent(val value: String?) : tigase.halcyon.core.eventbus.Event(TYPE) { companion object {
+	internal class TestEvent(val value: String?) : Event(TYPE) { companion object {
 
 		const val TYPE = "test:event"
 	}

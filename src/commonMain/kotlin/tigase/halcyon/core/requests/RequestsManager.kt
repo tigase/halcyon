@@ -17,12 +17,12 @@
  */
 package tigase.halcyon.core.requests
 
-import getFromAttr
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import tigase.halcyon.core.logger.LoggerFactory
 import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xmpp.JID
+import tigase.halcyon.core.xmpp.getFromAttr
 
 class RequestsManager {
 

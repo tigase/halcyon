@@ -19,10 +19,7 @@ package tigase.halcyon.core
 
 import tigase.halcyon.core.configuration.ConfigDsl
 import tigase.halcyon.core.configuration.Configuration
-import tigase.halcyon.core.connector.AbstractConnector
-import tigase.halcyon.core.connector.ConnectorStateChangeEvent
-import tigase.halcyon.core.connector.ReceivedXMLElementEvent
-import tigase.halcyon.core.connector.SentXMLElementEvent
+import tigase.halcyon.core.connector.*
 import tigase.halcyon.core.eventbus.Event
 import tigase.halcyon.core.eventbus.EventBus
 import tigase.halcyon.core.eventbus.EventHandler
@@ -37,7 +34,6 @@ import tigase.halcyon.core.requests.RequestsManager
 import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xml.element
 import tigase.halcyon.core.xmpp.ErrorCondition
-import tigase.halcyon.core.xmpp.SessionController
 import tigase.halcyon.core.xmpp.XMPPException
 import tigase.halcyon.core.xmpp.modules.*
 import tigase.halcyon.core.xmpp.modules.auth.SASLModule
@@ -80,6 +76,7 @@ data class TickEvent(val counter: Long) : Event(TYPE) {
 	}
 }
 
+@Suppress("LeakingThis")
 abstract class AbstractHalcyon : Context, PacketWriter {
 
 	var running: Boolean = false
@@ -161,8 +158,7 @@ abstract class AbstractHalcyon : Context, PacketWriter {
 	protected open fun onSessionControllerEvent(event: SessionController.SessionControllerEvents) {
 		when (event) {
 			is SessionController.SessionControllerEvents.ErrorStop, is SessionController.SessionControllerEvents.ErrorReconnect -> processControllerErrorEvent(
-				event
-			)
+				event)
 			is SessionController.SessionControllerEvents.Successful -> onSessionEstablished()
 		}
 	}
@@ -293,18 +289,13 @@ abstract class AbstractHalcyon : Context, PacketWriter {
 		eventBus.fire(TickEvent(++tickCounter))
 	}
 
-	protected fun getConnectorState(): tigase.halcyon.core.connector.State =
-		this.connector?.state ?: tigase.halcyon.core.connector.State.Disconnected
+	protected fun getConnectorState(): tigase.halcyon.core.connector.State = this.connector?.state ?: tigase.halcyon.core.connector.State.Disconnected
 
 	private fun logSendingStanza(element: Element) {
 		when {
 			log.isLoggable(Level.FINEST) -> log.finest("Sending: ${element.getAsString()}")
-			log.isLoggable(Level.FINER) -> log.finer(
-				"Sending: ${element.getAsString(deep = 3, showValue = false)}"
-			)
-			log.isLoggable(Level.FINE) -> log.fine(
-				"Sending: ${element.getAsString(deep = 2, showValue = false)}"
-			)
+			log.isLoggable(Level.FINER) -> log.finer("Sending: ${element.getAsString(deep = 3, showValue = false)}")
+			log.isLoggable(Level.FINE) -> log.fine("Sending: ${element.getAsString(deep = 2, showValue = false)}")
 		}
 	}
 
@@ -317,17 +308,17 @@ abstract class AbstractHalcyon : Context, PacketWriter {
 		eventBus.fire(SentXMLElementEvent(toSend, null))
 	}
 
-	override fun write(request: Request<*, *>) {
+	override fun write(stanza: Request<*, *>) {
 		val c = this.connector ?: throw HalcyonException("Connector is not initialized")
 		if (c.state != tigase.halcyon.core.connector.State.Connected) throw HalcyonException("Connector is not connected")
-		requestsManager.register(request)
-		logSendingStanza(request.stanza)
-		c.send(request.stanza.getAsString())
+		requestsManager.register(stanza)
+		logSendingStanza(stanza.stanza)
+		c.send(stanza.stanza.getAsString())
 
 		if (!getModule<StreamManagementModule>(StreamManagementModule.TYPE).resumptionContext.isAckActive) {
-			request.markAsSent()
+			stanza.markAsSent()
 		}
-		eventBus.fire(SentXMLElementEvent(request.stanza, request))
+		eventBus.fire(SentXMLElementEvent(stanza.stanza, stanza))
 	}
 
 	protected open fun onConnecting() {}
@@ -424,8 +415,7 @@ abstract class AbstractHalcyon : Context, PacketWriter {
 			log.info { "Disconnecting" }
 
 			modules.getModuleOrNull<StreamManagementModule>(StreamManagementModule.TYPE)?.let {
-				val ackEnabled =
-					getModule<StreamManagementModule>(StreamManagementModule.TYPE).resumptionContext.isAckActive
+				val ackEnabled = getModule<StreamManagementModule>(StreamManagementModule.TYPE).resumptionContext.isAckActive
 				if (ackEnabled && getConnectorState() == tigase.halcyon.core.connector.State.Connected) {
 					it.sendAck(true)
 				}

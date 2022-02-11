@@ -19,7 +19,6 @@ package tigase.halcyon.core.connector
 
 import tigase.halcyon.core.AbstractHalcyon
 import tigase.halcyon.core.eventbus.Event
-import tigase.halcyon.core.xmpp.SessionController
 
 abstract class AbstractConnector(val halcyon: AbstractHalcyon) {
 

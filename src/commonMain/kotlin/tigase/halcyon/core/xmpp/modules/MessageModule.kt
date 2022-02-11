@@ -1,5 +1,5 @@
 /*
- * Tigase Halcyon XMPP Library
+ * halcyon-core
  * Copyright (C) 2018 Tigase, Inc. (office@tigase.com)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -45,7 +45,7 @@ class MessageModule(override val context: Context) : XmppModule {
 	private val log = LoggerFactory.logger("tigase.halcyon.core.xmpp.modules.MessageModule")
 
 	override val type = TYPE
-	override val criteria: Criteria? = Criterion.element(this@MessageModule::isMessage)
+	override val criteria: Criteria = Criterion.element(this@MessageModule::isMessage)
 	override val features: Array<String>? = null
 	//	override val criteria = Criterion.name(Message.NAME)
 

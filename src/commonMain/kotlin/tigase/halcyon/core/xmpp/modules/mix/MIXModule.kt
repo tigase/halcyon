@@ -59,7 +59,26 @@ data class MIXMessageEvent(val channel: BareJID, val stanza: Message, val timest
 	}
 }
 
-data class JoinResponse(val jid: JID, val nick: String, val nodes: Array<String>)
+data class JoinResponse(val jid: JID, val nick: String, val nodes: Array<String>) {
+
+	override fun equals(other: Any?): Boolean {
+		if (this === other) return true
+		if (other !is JoinResponse) return false
+
+		if (jid != other.jid) return false
+		if (nick != other.nick) return false
+		if (!nodes.contentEquals(other.nodes)) return false
+
+		return true
+	}
+
+	override fun hashCode(): Int {
+		var result = jid.hashCode()
+		result = 31 * result + nick.hashCode()
+		result = 31 * result + nodes.contentHashCode()
+		return result
+	}
+}
 
 data class CreateResponse(val jid: BareJID, val name: String)
 
@@ -80,7 +99,7 @@ class MIXModule(override val context: Context) : XmppModule, RosterItemAnnotatio
 		const val NODE_MESSAGES = "urn:xmpp:mix:nodes:messages"
 	}
 
-	override val criteria: Criteria? = Criterion.element(this@MIXModule::checkCriteria)
+	override val criteria: Criteria = Criterion.element(this@MIXModule::checkCriteria)
 	override val type = TYPE
 	override val features = arrayOf(XMLNS)
 
@@ -151,15 +170,15 @@ class MIXModule(override val context: Context) : XmppModule, RosterItemAnnotatio
 	}
 
 	fun addToAllowed(channel: BareJID, participant: BareJID): RequestBuilder<Unit, IQ> {
-		return pubsubModule.publish(channel.toJID(), NODE_ALLOWED, participant.toString()).map { Unit }
+		return pubsubModule.publish(channel.toJID(), NODE_ALLOWED, participant.toString()).map { }
 	}
 
 	fun addToBanned(channel: BareJID, participant: BareJID): RequestBuilder<Unit, IQ> {
-		return pubsubModule.publish(channel.toJID(), NODE_BANNED, participant.toString()).map { Unit }
+		return pubsubModule.publish(channel.toJID(), NODE_BANNED, participant.toString()).map { }
 	}
 
 	fun createInvitation(
-		invitee: BareJID, channel: BareJID, inviter: BareJID = myJID().bareJID, token: String? = null
+		invitee: BareJID, channel: BareJID, inviter: BareJID = myJID().bareJID, token: String? = null,
 	): MIXInvitation {
 		return MIXInvitation(inviter, invitee, channel, token)
 	}
@@ -176,7 +195,7 @@ class MIXModule(override val context: Context) : XmppModule, RosterItemAnnotatio
 		join(invitation.channel, nick, invitation)
 
 	fun join(
-		channel: BareJID, nick: String, invitation: MIXInvitation? = null
+		channel: BareJID, nick: String, invitation: MIXInvitation? = null,
 	): RequestBuilder<JoinResponse, IQ> {
 		return context.request.iq {
 			type = IQType.Set
@@ -216,16 +235,16 @@ class MIXModule(override val context: Context) : XmppModule, RosterItemAnnotatio
 					xmlns = XMLNS
 				}
 			}
-		}.map { Unit }
+		}.map { }
 	}
 
-	private fun createParticipant(id: String, p: Element): Participant? {
+	private fun createParticipant(id: String, p: Element): Participant {
 		return Participant(id, p.getChildContent("nick"), p.getChildContent("jid")?.toBareJID())
 	}
 
 	fun retrieveParticipants(channel: BareJID): RequestBuilder<Collection<Participant>, IQ> {
 		return pubsubModule.retrieveItem(channel.toJID(), NODE_PARTICIPANTS).map { r ->
-			r.items.mapNotNull { item -> createParticipant(item.id, item.content!!) }
+			r.items.map { item -> createParticipant(item.id, item.content!!) }
 		}
 	}
 
@@ -254,7 +273,7 @@ class MIXModule(override val context: Context) : XmppModule, RosterItemAnnotatio
 		with: String? = null,
 		rsm: RSM.Query? = null,
 		start: Instant? = null,
-		end: Instant? = null
+		end: Instant? = null,
 	): RequestConsumerBuilder<ForwardedStanza<Message>, MAMModule.Fin, IQ> {
 		val node = if (fromChannel == null) null else NODE_MESSAGES
 		return mamModule.query(fromChannel, node, rsm, with, start, end)

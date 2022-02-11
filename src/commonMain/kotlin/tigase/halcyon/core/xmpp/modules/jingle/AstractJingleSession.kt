@@ -1,5 +1,5 @@
 /*
- * Tigase Halcyon XMPP Library
+ * halcyon-core
  * Copyright (C) 2018 Tigase, Inc. (office@tigase.com)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -30,30 +30,25 @@ abstract class AbstractJingleSession(
 	jid: JID,
 	override val sid: String,
 	val role: Content.Creator,
-	val initiationType: InitiationType
+	private val initiationType: InitiationType,
 ) : Jingle.Session {
 
-	override var state: State by Delegates.observable(State.created) { property, oldValue, newValue ->
+	override var state: State by Delegates.observable(State.Created) { _, _, newValue ->
 		stateChanged(newValue)
 	}
 		protected set
-	override lateinit var jid: JID
+	override var jid: JID = jid
 		protected set
 
 	private var remoteContents: List<Content>? = null
 	private var remoteBundles: List<String>? = null
-
-	init {
-		this.jid = jid
-	}
 
 	protected abstract fun stateChanged(state: State)
 	protected abstract fun setRemoteDescription(contents: List<Content>, bundle: List<String>?)
 	abstract fun addCandidate(candidate: Candidate, contentName: String)
 
 	fun initiate(contents: List<Content>, bundle: List<String>?, completionHandler: AsyncResult<Unit>) {
-		jingleModule.initiateSession(jid, sid, contents, bundle).response { result ->
-			val r = result.map { v -> v }
+		jingleModule.initiateSession(jid, sid, contents, bundle).response { r ->
 			if (r.isFailure) {
 				this.terminate()
 			}
@@ -71,25 +66,22 @@ abstract class AbstractJingleSession(
 	}
 
 	fun initiated(contents: List<Content>, bundle: List<String>?) {
-		state = State.initiating
+		state = State.Initiating
 		remoteContents = contents
 		remoteBundles = bundle
 	}
 
 	fun accept() {
-		state = State.accepted
+		state = State.Accepted
 		remoteContents?.let { contents ->
 			setRemoteDescription(contents, remoteBundles)
-		} ?: {
-			jingleModule.sendMessageInitiation(MessageInitiationAction.Proceed(sid), jid)
-		}()
+		} ?: jingleModule.sendMessageInitiation(MessageInitiationAction.Proceed(sid), jid)
 	}
 
 	fun accept(contents: List<Content>, bundle: List<String>?, completionHandler: AsyncResult<Unit>) {
-		jingleModule.acceptSession(jid, sid, contents, bundle).response { iqResult ->
-			val result = iqResult.map { v -> v }
+		jingleModule.acceptSession(jid, sid, contents, bundle).response { result ->
 			when {
-				result.isSuccess -> state = State.accepted
+				result.isSuccess -> state = State.Accepted
 				result.isFailure -> terminate()
 			}
 			completionHandler(result)
@@ -97,28 +89,29 @@ abstract class AbstractJingleSession(
 	}
 
 	fun accepted(by: JID) {
-		this.state = State.accepted
+		this.state = State.Accepted
 		this.jid = by
 	}
 
 	fun accepted(contents: List<Content>, bundle: List<String>?) {
-		this.state = State.accepted
+		this.state = State.Accepted
 		remoteContents = contents
 		remoteBundles = bundle
 		setRemoteDescription(contents, bundle)
 	}
 
+	@Suppress("unused")
 	fun decline() {
-		terminate(reason = TerminateReason.decline)
+		terminate(reason = TerminateReason.Decline)
 	}
 
 	override fun terminate(reason: TerminateReason) {
 		val oldState = state
-		if (oldState == State.terminated) {
+		if (oldState == State.Terminated) {
 			return
 		}
-		state = State.terminated
-		if (initiationType == InitiationType.iq || oldState == State.accepted) {
+		state = State.Terminated
+		if (initiationType == InitiationType.Iq || oldState == State.Accepted) {
 			jingleModule.terminateSession(jid, sid, reason).send()
 		} else {
 			jingleModule.sendMessageInitiation(MessageInitiationAction.Reject(sid), jid).send()
@@ -127,17 +120,19 @@ abstract class AbstractJingleSession(
 	}
 
 	fun terminated() {
-		if (state == State.terminated) {
+		if (state == State.Terminated) {
 			return
 		}
-		state = State.terminated
+		state = State.Terminated
 		terminateSession()
 	}
 
+	@Suppress("MemberVisibilityCanBePrivate")
 	protected fun terminateSession() {
 		sessionManager.close(this)
 	}
 
+	@Suppress("unused")
 	fun sendCandidate(contentName: String, creator: Content.Creator, transport: Transport) {
 		jingleModule.transportInfo(jid, sid, listOf(Content(creator, contentName, null, listOf(transport)))).send()
 	}

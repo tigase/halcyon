@@ -40,7 +40,7 @@ class EntityCapabilitiesModule(override val context: Context) : XmppModule, HasI
 
 	@Serializable
 	data class Caps(
-		val node: String, val identities: List<DiscoveryModule.Identity>, val features: List<String>
+		val node: String, val identities: List<DiscoveryModule.Identity>, val features: List<String>,
 	)
 
 	companion object {
@@ -139,7 +139,6 @@ class EntityCapabilitiesModule(override val context: Context) : XmppModule, HasI
 		}.send()
 	}
 
-	@OptIn(ExperimentalStdlibApi::class)
 	internal fun calculateVer(identities: List<DiscoveryModule.Identity>, features: List<String>): String {
 		val ids = identities.map { i -> i.category + "/" + i.type + "//" + i.name }.sorted()
 			.joinToString(separator = "<", postfix = "<")
@@ -167,7 +166,7 @@ class EntityCapabilitiesModule(override val context: Context) : XmppModule, HasI
 		cache.store(node, Caps(node, info.identities, info.features))
 	}
 
-	override fun afterReceive(element: Element): Element? {
+	override fun afterReceive(element: Element): Element {
 		if (element.name == Presence.NAME) {
 			processIncomingPresence(element)
 		}

@@ -1,5 +1,5 @@
 /*
- * Tigase Halcyon XMPP Library
+ * halcyon-core
  * Copyright (C) 2018 Tigase, Inc. (office@tigase.com)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -21,7 +21,7 @@ import kotlinx.browser.window
 import tigase.halcyon.core.connector.WebSocketConnector
 import tigase.halcyon.core.connector.WebSocketConnectorConfig
 
-actual class Halcyon actual constructor() : tigase.halcyon.core.AbstractHalcyon() {
+actual class Halcyon actual constructor() : AbstractHalcyon() {
 
 	private var intervalHandler: Int = -1
 

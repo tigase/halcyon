@@ -36,7 +36,7 @@ class Request<V, STT : Stanza<*>>(
 	private val handler: ResultHandler<V>?,
 	private val transform: (value: Any) -> V,
 	private val parentRequest: Request<*, STT>? = null,
-	private val callHandlerOnSent: Boolean
+	private val callHandlerOnSent: Boolean,
 ) {
 
 	private val log = LoggerFactory.logger("tigase.halcyon.core.requests.Request")
@@ -78,6 +78,7 @@ class Request<V, STT : Stanza<*>>(
 		return result
 	}
 
+	@Suppress("UNCHECKED_CAST")
 	private fun processStack() {
 		val requests = requestStack()
 
@@ -125,7 +126,8 @@ class Request<V, STT : Stanza<*>>(
 		if (processStack) processStack() else callHandlers()
 	}
 
-	internal fun markAsSent(processStack: Boolean = true) {
+	@Suppress("UNCHECKED_CAST")
+	internal fun markAsSent() {
 		var tmp: Any? = Unit
 		requestStack().forEach { req ->
 			log.finest { "Marking as sent ${this@Request}" }
@@ -149,8 +151,7 @@ class Request<V, STT : Stanza<*>>(
 
 	private fun callHandlers() {
 		callResponseStanzaHandler()
-		val tmp = calculatedResult
-		if (tmp == null) throw RuntimeException("No calculated result")
+		val tmp = calculatedResult ?: throw RuntimeException("No calculated result")
 		callResponseHandler(tmp)
 	}
 
@@ -169,9 +170,9 @@ class Request<V, STT : Stanza<*>>(
 	}
 
 	private fun findCondition(stanza: Element): Error {
-		val error = stanza.children.firstOrNull { element -> element.name == "error" } ?: return Error(
-			ErrorCondition.Unknown, null
-		)
+		val error =
+			stanza.children.firstOrNull { element -> element.name == "error" } ?: return Error(ErrorCondition.Unknown,
+																							   null)
 		// Condition Element
 		val cnd =
 			error.children.firstOrNull { element -> element.name != "text" && element.xmlns == XMPPException.XMLNS }
@@ -195,15 +196,18 @@ class Request<V, STT : Stanza<*>>(
 		}
 	}
 
+	@Suppress("unused")
 	fun isSet(param: String): Boolean {
 		val v = data[param]
 		return v != null && v is Boolean && v
 	}
 
+	@Suppress("unused")
 	fun setData(name: String, value: Any) {
 		data[name] = value
 	}
 
+	@Suppress("unused")
 	fun getData(name: String): Any? {
 		return data[name]
 	}

@@ -21,10 +21,10 @@ import tigase.halcyon.core.AbstractHalcyon
 import tigase.halcyon.core.Scope
 import tigase.halcyon.core.connector.AbstractSocketSessionController
 import tigase.halcyon.core.connector.ConnectionErrorEvent
+import tigase.halcyon.core.connector.SessionController
 import tigase.halcyon.core.connector.socket.SocketConnector.Companion.SEE_OTHER_HOST_KEY
 import tigase.halcyon.core.connector.socket.SocketConnector.Companion.XMLNS_START_TLS
 import tigase.halcyon.core.xml.Element
-import tigase.halcyon.core.xmpp.SessionController
 import tigase.halcyon.core.xmpp.StreamError
 import tigase.halcyon.core.xmpp.modules.StreamErrorEvent
 import tigase.halcyon.core.xmpp.modules.StreamFeaturesEvent
@@ -53,11 +53,7 @@ class SocketSessionController(halcyon: AbstractHalcyon, private val connector: S
 		when (event) {
 			is SocketConnectionErrorEvent.HostNotFount -> {
 				log.info { "Cannot find server in DNS" }
-				halcyon.eventBus.fire(
-					SessionController.SessionControllerEvents.ErrorStop(
-						"Cannot find server in DNS"
-					)
-				)
+				halcyon.eventBus.fire(SessionController.SessionControllerEvents.ErrorStop("Cannot find server in DNS"))
 			}
 			else -> {
 				halcyon.eventBus.fire(SessionController.SessionControllerEvents.ErrorReconnect("Connection error"))
@@ -85,11 +81,9 @@ class SocketSessionController(halcyon: AbstractHalcyon, private val connector: S
 		val url = event.errorElement.value
 		halcyon.internalDataStore.setData(Scope.Session, SEE_OTHER_HOST_KEY, url)
 
-		halcyon.eventBus.fire(
-			SessionController.SessionControllerEvents.ErrorReconnect(
-				"see-other-host: $url", immediately = true, force = true
-			)
-		)
+		halcyon.eventBus.fire(SessionController.SessionControllerEvents.ErrorReconnect("see-other-host: $url",
+																					   immediately = true,
+																					   force = true))
 	}
 
 }

@@ -1,5 +1,5 @@
 /*
- * Tigase Halcyon XMPP Library
+ * halcyon-core
  * Copyright (C) 2018 Tigase, Inc. (office@tigase.com)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -25,7 +25,7 @@ actual class EventBus actual constructor(context: AbstractHalcyon) : AbstractEve
 
 	override fun createHandlersMap(): MutableMap<String, MutableSet<EventHandler<*>>> = ConcurrentHashMap()
 
-	override fun createHandlersSet(): MutableSet<EventHandler<*>> = ConcurrentHashMap.newKeySet<EventHandler<*>>()
+	override fun createHandlersSet(): MutableSet<EventHandler<*>> = ConcurrentHashMap.newKeySet()
 
 	enum class Mode { NoThread,
 		ThreadPerEvent,
@@ -47,9 +47,7 @@ actual class EventBus actual constructor(context: AbstractHalcyon) : AbstractEve
 	private fun fireNoThread(event: Event, handlers: Collection<EventHandler<*>>) {
 		handlers.forEach { eventHandler ->
 			try {
-				(eventHandler as EventHandler<Event>).onEvent(
-					event
-				)
+				(eventHandler as EventHandler<Event>).onEvent(event)
 			} catch (e: Exception) {
 				log.warning(e) { "Problem on handling event" }
 			}
@@ -74,9 +72,7 @@ actual class EventBus actual constructor(context: AbstractHalcyon) : AbstractEve
 		handlers.forEach { eventHandler ->
 			executor.execute {
 				try {
-					(eventHandler as EventHandler<Event>).onEvent(
-						event
-					)
+					(eventHandler as EventHandler<Event>).onEvent(event)
 				} catch (e: Exception) {
 					log.warning(e) { "Problem on handling event" }
 				}

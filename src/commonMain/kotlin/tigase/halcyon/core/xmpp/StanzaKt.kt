@@ -1,5 +1,5 @@
 /*
- * Tigase Halcyon XMPP Library
+ * halcyon-core
  * Copyright (C) 2018 Tigase, Inc. (office@tigase.com)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -15,7 +15,7 @@
  * along with this program. Look for COPYING file in the top folder.
  * If not, see http://www.gnu.org/licenses/.
  */
-import tigase.halcyon.core.xmpp.JID
+package tigase.halcyon.core.xmpp
 
 fun tigase.halcyon.core.xml.Element.getFromAttr(): JID? {
 	val tmp = this.attributes["from"] ?: return null

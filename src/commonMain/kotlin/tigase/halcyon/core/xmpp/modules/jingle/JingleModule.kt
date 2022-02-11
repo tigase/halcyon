@@ -1,5 +1,5 @@
 /*
- * Tigase Halcyon XMPP Library
+ * halcyon-core
  * Copyright (C) 2018 Tigase, Inc. (office@tigase.com)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -37,18 +37,22 @@ import tigase.halcyon.core.xmpp.stanzas.MessageType
 
 class Jingle {
 
-	interface Session { enum class State { created,
-		initiating,
-		accepted,
-		terminated
-	}
+	interface Session {
+
+		enum class State {
+
+			Created,
+			Initiating,
+			Accepted,
+			Terminated
+		}
 
 		val account: BareJID
 		val jid: JID
 		val sid: String
 		val state: State
 
-		fun terminate(reason: TerminateReason = TerminateReason.success)
+		fun terminate(reason: TerminateReason = TerminateReason.Success)
 	}
 
 	interface SessionManager {
@@ -60,7 +64,7 @@ class Jingle {
 class JingleModule(
 	override val context: Context,
 	val sessionManager: Jingle.SessionManager,
-	val supportsMessageInitiation: Boolean = true
+	val supportsMessageInitiation: Boolean = true,
 ) : XmppModule {
 
 	companion object {
@@ -73,13 +77,13 @@ class JingleModule(
 		val SUPPORTED_FEATURES = arrayOf(XMLNS) + Description.supportedFeatures + Transport.supportedFeatures
 	}
 
-	override val criteria: Criteria? = if (supportsMessageInitiation) {
+	override val criteria: Criteria = if (supportsMessageInitiation) {
 		Criterion.or(IQ_CRITERIA, JMI_CRITERIA)
 	} else {
 		IQ_CRITERIA
 	}
 	override val type = TYPE
-	override val features: Array<String>?
+	override val features: Array<String>
 		get() = if (supportsMessageInitiation) {
 			SUPPORTED_FEATURES + MESSAGE_INITIATION_XMLNS
 		} else {
@@ -128,7 +132,7 @@ class JingleModule(
 				?: return
 		when (action) {
 			is MessageInitiationAction.Propose -> {
-				if (action.descriptions.filter { features?.contains(it.xmlns) == true }.isEmpty()) {
+				if (action.descriptions.none { features.contains(it.xmlns) }) {
 					this.sendMessageInitiation(MessageInitiationAction.Reject(action.id), from).send()
 					return
 				}
@@ -145,17 +149,15 @@ class JingleModule(
 	}
 
 	fun sendMessageInitiation(
-		action: MessageInitiationAction, jid: JID
+		action: MessageInitiationAction, jid: JID,
 	): RequestBuilder<Unit, Message> {
 		when (action) {
-			is MessageInitiationAction.Proceed -> sendMessageInitiation(
-				MessageInitiationAction.Accept(action.id), JID(context.config.userJID!!, null)
-			).send()
+			is MessageInitiationAction.Proceed -> sendMessageInitiation(MessageInitiationAction.Accept(action.id),
+																		JID(context.config.userJID!!, null)).send()
 			is MessageInitiationAction.Reject -> {
 				if (jid.bareJID != context.config.userJID) {
-					sendMessageInitiation(
-						MessageInitiationAction.Accept(action.id), JID(context.config.userJID!!, null)
-					).send()
+					sendMessageInitiation(MessageInitiationAction.Accept(action.id),
+										  JID(context.config.userJID!!, null)).send()
 				}
 			}
 			else -> {
@@ -166,10 +168,8 @@ class JingleModule(
 			addChild(element(action.actionName) {
 				xmlns = "urn:xmpp:jingle-message:0"
 				attribute("id", action.id)
-				when (action) {
-					is MessageInitiationAction.Propose -> action.descriptions.map { it.toElement() }
-						.forEach { addChild(it) }
-				}
+				if (action is MessageInitiationAction.Propose) action.descriptions.map { it.toElement() }
+					.forEach { addChild(it) }
 			})
 			type = MessageType.Chat
 			to = jid
@@ -177,7 +177,7 @@ class JingleModule(
 	}
 
 	fun initiateSession(
-		jid: JID, sid: String, contents: List<Content>, bundle: List<String>?
+		jid: JID, sid: String, contents: List<Content>, bundle: List<String>?,
 	): RequestBuilder<Unit, IQ> {
 		return context.request.iq {
 			to = jid
@@ -185,14 +185,11 @@ class JingleModule(
 
 			addChild(element("jingle") {
 				xmlns = XMLNS
-				attribute("action", Action.sessionInitiate.value)
+				attribute("action", Action.SessionInitiate.value)
 				attribute("sid", sid)
-				attribute(
-					"initiator",
-					context.modules.getModule<BindModule>(BindModule.TYPE).boundJID?.toString() ?: throw XMPPException(
-						ErrorCondition.NotAuthorized
-					)
-				)
+				attribute("initiator",
+						  context.modules.getModule<BindModule>(BindModule.TYPE).boundJID?.toString()
+							  ?: throw XMPPException(ErrorCondition.NotAuthorized))
 
 				contents.map { it.toElement() }.forEach { contentEl -> addChild(contentEl) }
 				bundle?.let { bundle ->
@@ -207,11 +204,11 @@ class JingleModule(
 					})
 				}
 			})
-		}.map { Unit }
+		}.map { }
 	}
 
 	fun acceptSession(
-		jid: JID, sid: String, contents: List<Content>, bundle: List<String>?
+		jid: JID, sid: String, contents: List<Content>, bundle: List<String>?,
 	): RequestBuilder<Unit, IQ> {
 		return context.request.iq {
 			to = jid
@@ -219,14 +216,11 @@ class JingleModule(
 
 			addChild(element("jingle") {
 				xmlns = XMLNS
-				attribute("action", Action.sessionAccept.value)
+				attribute("action", Action.SessionAccept.value)
 				attribute("sid", sid)
-				attribute(
-					"responder",
-					context.modules.getModule<BindModule>(BindModule.TYPE).boundJID?.toString() ?: throw XMPPException(
-						ErrorCondition.NotAuthorized
-					)
-				)
+				attribute("responder",
+						  context.modules.getModule<BindModule>(BindModule.TYPE).boundJID?.toString()
+							  ?: throw XMPPException(ErrorCondition.NotAuthorized))
 
 				contents.map { it.toElement() }.forEach { contentEl -> addChild(contentEl) }
 				bundle?.let { bundle ->
@@ -241,7 +235,7 @@ class JingleModule(
 					})
 				}
 			})
-		}.map { Unit }
+		}.map { }
 	}
 
 	fun terminateSession(jid: JID, sid: String, reason: TerminateReason): RequestBuilder<Unit, IQ> {
@@ -251,11 +245,11 @@ class JingleModule(
 
 			addChild(element("jingle") {
 				xmlns = XMLNS
-				attribute("action", Action.sessionTerminate.value)
+				attribute("action", Action.SessionTerminate.value)
 				attribute("sid", sid)
 				addChild(reason.toReasonElement())
 			})
-		}.map { Unit }
+		}.map { }
 	}
 
 	fun transportInfo(jid: JID, sid: String, contents: List<Content>): RequestBuilder<Unit, IQ> {
@@ -265,12 +259,12 @@ class JingleModule(
 
 			addChild(element("jingle") {
 				xmlns = XMLNS
-				attribute("action", Action.sessionAccept.value)
+				attribute("action", Action.SessionAccept.value)
 				attribute("sid", sid)
 
 				contents.map { it.toElement() }.forEach { contentEl -> addChild(contentEl) }
 			})
-		}.map { Unit }
+		}.map { }
 	}
 }
 
@@ -280,7 +274,7 @@ data class JingleEvent(
 	val intiator: JID,
 	val sid: String,
 	val contents: List<Content>,
-	val bundle: List<String>?
+	val bundle: List<String>?,
 ) : Event(TYPE) {
 
 	companion object {

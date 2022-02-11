@@ -1,5 +1,5 @@
 /*
- * Tigase Halcyon XMPP Library
+ * halcyon-core
  * Copyright (C) 2018 Tigase, Inc. (office@tigase.com)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -46,7 +46,7 @@ class UniqueStableStanzaIdModule(override val context: Context) : XmppModule, Ha
 
 	override fun process(element: Element) = throw XMPPException(ErrorCondition.BadRequest)
 
-	override fun afterReceive(element: Element): Element? = element
+	override fun afterReceive(element: Element): Element = element
 
 	override fun beforeSend(element: Element): Element {
 		if (element.name != Message.NAME) return element

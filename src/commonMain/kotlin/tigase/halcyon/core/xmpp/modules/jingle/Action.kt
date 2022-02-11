@@ -1,5 +1,5 @@
 /*
- * Tigase Halcyon XMPP Library
+ * halcyon-core
  * Copyright (C) 2018 Tigase, Inc. (office@tigase.com)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -17,20 +17,22 @@
  */
 package tigase.halcyon.core.xmpp.modules.jingle
 
-enum class Action(val value: String) { contentAccept("content-accept"),
-	contentAdd("content-add"),
-	contentModify("content-modify"),
-	contentReject("content-reject"),
-	descriptionInfo("description-info"),
-	securityInfo("security-info"),
-	sessionAccept("session-accept"),
-	sessionInfo("session-info"),
-	sessionInitiate("session-initiate"),
-	sessionTerminate("session-terminate"),
-	transportAccept("transport-accept"),
-	transportInfo("transport-info"),
-	transportReject("transport-reject"),
-	transportReplace("transport-replace");
+enum class Action(val value: String) {
+
+	ContentAccept("content-accept"),
+	ContentAdd("content-add"),
+	ContentModify("content-modify"),
+	ContentReject("content-reject"),
+	DescriptionInfo("description-info"),
+	SecurityInfo("security-info"),
+	SessionAccept("session-accept"),
+	SessionInfo("session-info"),
+	SessionInitiate("session-initiate"),
+	SessionTerminate("session-terminate"),
+	TransportAccept("transport-accept"),
+	TransportInfo("transport-info"),
+	TransportReject("transport-reject"),
+	TransportReplace("transport-replace");
 
 	companion object {
 

@@ -1,5 +1,5 @@
 /*
- * Tigase Halcyon XMPP Library
+ * halcyon-core
  * Copyright (C) 2018 Tigase, Inc. (office@tigase.com)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -62,8 +62,8 @@ private fun findChatState(element: Element): ChatState? {
 		it.xmlns == ChatStateModule.XMLNS
 	} ?: return null
 	return ChatState.values().find { chatState -> chatState.xmppValue == csi.name } ?: throw XMPPException(
-		ErrorCondition.BadRequest, "Unknown chat state ${csi.name}"
-	)
+		ErrorCondition.BadRequest,
+		"Unknown chat state ${csi.name}")
 }
 
 private fun setChatState(element: Element, state: ChatState?) {
@@ -90,7 +90,7 @@ class ChatStateModule(override val context: Context) : XmppModule {
 
 	override val type = TYPE
 	override val criteria: Criteria? = null
-	override val features: Array<String>? = arrayOf(XMLNS)
+	override val features: Array<String> = arrayOf(XMLNS)
 
 	companion object {
 
@@ -112,7 +112,7 @@ class ChatStateModule(override val context: Context) : XmppModule {
 	}
 
 	fun publishChatState(jid: BareJID, state: ChatState) {
-		var msg = message {
+		val msg = message {
 			to = jid.toJID()
 			state.xmppValue {
 				xmlns = XMLNS

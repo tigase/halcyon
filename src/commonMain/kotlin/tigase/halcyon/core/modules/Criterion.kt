@@ -1,5 +1,5 @@
 /*
- * Tigase Halcyon XMPP Library
+ * halcyon-core
  * Copyright (C) 2018 Tigase, Inc. (office@tigase.com)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -27,11 +27,10 @@ class Criterion private constructor() {
 			override fun match(element: Element): Boolean = predicate.invoke(element)
 		}
 
-		fun or(vararg crits: tigase.halcyon.core.modules.Criteria): tigase.halcyon.core.modules.Criteria =
-			object : tigase.halcyon.core.modules.Criteria {
-				override fun match(element: Element): Boolean =
-					crits.firstOrNull(predicate = { criteria -> criteria.match(element) }) != null
-			}
+		fun or(vararg crits: Criteria): Criteria = object : Criteria {
+			override fun match(element: Element): Boolean =
+				crits.firstOrNull(predicate = { criteria -> criteria.match(element) }) != null
+		}
 
 		fun and(vararg crits: Criteria) = object : Criteria {
 			override fun match(element: Element): Boolean =

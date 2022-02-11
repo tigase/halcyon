@@ -1,5 +1,5 @@
 /*
- * Tigase Halcyon XMPP Library
+ * halcyon-core
  * Copyright (C) 2018 Tigase, Inc. (office@tigase.com)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -94,7 +94,7 @@ class VCardModule(override val context: Context) : XmppModule {
 			}
 			addChild(vcard.element)
 		}
-		return context.request.iq(iq).map { Unit }
+		return context.request.iq(iq).map {}
 	}
 
 	private fun processEvent(event: PubSubItemEvent) {

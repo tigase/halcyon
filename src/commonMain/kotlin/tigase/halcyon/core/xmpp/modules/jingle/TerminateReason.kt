@@ -1,5 +1,5 @@
 /*
- * Tigase Halcyon XMPP Library
+ * halcyon-core
  * Copyright (C) 2018 Tigase, Inc. (office@tigase.com)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -20,23 +20,25 @@ package tigase.halcyon.core.xmpp.modules.jingle
 import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xml.element
 
-enum class TerminateReason(val value: String) { alternativeSession("alternative-session"),
-	busy("busy"),
-	cancel("cancel"),
-	connectivityError("connectivity-error"),
-	decline("decline"),
-	expired("expired"),
-	failedApplication("failed-application"),
-	failedTransport("failed-transport"),
-	generalError("general-error"),
-	gone("gone"),
-	incompatibleParameters("incompatible-parameters"),
-	mediaError("media-error"),
-	securityError("security-error"),
-	success("success"),
-	timeout("timeout"),
-	unsupportedApplications("unsupported-applications"),
-	unsupportedTransports("unsupported-transports");
+enum class TerminateReason(val value: String) {
+
+	AlternativeSession("alternative-session"),
+	Busy("busy"),
+	Cancel("cancel"),
+	ConnectivityError("connectivity-error"),
+	Decline("decline"),
+	Expired("expired"),
+	FailedApplication("failed-application"),
+	FailedTransport("failed-transport"),
+	GeneralError("general-error"),
+	Gone("gone"),
+	IncompatibleParameters("incompatible-parameters"),
+	MediaError("media-error"),
+	SecurityError("security-error"),
+	Success("success"),
+	Timeout("timeout"),
+	UnsupportedApplications("unsupported-applications"),
+	UnsupportedTransports("unsupported-transports");
 
 	fun toElement(): Element = element(value) {}
 	fun toReasonElement(): Element = element("reason") {

@@ -1,5 +1,5 @@
 /*
- * Tigase Halcyon XMPP Library
+ * halcyon-core
  * Copyright (C) 2018 Tigase, Inc. (office@tigase.com)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -22,6 +22,7 @@ import tigase.halcyon.core.eventbus.EventBusInterface.Companion.ALL_EVENTS
 import tigase.halcyon.core.logger.Level
 import tigase.halcyon.core.logger.LoggerFactory
 
+@Suppress("LeakingThis")
 abstract class NoContextEventBus : EventBusInterface {
 
 	protected val log = LoggerFactory.logger("tigase.halcyon.core.eventbus.EventBus")
@@ -86,13 +87,7 @@ abstract class NoContextEventBus : EventBusInterface {
 	}
 
 	override fun unregister(eventType: String, handler: EventHandler<*>) {
-		val handlers = handlersMap[eventType]
-		if (handlers != null) {
-			handlers.remove(handler)
-//				if (handlers.isEmpty()) {
-//					handlersMap.remove(eventType)
-//				}
-		}
+		handlersMap[eventType]?.remove(handler)
 	}
 
 	override fun unregister(handler: EventHandler<*>) {

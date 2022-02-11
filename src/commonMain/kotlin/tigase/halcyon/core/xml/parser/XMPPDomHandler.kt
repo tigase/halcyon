@@ -1,5 +1,5 @@
 /*
- * Tigase Halcyon XMPP Library
+ * halcyon-core
  * Copyright (C) 2018 Tigase, Inc. (office@tigase.com)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -25,7 +25,7 @@ class XMPPDomHandler(
 	val onNextElement: (Element) -> Unit,
 	val onStreamStarted: (Map<String, String>) -> Unit,
 	val onStreamClosed: () -> Unit,
-	val onParseError: (String) -> Unit
+	val onParseError: (String) -> Unit,
 ) : SimpleHandler {
 
 	companion object {
@@ -45,14 +45,14 @@ class XMPPDomHandler(
 	override fun endElement(name: String): Boolean {
 		log.finest { "End element name: $name" }
 
-		val tmp_name = name.toString()
+		val tmpName = name
 
-		if (tmp_name == ELEM_STREAM_STREAM) {
+		if (tmpName == ELEM_STREAM_STREAM) {
 			onStreamClosed.invoke()
 			return true
 		}
 
-		val elemName = tmp_name.substringAfter(":")
+		val elemName = tmpName.substringAfter(":")
 
 		if (elementBuilder != null && elementBuilder!!.onTop && elementBuilder!!.currentElement.name == elemName) {
 			val element = elementBuilder!!.build()
@@ -67,46 +67,45 @@ class XMPPDomHandler(
 		return false
 	}
 
-	override fun startElement(name: String, attr_names: Array<String?>?, attr_values: Array<String?>?) {
+	override fun startElement(name: String, attrNames: Array<String?>?, attrValues: Array<String?>?) {
 		log.finest {
 			"""Start element name: $name
-			Element attributes names: ${attr_names?.joinToString { " " }}
-			Element attributes values: ${attr_values?.joinToString { " " }}	
+			Element attributes names: ${attrNames?.joinToString { " " }}
+			Element attributes values: ${attrValues?.joinToString { " " }}	
 		""".trimIndent()
 		}
 
 		// Look for 'xmlns:' declarations:
-		if (attr_names != null) {
-			for (i in attr_names.indices) {
+		if (attrNames != null) {
+			for (i in attrNames.indices) {
 
 				// Exit the loop as soon as we reach end of attributes set
-				if (attr_names[i] == null) {
+				if (attrNames[i] == null) {
 					break
 				}
 
-				if (attr_names[i].toString().startsWith("xmlns:")) {
+				if (attrNames[i].toString().startsWith("xmlns:")) {
 
 					// TODO should use a StringCache instead of intern() to
 					// avoid potential
 					// DOS by exhausting permgen
-					namespaces.put(
-						attr_names[i]!!.substring("xmlns:".length, attr_names[i]!!.length), attr_values!![i].toString()
-					)
+					namespaces.put(attrNames[i]!!.substring("xmlns:".length, attrNames[i]!!.length),
+								   attrValues!![i].toString())
 
-					log.finest { "Namespace found: ${attr_values[i].toString()}" }
+					log.finest { "Namespace found: ${attrValues[i].toString()}" }
 				} // end of if (att_name.startsWith("xmlns:"))
 			} // end of for (String att_name : attnames)
 		} // end of if (attr_names != null)
 
-		var tmp_name = name.toString()
+		var tmpName = name
 
-		if (tmp_name == ELEM_STREAM_STREAM) {
+		if (tmpName == ELEM_STREAM_STREAM) {
 			val attribs = HashMap<String, String>()
 
-			if (attr_names != null) {
-				for (i in attr_names.indices) {
-					if (attr_names[i] != null && attr_values!![i] != null) {
-						attribs[attr_names[i].toString()] = attr_values[i].toString()
+			if (attrNames != null) {
+				for (i in attrNames.indices) {
+					if (attrNames[i] != null && attrValues!![i] != null) {
+						attribs[attrNames[i].toString()] = attrValues[i].toString()
 					} else {
 						break
 					} // end of else
@@ -120,20 +119,20 @@ class XMPPDomHandler(
 
 		var new_xmlns: String? = null
 		var prefix: String? = null
-		var tmp_name_prefix: String? = null
-		val idx = tmp_name.indexOf(':')
+		var tmpNamePrefix: String? = null
+		val idx = tmpName.indexOf(':')
 
 		if (idx > 0) {
-			tmp_name_prefix = tmp_name.substring(0, idx)
+			tmpNamePrefix = tmpName.substring(0, idx)
 
-			log.finest { "Found prefixed element name, prefix: $tmp_name_prefix" }
+			log.finest { "Found prefixed element name, prefix: $tmpNamePrefix" }
 		}
 
-		if (tmp_name_prefix != null) {
+		if (tmpNamePrefix != null) {
 			for (pref in namespaces.keys) {
-				if (tmp_name_prefix == pref) {
+				if (tmpNamePrefix == pref) {
 					new_xmlns = namespaces.get(pref)
-					tmp_name = tmp_name.substring(pref.length + 1, tmp_name.length)
+					tmpName = tmpName.substring(pref.length + 1, tmpName.length)
 					prefix = pref
 
 					log.finest { "new_xmlns = $new_xmlns" }
@@ -142,18 +141,18 @@ class XMPPDomHandler(
 		}
 
 		val attribs = mutableMapOf<String, String>()
-		if (attr_names != null) {
-			for (i in 0 until attr_names.size) {
-				val k = attr_names[i]
-				val v = attr_values!![i]
+		if (attrNames != null) {
+			for (i in 0 until attrNames.size) {
+				val k = attrNames[i]
+				val v = attrValues!![i]
 				if (k != null && v != null) attribs[k.toString()] = v.toString()
 			}
 		}
 
 		if (elementBuilder != null) {
-			elementBuilder!!.child(tmp_name)
+			elementBuilder!!.child(tmpName)
 		} else {
-			elementBuilder = ElementBuilder.Companion.create(tmp_name)
+			elementBuilder = ElementBuilder.create(tmpName)
 		}
 
 		if (new_xmlns != null) {
@@ -169,7 +168,7 @@ class XMPPDomHandler(
 	override fun restoreParserState(): Any? = parserState
 
 	override fun elementCData(cdata: String) {
-		elementBuilder!!.value(cdata.toString())
+		elementBuilder!!.value(cdata)
 	}
 
 	override fun saveParserState(state: Any?) {

@@ -25,12 +25,12 @@ import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
 class ExpiringMap<K, V>(
-	private val map: MutableMap<K, V> = mutableMapOf(), private val minimalTime: Duration = 30.seconds
+	private val map: MutableMap<K, V> = mutableMapOf(), private val minimalTime: Duration = 30.seconds,
 ) : MutableMap<K, V> by map {
 
 	var expirationChecker: ((V) -> Boolean)? = null
 
-	val tickHandler = object : EventHandler<TickEvent> {
+	private val tickHandler = object : EventHandler<TickEvent> {
 		override fun onEvent(event: TickEvent) {
 			onTick(event)
 		}
@@ -52,9 +52,9 @@ class ExpiringMap<K, V>(
 		}
 	}
 
+	@Suppress("unused")
 	fun clearOutdated() {
-		map.filter { (key, value) -> expirationChecker?.invoke(value) ?: false }.map { (key, value) -> key }
-			.forEach { map.remove(it) }
+		map.filter { (_, value) -> expirationChecker?.invoke(value) ?: false }.map { (key, _) -> key }.forEach { map.remove(it) }
 	}
 
 	override fun get(key: K): V? {

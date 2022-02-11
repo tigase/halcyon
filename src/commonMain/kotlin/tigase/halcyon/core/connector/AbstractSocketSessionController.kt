@@ -22,7 +22,6 @@ import tigase.halcyon.core.Scope
 import tigase.halcyon.core.eventbus.Event
 import tigase.halcyon.core.eventbus.EventHandler
 import tigase.halcyon.core.logger.LoggerFactory
-import tigase.halcyon.core.xmpp.SessionController
 import tigase.halcyon.core.xmpp.modules.BindModule
 import tigase.halcyon.core.xmpp.modules.StreamErrorEvent
 import tigase.halcyon.core.xmpp.modules.StreamFeaturesEvent
@@ -68,7 +67,7 @@ abstract class AbstractSocketSessionController(protected val halcyon: AbstractHa
 		val resource = halcyon.config.resource
 		halcyon.modules.getModule<BindModule>(BindModule.TYPE).bind(resource).response { result ->
 			when {
-				result.isSuccess -> processBindSuccess(result.getOrThrow())
+				result.isSuccess -> processBindSuccess()
 				else -> processBindError()
 			}
 		}.send()
@@ -105,10 +104,11 @@ abstract class AbstractSocketSessionController(protected val halcyon: AbstractHa
 				halcyon.requestsManager.timeoutAll()
 				bindResource()
 			}
+			is StreamManagementModule.StreamManagementEvent.Enabled -> {}
 		}
 	}
 
-	private fun processBindSuccess(event: BindModule.BindResult) {
+	private fun processBindSuccess() {
 		halcyon.modules.getModuleOrNull<DiscoveryModule>(DiscoveryModule.TYPE)?.let {
 			it.discoverServerFeatures()
 			it.discoverAccountFeatures()
@@ -138,11 +138,7 @@ abstract class AbstractSocketSessionController(protected val halcyon: AbstractHa
 	protected open fun processStreamError(event: StreamErrorEvent) {
 		halcyon.clear(Scope.Connection)
 		when (event.errorElement.name) {
-			else -> halcyon.eventBus.fire(
-				SessionController.SessionControllerEvents.ErrorReconnect(
-					"Stream error: ${event.condition}"
-				)
-			)
+			else -> halcyon.eventBus.fire(SessionController.SessionControllerEvents.ErrorReconnect("Stream error: ${event.condition}"))
 		}
 	}
 

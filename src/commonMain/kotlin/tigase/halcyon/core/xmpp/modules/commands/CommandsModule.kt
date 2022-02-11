@@ -21,7 +21,6 @@ import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import tigase.halcyon.core.Context
 import tigase.halcyon.core.exceptions.HalcyonException
-import tigase.halcyon.core.logger.LoggerFactory
 import tigase.halcyon.core.modules.Criteria
 import tigase.halcyon.core.modules.Criterion
 import tigase.halcyon.core.modules.XmppModule
@@ -124,8 +123,37 @@ data class AdHocResult(
 	/**
 	 * Command notes.
 	 */
-	val notes: Array<Note>
-)
+	val notes: Array<Note>,
+) {
+
+	override fun equals(other: Any?): Boolean {
+		if (this === other) return true
+		if (other !is AdHocResult) return false
+
+		if (jid != other.jid) return false
+		if (node != other.node) return false
+		if (sessionId != other.sessionId) return false
+		if (status != other.status) return false
+		if (form != other.form) return false
+		if (!actions.contentEquals(other.actions)) return false
+		if (defaultAction != other.defaultAction) return false
+		if (!notes.contentEquals(other.notes)) return false
+
+		return true
+	}
+
+	override fun hashCode(): Int {
+		var result = jid?.hashCode() ?: 0
+		result = 31 * result + node.hashCode()
+		result = 31 * result + (sessionId?.hashCode() ?: 0)
+		result = 31 * result + status.hashCode()
+		result = 31 * result + (form?.hashCode() ?: 0)
+		result = 31 * result + actions.contentHashCode()
+		result = 31 * result + (defaultAction?.hashCode() ?: 0)
+		result = 31 * result + notes.contentHashCode()
+		return result
+	}
+}
 
 interface AdHocCommand {
 
@@ -199,20 +227,17 @@ class CommandsModule(override val context: Context) : XmppModule {
 	override val criteria: Criteria = Criterion.chain(Criterion.name(IQ.NAME), Criterion.nameAndXmlns("command", XMLNS))
 	override val features: Array<String> = arrayOf(XMLNS)
 
-	private val log = LoggerFactory.logger("tigase.halcyon.core.xmpp.modules.commands.CommandsModule")
-
 	inner class AdHocCommandsNodeDetailsProvider : NodeDetailsProvider {
 
 		override fun getIdentities(sender: BareJID?, node: String?): List<DiscoveryModule.Identity> {
 			if (sender == null || node == null) return emptyList()
 			val cmd = registeredCommands[node] ?: return emptyList()
-			return getCommandIdentities(sender, node, cmd)
+			return getCommandIdentities(sender, cmd)
 		}
 
 		override fun getFeatures(sender: BareJID?, node: String?): List<String> {
 			if (node == null) return emptyList()
-			val cmd = registeredCommands[node] ?: return emptyList()
-			return listOf(XMLNS, JabberDataForm.XMLNS)
+			if (registeredCommands.containsKey(node)) return listOf(XMLNS, JabberDataForm.XMLNS) else return emptyList()
 		}
 
 		override fun getItems(sender: BareJID?, node: String?): List<DiscoveryModule.Item> {
@@ -222,10 +247,10 @@ class CommandsModule(override val context: Context) : XmppModule {
 	}
 
 	private class AdHocSessionImpl(
-		override val sessionId: String, override val values: MutableMap<String, Any> = mutableMapOf()
+		override val sessionId: String, override val values: MutableMap<String, Any> = mutableMapOf(),
 	) : AdHocSession {
 
-		val creationDate: Instant = Clock.System.now()
+		//		val creationDate: Instant = Clock.System.now()
 		var lastAccessDate: Instant = Clock.System.now()
 
 	}
@@ -234,7 +259,7 @@ class CommandsModule(override val context: Context) : XmppModule {
 		override val stanza: IQ,
 		override val command: AdHocCommand,
 		override val form: JabberDataForm?,
-		override val action: Action?
+		override val action: Action?,
 	) : AdHocRequest {
 
 		var adHocSession: AdHocSession? = null
@@ -348,7 +373,7 @@ class CommandsModule(override val context: Context) : XmppModule {
 	}
 
 	fun executeCommand(
-		jid: JID?, command: String, form: Element? = null, action: Action? = Action.Execute, sessionId: String? = null
+		jid: JID?, command: String, form: Element? = null, action: Action? = Action.Execute, sessionId: String? = null,
 	): RequestBuilder<AdHocResult, IQ> {
 		return context.request.iq {
 			to = jid
@@ -366,9 +391,8 @@ class CommandsModule(override val context: Context) : XmppModule {
 	}
 
 	private fun createCommandResult(iq: IQ): AdHocResult {
-		val cmd = iq.getChildrenNS("command", XMLNS) ?: throw XMPPException(
-			ErrorCondition.NotAcceptable, "Missing command element."
-		)
+		val cmd = iq.getChildrenNS("command", XMLNS) ?: throw XMPPException(ErrorCondition.NotAcceptable,
+																			"Missing command element.")
 		val sessionId = cmd.attributes["sessionid"]
 		val node = cmd.attributes["node"] ?: throw XMPPException(ErrorCondition.NotAcceptable, "Missing node name.")
 		val status = Status.values().first { it.xmppValue == cmd.attributes["status"] }
@@ -400,7 +424,7 @@ class CommandsModule(override val context: Context) : XmppModule {
 		}
 	}
 
-	private fun getCommandIdentities(sender: BareJID, node: String, cmd: AdHocCommand): List<DiscoveryModule.Identity> {
+	private fun getCommandIdentities(sender: BareJID, cmd: AdHocCommand): List<DiscoveryModule.Identity> {
 		if (!cmd.isAllowed(sender)) throw XMPPException(ErrorCondition.Forbidden)
 		return listOf(DiscoveryModule.Identity("automation", "command-node", cmd.name))
 	}

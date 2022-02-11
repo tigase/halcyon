@@ -40,7 +40,7 @@ abstract class Stanza<STANZA_TYPE> protected constructor(protected val element: 
 
 	override fun toString(): String {
 		return buildString {
-			append(name.toUpperCase()).append("[")
+			append(name.uppercase()).append("[")
 			attributes["type"]?.let { append("type=").append(it).append(" ") }
 			attributes["id"]?.let { append("id=").append(it).append(" ") }
 			attributes["to"]?.let { append("to=").append(it).append(" ") }

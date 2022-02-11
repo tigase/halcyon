@@ -28,7 +28,8 @@ This method prepare request for publishing own vcard.
 
 === Retrieving VCard
 
-```kotlin
+[source,kotlin]
+----
 val vCardModule = halcyon.getModule<VCardModule>(VCardModule.TYPE)!!
 vCardModule.retrieveVCard("someone@server.im".toBareJID()).response { result ->
 	result.onSuccess {vcard->
@@ -56,24 +57,26 @@ vCardModule.retrieveVCard("someone@server.im".toBareJID()).response { result ->
 		println("Cannot retrieve VCard. Error: $it")
 	}
 }.send()
-```
+----
 
 === Publishing VCard
 
 Publishing own vcard is very simple:
 
-```kotlin
+[source,kotlin]
+----
 val vCardModule = halcyon.getModule<VCardModule>(VCardModule.TYPE)!!
 vCardModule.publish(vcard).response { result ->
     result.onSuccess { println("VCard published") }
     result.onFailure { println("VCard NOT published") }
 }.send()
-```
+----
 
 VCard object is mutable and can be edited.
 To create new VCard instance you can use VCard builder:
 
-```kotlin
+[source,kotlin]
+----
 val vCard = vcard {
     structuredName {
         given = "Alice"
@@ -88,4 +91,4 @@ val vCard = vcard {
         text = "alice@organisation.com"
     }
 }
-```
+----

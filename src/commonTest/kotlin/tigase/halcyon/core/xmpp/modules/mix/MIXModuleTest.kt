@@ -1,5 +1,5 @@
 /*
- * Tigase Halcyon XMPP Library
+ * halcyon-core
  * Copyright (C) 2018 Tigase, Inc. (office@tigase.com)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -46,11 +46,11 @@ class MIXModuleTest {
 	 */
 	@Test
 	fun testMIXMessageEventCalling() {
-		halcyon.getModule<RosterModule>(RosterModule.TYPE).store.addItem(
-			"arturs@mix.tigase.org".toBareJID(), RosterItem(
-				"arturs@mix.tigase.org".toBareJID(), "MIX", annotations = arrayOf(MIXRosterItemAnnotation("123"))
-			)
-		)
+		halcyon.getModule<RosterModule>(RosterModule.TYPE).store.addItem("arturs@mix.tigase.org".toBareJID(),
+																		 RosterItem("arturs@mix.tigase.org".toBareJID(),
+																					"MIX",
+																					annotations = arrayOf(
+																						MIXRosterItemAnnotation("123"))))
 
 		val module = halcyon.getModule<MIXModule>(MIXModule.TYPE)
 
@@ -77,7 +77,7 @@ class MIXModuleTest {
 			}
 		}
 
-		if (module.criteria!!.match(stanza)) module.process(stanza)
+		if (module.criteria.match(stanza)) module.process(stanza)
 
 		assertFalse(stanza.isMixMessage(), "This is not MIX Message")
 		assertFalse(eventCalled, "Event should not be called")

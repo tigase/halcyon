@@ -1,5 +1,5 @@
 /*
- * Tigase Halcyon XMPP Library
+ * halcyon-core
  * Copyright (C) 2018 Tigase, Inc. (office@tigase.com)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -21,7 +21,7 @@ import kotlin.test.*
 
 class ElementImplTest {
 
-	val e_a1_1 = element("a") {
+	val ea11 = element("a") {
 		attribute("id", "000")
 		attribute("ok", "010")
 		"a"{
@@ -45,7 +45,7 @@ class ElementImplTest {
 			+"value2"
 		}
 	} as ElementImpl
-	val e_a1_2 = element("a") {
+	val ea12 = element("a") {
 		attribute("id", "000")
 		attribute("ok", "010")
 		"a"{
@@ -69,7 +69,7 @@ class ElementImplTest {
 			+"value2"
 		}
 	} as ElementImpl
-	val e_b1_1 = element("a") {
+	val eb11 = element("a") {
 		attribute("id", "000")
 		attribute("ok", "101")
 		"a"{
@@ -93,7 +93,7 @@ class ElementImplTest {
 			+"value2"
 		}
 	} as ElementImpl
-	val e_c1_1 = element("a") {
+	val ec11 = element("a") {
 		attribute("id", "000")
 		attribute("ok", "010")
 		"a"{
@@ -120,32 +120,32 @@ class ElementImplTest {
 
 	@Test
 	fun testFirstChildAndSibling() {
-		val a = e_a1_1.getFirstChild("a")
+		val a = ea11.getFirstChild("a")
 		assertEquals("a", a!!.name)
 		val b = a.getNextSibling()
 		assertEquals("1", b!!.name)
 
-		assertEquals("a", e_a1_1.getFirstChild()!!.name)
+		assertEquals("a", ea11.getFirstChild()!!.name)
 	}
 
 	@Test
 	fun testFindChild() {
-		assertEquals("1", e_a1_1.findChild("a", "1")!!.name)
-		assertEquals("x", e_a1_1.findChild("a", "1")!!.attributes["type"])
-		assertEquals("a", e_a1_1.findChild("a", "a")!!.name)
-		assertEquals("99898", e_a1_1.findChild("a", "b", "ba", "bb")!!.value)
+		assertEquals("1", ea11.findChild("a", "1")!!.name)
+		assertEquals("x", ea11.findChild("a", "1")!!.attributes["type"])
+		assertEquals("a", ea11.findChild("a", "a")!!.name)
+		assertEquals("99898", ea11.findChild("a", "b", "ba", "bb")!!.value)
 	}
 
 	@Test
 	fun testGetChildAfter() {
-		val ch = e_a1_1.getFirstChild("1")
+		val ch = ea11.getFirstChild("1")
 		assertEquals("1", ch!!.name)
-		assertEquals("b", e_a1_1.getChildAfter(ch)!!.name)
+		assertEquals("b", ea11.getChildAfter(ch).name)
 	}
 
 	@Test
 	fun testChildren() {
-		val list = e_a1_1.getChildren("a")
+		val list = ea11.getChildren("a")
 		assertEquals(2, list.count())
 		assertEquals("a", list[0].name)
 		assertEquals("a", list[1].name)
@@ -153,7 +153,7 @@ class ElementImplTest {
 
 	@Test
 	fun testGetChildrenNS() {
-		val list = e_a1_1.getChildrenNS("xxx")
+		val list = ea11.getChildrenNS("xxx")
 		assertEquals(2, list.count())
 		assertEquals("a", list[0].name)
 		assertEquals("1", list[1].name)
@@ -161,34 +161,34 @@ class ElementImplTest {
 
 	@Test
 	fun testGetChildrenNameNS() {
-		val e = e_a1_1.getChildrenNS("a", "xxx")
+		val e = ea11.getChildrenNS("a", "xxx")
 		assertEquals("a", e!!.name)
 	}
 
 	@Test
 	fun testEquals() {
-		assertEquals(e_a1_1, e_a1_1)
-		assertEquals(e_a1_1, e_a1_2)
-		assertEquals(e_a1_2, e_a1_1)
+		assertEquals(ea11, ea11)
+		assertEquals(ea11, ea12)
+		assertEquals(ea12, ea11)
 
-		assertNotEquals(e_a1_1, e_b1_1)
-		assertNotEquals(e_a1_1, e_c1_1)
-		assertNotEquals(e_b1_1, e_c1_1)
+		assertNotEquals(ea11, eb11)
+		assertNotEquals(ea11, ec11)
+		assertNotEquals(eb11, ec11)
 
-		assertTrue(e_a1_1 == e_a1_2)
-		assertTrue(e_a1_1.equals(e_a1_2))
-		assertTrue(e_a1_2.equals(e_a1_1))
+		assertEquals(ea11, ea12)
+		assertTrue(ea11.equals(ea12))
+		assertTrue(ea12.equals(ea11))
 
-		assertEquals(e_a1_2, e_a1_1)
-		assertEquals(e_a1_1, e_a1_1)
-		assertEquals(e_a1_1, e_a1_2)
+		assertEquals(ea12, ea11)
+		assertEquals(ea11, ea11)
+		assertEquals(ea11, ea12)
 
-		assertNotEquals(e_a1_2, e_b1_1)
-		assertNotEquals(e_a1_1, e_c1_1)
-		assertNotEquals(e_b1_1, e_c1_1)
+		assertNotEquals(ea12, eb11)
+		assertNotEquals(ea11, ec11)
+		assertNotEquals(eb11, ec11)
 
-		assertEquals(e_a1_1.hashCode(), e_a1_1.hashCode())
-		assertEquals(e_a1_1.hashCode(), e_a1_2.hashCode())
+		assertEquals(ea11.hashCode(), ea11.hashCode())
+		assertEquals(ea11.hashCode(), ea12.hashCode())
 	}
 
 	private fun createElement(): Element {
@@ -263,10 +263,8 @@ class ElementImplTest {
 				}
 			}
 		}
-		assertEquals(
-			"<a id=\"123\"><b><c><d>...</d><e>...</e><f>...</f></c></b></a>",
-			e3.getAsString(deep = 3, showValue = false)
-		)
+		assertEquals("<a id=\"123\"><b><c><d>...</d><e>...</e><f>...</f></c></b></a>",
+					 e3.getAsString(deep = 3, showValue = false))
 
 	}
 

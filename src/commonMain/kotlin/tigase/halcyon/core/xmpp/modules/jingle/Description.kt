@@ -1,5 +1,5 @@
 /*
- * Tigase Halcyon XMPP Library
+ * halcyon-core
  * Copyright (C) 2018 Tigase, Inc. (office@tigase.com)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -30,12 +30,14 @@ class Description(
 	val rtcpMux: Boolean,
 	val ssrcs: List<SSRC>,
 	val ssrcGroups: List<SSRCGroup>,
-	val hdrExts: List<HdrExt>
+	val hdrExts: List<HdrExt>,
 ) {
 
-	enum class Senders { initiator,
-		responder,
-		both
+	enum class Senders {
+
+		Initiator,
+		Responder,
+		Both
 	}
 
 	fun toElement(): Element {

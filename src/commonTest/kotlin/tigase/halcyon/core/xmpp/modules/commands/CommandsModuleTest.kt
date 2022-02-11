@@ -20,12 +20,12 @@ package tigase.halcyon.core.xmpp.modules.commands
 import tigase.halcyon.core.AbstractHalcyon
 import tigase.halcyon.core.connector.AbstractConnector
 import tigase.halcyon.core.connector.ReceivedXMLElementEvent
+import tigase.halcyon.core.connector.SessionController
 import tigase.halcyon.core.connector.State
 import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xml.element
 import tigase.halcyon.core.xml.parser.parseXML
 import tigase.halcyon.core.xmpp.BareJID
-import tigase.halcyon.core.xmpp.SessionController
 import tigase.halcyon.core.xmpp.forms.Field
 import tigase.halcyon.core.xmpp.forms.FieldType
 import tigase.halcyon.core.xmpp.forms.FormType
@@ -329,8 +329,7 @@ class CommandsModuleTest {
 			}
 		})
 
-		var frm: JabberDataForm? = null
-		assertNotNull(result).let { resp ->
+		val frm: JabberDataForm = assertNotNull(result).let { resp ->
 			assertEquals(Status.Executing, resp.status)
 			assertEquals("config", resp.node)
 			assertEquals(Action.Next, resp.defaultAction)
@@ -344,16 +343,18 @@ class CommandsModuleTest {
 					assertEquals("Service", it.fieldLabel)
 				}
 			}
-			frm = resp.form!!
+			resp.form!!
 		}
 
 
 		result = null
 
-		frm!!.getFieldByVar("service")!!.fieldValue = "httpd"
-		reqId = module.executeCommand(
-			"responder@domain".toJID(), "config", frm!!.createSubmitForm(), null, "config:20020923T213616Z-700"
-		).response {
+		frm.getFieldByVar("service")!!.fieldValue = "httpd"
+		reqId = module.executeCommand("responder@domain".toJID(),
+									  "config",
+									  frm.createSubmitForm(),
+									  null,
+									  "config:20020923T213616Z-700").response {
 			it.onSuccess { result = it }
 		}.send().id
 
@@ -525,9 +526,7 @@ class CommandsModuleTest {
 			}
 		})
 
-		assertNotNull(result).let { resp ->
-			assertEquals(Status.Canceled, resp.status)
-		}
+		assertEquals(Status.Canceled, assertNotNull(result).status)
 
 	}
 
@@ -572,9 +571,7 @@ class CommandsModuleTest {
 				attributes["node"] = "http://jabber.org/protocol/commands"
 			}
 		})
-		assertNotNull(sentElements.removeLast()).let {
-			assertEquals(0, it.getFirstChild("query")!!.children.size)
-		}
+		assertEquals(0, assertNotNull(sentElements.removeLast()).getFirstChild("query")!!.children.size)
 
 		processReceived(iq {
 			to = "requester@domain".toJID()
@@ -721,19 +718,6 @@ class CommandsModuleTest {
 
 	}
 
-	class TestAdHoc : AdHocCommand {
-
-		override fun isAllowed(jid: BareJID): Boolean = jid == "owner@example.com".toBareJID()
-
-		override val node: String = "command-node-name"
-		override val name: String = "Example command"
-
-		override fun process(request: AdHocRequest, response: AdHocResponse) {
-			response.notes = arrayOf(Note.Info("Everything is OK"))
-			response.status = Status.Completed
-		}
-	}
-
 	@Test
 	fun testCustomAdHocExecution() {
 		val module = halcyon.getModule<CommandsModule>(CommandsModule.TYPE)
@@ -744,18 +728,12 @@ class CommandsModuleTest {
 			override fun process(request: AdHocRequest, response: AdHocResponse) {
 				val form = JabberDataForm.create(FormType.Result).apply {
 					title = "Available Services"
-					setReportedColumns(
-						listOf(Field.create("service").apply { fieldLabel = "Service" },
-							   Field.create("status").apply { fieldLabel = "Status" })
-					)
-					addItem(
-						listOf(Field.create("service").apply { fieldValue = "httpd" },
-							   Field.create("status").apply { fieldValue = "on" })
-					)
-					addItem(
-						listOf(Field.create("service").apply { fieldValue = "postgresql" },
-							   Field.create("status").apply { fieldValue = "off" })
-					)
+					setReportedColumns(listOf(Field.create("service").apply { fieldLabel = "Service" },
+											  Field.create("status").apply { fieldLabel = "Status" }))
+					addItem(listOf(Field.create("service").apply { fieldValue = "httpd" },
+								   Field.create("status").apply { fieldValue = "on" }))
+					addItem(listOf(Field.create("service").apply { fieldValue = "postgresql" },
+								   Field.create("status").apply { fieldValue = "off" }))
 				}
 				response.form = form
 				response.status = Status.Completed

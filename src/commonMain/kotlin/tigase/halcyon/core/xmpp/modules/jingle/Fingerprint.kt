@@ -1,5 +1,5 @@
 /*
- * Tigase Halcyon XMPP Library
+ * halcyon-core
  * Copyright (C) 2018 Tigase, Inc. (office@tigase.com)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -21,10 +21,14 @@ import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xml.element
 import kotlin.jvm.JvmStatic
 
-class Fingerprint(val hash: String, val value: String, val setup: Fingerprint.Setup) { enum class Setup { actpass,
-	active,
-	passive
-}
+class Fingerprint(val hash: String, val value: String, val setup: Setup) {
+
+	enum class Setup {
+
+		Actpass,
+		Active,
+		Passive
+	}
 
 	fun toElement(): Element {
 		return element("fingerprint") {

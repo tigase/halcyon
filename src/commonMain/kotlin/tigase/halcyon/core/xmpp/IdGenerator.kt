@@ -22,7 +22,7 @@ import kotlin.math.absoluteValue
 
 class IdGenerator {
 
-	private var buffer = kotlin.IntArray(16, init = { 0 })
+	private var buffer = IntArray(16, init = { 0 })
 
 	private val seed = createSeed()
 
@@ -33,7 +33,7 @@ class IdGenerator {
 			val c = t % ALPHABET.length
 			t -= c
 			t /= ALPHABET.length
-			result += arrayListOf<Int>(c.toInt())
+			result += arrayListOf(c.toInt())
 		}
 		return result
 	}
@@ -48,7 +48,7 @@ class IdGenerator {
 			}
 			buffer[ix] = 0
 			if (ix == buffer.size - 1) {
-				buffer = kotlin.IntArray(buffer.size + 1, init = { 0 })
+				buffer = IntArray(buffer.size + 1, init = { 0 })
 				break
 			}
 		}
@@ -66,7 +66,7 @@ class IdGenerator {
 
 //		val result =  buffer.copyOf(buffer.size + 1)
 
-		val result = seed + buffer + kotlin.IntArray(1, init = { 0 })
+		val result = seed + buffer + IntArray(1, init = { 0 })
 
 		val iv = f(counter)
 		result[result.size - 1] = (iv % ALPHABET.length).absoluteValue.toInt()

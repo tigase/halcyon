@@ -1,5 +1,5 @@
 /*
- * Tigase Halcyon XMPP Library
+ * halcyon-core
  * Copyright (C) 2018 Tigase, Inc. (office@tigase.com)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -28,10 +28,10 @@ import kotlin.test.assertTrue
 
 class ModulesManagerTest {
 
-	class Module01(override val context: Context) : tigase.halcyon.core.modules.XmppModule {
+	class Module01(override val context: Context) : XmppModule {
 
 		override val type = "Module01"
-		override val criteria: tigase.halcyon.core.modules.Criteria = tigase.halcyon.core.modules.Criterion.name("iq")
+		override val criteria: Criteria = Criterion.name("iq")
 		override val features: Array<String> = arrayOf("1", "2")
 
 		override fun initialize() {
@@ -41,10 +41,10 @@ class ModulesManagerTest {
 		}
 	}
 
-	class Module02(override val context: Context) : tigase.halcyon.core.modules.XmppModule {
+	class Module02(override val context: Context) : XmppModule {
 
 		override val type = "Module02"
-		override val criteria = tigase.halcyon.core.modules.Criterion.name("msg")
+		override val criteria = Criterion.name("msg")
 		override val features = arrayOf("a", "b")
 
 		override fun initialize() {
@@ -56,8 +56,8 @@ class ModulesManagerTest {
 
 	@Test
 	fun test01() {
-		val mm = tigase.halcyon.core.modules.ModulesManager()
-		mm.context = object : tigase.halcyon.core.Context {
+		val mm = ModulesManager()
+		mm.context = object : Context {
 
 			override val eventBus: tigase.halcyon.core.eventbus.EventBus
 				get() = TODO("not implemented")
@@ -65,7 +65,7 @@ class ModulesManagerTest {
 				get() = TODO("not implemented") //To change initializer of created properties use File | Settings | File Templates.
 			override val writer: tigase.halcyon.core.PacketWriter
 				get() = TODO("not implemented")
-			override val modules: tigase.halcyon.core.modules.ModulesManager
+			override val modules: ModulesManager
 				get() = TODO("not implemented")
 			override val request: RequestBuilderFactory
 				get() = TODO("not implemented") //To change initializer of created properties use File | Settings | File Templates.
@@ -73,11 +73,7 @@ class ModulesManagerTest {
 		mm.register(Module01(mm.context))
 		mm.register(Module02(mm.context))
 
-		assertTrue(
-			arrayOf(
-				"1", "2", "a", "b"
-			).sortedArray() contentDeepEquals mm.getAvailableFeatures().sortedArray()
-		)
+		assertTrue(arrayOf("1", "2", "a", "b").sortedArray() contentDeepEquals mm.getAvailableFeatures().sortedArray())
 
 		assertEquals(0, mm.getModulesFor(element("presence") {}).size)
 		assertEquals(1, mm.getModulesFor(element("iq") {}).size)

@@ -1,5 +1,5 @@
 /*
- * Tigase Halcyon XMPP Library
+ * halcyon-core
  * Copyright (C) 2018 Tigase, Inc. (office@tigase.com)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -50,70 +50,19 @@ class CriteriaTest {
 
 	@Test
 	fun testCriterion() {
-		assertFalse(
-			tigase.halcyon.core.modules.Criterion.or(
-				tigase.halcyon.core.modules.Criterion.name("X"), tigase.halcyon.core.modules.Criterion.name("Y")
-			).match(element)
-		)
-		assertFalse(
-			tigase.halcyon.core.modules.Criterion.or(
-				tigase.halcyon.core.modules.Criterion.name("X"), tigase.halcyon.core.modules.Criterion.name("Y")
-			).match(element)
-		)
-		assertTrue(
-			tigase.halcyon.core.modules.Criterion.or(
-				tigase.halcyon.core.modules.Criterion.name("X"), tigase.halcyon.core.modules.Criterion.name("iq")
-			).match(element)
-		)
+		assertFalse(Criterion.or(Criterion.name("X"), Criterion.name("Y")).match(element))
+		assertFalse(Criterion.or(Criterion.name("X"), Criterion.name("Y")).match(element))
+		assertTrue(Criterion.or(Criterion.name("X"), Criterion.name("iq")).match(element))
 
-		assertFalse(
-			tigase.halcyon.core.modules.Criterion.and(
-				tigase.halcyon.core.modules.Criterion.xmlns("jabber:client"),
-				tigase.halcyon.core.modules.Criterion.name("X")
-			).match(element)
-		)
-		assertTrue(
-			tigase.halcyon.core.modules.Criterion.and(
-				tigase.halcyon.core.modules.Criterion.xmlns("jabber:client"),
-				tigase.halcyon.core.modules.Criterion.name("iq")
-			).match(element)
-		)
+		assertFalse(Criterion.and(Criterion.xmlns("jabber:client"), Criterion.name("X")).match(element))
+		assertTrue(Criterion.and(Criterion.xmlns("jabber:client"), Criterion.name("iq")).match(element))
 
-		assertTrue(
-			tigase.halcyon.core.modules.Criterion.not(
-				tigase.halcyon.core.modules.Criterion.and(
-					tigase.halcyon.core.modules.Criterion.xmlns(
-						"jabber:client"
-					), tigase.halcyon.core.modules.Criterion.name("X")
-				)
-			).match(element)
-		)
-		assertFalse(
-			tigase.halcyon.core.modules.Criterion.not(
-				tigase.halcyon.core.modules.Criterion.and(
-					tigase.halcyon.core.modules.Criterion.xmlns(
-						"jabber:client"
-					), tigase.halcyon.core.modules.Criterion.name("iq")
-				)
-			).match(element)
-		)
+		assertTrue(Criterion.not(Criterion.and(Criterion.xmlns("jabber:client"), Criterion.name("X"))).match(element))
+		assertFalse(Criterion.not(Criterion.and(Criterion.xmlns("jabber:client"), Criterion.name("iq"))).match(element))
 
-		assertTrue(
-			tigase.halcyon.core.modules.Criterion.chain(
-				tigase.halcyon.core.modules.Criterion.name("iq"), tigase.halcyon.core.modules.Criterion.xmlns("a:b")
-			).match(element)
-		)
-		assertFalse(
-			tigase.halcyon.core.modules.Criterion.chain(
-				tigase.halcyon.core.modules.Criterion.name("iq"), tigase.halcyon.core.modules.Criterion.xmlns("a:c")
-			).match(element)
-		)
-		assertFalse(
-			tigase.halcyon.core.modules.Criterion.chain(
-				tigase.halcyon.core.modules.Criterion.name("presence"),
-				tigase.halcyon.core.modules.Criterion.xmlns("a:b")
-			).match(element)
-		)
+		assertTrue(Criterion.chain(Criterion.name("iq"), Criterion.xmlns("a:b")).match(element))
+		assertFalse(Criterion.chain(Criterion.name("iq"), Criterion.xmlns("a:c")).match(element))
+		assertFalse(Criterion.chain(Criterion.name("presence"), Criterion.xmlns("a:b")).match(element))
 	}
 
 }

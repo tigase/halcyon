@@ -1,5 +1,5 @@
 /*
- * Tigase Halcyon XMPP Library
+ * halcyon-core
  * Copyright (C) 2018 Tigase, Inc. (office@tigase.com)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -21,7 +21,7 @@ interface SimpleHandler {
 
 	fun error(errorMessage: String)
 
-	fun startElement(name: String, attr_names: Array<String?>?, attr_values: Array<String?>?)
+	fun startElement(name: String, attrNames: Array<String?>?, attrValues: Array<String?>?)
 
 	fun elementCData(cdata: String)
 

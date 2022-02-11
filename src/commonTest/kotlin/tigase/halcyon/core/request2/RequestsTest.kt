@@ -1,5 +1,5 @@
 /*
- * Tigase Halcyon XMPP Library
+ * halcyon-core
  * Copyright (C) 2018 Tigase, Inc. (office@tigase.com)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -32,11 +32,11 @@ class RequestsTest {
 
 	private val halcyon = object : AbstractHalcyon() {
 		override fun reconnect(immediately: Boolean) {
-			TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+			fail("It should not be called in this test!")
 		}
 
 		override fun createConnector(): AbstractConnector {
-			TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+			fail("It should not be called in this test!")
 		}
 	}
 
@@ -159,7 +159,7 @@ class RequestsTest {
 			type = IQType.Get
 		}.map { response -> response.getChildrenNS("response", "test")!!.value!! }.response { result ->
 			if (result.isSuccess) rr = result
-		}.handleResponseStanza { request, iq ->
+		}.handleResponseStanza { _, iq ->
 			rs = iq
 		}.build()
 
@@ -229,15 +229,9 @@ class RequestsTest {
 		}
 		req.setResponseStanza(response)
 
-		assertNotNull(rr1).let {
-			assertTrue(it.isSuccess)
-		}
-		assertNotNull(rr2).let {
-			assertTrue(it.isSuccess)
-		}
-		assertNotNull(rr3).let {
-			assertTrue(it.isSuccess)
-		}
+		assertTrue(assertNotNull(rr1).isSuccess)
+		assertTrue(assertNotNull(rr2).isSuccess)
+		assertTrue(assertNotNull(rr3).isSuccess)
 	}
 
 	@Test
@@ -259,15 +253,9 @@ class RequestsTest {
 		}
 		req.setResponseStanza(response)
 
-		assertNotNull(rr1).let {
-			assertTrue(it.isFailure)
-		}
-		assertNotNull(rr2).let {
-			assertTrue(it.isFailure)
-		}
-		assertNotNull(rr3).let {
-			assertTrue(it.isFailure)
-		}
+		assertTrue(assertNotNull(rr1).isFailure)
+		assertTrue(assertNotNull(rr2).isFailure)
+		assertTrue(assertNotNull(rr3).isFailure)
 	}
 
 	@Test
@@ -426,9 +414,9 @@ class RequestsTest {
 			to = "a@b".toJID()
 			from = "x@y".toJID()
 			type = IQType.Get
-		}.map { Unit }.response {
+		}.map { }.response {
 			rr = it
-		}.map { Unit }.build()
+		}.map { }.build()
 		req.markAsSent()
 
 		assertNull(rr, "Handler must not be executed for IQ stanza, if markAsRead() is called.")

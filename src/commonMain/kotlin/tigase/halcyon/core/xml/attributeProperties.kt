@@ -40,7 +40,7 @@ abstract class AttributeProperty<V>(private val attributeName: String? = null) :
 }
 
 inline fun <V> attributeProp(
-	attributeName: String? = null, crossinline valueToString: (V) -> String?, crossinline stringToValue: (String?) -> V
+	attributeName: String? = null, crossinline valueToString: (V) -> String?, crossinline stringToValue: (String?) -> V,
 ): ReadWriteProperty<Element, V> {
 	return object : AttributeProperty<V>(attributeName) {
 		override fun valueToString(value: V): String? = valueToString.invoke(value)
@@ -50,15 +50,15 @@ inline fun <V> attributeProp(
 	}
 }
 
-inline fun intAttributeProperty(attributeName: String? = null): ReadWriteProperty<Element, Int?> = attributeProp(
-	attributeName = attributeName,
-	valueToString = { v -> v?.toString() },
-	stringToValue = { s -> s?.toInt() })
+fun intAttributeProperty(attributeName: String? = null): ReadWriteProperty<Element, Int?> =
+	attributeProp(attributeName = attributeName,
+				  valueToString = { v -> v?.toString() },
+				  stringToValue = { s -> s?.toInt() })
 
-inline fun stringAttributeProperty(attributeName: String? = null): ReadWriteProperty<Element, String?> =
+fun stringAttributeProperty(attributeName: String? = null): ReadWriteProperty<Element, String?> =
 	attributeProp(attributeName = attributeName, valueToString = { v -> v }, stringToValue = { s -> s })
 
-inline fun jidAttributeProperty(attributeName: String? = null): ReadWriteProperty<Element, JID?> = attributeProp(
-	attributeName = attributeName,
-	valueToString = { v -> v?.toString() },
-	stringToValue = { v: String? -> v?.toJID() })
+fun jidAttributeProperty(attributeName: String? = null): ReadWriteProperty<Element, JID?> =
+	attributeProp(attributeName = attributeName,
+				  valueToString = { v -> v?.toString() },
+				  stringToValue = { v: String? -> v?.toJID() })

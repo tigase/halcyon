@@ -1,5 +1,5 @@
 /*
- * Tigase Halcyon XMPP Library
+ * halcyon-core
  * Copyright (C) 2018 Tigase, Inc. (office@tigase.com)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -79,9 +79,11 @@ sealed class BlockingCommandEvent : Event(TYPE) {
  *
  * Module implements [Blocking Command](https://xmpp.org/extensions/xep-0191.html) and [Spam Reporting](https://xmpp.org/extensions/xep-0377.html) extension.
  */
-class BlockingCommandModule(override val context: Context) : AbstractXmppIQModule(
-	context, TYPE, arrayOf(XMLNS), Criterion.chain(Criterion.name(IQ.NAME), Criterion.xmlns(XMLNS))
-) {
+class BlockingCommandModule(override val context: Context) : AbstractXmppIQModule(context,
+																				  TYPE,
+																				  arrayOf(XMLNS),
+																				  Criterion.chain(Criterion.name(IQ.NAME),
+																								  Criterion.xmlns(XMLNS))) {
 
 	companion object {
 
@@ -166,7 +168,7 @@ class BlockingCommandModule(override val context: Context) : AbstractXmppIQModul
 					}
 				}
 			}
-		}.map { Unit }
+		}.map { }
 
 	/**
 	 * Prepares request to unblock specific contacts.

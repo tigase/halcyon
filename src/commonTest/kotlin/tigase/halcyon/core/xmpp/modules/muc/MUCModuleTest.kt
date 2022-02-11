@@ -20,13 +20,13 @@ package tigase.halcyon.core.xmpp.modules.muc
 import tigase.halcyon.core.AbstractHalcyon
 import tigase.halcyon.core.connector.AbstractConnector
 import tigase.halcyon.core.connector.ReceivedXMLElementEvent
+import tigase.halcyon.core.connector.SessionController
 import tigase.halcyon.core.connector.State
 import tigase.halcyon.core.eventbus.Event
 import tigase.halcyon.core.exceptions.HalcyonException
 import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xml.parser.parseXML
 import tigase.halcyon.core.xmpp.ErrorCondition
-import tigase.halcyon.core.xmpp.SessionController
 import tigase.halcyon.core.xmpp.forms.JabberDataForm
 import tigase.halcyon.core.xmpp.modules.MessageReceivedEvent
 import tigase.halcyon.core.xmpp.modules.PingModule
@@ -112,10 +112,8 @@ class MUCModuleTest {
 		halcyon.eventBus.register<Event> { events.add(it) }
 		val muc: MUCModule = halcyon.getModule(MUCModule.TYPE)
 		muc.join("coven@chat.shakespeare.lit".toBareJID(), "thirdwitch").send()
-		assertEquals(
-			tigase.halcyon.core.xmpp.modules.muc.State.RequestSent,
-			assertNotNull(muc.store.findRoom("coven@chat.shakespeare.lit".toBareJID())).state
-		)
+		assertEquals(tigase.halcyon.core.xmpp.modules.muc.State.RequestSent,
+					 assertNotNull(muc.store.findRoom("coven@chat.shakespeare.lit".toBareJID())).state)
 		assertContains(presence {
 			to = "coven@chat.shakespeare.lit/thirdwitch".toJID()
 			"x"{ xmlns = "http://jabber.org/protocol/muc" }
@@ -143,7 +141,7 @@ class MUCModuleTest {
 		assertEquals(tigase.halcyon.core.xmpp.modules.muc.State.Joined, room.state, "Room state is not changed")
 		assertTrue(events.any { event -> event is MucRoomEvents.YouJoined }, "Event is not fired")
 		assertEquals("thirdwitch", room.nickname, "Invalid nickname")
-		val occupant = assertNotNull(room.occupants["thirdwitch"])
+		val occupant = assertNotNull(room.occupants()["thirdwitch"])
 		assertEquals(rp, occupant.presence)
 
 		assertEquals(Role.Participant, occupant.role)
@@ -185,10 +183,8 @@ class MUCModuleTest {
 		muc.join("coven@chat.shakespeare.lit".toBareJID(), "thirdwitch").send()
 
 		// occupant join
-		assertEquals(
-			tigase.halcyon.core.xmpp.modules.muc.State.RequestSent,
-			assertNotNull(muc.store.findRoom("coven@chat.shakespeare.lit".toBareJID())).state
-		)
+		assertEquals(tigase.halcyon.core.xmpp.modules.muc.State.RequestSent,
+					 assertNotNull(muc.store.findRoom("coven@chat.shakespeare.lit".toBareJID())).state)
 		assertContains(presence {
 			to = "coven@chat.shakespeare.lit/thirdwitch".toJID()
 			"x"{ xmlns = "http://jabber.org/protocol/muc" }
@@ -212,13 +208,11 @@ class MUCModuleTest {
 
 		val room = assertNotNull(muc.store.findRoom("coven@chat.shakespeare.lit".toBareJID()), "Room must be there!")
 		assertEquals(tigase.halcyon.core.xmpp.modules.muc.State.RequestSent, room.state, "Room state changed")
-		assertTrue(
-			events.any { event -> event is MucRoomEvents.OccupantCame && event.nickname == "firstwitch" },
-			"Event OccupantCame is not fired"
-		)
+		assertTrue(events.any { event -> event is MucRoomEvents.OccupantCame && event.nickname == "firstwitch" },
+				   "Event OccupantCame is not fired")
 
-		assertEquals(1, room.occupants.size)
-		assertNotNull(room.occupants["firstwitch"]).let {
+		assertEquals(1, room.occupants().size)
+		assertNotNull(room.occupants()["firstwitch"]).let {
 			assertEquals(Role.Moderator, it.role)
 			assertEquals(Affiliation.Owner, it.affiliation)
 			assertNull(it.presence.show)
@@ -244,7 +238,7 @@ class MUCModuleTest {
 
 		assertEquals(tigase.halcyon.core.xmpp.modules.muc.State.Joined, room.state, "Room state is not changed")
 		assertTrue(events.any { event -> event is MucRoomEvents.YouJoined }, "Event is not fired")
-		assertEquals(2, room.occupants.size)
+		assertEquals(2, room.occupants().size)
 
 		// first witch changes presence
 		presence {
@@ -262,15 +256,13 @@ class MUCModuleTest {
 			assertTrue(muc.criteria.match(it), "Sender is not identified as MUC Room")
 			muc.process(it)
 		}
-		assertNotNull(room.occupants["firstwitch"]).let {
+		assertNotNull(room.occupants()["firstwitch"]).let {
 			assertEquals(Role.Moderator, it.role)
 			assertEquals(Affiliation.Owner, it.affiliation)
 			assertEquals(Show.DnD, it.presence.show)
 		}
-		assertTrue(
-			events.any { event -> event is MucRoomEvents.OccupantChangedPresence && event.nickname == "firstwitch" },
-			"OccupantChangedPresence event is not fired"
-		)
+		assertTrue(events.any { event -> event is MucRoomEvents.OccupantChangedPresence && event.nickname == "firstwitch" },
+				   "OccupantChangedPresence event is not fired")
 
 		// firstwitch leaves room
 
@@ -291,11 +283,9 @@ class MUCModuleTest {
 		}
 
 		assertEquals(tigase.halcyon.core.xmpp.modules.muc.State.Joined, room.state, "Room state is not changed")
-		assertTrue(
-			events.any { event -> event is MucRoomEvents.OccupantLeave && event.nickname == "firstwitch" },
-			"OccupantLeave event is not fired"
-		)
-		assertEquals(1, room.occupants.size)
+		assertTrue(events.any { event -> event is MucRoomEvents.OccupantLeave && event.nickname == "firstwitch" },
+				   "OccupantLeave event is not fired")
+		assertEquals(1, room.occupants().size)
 	}
 
 	@Test
@@ -306,10 +296,8 @@ class MUCModuleTest {
 		muc.join("coven@chat.shakespeare.lit".toBareJID(), "thirdwitch").send()
 
 		// occupant join
-		assertEquals(
-			tigase.halcyon.core.xmpp.modules.muc.State.RequestSent,
-			assertNotNull(muc.store.findRoom("coven@chat.shakespeare.lit".toBareJID())).state
-		)
+		assertEquals(tigase.halcyon.core.xmpp.modules.muc.State.RequestSent,
+					 assertNotNull(muc.store.findRoom("coven@chat.shakespeare.lit".toBareJID())).state)
 		assertContains(presence {
 			to = "coven@chat.shakespeare.lit/thirdwitch".toJID()
 			"x"{ xmlns = "http://jabber.org/protocol/muc" }
@@ -350,7 +338,7 @@ class MUCModuleTest {
 		}
 
 		assertEquals(tigase.halcyon.core.xmpp.modules.muc.State.Joined, room.state, "Room state is not changed")
-		assertEquals(2, room.occupants.size)
+		assertEquals(2, room.occupants().size)
 
 		// firstwitch is kicked
 		presence {
@@ -370,12 +358,10 @@ class MUCModuleTest {
 			muc.process(it)
 		}
 
-		assertTrue(
-			events.any { event -> event is MucRoomEvents.OccupantLeave && event.nickname == "firstwitch" },
-			"OccupantChangedPresence event is not fired"
-		)
+		assertTrue(events.any { event -> event is MucRoomEvents.OccupantLeave && event.nickname == "firstwitch" },
+				   "OccupantChangedPresence event is not fired")
 		assertEquals(tigase.halcyon.core.xmpp.modules.muc.State.Joined, room.state, "Invalid room state")
-		assertEquals(1, room.occupants.size)
+		assertEquals(1, room.occupants().size)
 	}
 
 	@Test
@@ -384,10 +370,8 @@ class MUCModuleTest {
 		halcyon.eventBus.register<Event> { events.add(it) }
 		val muc: MUCModule = halcyon.getModule(MUCModule.TYPE)
 		muc.join("coven@chat.shakespeare.lit".toBareJID(), "thirdwitch").send()
-		assertEquals(
-			tigase.halcyon.core.xmpp.modules.muc.State.RequestSent,
-			assertNotNull(muc.store.findRoom("coven@chat.shakespeare.lit".toBareJID())).state
-		)
+		assertEquals(tigase.halcyon.core.xmpp.modules.muc.State.RequestSent,
+					 assertNotNull(muc.store.findRoom("coven@chat.shakespeare.lit".toBareJID())).state)
 		assertContains(presence {
 			to = "coven@chat.shakespeare.lit/thirdwitch".toJID()
 			"x"{ xmlns = "http://jabber.org/protocol/muc" }
@@ -411,10 +395,8 @@ class MUCModuleTest {
 
 		val room = assertNotNull(muc.store.findRoom("coven@chat.shakespeare.lit".toBareJID()), "Room must be there!")
 		assertEquals(tigase.halcyon.core.xmpp.modules.muc.State.NotJoined, room.state, "Room state is not changed")
-		assertTrue(
-			events.any { event -> event is MucRoomEvents.JoinError && event.condition == ErrorCondition.JidMalformed },
-			"JoinError event missing"
-		)
+		assertTrue(events.any { event -> event is MucRoomEvents.JoinError && event.condition == ErrorCondition.JidMalformed },
+				   "JoinError event missing")
 	}
 
 	@Test
@@ -423,10 +405,8 @@ class MUCModuleTest {
 		halcyon.eventBus.register<Event> { events.add(it) }
 		val muc: MUCModule = halcyon.getModule(MUCModule.TYPE)
 		muc.join("coven@chat.shakespeare.lit".toBareJID(), "thirdwitch").send()
-		assertEquals(
-			tigase.halcyon.core.xmpp.modules.muc.State.RequestSent,
-			assertNotNull(muc.store.findRoom("coven@chat.shakespeare.lit".toBareJID())).state
-		)
+		assertEquals(tigase.halcyon.core.xmpp.modules.muc.State.RequestSent,
+					 assertNotNull(muc.store.findRoom("coven@chat.shakespeare.lit".toBareJID())).state)
 		assertContains(presence {
 			to = "coven@chat.shakespeare.lit/thirdwitch".toJID()
 			"x"{ xmlns = "http://jabber.org/protocol/muc" }
@@ -479,7 +459,7 @@ class MUCModuleTest {
 
 		assertTrue(events.any { event -> event is MucRoomEvents.YouLeaved }, "YouLeaved event missing")
 		assertEquals(tigase.halcyon.core.xmpp.modules.muc.State.NotJoined, room.state, "Room state is not changed")
-		assertEquals(0, room.occupants.size)
+		assertEquals(0, room.occupants().size)
 	}
 
 	@Test
@@ -488,10 +468,8 @@ class MUCModuleTest {
 		halcyon.eventBus.register<Event> { events.add(it) }
 		val muc: MUCModule = halcyon.getModule(MUCModule.TYPE)
 		muc.join("coven@chat.shakespeare.lit".toBareJID(), "thirdwitch").send()
-		assertEquals(
-			tigase.halcyon.core.xmpp.modules.muc.State.RequestSent,
-			assertNotNull(muc.store.findRoom("coven@chat.shakespeare.lit".toBareJID())).state
-		)
+		assertEquals(tigase.halcyon.core.xmpp.modules.muc.State.RequestSent,
+					 assertNotNull(muc.store.findRoom("coven@chat.shakespeare.lit".toBareJID())).state)
 		assertContains(presence {
 			to = "coven@chat.shakespeare.lit/thirdwitch".toJID()
 			"x"{ xmlns = "http://jabber.org/protocol/muc" }
@@ -540,7 +518,7 @@ class MUCModuleTest {
 
 		assertTrue(events.any { event -> event is MucRoomEvents.YouLeaved }, "YouLeaved event missing")
 		assertEquals(tigase.halcyon.core.xmpp.modules.muc.State.NotJoined, room.state, "Room state is not changed")
-		assertEquals(0, room.occupants.size)
+		assertEquals(0, room.occupants().size)
 	}
 
 	@Test
@@ -549,10 +527,8 @@ class MUCModuleTest {
 		halcyon.eventBus.register<Event> { events.add(it) }
 		val muc: MUCModule = halcyon.getModule(MUCModule.TYPE)
 		muc.join("coven@chat.shakespeare.lit".toBareJID(), "thirdwitch").send()
-		assertEquals(
-			tigase.halcyon.core.xmpp.modules.muc.State.RequestSent,
-			assertNotNull(muc.store.findRoom("coven@chat.shakespeare.lit".toBareJID())).state
-		)
+		assertEquals(tigase.halcyon.core.xmpp.modules.muc.State.RequestSent,
+					 assertNotNull(muc.store.findRoom("coven@chat.shakespeare.lit".toBareJID())).state)
 		assertContains(presence {
 			to = "coven@chat.shakespeare.lit/thirdwitch".toJID()
 			"x"{ xmlns = "http://jabber.org/protocol/muc" }
@@ -595,10 +571,8 @@ class MUCModuleTest {
 			muc.process(it)
 		}
 
-		assertTrue(
-			events.any { event -> event is MucRoomEvents.ReceivedMessage && event.nickname == "thirdwitch" && event.message.body == "Thrice and once the hedge-pig whined." },
-			"Message event missing"
-		)
+		assertTrue(events.any { event -> event is MucRoomEvents.ReceivedMessage && event.nickname == "thirdwitch" && event.message.body == "Thrice and once the hedge-pig whined." },
+				   "Message event missing")
 	}
 
 	@Test
@@ -612,10 +586,8 @@ class MUCModuleTest {
 
 		halcyon.eventBus.register<MessageReceivedEvent>(MessageReceivedEvent.TYPE) { receivedEvent = it }
 
-		assertEquals(
-			tigase.halcyon.core.xmpp.modules.muc.State.RequestSent,
-			assertNotNull(muc.store.findRoom("coven@chat.shakespeare.lit".toBareJID())).state
-		)
+		assertEquals(tigase.halcyon.core.xmpp.modules.muc.State.RequestSent,
+					 assertNotNull(muc.store.findRoom("coven@chat.shakespeare.lit".toBareJID())).state)
 		assertContains(presence {
 			to = "coven@chat.shakespeare.lit/thirdwitch".toJID()
 			"x"{ xmlns = "http://jabber.org/protocol/muc" }
@@ -660,10 +632,8 @@ class MUCModuleTest {
 		halcyon.eventBus.register<Event> { events.add(it) }
 		val muc: MUCModule = halcyon.getModule(MUCModule.TYPE)
 		muc.join("coven@chat.shakespeare.lit".toBareJID(), "thirdwitch").send()
-		assertEquals(
-			tigase.halcyon.core.xmpp.modules.muc.State.RequestSent,
-			assertNotNull(muc.store.findRoom("coven@chat.shakespeare.lit".toBareJID())).state
-		)
+		assertEquals(tigase.halcyon.core.xmpp.modules.muc.State.RequestSent,
+					 assertNotNull(muc.store.findRoom("coven@chat.shakespeare.lit".toBareJID())).state)
 		assertContains(presence {
 			to = "coven@chat.shakespeare.lit/thirdwitch".toJID()
 			"x"{ xmlns = "http://jabber.org/protocol/muc" }
@@ -728,13 +698,11 @@ class MUCModuleTest {
 			when (it) {
 				is MucRoomEvents.YouJoined -> println("You joined to room ${it.room.roomJID} as ${it.nickname}")
 				is MucRoomEvents.JoinError -> println("Oh! You cannot join to room ${it.room.roomJID} because of ${it.condition}")
-
+				else -> {}
 			}
 		}
-		assertEquals(
-			tigase.halcyon.core.xmpp.modules.muc.State.RequestSent,
-			assertNotNull(muc.store.findRoom("coven@chat.shakespeare.lit".toBareJID())).state
-		)
+		assertEquals(tigase.halcyon.core.xmpp.modules.muc.State.RequestSent,
+					 assertNotNull(muc.store.findRoom("coven@chat.shakespeare.lit".toBareJID())).state)
 		processReceived(presence {
 			from = "coven@chat.shakespeare.lit/thirdwitch".toJID()
 			to = "hag66@shakespeare.lit/pda".toJID()
@@ -782,7 +750,7 @@ class MUCModuleTest {
 
 		muc.inviteDirectly(room, "hecate@shakespeare.lit".toBareJID(), "Hey Hecate").send()
 		assertContains(message {
-			to = "coven@chat.shakespeare.lit".toJID()
+			to = "hecate@shakespeare.lit".toJID()
 			"x"{
 				xmlns = "jabber:x:conference"
 				attributes["jid"] = "coven@chat.shakespeare.lit"
@@ -802,6 +770,7 @@ class MUCModuleTest {
 				is MucRoomEvents.YouJoined -> println("You joined to room ${event.room.roomJID}")
 				is MucRoomEvents.OccupantCame -> println("Occupant ${event.nickname} came to ${event.room.roomJID}")
 				is MucRoomEvents.OccupantLeave -> println("Occupant ${event.nickname} leaves room ${event.room.roomJID}")
+				else -> {}
 			}
 		}
 
@@ -827,10 +796,8 @@ class MUCModuleTest {
 		assertEquals("crone1@shakespeare.lit/desktop".toJID(), invitation.sender)
 
 		muc.accept(invitation, "thirdwitch").send()
-		assertEquals(
-			tigase.halcyon.core.xmpp.modules.muc.State.RequestSent,
-			assertNotNull(muc.store.findRoom("coven@chat.shakespeare.lit".toBareJID())).state
-		)
+		assertEquals(tigase.halcyon.core.xmpp.modules.muc.State.RequestSent,
+					 assertNotNull(muc.store.findRoom("coven@chat.shakespeare.lit".toBareJID())).state)
 		assertContains(presence {
 			to = "coven@chat.shakespeare.lit/thirdwitch".toJID()
 			"x"{
@@ -942,10 +909,8 @@ class MUCModuleTest {
 		assertEquals("crone1@shakespeare.lit/desktop".toJID(), invitation.sender)
 
 		muc.accept(invitation, "thirdwitch").send()
-		assertEquals(
-			tigase.halcyon.core.xmpp.modules.muc.State.RequestSent,
-			assertNotNull(muc.store.findRoom("darkcave@macbeth.shakespeare.lit".toBareJID())).state
-		)
+		assertEquals(tigase.halcyon.core.xmpp.modules.muc.State.RequestSent,
+					 assertNotNull(muc.store.findRoom("darkcave@macbeth.shakespeare.lit".toBareJID())).state)
 		assertContains(presence {
 			to = "darkcave@macbeth.shakespeare.lit/thirdwitch".toJID()
 			"x"{
@@ -1004,9 +969,8 @@ class MUCModuleTest {
 				}
 			}
 		})
-		assertNotNull(config).let { form ->
-			assertEquals("http://jabber.org/protocol/muc#roomconfig", form.getFieldByVar("FORM_TYPE")?.fieldValue)
-		}
+		assertEquals("http://jabber.org/protocol/muc#roomconfig",
+					 assertNotNull(config).getFieldByVar("FORM_TYPE")?.fieldValue)
 
 		var updateOk = false
 		val idSet = muc.updateRoomConfig(room, config!!).response {

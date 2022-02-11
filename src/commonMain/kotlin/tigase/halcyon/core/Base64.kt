@@ -27,13 +27,13 @@ object Base64 {
 	private val ALPHABET_1 = IntArray(256)
 
 	init {
-		for (i in tigase.halcyon.core.Base64.ALPHABET_1.indices) {
-			tigase.halcyon.core.Base64.ALPHABET_1[i] = -1
+		for (i in ALPHABET_1.indices) {
+			ALPHABET_1[i] = -1
 		}
-		for (i in tigase.halcyon.core.Base64.ALPHABET.indices) {
-			tigase.halcyon.core.Base64.ALPHABET_1[tigase.halcyon.core.Base64.ALPHABET[i].toInt()] = i
+		for (i in ALPHABET.indices) {
+			ALPHABET_1[ALPHABET[i].code] = i
 		}
-		tigase.halcyon.core.Base64.ALPHABET_1['='.toInt()] = 0
+		ALPHABET_1['='.code] = 0
 	}
 
 	/**
@@ -47,15 +47,15 @@ object Base64 {
 		var separatorsCounter = 0
 		val inputLen = s.length
 		for (i in 0 until inputLen) {
-			val c = tigase.halcyon.core.Base64.ALPHABET_1[s[i].toInt()]
-			if (c < 0 && c != '='.toInt()) {
+			val c = ALPHABET_1[s[i].code]
+			if (c < 0 && c != '='.code) {
 				separatorsCounter++
 			}
 		}
 
 		var deltas = 0
 		var i = inputLen - 1
-		while (i > 1 && tigase.halcyon.core.Base64.ALPHABET_1[s[i].toInt()] <= 0) {
+		while (i > 1 && ALPHABET_1[s[i].code] <= 0) {
 			if (s[i] == '=') {
 				++deltas
 			}
@@ -71,18 +71,18 @@ object Base64 {
 		o = 0
 		while (o < s.length) {
 
-			var c0 = tigase.halcyon.core.Base64.ALPHABET_1[s[o++].toInt()]
+			var c0 = ALPHABET_1[s[o++].code]
 			if (c0 == -1) {
-				o = tigase.halcyon.core.Base64.findNexIt(s, --o)
-				c0 = tigase.halcyon.core.Base64.ALPHABET_1[s[o++].toInt()]
+				o = findNexIt(s, --o)
+				c0 = ALPHABET_1[s[o++].code]
 				if (c0 == -1) {
 					break
 				}
 			}
-			var c1 = tigase.halcyon.core.Base64.ALPHABET_1[s[o++].toInt()]
+			var c1 = ALPHABET_1[s[o++].code]
 			if (c1 == -1) {
-				o = tigase.halcyon.core.Base64.findNexIt(s, --o)
-				c1 = tigase.halcyon.core.Base64.ALPHABET_1[s[o++].toInt()]
+				o = findNexIt(s, --o)
+				c1 = ALPHABET_1[s[o++].code]
 				if (c1 == -1) {
 					break
 				}
@@ -92,10 +92,10 @@ object Base64 {
 			if (index >= buffer.size) {
 				break
 			}
-			var c2 = tigase.halcyon.core.Base64.ALPHABET_1[s[o++].toInt()]
+			var c2 = ALPHABET_1[s[o++].code]
 			if (c2 == -1) {
-				o = tigase.halcyon.core.Base64.findNexIt(s, --o)
-				c2 = tigase.halcyon.core.Base64.ALPHABET_1[s[o++].toInt()]
+				o = findNexIt(s, --o)
+				c2 = ALPHABET_1[s[o++].code]
 				if (c2 == -1) {
 					break
 				}
@@ -104,10 +104,10 @@ object Base64 {
 			if (index >= buffer.size) {
 				break
 			}
-			var c3 = tigase.halcyon.core.Base64.ALPHABET_1[s[o++].toInt()]
+			var c3 = ALPHABET_1[s[o++].code]
 			if (c3 == -1) {
-				o = tigase.halcyon.core.Base64.findNexIt(s, --o)
-				c3 = tigase.halcyon.core.Base64.ALPHABET_1[s[o++].toInt()]
+				o = findNexIt(s, --o)
+				c3 = ALPHABET_1[s[o++].code]
 				if (c3 == -1) {
 					break
 				}
@@ -119,7 +119,7 @@ object Base64 {
 	}
 
 	fun decodeToString(s: String): String {
-		val buf = tigase.halcyon.core.Base64.decode(s)
+		val buf = decode(s)
 		return buf.concatToString()
 	}
 
@@ -137,15 +137,15 @@ object Base64 {
 		var a = 0
 		var i = 0
 		while (i < size) {
-			val b0 = buf[i++].toInt()
-			val b1 = if (i < size) buf[i++].toInt() else 0
-			val b2 = if (i < size) buf[i++].toInt() else 0
+			val b0 = buf[i++].code
+			val b1 = if (i < size) buf[i++].code else 0
+			val b2 = if (i < size) buf[i++].code else 0
 
 			val mask = 0x3F
-			output[a++] = tigase.halcyon.core.Base64.ALPHABET[b0 shr 2 and mask]
-			output[a++] = tigase.halcyon.core.Base64.ALPHABET[b0 shl 4 or (b1 and 0xFF shr 4) and mask]
-			output[a++] = tigase.halcyon.core.Base64.ALPHABET[b1 shl 2 or (b2 and 0xFF shr 6) and mask]
-			output[a++] = tigase.halcyon.core.Base64.ALPHABET[b2 and mask]
+			output[a++] = ALPHABET[b0 shr 2 and mask]
+			output[a++] = ALPHABET[b0 shl 4 or (b1 and 0xFF shr 4) and mask]
+			output[a++] = ALPHABET[b1 shl 2 or (b2 and 0xFF shr 6) and mask]
+			output[a++] = ALPHABET[b2 and mask]
 		}
 		when (size % 3) {
 			1 -> {
@@ -169,10 +169,10 @@ object Base64 {
 			val b2 = if (i < size) buf[i++].toInt() else 0
 
 			val mask = 0x3F
-			output[a++] = tigase.halcyon.core.Base64.ALPHABET[b0 shr 2 and mask]
-			output[a++] = tigase.halcyon.core.Base64.ALPHABET[b0 shl 4 or (b1 and 0xFF shr 4) and mask]
-			output[a++] = tigase.halcyon.core.Base64.ALPHABET[b1 shl 2 or (b2 and 0xFF shr 6) and mask]
-			output[a++] = tigase.halcyon.core.Base64.ALPHABET[b2 and mask]
+			output[a++] = ALPHABET[b0 shr 2 and mask]
+			output[a++] = ALPHABET[b0 shl 4 or (b1 and 0xFF shr 4) and mask]
+			output[a++] = ALPHABET[b1 shl 2 or (b2 and 0xFF shr 6) and mask]
+			output[a++] = ALPHABET[b2 and mask]
 		}
 		when (size % 3) {
 			1 -> {
@@ -192,7 +192,7 @@ object Base64 {
 			return i
 		}
 		do {
-			c2 = tigase.halcyon.core.Base64.ALPHABET_1[s[++i].toInt()]
+			c2 = ALPHABET_1[s[++i].code]
 		} while (c2 == -1 && i < sl)
 
 		return i
@@ -202,15 +202,15 @@ object Base64 {
 		var separatorsCounter = 0
 		val inputLen = s.length
 		for (i in 0 until inputLen) {
-			val c = tigase.halcyon.core.Base64.ALPHABET_1[s[i].toInt()]
-			if (c < 0 && c != '='.toInt()) {
+			val c = ALPHABET_1[s[i].code]
+			if (c < 0 && c != '='.code) {
 				separatorsCounter++
 			}
 		}
 
 		var deltas = 0
 		var i = inputLen - 1
-		while (i > 1 && tigase.halcyon.core.Base64.ALPHABET_1[s[i].toInt()] <= 0) {
+		while (i > 1 && ALPHABET_1[s[i].code] <= 0) {
 			if (s[i] == '=') {
 				++deltas
 			}
@@ -226,18 +226,18 @@ object Base64 {
 		o = 0
 		while (o < s.length) {
 
-			var c0 = tigase.halcyon.core.Base64.ALPHABET_1[s[o++].toInt()]
+			var c0 = ALPHABET_1[s[o++].code]
 			if (c0 == -1) {
-				o = tigase.halcyon.core.Base64.findNexIt(s, --o)
-				c0 = tigase.halcyon.core.Base64.ALPHABET_1[s[o++].toInt()]
+				o = findNexIt(s, --o)
+				c0 = ALPHABET_1[s[o++].code]
 				if (c0 == -1) {
 					break
 				}
 			}
-			var c1 = tigase.halcyon.core.Base64.ALPHABET_1[s[o++].toInt()]
+			var c1 = ALPHABET_1[s[o++].code]
 			if (c1 == -1) {
-				o = tigase.halcyon.core.Base64.findNexIt(s, --o)
-				c1 = tigase.halcyon.core.Base64.ALPHABET_1[s[o++].toInt()]
+				o = findNexIt(s, --o)
+				c1 = ALPHABET_1[s[o++].code]
 				if (c1 == -1) {
 					break
 				}
@@ -247,10 +247,10 @@ object Base64 {
 			if (index >= buffer.size) {
 				break
 			}
-			var c2 = tigase.halcyon.core.Base64.ALPHABET_1[s[o++].toInt()]
+			var c2 = ALPHABET_1[s[o++].code]
 			if (c2 == -1) {
-				o = tigase.halcyon.core.Base64.findNexIt(s, --o)
-				c2 = tigase.halcyon.core.Base64.ALPHABET_1[s[o++].toInt()]
+				o = findNexIt(s, --o)
+				c2 = ALPHABET_1[s[o++].code]
 				if (c2 == -1) {
 					break
 				}
@@ -259,10 +259,10 @@ object Base64 {
 			if (index >= buffer.size) {
 				break
 			}
-			var c3 = tigase.halcyon.core.Base64.ALPHABET_1[s[o++].toInt()]
+			var c3 = ALPHABET_1[s[o++].code]
 			if (c3 == -1) {
-				o = tigase.halcyon.core.Base64.findNexIt(s, --o)
-				c3 = tigase.halcyon.core.Base64.ALPHABET_1[s[o++].toInt()]
+				o = findNexIt(s, --o)
+				c3 = ALPHABET_1[s[o++].code]
 				if (c3 == -1) {
 					break
 				}

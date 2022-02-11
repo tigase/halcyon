@@ -1,5 +1,5 @@
 /*
- * Tigase Halcyon XMPP Library
+ * halcyon-core
  * Copyright (C) 2018 Tigase, Inc. (office@tigase.com)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -17,6 +17,8 @@
  */
 package tigase.halcyon.core.xmpp.modules.jingle
 
-enum class InitiationType { iq,
-	message
+enum class InitiationType {
+
+	Iq,
+	Message
 }

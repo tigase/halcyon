@@ -1,5 +1,5 @@
 /*
- * Tigase Halcyon XMPP Library
+ * halcyon-core
  * Copyright (C) 2018 Tigase, Inc. (office@tigase.com)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -20,14 +20,12 @@ package tigase.halcyon.core.xmpp.modules.jingle
 import tigase.halcyon.core.xmpp.IdGenerator
 import kotlin.jvm.JvmStatic
 
-class SDP(val id: String, val contents: List<Content>, val bundle: List<String>) {
+class SDP(val id: String, val contents: List<Content>, private val bundle: List<String>) {
 
 	fun toString(sid: String): String {
-		var lines: List<String> = listOf(
-			"v=0", "o=- $sid $id IN IP4 0.0.0.0", "s=-", "t=0 0"
-		)
+		val lines: MutableList<String> = mutableListOf("v=0", "o=- $sid $id IN IP4 0.0.0.0", "s=-", "t=0 0")
 		if (bundle.isNotEmpty()) {
-			val t = listOf<String>("a=group:BUNDLE")
+			val t = listOf("a=group:BUNDLE")
 			lines += ((t + bundle).joinToString(" "))
 		}
 
@@ -57,7 +55,7 @@ class SDP(val id: String, val contents: List<Content>, val bundle: List<String>)
 
 				println("got session with id=$id and sid=$sid and bundle=$bundle")
 
-				val contents = media.map { Content.parse(it, creator) }.filterNotNull()
+				val contents = media.map { Content.parse(it, creator) }
 				println("contents: $contents")
 
 				return Pair(SDP(id, contents, bundle), sid)
@@ -68,7 +66,7 @@ class SDP(val id: String, val contents: List<Content>, val bundle: List<String>)
 
 }
 
-fun Content.Companion.parse(sdp: String, creator: Content.Creator): Content? {
+fun Content.Companion.parse(sdp: String, creator: Content.Creator): Content {
 	println("parsing sdp: $sdp")
 
 	val lines = sdp.split("\r\n")
@@ -90,23 +88,19 @@ fun Content.Companion.parse(sdp: String, creator: Content.Creator): Content? {
 		prefix = "a=fmtp:$id "
 		val params =
 			lines.firstOrNull { it.startsWith(prefix) }?.drop(prefix.length)?.split(";")?.map { it.split("=") }?.map {
-				Payload.Parameter(
-					it.get(0), if (it.size > 1) {
-						it.get(1)
-					} else {
-						""
-					}
-				)
+				Payload.Parameter(it.get(0), if (it.size > 1) {
+					it.get(1)
+				} else {
+					""
+				})
 			} ?: emptyList()
 		prefix = "a=rtcp-fb:$id "
 		val rtcpFb = lines.filter { it.startsWith(prefix) }.map { it.drop(prefix.length).split(" ") }.map {
-			Payload.RtcpFeedback(
-				it[0], if (it.size > 1) {
-					it[1]
-				} else {
-					null
-				}
-			)
+			Payload.RtcpFeedback(it[0], if (it.size > 1) {
+				it[1]
+			} else {
+				null
+			})
 		}
 		val clockrate = l?.get(1)?.toInt()
 		val channels = (if ((l?.size ?: 0) > 2) {
@@ -118,13 +112,11 @@ fun Content.Companion.parse(sdp: String, creator: Content.Creator): Content? {
 	}
 
 	val encryptions = lines.filter { it.startsWith("a=crypto:") }.map { it.split(" ") }.filter { it.size > 3 }.map {
-		Encryption(
-			it[0], it[1], if (it.size > 3) {
-				it[3]
-			} else {
-				null
-			}, it[2]
-		)
+		Encryption(it[0], it[1], if (it.size > 3) {
+			it[3]
+		} else {
+			null
+		}, it[2])
 	}
 	val hdrExts = HdrExt.parse(lines)
 	val ssrcs = SSRC.parse(lines)
@@ -145,7 +137,7 @@ fun Content.Companion.parse(sdp: String, creator: Content.Creator): Content? {
 }
 
 fun Content.toSDP(): String {
-	var lines = emptyList<String>()
+	val lines = mutableListOf<String>()
 	description?.let {
 		lines += "m=${it.media} 1 ${
 			if (it.encryption.isEmpty() || transports.filter { it.fingerprint == null }.isNotEmpty()) {
@@ -165,9 +157,7 @@ fun Content.toSDP(): String {
 		it.ufrag?.let { lines += "a=ice-ufrag:$it" }
 		it.pwd?.let { lines += "a=ice-pwd:$it" }
 		it.fingerprint?.let {
-			lines += listOf<String>(
-				"a=fingerprint:${it.hash} ${it.value}", "a=setup:${it.setup.name}"
-			)
+			lines += listOf("a=fingerprint:${it.hash} ${it.value}", "a=setup:${it.setup.name}")
 		}
 	}
 
@@ -197,10 +187,10 @@ fun Content.toSDP(): String {
 }
 
 fun Candidate.toSDP(): String {
-	val expType = type ?: Candidate.CandidateType.host
+	val expType = type ?: Candidate.CandidateType.Host
 	var sdp =
-		"a=candidate:$foundation $component ${protocolType.name.toUpperCase()} $priority $ip $port typ ${expType.name}"
-	if (expType != Candidate.CandidateType.host) {
+		"a=candidate:$foundation $component ${protocolType.name.uppercase()} $priority $ip $port typ ${expType.name}"
+	if (expType != Candidate.CandidateType.Host) {
 		relAddr?.let { addr ->
 			relPort?.let { port ->
 				sdp += " raddr $addr rport $port"
@@ -208,7 +198,7 @@ fun Candidate.toSDP(): String {
 		}
 	}
 
-	if (protocolType == Candidate.ProtocolType.tcp) {
+	if (protocolType == Candidate.ProtocolType.TCP) {
 		tcpType?.let { sdp += " tcptype $it" }
 	}
 
@@ -221,7 +211,7 @@ fun Candidate.Companion.parse(line: String): Candidate? {
 	if (parts.size >= 10) {
 		val foundation = parts[0]
 		val component = parts[1]
-		val protocolType = Candidate.ProtocolType.valueOf(parts[2].toLowerCase())
+		val protocolType = Candidate.ProtocolType.valueOf(parts[2].lowercase())
 		val priority = parts[3].toInt()
 		val port = parts[5].toInt()
 		val type = Candidate.CandidateType.valueOf(parts[7])
@@ -243,29 +233,27 @@ fun Candidate.Companion.parse(line: String): Candidate? {
 				"raddr" -> relAddr = value
 				"rport" -> relPort = value.toInt()
 				else -> {
-					i = i + 1
+					i += 1
 				}
 			}
 			if (oldI == i) {
-				i = i + 2
+				i += 2
 			}
 		}
 		return generation?.let {
-			Candidate(
-				component,
-				foundation,
-				it,
-				IdGenerator.nextIdLongs(),
-				ip,
-				0,
-				port,
-				priority,
-				protocolType,
-				relAddr,
-				relPort,
-				type,
-				tcptype
-			)
+			Candidate(component,
+					  foundation,
+					  it,
+					  IdGenerator.nextIdLongs(),
+					  ip,
+					  0,
+					  port,
+					  priority,
+					  protocolType,
+					  relAddr,
+					  relPort,
+					  type,
+					  tcptype)
 		}
 	}
 	return null
@@ -279,13 +267,13 @@ fun Payload.toSDP(): List<String> {
 	if (channels > 1) {
 		line += "/$channels"
 	}
-	var lines = listOf(line)
+	val lines = mutableListOf(line)
 	if (parameters.isNotEmpty()) {
 		lines += "a=fmtp:$id ${parameters.map { "${it.name}=${it.value}" }.joinToString(";")}"
 	}
 	lines += rtcpFeedbacks.map {
 		val type = it.type
-		it.subtype?.let { "a=rtcp-fb:$id ${type} ${it})" } ?: "a=rtcp-fb:$id $type"
+		it.subtype?.let { "a=rtcp-fb:$id $type $it)" } ?: "a=rtcp-fb:$id $type"
 	}
 	return lines
 }
@@ -295,7 +283,7 @@ fun HdrExt.toSDP(): String = "a=extmap:$id $uri"
 fun HdrExt.Companion.parse(lines: List<String>): List<HdrExt> {
 	val hdrExtLines = lines.filter { it.startsWith("a=extmap:") }.map { it.drop("a=extmap:".length) }
 	return hdrExtLines.map { it.split(" ") }.filter { it.size > 1 && !it[0].contains("/") }
-		.map { HdrExt(it[0], it[1], Description.Senders.both) }
+		.map { HdrExt(it[0], it[1], Description.Senders.Both) }
 }
 
 fun SSRCGroup.toSDP(): String = "a=ssrc-group:$semantics ${sources.joinToString(" ")})"
@@ -314,13 +302,11 @@ fun SSRC.Companion.parse(lines: List<String>): List<SSRC> {
 		val prefix = "a=ssrc:$it "
 		val params = ssrcLines.filter { it.startsWith(prefix) }.map { it.drop(prefix.length).split(":") }
 			.filter { it[0].isNotEmpty() }.map {
-				SSRC.Parameter(
-					it[0], if (it.size == 1) {
-						null
-					} else {
-						it.drop(1).joinToString(":")
-					}
-				)
+				SSRC.Parameter(it[0], if (it.size == 1) {
+					null
+				} else {
+					it.drop(1).joinToString(":")
+				})
 			}
 		SSRC(it, params)
 	}

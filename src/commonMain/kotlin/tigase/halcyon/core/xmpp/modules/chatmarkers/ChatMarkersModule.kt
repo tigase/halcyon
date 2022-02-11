@@ -142,31 +142,18 @@ class ChatMarkersModule(override val context: Context) : XmppModule, HasIntercep
 			}
 			Marker.Received.xmppValue -> {
 				val id = command.attributes["id"]
-				if (id != null) context.eventBus.fire(
-					ChatMarkerEvent(
-						from, id, wrap<Message>(element), Marker.Received
-					)
-				)
+				if (id != null) context.eventBus.fire(ChatMarkerEvent(from, id, wrap(element), Marker.Received))
 			}
 			Marker.Acknowledged.xmppValue -> {
 				val id = command.attributes["id"]
-				if (id != null) context.eventBus.fire(
-					ChatMarkerEvent(
-						from, id, wrap<Message>(element), Marker.Acknowledged
-					)
-				)
+				if (id != null) context.eventBus.fire(ChatMarkerEvent(from, id, wrap(element), Marker.Acknowledged))
 			}
 			Marker.Displayed.xmppValue -> {
 				val id = command.attributes["id"]
-				if (id != null) context.eventBus.fire(
-					ChatMarkerEvent(
-						from, id, wrap<Message>(element), Marker.Displayed
-					)
-				)
+				if (id != null) context.eventBus.fire(ChatMarkerEvent(from, id, wrap(element), Marker.Displayed))
 			}
-			else -> throw XMPPException(
-				ErrorCondition.FeatureNotImplemented, "Unsupported chat marker '${command.name}'"
-			)
+			else -> throw XMPPException(ErrorCondition.FeatureNotImplemented,
+										"Unsupported chat marker '${command.name}'")
 		}
 		return element
 	}

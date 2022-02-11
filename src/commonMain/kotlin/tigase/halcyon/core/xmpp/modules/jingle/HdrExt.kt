@@ -1,5 +1,5 @@
 /*
- * Tigase Halcyon XMPP Library
+ * halcyon-core
  * Copyright (C) 2018 Tigase, Inc. (office@tigase.com)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -29,7 +29,7 @@ class HdrExt(val id: String, val uri: String, val senders: Description.Senders) 
 			attribute("id", id)
 			attribute("uri", uri)
 			when (senders) {
-				Description.Senders.both -> {
+				Description.Senders.Both -> {
 				}
 				else -> attribute("senders", senders.name)
 			}
@@ -44,7 +44,7 @@ class HdrExt(val id: String, val uri: String, val senders: Description.Senders) 
 				val id = el.attributes["id"] ?: return null
 				val uri = el.attributes["uri"] ?: return null
 				val senders =
-					el.attributes["senders"]?.let { Description.Senders.valueOf(it) } ?: Description.Senders.both
+					el.attributes["senders"]?.let { Description.Senders.valueOf(it) } ?: Description.Senders.Both
 				return HdrExt(id, uri, senders)
 			}
 			return null

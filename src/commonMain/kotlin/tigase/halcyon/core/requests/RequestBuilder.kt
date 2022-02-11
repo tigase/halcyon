@@ -63,28 +63,28 @@ class RequestBuilderFactory(private val context: Context) {
 	}
 
 	fun presence(stanza: Element): RequestBuilder<Unit, Presence> =
-		RequestBuilder(halcyon = context, element = stanza, callHandlerOnSent = true) { Unit }
+		RequestBuilder(halcyon = context, element = stanza, callHandlerOnSent = true) { }
 
 	fun presence(init: PresenceNode.() -> Unit): RequestBuilder<Unit, Presence> {
 		val n = PresenceNode(Presence(ElementImpl(Presence.NAME)))
 		n.init()
 		n.id()
 		val stanza = n.element as Presence
-		return RequestBuilder(halcyon = context, element = stanza, callHandlerOnSent = true) { Unit }
+		return RequestBuilder(halcyon = context, element = stanza, callHandlerOnSent = true) { }
 	}
 
-	fun message(stanza: Element, writeDirectly: Boolean = false): RequestBuilder<Unit, Message> = RequestBuilder(
-		halcyon = context, element = stanza, callHandlerOnSent = true
-	) { Unit }
+	fun message(stanza: Element, writeDirectly: Boolean = false): RequestBuilder<Unit, Message> =
+		RequestBuilder(halcyon = context, element = stanza, callHandlerOnSent = true, writeDirectly = writeDirectly) { }
 
 	fun message(writeDirectly: Boolean = false, init: MessageNode.() -> Unit): RequestBuilder<Unit, Message> {
 		val n = MessageNode(Message(ElementImpl(Message.NAME)))
 		n.init()
 		n.id()
 		val stanza = n.element as Message
-		return RequestBuilder(
-			halcyon = context, element = stanza, writeDirectly = writeDirectly, callHandlerOnSent = true
-		) { Unit }
+		return RequestBuilder(halcyon = context,
+							  element = stanza,
+							  writeDirectly = writeDirectly,
+							  callHandlerOnSent = true) { }
 	}
 
 }
@@ -94,7 +94,7 @@ class RequestBuilder<V, STT : Stanza<*>>(
 	private val element: Element,
 	private val writeDirectly: Boolean = false,
 	private val callHandlerOnSent: Boolean = false,
-	private val transform: (value: Any) -> V
+	private val transform: (value: Any) -> V,
 ) {
 
 	private var requestName: String? = null
@@ -109,17 +109,15 @@ class RequestBuilder<V, STT : Stanza<*>>(
 
 	fun build(): Request<V, STT> {
 		val stanza = wrap<STT>(halcyon.modules.processSendInterceptors(element))
-		return Request(
-			stanza.to,
-			stanza.id!!,
-			Clock.System.now(),
-			stanza,
-			timeoutDelay,
-			resultHandler,
-			transform,
-			parentBuilder?.build(),
-			callHandlerOnSent
-		).apply {
+		return Request(stanza.to,
+					   stanza.id!!,
+					   Clock.System.now(),
+					   stanza,
+					   timeoutDelay,
+					   resultHandler,
+					   transform,
+					   parentBuilder?.build(),
+					   callHandlerOnSent).apply {
 			this.stanzaHandler = responseStanzaHandler
 			this.requestName = this@RequestBuilder.requestName
 		}
@@ -139,7 +137,7 @@ class RequestBuilder<V, STT : Stanza<*>>(
 	fun handleResponseStanza(name: String? = null, handler: ResponseStanzaHandler<STT>): RequestBuilder<V, STT> {
 		check(!writeDirectly) { "Response handler cannot be added to directly writable request." }
 		this.responseStanzaHandler = handler
-		if (requestName != null) this.requestName = requestName
+		if (requestName != null) this.requestName = name
 		return this
 	}
 
@@ -190,7 +188,7 @@ class RequestConsumerBuilder<CSR, V, STT : Stanza<*>>(
 	private val element: Element,
 	private val writeDirectly: Boolean = false,
 	private val callHandlerOnSent: Boolean = false,
-	private val transform: (value: Any) -> V
+	private val transform: (value: Any) -> V,
 ) {
 
 	private var requestName: String? = null
@@ -207,17 +205,15 @@ class RequestConsumerBuilder<CSR, V, STT : Stanza<*>>(
 
 	fun build(): Request<V, STT> {
 		val stanza = wrap<STT>(halcyon.modules.processSendInterceptors(element))
-		return Request(
-			stanza.to,
-			stanza.id!!,
-			Clock.System.now(),
-			stanza,
-			timeoutDelay,
-			resultHandler,
-			transform,
-			parentBuilder?.build(),
-			callHandlerOnSent
-		).apply {
+		return Request(stanza.to,
+					   stanza.id!!,
+					   Clock.System.now(),
+					   stanza,
+					   timeoutDelay,
+					   resultHandler,
+					   transform,
+					   parentBuilder?.build(),
+					   callHandlerOnSent).apply {
 			this.stanzaHandler = responseStanzaHandler
 			this.requestName = this@RequestConsumerBuilder.requestName
 		}
@@ -233,8 +229,9 @@ class RequestConsumerBuilder<CSR, V, STT : Stanza<*>>(
 		return res
 	}
 
+	@Suppress("unused")
 	fun handleResponseStanza(
-		requestName: String? = null, handler: ResponseStanzaHandler<STT>
+		requestName: String? = null, handler: ResponseStanzaHandler<STT>,
 	): RequestConsumerBuilder<CSR, V, STT> {
 		this.responseStanzaHandler = handler
 		if (requestName != null) this.requestName = requestName

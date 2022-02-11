@@ -1,5 +1,5 @@
 /*
- * Tigase Halcyon XMPP Library
+ * halcyon-core
  * Copyright (C) 2018 Tigase, Inc. (office@tigase.com)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -63,9 +63,11 @@ open class ElementNode(internal val element: Element) {
 	}
 
 	operator fun String.invoke(
-		vararg attributes: Pair<String, Any>, init: (ElementNode.() -> Unit)? = null
+		vararg attributes: Pair<String, String>, init: (ElementNode.() -> Unit)? = null,
 	): Element {
-		return element(this, init)
+		return element(this, init).apply {
+			this.attributes.putAll(attributes)
+		}
 	}
 
 	fun addChild(e: Element) {

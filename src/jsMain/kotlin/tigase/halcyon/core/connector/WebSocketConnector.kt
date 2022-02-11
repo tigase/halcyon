@@ -27,10 +27,9 @@ import tigase.halcyon.core.logger.Level
 import tigase.halcyon.core.logger.LoggerFactory
 import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xml.parser.StreamParser
-import tigase.halcyon.core.xmpp.SessionController
 import kotlin.time.Duration.Companion.seconds
 
-class WebSocketConnectionErrorEvent(description: String) : ConnectionErrorEvent()
+class WebSocketConnectionErrorEvent(@Suppress("unused") val description: String) : ConnectionErrorEvent()
 
 class WebSocketConnector(halcyon: Halcyon) : AbstractConnector(halcyon) {
 
@@ -44,12 +43,12 @@ class WebSocketConnector(halcyon: Halcyon) : AbstractConnector(halcyon) {
 		private fun logReceivedStanza(element: Element) {
 			when {
 				log.isLoggable(Level.FINEST) -> log.finest("Received element ${element.getAsString()}")
-				log.isLoggable(Level.FINER) -> log.finer(
-					"Received element ${element.getAsString(deep = 3, showValue = false)}"
-				)
-				log.isLoggable(Level.FINE) -> log.fine(
-					"Received element ${element.getAsString(deep = 2, showValue = false)}"
-				)
+				log.isLoggable(Level.FINER) -> log.finer("Received element ${
+					element.getAsString(deep = 3, showValue = false)
+				}")
+				log.isLoggable(Level.FINE) -> log.fine("Received element ${
+					element.getAsString(deep = 2, showValue = false)
+				}")
 			}
 		}
 
@@ -116,8 +115,7 @@ class WebSocketConnector(halcyon: Halcyon) : AbstractConnector(halcyon) {
 
 	private fun onSocketClose(event: Event): dynamic {
 		log.fine { "Socket is closed: $event" }
-		var oldState = state
-		if (oldState == State.Connected) halcyon.eventBus.fire(WebSocketConnectionErrorEvent("Socket unexpectedly disconnected."))
+		if (state == State.Connected) halcyon.eventBus.fire(WebSocketConnectionErrorEvent("Socket unexpectedly disconnected."))
 		state = State.Disconnected
 		eventsEnabled = false
 		return true

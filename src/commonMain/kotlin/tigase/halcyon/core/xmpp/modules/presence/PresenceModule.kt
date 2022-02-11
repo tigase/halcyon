@@ -17,7 +17,6 @@
  */
 package tigase.halcyon.core.xmpp.modules.presence
 
-import getFromAttr
 import tigase.halcyon.core.Context
 import tigase.halcyon.core.eventbus.Event
 import tigase.halcyon.core.logger.LoggerFactory
@@ -27,6 +26,7 @@ import tigase.halcyon.core.requests.RequestBuilder
 import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xmpp.BareJID
 import tigase.halcyon.core.xmpp.JID
+import tigase.halcyon.core.xmpp.getFromAttr
 import tigase.halcyon.core.xmpp.stanzas.*
 
 data class PresenceReceivedEvent(val jid: JID, val stanzaType: PresenceType?, val stanza: Presence) : Event(TYPE) {
@@ -38,7 +38,7 @@ data class PresenceReceivedEvent(val jid: JID, val stanzaType: PresenceType?, va
 }
 
 data class ContactChangeStatusEvent(
-	val jid: BareJID, val status: String?, val presence: Presence, val lastReceivedPresence: Presence
+	val jid: BareJID, val status: String?, val presence: Presence, val lastReceivedPresence: Presence,
 ) : Event(TYPE) {
 
 	companion object {
@@ -82,9 +82,10 @@ class PresenceModule(override val context: Context) : XmppModule {
 
 		if (presence.type == null || presence.type == PresenceType.Unavailable || presence.type == PresenceType.Error) {
 			val bestPresence = getBestPresenceOf(fromJID.bareJID) ?: presence
-			context.eventBus.fire(
-				ContactChangeStatusEvent(fromJID.bareJID, bestPresence.status, bestPresence, presence)
-			)
+			context.eventBus.fire(ContactChangeStatusEvent(fromJID.bareJID,
+														   bestPresence.status,
+														   bestPresence,
+														   presence))
 		}
 	}
 
@@ -94,7 +95,7 @@ class PresenceModule(override val context: Context) : XmppModule {
 	}
 
 	fun sendPresence(
-		jid: JID? = null, type: PresenceType? = null, show: Show? = null, status: String? = null
+		jid: JID? = null, type: PresenceType? = null, show: Show? = null, status: String? = null,
 	): RequestBuilder<Unit, Presence> {
 		val presence = presence {
 			if (jid != null) this.to = jid

@@ -1,5 +1,5 @@
 /*
- * Tigase Halcyon XMPP Library
+ * halcyon-core
  * Copyright (C) 2018 Tigase, Inc. (office@tigase.com)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -25,7 +25,7 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 import kotlin.test.fail
 
-class Stanza_buildersKtTest {
+class StanzaBuildersKtTest {
 
 	@Test
 	fun testWrap() {
@@ -36,7 +36,7 @@ class Stanza_buildersKtTest {
 		try {
 			assertTrue { wrap<Stanza<*>>(ElementImpl("UNKNOWN")) is IQ }
 			fail("Should throw exception!")
-		} catch (e: HalcyonException) {
+		} catch (_: HalcyonException) {
 		}
 
 		assertFalse { wrap<Stanza<*>>(ElementImpl("presence")) is IQ }

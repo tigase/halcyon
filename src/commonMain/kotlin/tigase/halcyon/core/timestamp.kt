@@ -20,7 +20,7 @@ package tigase.halcyon.core
 import kotlinx.datetime.*
 import tigase.halcyon.core.exceptions.HalcyonException
 
-fun timestampToISO8601(timestamp: Instant, utc: Boolean = true): String = buildString {
+fun timestampToISO8601(timestamp: Instant): String = buildString {
 	timestamp.toLocalDateTime(TimeZone.UTC).let {
 		append(it.year.toString().padStart(4, '0'))
 		append("-")

@@ -42,7 +42,7 @@ class DiscoveryModule(override val context: Context) : XmppModule {
 
 	@Serializable
 	data class Info(
-		val jid: JID, val node: String?, val identities: List<Identity>, val features: List<String>
+		val jid: JID, val node: String?, val identities: List<Identity>, val features: List<String>,
 	)
 
 	@Serializable
@@ -60,10 +60,9 @@ class DiscoveryModule(override val context: Context) : XmppModule {
 	}
 
 	override val type: String = TYPE
-	override val criteria: Criteria? = Criterion.or(
-		Criterion.chain(Criterion.name("iq"), Criterion.nameAndXmlns("query", XMLNS_INFO)),
-		Criterion.chain(Criterion.name("iq"), Criterion.nameAndXmlns("query", XMLNS_ITEMS))
-	)
+	override val criteria: Criteria =
+		Criterion.or(Criterion.chain(Criterion.name("iq"), Criterion.nameAndXmlns("query", XMLNS_INFO)),
+					 Criterion.chain(Criterion.name("iq"), Criterion.nameAndXmlns("query", XMLNS_ITEMS)))
 	override val features: Array<String> = arrayOf(XMLNS_INFO, XMLNS_ITEMS)
 
 	var clientName = "Halcyon Based Client"
@@ -207,7 +206,7 @@ class DiscoveryModule(override val context: Context) : XmppModule {
 
 	fun findComponent(predicate: (Info) -> Boolean, consumer: (Info) -> Unit) {
 		val domain = context.modules.getModuleOrNull<BindModule>(BindModule.TYPE)?.boundJID?.bareJID?.domain!!
-		var found: Boolean = false
+		var found = false
 		items(domain.toJID()).response {
 			if (it.isSuccess) {
 				val items = it.getOrThrow()

@@ -1,5 +1,5 @@
 /*
- * Tigase Halcyon XMPP Library
+ * halcyon-core
  * Copyright (C) 2018 Tigase, Inc. (office@tigase.com)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -22,11 +22,13 @@ import tigase.halcyon.core.xml.element
 import kotlin.jvm.JvmStatic
 
 class Content(
-	val creator: Creator, val name: String, val description: Description?, val transports: List<Transport>
+	val creator: Creator, val name: String, val description: Description?, val transports: List<Transport>,
 ) {
 
-	enum class Creator { initiator,
-		responder
+	enum class Creator {
+
+		Initiator,
+		Responder
 	}
 
 	fun toElement(): Element {

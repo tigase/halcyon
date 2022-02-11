@@ -21,7 +21,6 @@ import kotlinx.datetime.Instant
 import tigase.halcyon.core.Context
 import tigase.halcyon.core.eventbus.Event
 import tigase.halcyon.core.exceptions.HalcyonException
-import tigase.halcyon.core.logger.LoggerFactory
 import tigase.halcyon.core.modules.Criteria
 import tigase.halcyon.core.modules.Criterion
 import tigase.halcyon.core.modules.XmppModule
@@ -58,11 +57,12 @@ open class Room(
 	var nickname: String,
 	var password: String?,
 	var state: State = State.NotJoined,
-	var lastMessageTimestamp: Instant? = null
+	var lastMessageTimestamp: Instant? = null,
 ) {
 
-	internal val _occupants = mutableMapOf<String, Occupant>()
-	val occupants: Map<String, Occupant> = _occupants
+	internal val occupants = mutableMapOf<String, Occupant>()
+
+	fun occupants(): Map<String, Occupant> = occupants
 
 }
 
@@ -74,7 +74,7 @@ interface MUCStore {
 }
 
 data class Invitation(
-	val roomjid: BareJID, val sender: JID, val password: String?, val reason: String?, val direct: Boolean
+	val roomjid: BareJID, val sender: JID, val password: String?, val reason: String?, val direct: Boolean,
 )
 
 /**
@@ -196,7 +196,7 @@ class MUCModule(override val context: Context) : XmppModule {
 
 	}
 
-	private val log = LoggerFactory.logger("tigase.halcyon.core.xmpp.modules.muc.MUCModule")
+//	private val log = LoggerFactory.logger("tigase.halcyon.core.xmpp.modules.muc.MUCModule")
 
 	override val type = TYPE
 	override val criteria: Criteria = Criterion.element { element -> calculateAction(element) != Action.Skip }
@@ -264,9 +264,7 @@ class MUCModule(override val context: Context) : XmppModule {
 		val room = store.findRoom(stanza.from!!.bareJID) ?: throw XMPPException(ErrorCondition.ServiceUnavailable)
 		val nickname = stanza.from?.resource ?: return
 
-		if (stanza.type == MessageType.Error) {
-
-		} else {
+		if (stanza.type != MessageType.Error) {
 			context.eventBus.fire(MucRoomEvents.ReceivedMessage(room, nickname, stanza))
 		}
 	}
@@ -277,19 +275,18 @@ class MUCModule(override val context: Context) : XmppModule {
 
 		if (stanza.type == PresenceType.Error && room.state != State.Joined && nickname == null) {
 			room.state = State.NotJoined
-			context.eventBus.fire(
-				MucRoomEvents.JoinError(
-					room, stanza, stanza.getErrorConditionOrNull() ?: ErrorCondition.UndefinedCondition
-				)
-			)
+			context.eventBus.fire(MucRoomEvents.JoinError(room,
+														  stanza,
+														  stanza.getErrorConditionOrNull()
+															  ?: ErrorCondition.UndefinedCondition))
 		}
 
 		if (nickname == null) return
 
 		val mucExt = MucUserExt.createUserExt(stanza)
 
-		val (occupant, presenceOld) = if (room._occupants.containsKey(nickname)) {
-			val p = room._occupants[nickname]!!
+		val (occupant, presenceOld) = if (room.occupants.containsKey(nickname)) {
+			val p = room.occupants[nickname]!!
 			Pair(p, p.presence)
 		} else {
 			Pair(Occupant(stanza), null)
@@ -303,20 +300,20 @@ class MUCModule(override val context: Context) : XmppModule {
 		if (room.state == State.Joined && selfPresence) {
 			// you leave room
 			room.state = State.NotJoined
-			room._occupants.clear()
+			room.occupants.clear()
 			context.eventBus.fire(MucRoomEvents.YouLeaved(room, stanza))
 		} else if (room.state != State.Joined && selfPresence) {
 			// own presence
 			room.state = State.Joined
-			room._occupants[nickname] = occupant
+			room.occupants[nickname] = occupant
 			context.eventBus.fire(MucRoomEvents.YouJoined(room, stanza, nickname))
 		} else if ((presenceOld == null || presenceOld.type == PresenceType.Unavailable) && stanza.type == null) {
 			// other occupant came
-			room._occupants[nickname] = occupant
+			room.occupants[nickname] = occupant
 			context.eventBus.fire(MucRoomEvents.OccupantCame(room, stanza, nickname))
 		} else if (stanza.type == PresenceType.Unavailable) {
 			// other occupant leaves
-			room._occupants.remove(nickname)
+			room.occupants.remove(nickname)
 			context.eventBus.fire(MucRoomEvents.OccupantLeave(room, stanza, nickname))
 		} else {
 			// presence update
@@ -334,8 +331,7 @@ class MUCModule(override val context: Context) : XmppModule {
 	private fun processMediatedInvitationMessage(stanza: Message) {
 		val roomJid = stanza.from?.bareJID ?: throw XMPPException(ErrorCondition.BadRequest)
 		val invite = stanza.getChildrenNS("x", "$XMLNS#user")?.getFirstChild("invite") ?: throw XMPPException(
-			ErrorCondition.BadRequest
-		)
+			ErrorCondition.BadRequest)
 		val sender = invite.attributes["from"]?.toJID() ?: throw XMPPException(ErrorCondition.BadRequest)
 		val reason = invite.getFirstChild("reason")?.value
 		val password = stanza.getChildrenNS("x", "$XMLNS#user")?.getFirstChild("password")?.value
@@ -418,7 +414,7 @@ class MUCModule(override val context: Context) : XmppModule {
 	 */
 	fun inviteDirectly(room: Room, invitedJid: BareJID, reason: String? = null): RequestBuilder<Unit, Message> =
 		context.request.message {
-			to = room.roomJID.toJID()
+			to = invitedJid.toJID()
 			"x"{
 				xmlns = "jabber:x:conference"
 				attributes["jid"] = room.roomJID.toString()

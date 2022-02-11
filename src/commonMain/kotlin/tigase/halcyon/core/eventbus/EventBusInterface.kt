@@ -1,5 +1,5 @@
 /*
- * Tigase Halcyon XMPP Library
+ * halcyon-core
  * Copyright (C) 2018 Tigase, Inc. (office@tigase.com)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -34,4 +34,10 @@ interface EventBusInterface {
 
 	fun unregister(handler: EventHandler<*>)
 
+}
+
+inline fun <T : Event> handler(crossinline handler: (T) -> Unit): EventHandler<T> = object : EventHandler<T> {
+	override fun onEvent(event: T) {
+		handler.invoke(event)
+	}
 }

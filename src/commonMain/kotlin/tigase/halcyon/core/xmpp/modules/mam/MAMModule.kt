@@ -41,7 +41,7 @@ import tigase.halcyon.core.xmpp.stanzas.*
 import kotlin.time.Duration.Companion.seconds
 
 data class MAMMessageEvent(
-	val resultStanza: Message, val queryId: String, val id: String, val forwardedStanza: ForwardedStanza<Message>
+	val resultStanza: Message, val queryId: String, val id: String, val forwardedStanza: ForwardedStanza<Message>,
 ) : Event(TYPE) {
 
 	companion object {
@@ -98,7 +98,7 @@ class MAMModule(override val context: Context) : XmppModule {
 		val queryId: String,
 		val createdTimestamp: Instant,
 		var validUntil: Instant,
-		var publisher: ConsumerPublisher<ForwardedStanza<Message>>? = null
+		var publisher: ConsumerPublisher<ForwardedStanza<Message>>? = null,
 	)
 
 	companion object {
@@ -131,7 +131,7 @@ class MAMModule(override val context: Context) : XmppModule {
 
 		val forwarded = result.getChildrenNS("forwarded", "urn:xmpp:forward:0") ?: return
 
-		val msg = forwarded.getFirstChild("message") ?: return
+		forwarded.getFirstChild("message") ?: return
 
 		val forwardedStanza = ForwardedStanza<Message>(resultId, forwarded)
 		try {
@@ -159,7 +159,7 @@ class MAMModule(override val context: Context) : XmppModule {
 		rsm: RSM.Query? = null,
 		with: String? = null,
 		start: Instant? = null,
-		end: Instant? = null
+		end: Instant? = null,
 	): RequestConsumerBuilder<ForwardedStanza<Message>, Fin, IQ> {
 		val queryId = IdGenerator.nextId()
 		val form: Element? = prepareForm(with, start, end)
@@ -177,9 +177,10 @@ class MAMModule(override val context: Context) : XmppModule {
 		val q = RegisteredQuery(queryId, Clock.System.now(), Clock.System.now() + 30.seconds)
 		requests.put(queryId, q)
 
-		val builder = RequestConsumerBuilder<ForwardedStanza<Message>, IQ, IQ>(
-			context, stanza
-		) { it as IQ }.map { element -> createResponse(element, q) }
+		val builder =
+			RequestConsumerBuilder<ForwardedStanza<Message>, IQ, IQ>(context, stanza) { it as IQ }.map { element ->
+				createResponse(element, q)
+			}
 		q.publisher = builder.publisher
 
 		return builder
@@ -205,9 +206,9 @@ class MAMModule(override val context: Context) : XmppModule {
 		val always = prefs.getChildren("always").mapNotNull { p -> p.getFirstChild("jid")?.value?.toBareJID() }.toList()
 		val never = prefs.getChildren("never").mapNotNull { p -> p.getFirstChild("jid")?.value?.toBareJID() }.toList()
 		val b = prefs.attributes["default"]
-		val default = DefaultBehaviour.values().find { db -> db.xmppValue == b } ?: throw XMPPException(
-			ErrorCondition.BadRequest, "Unknown default value: ${b}"
-		)
+		val default =
+			DefaultBehaviour.values().find { db -> db.xmppValue == b } ?: throw XMPPException(ErrorCondition.BadRequest,
+																							  "Unknown default value: $b")
 		return Preferences(default, always, never)
 	}
 

@@ -19,7 +19,6 @@ package tigase.halcyon.core.connector
 
 import tigase.halcyon.core.AbstractHalcyon
 import tigase.halcyon.core.Scope
-import tigase.halcyon.core.xmpp.SessionController
 import tigase.halcyon.core.xmpp.modules.auth.SASLEvent
 
 class WebSocketSessionController(halcyon: AbstractHalcyon, private val connector: WebSocketConnector) :

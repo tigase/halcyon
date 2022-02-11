@@ -47,7 +47,7 @@ abstract class ElementProperty<V>(private val elementName: String? = null) : Rea
 }
 
 inline fun <V> elementProperty(
-	elementName: String? = null, crossinline valueToString: (V) -> String?, crossinline stringToValue: (String?) -> V
+	elementName: String? = null, crossinline valueToString: (V) -> String?, crossinline stringToValue: (String?) -> V,
 ): ReadWriteProperty<Element, V> {
 	return object : ElementProperty<V>(elementName) {
 		override fun valueToString(value: V): String? = valueToString.invoke(value)
@@ -56,17 +56,17 @@ inline fun <V> elementProperty(
 	}
 }
 
-inline fun intElementProperty(elementName: String? = null): ReadWriteProperty<Element, Int?> = elementProperty(
-	elementName = elementName,
-	valueToString = { v -> v?.toString() },
-	stringToValue = { s -> s?.toInt() })
+fun intElementProperty(elementName: String? = null): ReadWriteProperty<Element, Int?> =
+	elementProperty(elementName = elementName,
+					valueToString = { v -> v?.toString() },
+					stringToValue = { s -> s?.toInt() })
 
-inline fun intWithDefaultElementProperty(
-	elementName: String? = null, defaultValue: Int
+fun intWithDefaultElementProperty(
+	elementName: String? = null, defaultValue: Int,
 ): ReadWriteProperty<Element, Int> = elementProperty(elementName = elementName,
 													 valueToString = { v -> v.toString() },
 													 stringToValue = { s -> s?.toInt() ?: defaultValue })
 
-inline fun stringElementProperty(elementName: String? = null): ReadWriteProperty<Element, String?> =
+fun stringElementProperty(elementName: String? = null): ReadWriteProperty<Element, String?> =
 	elementProperty(elementName = elementName, valueToString = { v -> v }, stringToValue = { s -> s })
 

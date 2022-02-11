@@ -1,5 +1,5 @@
 /*
- * Tigase Halcyon XMPP Library
+ * halcyon-core
  * Copyright (C) 2018 Tigase, Inc. (office@tigase.com)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -21,12 +21,11 @@ import tigase.halcyon.core.logger.Level
 import tigase.halcyon.core.logger.LoggerSPI
 import java.util.logging.LogRecord
 
-@Suppress("NOTHING_TO_INLINE")
 actual class DefaultLoggerSPI actual constructor(name: String, val enabled: Boolean) : LoggerSPI {
 
 	private val log = java.util.logging.Logger.getLogger(name)
 
-	private inline fun cnv(level: Level): java.util.logging.Level = when (level) {
+	private fun cnv(level: Level): java.util.logging.Level = when (level) {
 		Level.OFF -> java.util.logging.Level.OFF
 		Level.SEVERE -> java.util.logging.Level.SEVERE
 		Level.WARNING -> java.util.logging.Level.WARNING
@@ -42,7 +41,7 @@ actual class DefaultLoggerSPI actual constructor(name: String, val enabled: Bool
 		return log.isLoggable(cnv(level))
 	}
 
-	private inline fun doLog(level: Level, msg: String, caught: Throwable?) {
+	private fun doLog(level: Level, msg: String, caught: Throwable?) {
 		if (!enabled) return
 		val lr = LogRecord(cnv(level), msg)
 		if (caught != null) lr.thrown = caught

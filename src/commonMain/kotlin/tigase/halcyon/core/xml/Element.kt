@@ -84,7 +84,7 @@ class ElementImpl(override val name: String) : Element {
 		}
 	}
 
-	override fun getChildAfter(child: Element): Element? {
+	override fun getChildAfter(child: Element): Element {
 		val index = children.indexOf(child)
 		if (index == -1) {
 			throw XmlException("Element not part of tree")

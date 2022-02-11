@@ -36,7 +36,7 @@ import tigase.halcyon.core.xmpp.stanzas.IQType
 import tigase.halcyon.core.xmpp.stanzas.iq
 import tigase.halcyon.core.xmpp.toBareJID
 
-sealed class RosterEvent(val itemElement: Element, val item: RosterItem) : Event(TYPE) {
+sealed class RosterEvent(@Suppress("unused") val itemElement: Element, val item: RosterItem) : Event(TYPE) {
 
 	companion object {
 
@@ -44,7 +44,9 @@ sealed class RosterEvent(val itemElement: Element, val item: RosterItem) : Event
 	}
 
 	class ItemAdded(element: Element, item: RosterItem) : RosterEvent(element, item)
-	class ItemUpdated(element: Element, val oldItem: RosterItem, item: RosterItem) : RosterEvent(element, item)
+	class ItemUpdated(element: Element, @Suppress("unused") val oldItem: RosterItem, item: RosterItem) :
+		RosterEvent(element, item)
+
 	class ItemRemoved(element: Element, item: RosterItem) : RosterEvent(element, item)
 }
 
@@ -94,16 +96,43 @@ data class RosterItem(
 	val ask: Ask? = null,
 	val subscription: Subscription? = null,
 	val approved: Boolean? = null,
-	val annotations: Array<RosterItemAnnotation> = emptyArray()
-)
+	val annotations: Array<RosterItemAnnotation> = emptyArray(),
+) {
+
+	override fun equals(other: Any?): Boolean {
+		if (this === other) return true
+		if (other !is RosterItem) return false
+
+		if (jid != other.jid) return false
+		if (name != other.name) return false
+		if (groups != other.groups) return false
+		if (ask != other.ask) return false
+		if (subscription != other.subscription) return false
+		if (approved != other.approved) return false
+		if (!annotations.contentEquals(other.annotations)) return false
+
+		return true
+	}
+
+	override fun hashCode(): Int {
+		var result = jid.hashCode()
+		result = 31 * result + (name?.hashCode() ?: 0)
+		result = 31 * result + groups.hashCode()
+		result = 31 * result + (ask?.hashCode() ?: 0)
+		result = 31 * result + (subscription?.hashCode() ?: 0)
+		result = 31 * result + (approved?.hashCode() ?: 0)
+		result = 31 * result + annotations.contentHashCode()
+		return result
+	}
+}
 
 data class RosterResponse(val version: String?)
 
-class RosterModule(context: Context) : AbstractXmppIQModule(
-	context, TYPE, emptyArray(), Criterion.chain(
-		Criterion.name(IQ.NAME), Criterion.xmlns(XMLNS)
-	)
-) {
+class RosterModule(context: Context) : AbstractXmppIQModule(context,
+															TYPE,
+															emptyArray(),
+															Criterion.chain(Criterion.name(IQ.NAME),
+																			Criterion.xmlns(XMLNS))) {
 
 	private val log = LoggerFactory.logger("tigase.halcyon.core.xmpp.modules.roster.RosterModule")
 
@@ -191,9 +220,8 @@ class RosterModule(context: Context) : AbstractXmppIQModule(
 	}
 
 	private fun parseItem(item: Element): RosterItem {
-		val jid = item.attributes["jid"]?.toBareJID() ?: throw XMPPException(
-			ErrorCondition.BadRequest, "Missing JID in roster item."
-		)
+		val jid = item.attributes["jid"]?.toBareJID() ?: throw XMPPException(ErrorCondition.BadRequest,
+																			 "Missing JID in roster item.")
 		val name = item.attributes["name"]
 		val subscription = item.attributes["subscription"]?.let { sname ->
 			Subscription.values().firstOrNull { s -> s.value == sname }
@@ -236,6 +264,7 @@ class RosterModule(context: Context) : AbstractXmppIQModule(
 	/**
 	 * Add or update roster item.
 	 */
+	@Suppress("unused")
 	fun addItem(vararg items: RosterItem): RequestBuilder<Unit, IQ> {
 		return context.request.iq {
 			type = IQType.Set
@@ -245,9 +274,10 @@ class RosterModule(context: Context) : AbstractXmppIQModule(
 					addChild(createItem(it))
 				}
 			}
-		}.map { Unit }
+		}.map {}
 	}
 
+	@Suppress("unused")
 	fun deleteItem(vararg jids: BareJID): RequestBuilder<Unit, IQ> {
 		return context.request.iq {
 			type = IQType.Set
@@ -260,9 +290,10 @@ class RosterModule(context: Context) : AbstractXmppIQModule(
 					}
 				}
 			}
-		}.map { Unit }
+		}.map {}
 	}
 
+	@Suppress("unused")
 	fun getAllItems(): List<RosterItem> = store.getAllItems()
 
 }

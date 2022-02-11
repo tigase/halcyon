@@ -1,5 +1,5 @@
 /*
- * Tigase Halcyon XMPP Library
+ * halcyon-core
  * Copyright (C) 2018 Tigase, Inc. (office@tigase.com)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -19,6 +19,7 @@ package tigase.halcyon.core.xmpp.modules.jingle
 
 import tigase.halcyon.core.AbstractHalcyon
 import tigase.halcyon.core.eventbus.Event
+import tigase.halcyon.core.eventbus.handler
 import tigase.halcyon.core.logger.LoggerFactory
 import tigase.halcyon.core.xmpp.BareJID
 import tigase.halcyon.core.xmpp.JID
@@ -26,42 +27,40 @@ import tigase.halcyon.core.xmpp.modules.presence.ContactChangeStatusEvent
 import tigase.halcyon.core.xmpp.stanzas.PresenceType
 
 abstract class AbstractJingleSessionManager<S : AbstractJingleSession>(
-	name: String, private val sessionFactory: SessionFactory<S>
+	name: String, private val sessionFactory: SessionFactory<S>,
 ) : Jingle.SessionManager {
 
 	private val log = LoggerFactory.logger(name)
 
 	protected var sessions: List<S> = emptyList()
 
-	private val jingleEventHandler: (JingleEvent) -> Unit = { event ->
+	private val jingleEventHandler = handler<JingleEvent> { event ->
 		when (event.action) {
-			Action.sessionInitiate -> sessionInitiated(event)
-			Action.sessionAccept -> sessionAccepted(event)
-			Action.transportInfo -> transportInfo(event)
-			Action.sessionTerminate -> sessionTerminated(event)
+			Action.SessionInitiate -> sessionInitiated(event)
+			Action.SessionAccept -> sessionAccepted(event)
+			Action.TransportInfo -> transportInfo(event)
+			Action.SessionTerminate -> sessionTerminated(event)
 			else -> log.warning { "unsupported event: " + event.action.name }
 		}
 	}
-	private val contactChangeStatusEventHandler: (ContactChangeStatusEvent) -> Unit = { event ->
+	private val contactChangeStatusEventHandler = handler<ContactChangeStatusEvent> { event ->
 		if (event.lastReceivedPresence.type == PresenceType.Unavailable) {
 			val toClose =
 				sessions.filter { it.jid == event.presence.from && it.account == event.context.config.userJID }
-			toClose.forEach { it.terminate(TerminateReason.success) }
+			toClose.forEach { it.terminate(TerminateReason.Success) }
 		}
 	}
-	private val jingleMessageInitiationEvent: (JingleMessageInitiationEvent) -> Unit = { event ->
+	private val jingleMessageInitiationEvent = handler<JingleMessageInitiationEvent> { event ->
 		val account = event.context.config.userJID!!
 		when (event.action) {
 			is MessageInitiationAction.Propose -> {
 				if (session(account, event.jid, event.action.id) == null) {
-					val session = open(
-						event.context.getModule<JingleModule>(JingleModule.TYPE),
-						account,
-						event.jid,
-						event.action.id,
-						Content.Creator.responder,
-						InitiationType.message
-					)
+					val session = open(event.context.getModule(JingleModule.TYPE),
+									   account,
+									   event.jid,
+									   event.action.id,
+									   Content.Creator.Responder,
+									   InitiationType.Message)
 					val media = event.action.descriptions.filter { isDesciptionSupported(it) }.map { it.media }
 					fireIncomingSessionEvent(event.context, session, media)
 				}
@@ -69,9 +68,7 @@ abstract class AbstractJingleSessionManager<S : AbstractJingleSession>(
 			is MessageInitiationAction.Retract -> sessionTerminated(account, event.jid, event.action.id)
 			is MessageInitiationAction.Accept -> sessionTerminated(account, event.action.id)
 			is MessageInitiationAction.Reject -> sessionTerminated(account, event.jid, event.action.id)
-			is MessageInitiationAction.Proceed -> session(account, event.jid, event.action.id)?.let { session ->
-				session.accepted(event.jid)
-			}
+			is MessageInitiationAction.Proceed -> session(account, event.jid, event.action.id)?.accepted(event.jid)
 		}
 	}
 
@@ -84,11 +81,13 @@ abstract class AbstractJingleSessionManager<S : AbstractJingleSession>(
 	}
 
 	fun unregister(halcyon: AbstractHalcyon) {
-		// TODO: how to remove those handlers??
+		halcyon.eventBus.unregister(JingleEvent.TYPE, this.jingleEventHandler)
+		halcyon.eventBus.unregister(ContactChangeStatusEvent.TYPE, this.contactChangeStatusEventHandler)
+		halcyon.eventBus.unregister(JingleMessageInitiationEvent.TYPE, this.jingleMessageInitiationEvent)
 	}
 
-	override fun activateSessionSid(account: BareJID, jid: JID): String? {
-		return session(account, jid, null)?.sid
+	override fun activateSessionSid(account: BareJID, with: JID): String? {
+		return session(account, with, null)?.sid
 	}
 
 	fun session(account: BareJID, jid: JID, sid: String?): S? =
@@ -100,15 +99,15 @@ abstract class AbstractJingleSessionManager<S : AbstractJingleSession>(
 		jid: JID,
 		sid: String,
 		role: Content.Creator,
-		initiationType: InitiationType
+		initiationType: InitiationType,
 	): S {
 		val session = sessionFactory.createSession(this, jingleModule, account, jid, sid, role, initiationType)
-		sessions += session
+		sessions = sessions + session
 		return session
 	}
 
 	fun close(account: BareJID, jid: JID, sid: String): S? = session(account, jid, sid)?.let { session ->
-		sessions -= session
+		sessions = sessions - session
 		return session
 	}
 
@@ -118,27 +117,23 @@ abstract class AbstractJingleSessionManager<S : AbstractJingleSession>(
 
 	protected fun sessionInitiated(event: JingleEvent) {
 		val account = event.context.config.userJID!!
-		session(account, event.jid, event.sid)?.let { session ->
-			session.accepted(event.contents, event.bundle)
-		} ?: {
-			val session = open(
-				event.context.getModule<JingleModule>(JingleModule.TYPE),
-				account,
-				event.jid,
-				event.sid,
-				Content.Creator.responder,
-				InitiationType.iq
-			)
+		session(account, event.jid, event.sid)?.accepted(event.contents, event.bundle) ?: run {
+			val session = open(event.context.getModule(JingleModule.TYPE),
+							   account,
+							   event.jid,
+							   event.sid,
+							   Content.Creator.Responder,
+							   InitiationType.Iq)
 			session.initiated(event.contents, event.bundle)
-			fireIncomingSessionEvent(
-				event.context, session, event.contents.map { it.description?.media }.filterNotNull()
-			)
-		}()
+			fireIncomingSessionEvent(event.context,
+									 session,
+									 event.contents.map { it.description?.media }.filterNotNull())
+		}
 	}
 
 	protected fun sessionAccepted(event: JingleEvent) {
 		val account = event.context.config.userJID!!
-		session(account, event.jid, event.sid)?.let { it.accepted(event.contents, event.bundle) }
+		session(account, event.jid, event.sid)?.accepted(event.contents, event.bundle)
 	}
 
 	protected fun sessionTerminated(event: JingleEvent) {
@@ -173,7 +168,7 @@ abstract class AbstractJingleSessionManager<S : AbstractJingleSession>(
 			jid: JID,
 			sid: String,
 			role: Content.Creator,
-			initiationType: InitiationType
+			initiationType: InitiationType,
 		): S
 	}
 
@@ -182,7 +177,8 @@ abstract class AbstractJingleSessionManager<S : AbstractJingleSession>(
 	}
 }
 
-class JingleIncomingSessionEvent(val session: AbstractJingleSession, val media: List<String>) : Event(TYPE) {
+class JingleIncomingSessionEvent(val session: AbstractJingleSession, @Suppress("unused") val media: List<String>) :
+	Event(TYPE) {
 
 	companion object {
 

@@ -7,4 +7,5 @@
 
 === Design
 
+// suppress inspection "AsciiDocLinkResolve"
 image::images/architecture.png[]
