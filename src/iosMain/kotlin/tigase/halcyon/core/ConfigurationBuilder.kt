@@ -1,5 +1,5 @@
 /*
- * Tigase Halcyon XMPP Library
+ * halcyon-core
  * Copyright (C) 2018 Tigase, Inc. (office@tigase.com)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -15,10 +15,6 @@
  * along with this program. Look for COPYING file in the top folder.
  * If not, see http://www.gnu.org/licenses/.
  */
-package tigase.halcyon.core.xmpp.modules.caps
+package tigase.halcyon.core
 
-import com.soywiz.krypto.sha1
-
-actual fun hashSHA1(buffer: ByteArray): ByteArray {
-	return buffer.sha1().bytes
-}
+actual class ConfigurationBuilder actual constructor(halcyon: AbstractHalcyon) : AbstractConfigurationBuilder(halcyon)

@@ -1,5 +1,5 @@
 /*
- * Tigase Halcyon XMPP Library
+ * halcyon-core
  * Copyright (C) 2018 Tigase, Inc. (office@tigase.com)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -62,6 +62,7 @@ class ClearableValue<T>(
 	}
 
 	private fun clear(event: ClearedEvent) {
+		log.finest("ClearEvent #event")
 		if (event.scopes.contains(scope)) {
 			this.value = initialValueFactory.invoke()
 			log.fine { "Restoring initial value. Scope=$scope; value=$value" }

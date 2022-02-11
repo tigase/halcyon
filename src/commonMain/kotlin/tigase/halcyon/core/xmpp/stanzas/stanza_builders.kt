@@ -1,5 +1,5 @@
 /*
- * Tigase Halcyon XMPP Library
+ * halcyon-core
  * Copyright (C) 2018 Tigase, Inc. (office@tigase.com)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -19,8 +19,8 @@ package tigase.halcyon.core.xmpp.stanzas
 
 import tigase.halcyon.core.exceptions.HalcyonException
 import tigase.halcyon.core.xml.*
-import tigase.halcyon.core.xmpp.IdGenerator
 import tigase.halcyon.core.xmpp.JID
+import tigase.halcyon.core.xmpp.nextUID
 
 abstract class StanzaNode<STANZA_TYPE>(element: Element) : ElementNode(element) {
 
@@ -38,7 +38,7 @@ abstract class StanzaNode<STANZA_TYPE>(element: Element) : ElementNode(element) 
 	}
 
 	fun id() {
-		if (!element.attributes.containsKey("id")) element.attributes["id"] = IdGenerator.nextId()
+		if (!element.attributes.containsKey("id")) element.attributes["id"] = nextUID()
 	}
 
 	var to: JID?

@@ -19,7 +19,7 @@ package tigase.halcyon.core.xmpp.modules.jingle
 
 import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xml.element
-import tigase.halcyon.core.xmpp.IdGenerator
+import tigase.halcyon.core.xmpp.nextUID
 import kotlin.jvm.JvmStatic
 
 class Candidate(
@@ -87,7 +87,7 @@ class Candidate(
 			val component = el.attributes["component"] ?: return null
 			val foundation = el.attributes["foundation"] ?: return null
 			val generation = el.attributes["generation"]?.toInt() ?: return null
-			val id = el.attributes["id"] ?: IdGenerator.nextId()
+			val id = el.attributes["id"] ?: nextUID()
 			val ip = el.attributes["ip"] ?: return null
 			val network = el.attributes["network"]?.toInt() ?: return null
 			val port = el.attributes["port"]?.toInt() ?: return null

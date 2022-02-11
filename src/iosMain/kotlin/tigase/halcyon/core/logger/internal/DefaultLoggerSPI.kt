@@ -1,5 +1,5 @@
 /*
- * Tigase Halcyon XMPP Library
+ * halcyon-core
  * Copyright (C) 2018 Tigase, Inc. (office@tigase.com)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -15,8 +15,16 @@
  * along with this program. Look for COPYING file in the top folder.
  * If not, see http://www.gnu.org/licenses/.
  */
-package tigase.halcyon.core.xmpp.modules.caps
+package tigase.halcyon.core.logger.internal
 
-import com.soywiz.krypto.sha1
+import tigase.halcyon.core.logger.Level
+import tigase.halcyon.core.logger.LoggerSPI
 
-actual fun hashSHA1(buffer: ByteArray): ByteArray = buffer.sha1().bytes
+actual class DefaultLoggerSPI actual constructor(val name: String, val enabled: Boolean) : LoggerSPI {
+
+	actual override fun isLoggable(level: Level): Boolean = true
+
+	actual override fun log(level: Level, msg: String, caught: Throwable?) {
+//		print(msg)
+	}
+}

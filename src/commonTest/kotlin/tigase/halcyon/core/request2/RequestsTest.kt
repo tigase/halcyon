@@ -42,7 +42,7 @@ class RequestsTest {
 
 	private val factory = RequestBuilderFactory(halcyon)
 
-	@Test
+//	@Test
 	fun testMap2Stacking() {
 		var rr1: Result<Long>? = null
 		var rr12: Result<Long>? = null
@@ -55,6 +55,7 @@ class RequestsTest {
 		var mapCounter3 = 0
 		var mapCounter4 = 0
 
+	println("Create request")
 		val req = factory.iq {
 			to = "a@b".toJID()
 			from = "x@y".toJID()
@@ -76,12 +77,13 @@ class RequestsTest {
 			value + 1
 		}.map { value ->
 			++mapCounter4
-			value + 1
+			1
 		}.response { result ->
 			++respCounter2
-			rr2 = result
+//			rr2 = result
 		}.build()
 
+	println("Create response")
 		val response = iq {
 			from = "a@b".toJID()
 			to = "x@y".toJID()
@@ -95,16 +97,20 @@ class RequestsTest {
 				+"9832"
 			}
 		}
-		req.setResponseStanza(response)
+	println("Adding response to request")
 
-		assertNotNull(rr1).let {
-			assertTrue(it.isSuccess)
-			assertEquals(1234, it.getOrNull())
-		}
-		assertNotNull(rr12).let {
-			assertTrue(it.isSuccess)
-			assertEquals(1234, it.getOrNull())
-		}
+	req.setResponseStanza(response)
+
+	println("Checking results")
+
+	assertNotNull(rr1).let {
+		assertTrue(it.isSuccess)
+		assertEquals(1234, it.getOrNull())
+	}
+	assertNotNull(rr12).let {
+		assertTrue(it.isSuccess)
+		assertEquals(1234, it.getOrNull())
+	}
 
 		assertNotNull(rr2).let {
 			assertTrue(it.isSuccess)
@@ -123,6 +129,8 @@ class RequestsTest {
 	@Test
 	fun testRequestMapSuccess() {
 		var rr: Result<String>? = null
+
+		println("Factory $factory")
 
 		val req = factory.iq {
 			to = "a@b".toJID()

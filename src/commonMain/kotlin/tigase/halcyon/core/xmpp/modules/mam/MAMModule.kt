@@ -161,7 +161,7 @@ class MAMModule(override val context: Context) : XmppModule {
 		start: Instant? = null,
 		end: Instant? = null,
 	): RequestConsumerBuilder<ForwardedStanza<Message>, Fin, IQ> {
-		val queryId = IdGenerator.nextId()
+		val queryId = nextUID()
 		val form: Element? = prepareForm(with, start, end)
 		val stanza = iq {
 			if (to != null) this.to = to.toJID()

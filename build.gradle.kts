@@ -71,7 +71,7 @@ kotlin {
 			}
 		}
 	}
-//	iosX64()
+	ios()
 
 	sourceSets {
 		all {
@@ -115,6 +115,12 @@ kotlin {
 			}
 		}
 
+		val iosMain by getting {
+			dependsOn(commonMain)
+		}
+		val iosTest by getting {
+			dependsOn(commonTest)
+		}
 	}
 }
 

@@ -17,7 +17,7 @@
  */
 package tigase.halcyon.core.xmpp.modules.jingle
 
-import tigase.halcyon.core.xmpp.IdGenerator
+import tigase.halcyon.core.xmpp.nextUIDLongs
 import kotlin.jvm.JvmStatic
 
 class SDP(val id: String, val contents: List<Content>, private val bundle: List<String>) {
@@ -244,7 +244,7 @@ fun Candidate.Companion.parse(line: String): Candidate? {
 			Candidate(component,
 					  foundation,
 					  it,
-					  IdGenerator.nextIdLongs(),
+					  nextUIDLongs(),
 					  ip,
 					  0,
 					  port,

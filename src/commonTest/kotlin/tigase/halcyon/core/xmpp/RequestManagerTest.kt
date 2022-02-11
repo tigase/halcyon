@@ -264,6 +264,7 @@ class RequestManagerTest {
 
 		var counter = 0
 
+		println("1")
 		// timout expected
 		val r1 = halcyon.request.iq(element("iq") {
 			attribute("id", "1")
@@ -274,6 +275,7 @@ class RequestManagerTest {
 				if ((it as XMPPError).error == ErrorCondition.RemoteServerTimeout) ++counter
 			}
 		}.build()
+		println("2")
 		rm.register(r1)
 
 		// timout NOT expected
@@ -290,7 +292,9 @@ class RequestManagerTest {
 		rm.register(r2)
 
 
+		println("3")
 		rm.findOutdated()
+		println("4")
 
 		assertEquals(1, counter)
 

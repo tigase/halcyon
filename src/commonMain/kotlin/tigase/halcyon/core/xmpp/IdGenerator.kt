@@ -22,6 +22,8 @@ import kotlin.math.absoluteValue
 
 class IdGenerator {
 
+	private val ALPHABET: String = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+
 	private var buffer = IntArray(16, init = { 0 })
 
 	private val seed = createSeed()
@@ -93,13 +95,9 @@ class IdGenerator {
 		return result
 	}
 
-	companion object {
-
-		private val generator = IdGenerator()
-
-		private const val ALPHABET: String = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
-
-		fun nextId(): String = generator.nextId()
-		fun nextIdLongs(): String = generator.nextId() + generator.nextId()
-	}
 }
+
+private val generator by lazy { IdGenerator() }
+
+fun nextUID(): String = generator.nextId()
+fun nextUIDLongs(): String = generator.nextId() + generator.nextId()

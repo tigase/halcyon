@@ -265,7 +265,7 @@ class CommandsModule(override val context: Context) : XmppModule {
 		var adHocSession: AdHocSession? = null
 
 		override fun getSession(): AdHocSession {
-			if (adHocSession == null) adHocSession = AdHocSessionImpl(IdGenerator.nextIdLongs())
+			if (adHocSession == null) adHocSession = AdHocSessionImpl(nextUIDLongs())
 			return adHocSession ?: throw HalcyonException("Internal error. AdHoc Session is not created.")
 		}
 

@@ -17,6 +17,7 @@
  */
 package tigase.halcyon.core.xmpp.modules.caps
 
+import com.soywiz.krypto.sha1
 import kotlinx.serialization.Serializable
 import tigase.halcyon.core.*
 import tigase.halcyon.core.modules.Criteria
@@ -145,7 +146,7 @@ class EntityCapabilitiesModule(override val context: Context) : XmppModule, HasI
 		val ftrs = features.sorted().joinToString(separator = "<", postfix = "<")
 		val s = "$ids$ftrs"
 
-		val hash = hashSHA1(s.encodeToByteArray())
+		val hash = s.encodeToByteArray().sha1().bytes
 		return Base64.encode(hash)
 	}
 
@@ -194,5 +195,3 @@ class EntityCapabilitiesModule(override val context: Context) : XmppModule, HasI
 	}
 
 }
-
-expect fun hashSHA1(buffer: ByteArray): ByteArray

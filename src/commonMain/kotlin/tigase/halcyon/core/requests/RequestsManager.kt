@@ -95,12 +95,13 @@ class RequestsManager {
 
 	fun findOutdated() {
 		val now = Clock.System.now()
-		requests.entries.filter {
+		val toRemove = requests.entries.filter {
 			it.value.isCompleted || it.value.creationTimestamp + it.value.timeoutDelay <= now
-		}.forEach {
-			requests.remove(it.key)
-			if (it.value.creationTimestamp + it.value.timeoutDelay <= now) {
-				execute { it.value.markTimeout() }
+		}
+		toRemove.forEach { (key, request) ->
+			requests.remove(key)
+			if (request.creationTimestamp + request.timeoutDelay <= now) {
+				execute(request::markTimeout)
 			}
 		}
 	}
