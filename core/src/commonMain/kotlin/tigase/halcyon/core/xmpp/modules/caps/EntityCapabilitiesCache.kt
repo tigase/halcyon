@@ -15,6 +15,11 @@
  * along with this program. Look for COPYING file in the top folder.
  * If not, see http://www.gnu.org/licenses/.
  */
-rootProject.name = 'halcyon-core'
+package tigase.halcyon.core.xmpp.modules.caps
 
-include(":core")
+interface EntityCapabilitiesCache {
+
+	fun isCached(node: String): Boolean
+	fun store(node: String, caps: EntityCapabilitiesModule.Caps)
+	fun load(node: String): EntityCapabilitiesModule.Caps?
+}

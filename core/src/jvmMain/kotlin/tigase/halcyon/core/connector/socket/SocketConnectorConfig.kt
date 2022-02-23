@@ -15,6 +15,25 @@
  * along with this program. Look for COPYING file in the top folder.
  * If not, see http://www.gnu.org/licenses/.
  */
-rootProject.name = 'halcyon-core'
+package tigase.halcyon.core.connector.socket
 
-include(":core")
+import tigase.halcyon.core.connector.ConnectorConfig
+import java.security.cert.X509Certificate
+import javax.net.ssl.TrustManager
+import javax.net.ssl.X509TrustManager
+
+class SocketConnectorConfig : ConnectorConfig {
+
+	var port: Int = 5222
+
+	var trustManager: TrustManager = object : X509TrustManager {
+		override fun checkClientTrusted(p0: Array<out X509Certificate>?, p1: String?) {
+		}
+
+		override fun checkServerTrusted(p0: Array<out X509Certificate>?, p1: String?) {
+		}
+
+		override fun getAcceptedIssuers(): Array<X509Certificate> = emptyArray()
+	}
+
+}

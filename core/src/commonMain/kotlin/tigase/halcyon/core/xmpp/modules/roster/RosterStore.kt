@@ -15,6 +15,19 @@
  * along with this program. Look for COPYING file in the top folder.
  * If not, see http://www.gnu.org/licenses/.
  */
-rootProject.name = 'halcyon-core'
+package tigase.halcyon.core.xmpp.modules.roster
 
-include(":core")
+import tigase.halcyon.core.xmpp.BareJID
+
+interface RosterStore {
+
+	fun getVersion(): String?
+	fun setVersion(version: String)
+
+	fun getItem(jid: BareJID): RosterItem?
+	fun removeItem(jid: BareJID)
+	fun addItem(jid: BareJID, value: RosterItem)
+	fun updateItem(jid: BareJID, value: RosterItem)
+
+	fun getAllItems(): List<RosterItem>
+}

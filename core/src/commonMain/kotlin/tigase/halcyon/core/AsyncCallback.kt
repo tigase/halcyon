@@ -15,6 +15,17 @@
  * along with this program. Look for COPYING file in the top folder.
  * If not, see http://www.gnu.org/licenses/.
  */
-rootProject.name = 'halcyon-core'
+package tigase.halcyon.core
 
-include(":core")
+import tigase.halcyon.core.xml.Element
+import tigase.halcyon.core.xmpp.ErrorCondition
+
+interface AsyncCallback {
+
+	fun oSuccess(responseStanza: Element)
+
+	fun onError(responseStanza: Element, condition: ErrorCondition)
+
+	fun onTimeout()
+
+}

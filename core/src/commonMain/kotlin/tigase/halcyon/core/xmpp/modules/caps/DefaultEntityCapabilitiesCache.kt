@@ -15,6 +15,17 @@
  * along with this program. Look for COPYING file in the top folder.
  * If not, see http://www.gnu.org/licenses/.
  */
-rootProject.name = 'halcyon-core'
+package tigase.halcyon.core.xmpp.modules.caps
 
-include(":core")
+class DefaultEntityCapabilitiesCache : EntityCapabilitiesCache {
+
+	private val entities = mutableMapOf<String, EntityCapabilitiesModule.Caps>()
+
+	override fun isCached(node: String): Boolean = entities.containsKey(node)
+
+	override fun store(node: String, caps: EntityCapabilitiesModule.Caps) {
+		entities[node] = caps
+	}
+
+	override fun load(node: String): EntityCapabilitiesModule.Caps? = entities[node]
+}

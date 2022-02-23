@@ -15,6 +15,10 @@
  * along with this program. Look for COPYING file in the top folder.
  * If not, see http://www.gnu.org/licenses/.
  */
-rootProject.name = 'halcyon-core'
+package tigase.halcyon.core.eventbus
 
-include(":core")
+interface EventHandler<in T : Event> {
+
+	fun onEvent(event: T)
+
+}

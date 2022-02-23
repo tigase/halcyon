@@ -15,6 +15,16 @@
  * along with this program. Look for COPYING file in the top folder.
  * If not, see http://www.gnu.org/licenses/.
  */
-rootProject.name = 'halcyon-core'
+package tigase.halcyon.core.xml.parser
 
-include(":core")
+import tigase.halcyon.core.xml.Element
+
+interface StreamListener {
+
+	fun onNextElement(element: Element)
+
+	fun onStreamClose()
+
+	fun onStreamOpened(attrs: Map<String, String>)
+
+}

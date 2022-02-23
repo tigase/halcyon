@@ -15,6 +15,14 @@
  * along with this program. Look for COPYING file in the top folder.
  * If not, see http://www.gnu.org/licenses/.
  */
-rootProject.name = 'halcyon-core'
+package tigase.halcyon.core.xmpp
 
-include(":core")
+import tigase.halcyon.core.xml.Element
+
+data class ReceivedStreamFeaturesEvent(val features: List<Element>) : tigase.halcyon.core.eventbus.Event(TYPE) {
+
+	companion object {
+
+		const val TYPE = "tigase.halcyon.core.xmpp.ReceivedStreamFeaturesEvent"
+	}
+}

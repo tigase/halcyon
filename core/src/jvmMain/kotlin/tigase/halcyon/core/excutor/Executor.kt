@@ -15,6 +15,16 @@
  * along with this program. Look for COPYING file in the top folder.
  * If not, see http://www.gnu.org/licenses/.
  */
-rootProject.name = 'halcyon-core'
+package tigase.halcyon.core.excutor
 
-include(":core")
+import java.util.concurrent.Executors
+
+actual class Executor {
+
+	private val ex = Executors.newSingleThreadExecutor()
+
+	actual fun execute(runnable: () -> Unit) {
+		ex.run { runnable.invoke() }
+	}
+
+}

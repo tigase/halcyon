@@ -15,6 +15,13 @@
  * along with this program. Look for COPYING file in the top folder.
  * If not, see http://www.gnu.org/licenses/.
  */
-rootProject.name = 'halcyon-core'
+package tigase.halcyon.core.xmpp.modules.avatar
 
-include(":core")
+import tigase.halcyon.core.xmpp.BareJID
+
+interface UserAvatarStore {
+
+	fun store(userJID: BareJID, avatarID: String?, data: UserAvatarModule.Avatar?)
+	fun load(userJID: BareJID, avatarID: String): UserAvatarModule.Avatar?
+	fun isStored(userJID: BareJID, avatarID: String): Boolean
+}

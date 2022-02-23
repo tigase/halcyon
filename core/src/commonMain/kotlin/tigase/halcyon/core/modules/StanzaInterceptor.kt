@@ -15,6 +15,14 @@
  * along with this program. Look for COPYING file in the top folder.
  * If not, see http://www.gnu.org/licenses/.
  */
-rootProject.name = 'halcyon-core'
+package tigase.halcyon.core.modules
 
-include(":core")
+import tigase.halcyon.core.xml.Element
+
+interface StanzaInterceptor {
+
+	fun afterReceive(element: Element): Element?
+
+	fun beforeSend(element: Element): Element
+
+}

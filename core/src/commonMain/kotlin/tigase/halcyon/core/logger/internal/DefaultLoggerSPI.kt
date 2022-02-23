@@ -15,6 +15,14 @@
  * along with this program. Look for COPYING file in the top folder.
  * If not, see http://www.gnu.org/licenses/.
  */
-rootProject.name = 'halcyon-core'
+package tigase.halcyon.core.logger.internal
 
-include(":core")
+import tigase.halcyon.core.logger.Level
+import tigase.halcyon.core.logger.LoggerSPI
+
+expect class DefaultLoggerSPI(name: String, enabled: Boolean) : LoggerSPI {
+
+	override fun isLoggable(level: Level): Boolean
+	override fun log(level: Level, msg: String, caught: Throwable?)
+
+}

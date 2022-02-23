@@ -15,6 +15,26 @@
  * along with this program. Look for COPYING file in the top folder.
  * If not, see http://www.gnu.org/licenses/.
  */
-rootProject.name = 'halcyon-core'
+package tigase.halcyon.core.configuration
 
-include(":core")
+import tigase.halcyon.core.connector.ConnectorConfig
+import tigase.halcyon.core.xmpp.BareJID
+
+interface PasswordCallback {
+
+	fun getPassword(): String
+}
+
+class Configuration {
+
+	var userJID: BareJID? = null
+
+	var resource: String? = null
+
+	var passwordCallback: PasswordCallback? = null
+
+	var domain: String? = null
+
+	lateinit var connectorConfig: ConnectorConfig
+
+}

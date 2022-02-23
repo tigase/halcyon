@@ -15,6 +15,34 @@
  * along with this program. Look for COPYING file in the top folder.
  * If not, see http://www.gnu.org/licenses/.
  */
-rootProject.name = 'halcyon-core'
+package tigase.halcyon.core.eventbus
 
-include(":core")
+import tigase.halcyon.core.Halcyon
+import kotlin.test.Test
+
+class EventBusTest {
+
+	class Event01 : Event(TYPE) { companion object {
+
+		const val TYPE = "Event01"
+	}
+	}
+
+	@Test
+	fun testEventBus() {
+		val halcyon = Halcyon()
+		val eventBus = EventBus(halcyon)
+
+		eventBus.register(Event01.TYPE, object : EventHandler<Event01> {
+			override fun onEvent(event: Event01) {
+				println(event)
+			}
+		})
+		eventBus.register<Event> { println() }
+
+//		eventBus.register("1") { event -> println(event) }
+	}
+
+}
+
+

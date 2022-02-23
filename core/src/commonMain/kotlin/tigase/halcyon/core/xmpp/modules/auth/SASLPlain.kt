@@ -15,6 +15,26 @@
  * along with this program. Look for COPYING file in the top folder.
  * If not, see http://www.gnu.org/licenses/.
  */
-rootProject.name = 'halcyon-core'
+package tigase.halcyon.core.xmpp.modules.auth
 
-include(":core")
+import tigase.halcyon.core.configuration.Configuration
+
+class SASLPlain : SASLMechanism {
+
+	override val name = "PLAIN"
+
+	override fun evaluateChallenge(input: String?, config: Configuration, saslContext: SASLContext): String? {
+		if (saslContext.complete) return null
+
+		val username = config.userJID?.localpart!!
+		val password = config.passwordCallback!!.getPassword()
+
+		saslContext.complete = true
+		return tigase.halcyon.core.Base64.encode('\u0000' + username + '\u0000' + password)
+	}
+
+	override fun isAllowedToUse(config: Configuration, saslContext: SASLContext): Boolean {
+		return config.userJID != null && config.passwordCallback != null
+	}
+
+}

@@ -15,6 +15,23 @@
  * along with this program. Look for COPYING file in the top folder.
  * If not, see http://www.gnu.org/licenses/.
  */
-rootProject.name = 'halcyon-core'
+package tigase.halcyon.core.xmpp.modules.presence
 
-include(":core")
+import tigase.halcyon.core.xmpp.BareJID
+import tigase.halcyon.core.xmpp.JID
+import tigase.halcyon.core.xmpp.stanzas.Presence
+
+/**
+ * Presence store keeps last received presence stanza per JID.
+ */
+interface PresenceStore {
+
+	fun setPresence(stanza: Presence)
+
+	fun getPresence(jid: JID): Presence?
+
+	fun removePresence(jid: JID): Presence?
+
+	fun getPresences(jid: BareJID): List<Presence>
+
+}

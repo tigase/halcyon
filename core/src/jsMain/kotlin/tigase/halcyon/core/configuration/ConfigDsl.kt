@@ -15,6 +15,23 @@
  * along with this program. Look for COPYING file in the top folder.
  * If not, see http://www.gnu.org/licenses/.
  */
-rootProject.name = 'halcyon-core'
+package tigase.halcyon.core.configuration
 
-include(":core")
+import tigase.halcyon.core.connector.WebSocketConnectorConfig
+
+class WebSocketConnectorConfigDsl(private val socketConfig: WebSocketConnectorConfig) {
+
+	var webSocketUrl: String? by Alias(socketConfig::webSocketUrl)
+
+}
+
+actual class ConfigDsl actual constructor(configuration: Configuration) : AbstractConfigDsl(configuration) {
+
+	fun webSocketConnector(block: WebSocketConnectorConfigDsl.() -> Unit) {
+		val cf = WebSocketConnectorConfig()
+		configuration.connectorConfig = cf
+		val cfg = WebSocketConnectorConfigDsl(cf)
+		cfg.block()
+	}
+
+}

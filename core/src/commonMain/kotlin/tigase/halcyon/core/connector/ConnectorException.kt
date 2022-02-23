@@ -15,6 +15,10 @@
  * along with this program. Look for COPYING file in the top folder.
  * If not, see http://www.gnu.org/licenses/.
  */
-rootProject.name = 'halcyon-core'
+package tigase.halcyon.core.connector
 
-include(":core")
+class ConnectorException : RuntimeException { constructor() : super()
+	constructor(message: String?) : super(message)
+	constructor(message: String?, cause: Throwable?) : super(message, cause)
+	constructor(cause: Throwable?) : super(cause)
+}

@@ -15,6 +15,21 @@
  * along with this program. Look for COPYING file in the top folder.
  * If not, see http://www.gnu.org/licenses/.
  */
-rootProject.name = 'halcyon-core'
+package tigase.halcyon.core
 
-include(":core")
+import tigase.halcyon.core.requests.Request
+import tigase.halcyon.core.xml.Element
+
+interface PacketWriter {
+
+	/**
+	 * Sends Request to server and register it for potential response or error handling.
+	 */
+	fun write(stanza: Request<*, *>)
+
+	/**
+	 * Sends prepared element directly to server, without registering response handlers.
+	 */
+	fun writeDirectly(stanza: Element)
+
+}

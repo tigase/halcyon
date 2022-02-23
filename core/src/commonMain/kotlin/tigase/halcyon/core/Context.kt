@@ -15,6 +15,23 @@
  * along with this program. Look for COPYING file in the top folder.
  * If not, see http://www.gnu.org/licenses/.
  */
-rootProject.name = 'halcyon-core'
+package tigase.halcyon.core
 
-include(":core")
+import tigase.halcyon.core.configuration.Configuration
+import tigase.halcyon.core.eventbus.EventBus
+import tigase.halcyon.core.modules.ModulesManager
+import tigase.halcyon.core.requests.RequestBuilderFactory
+
+interface Context {
+
+	val eventBus: EventBus
+
+	val config: Configuration
+
+	val writer: PacketWriter
+
+	val modules: ModulesManager
+
+	val request: RequestBuilderFactory
+
+}

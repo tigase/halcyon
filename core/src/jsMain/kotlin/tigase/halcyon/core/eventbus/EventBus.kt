@@ -15,6 +15,14 @@
  * along with this program. Look for COPYING file in the top folder.
  * If not, see http://www.gnu.org/licenses/.
  */
-rootProject.name = 'halcyon-core'
+package tigase.halcyon.core.eventbus
 
-include(":core")
+import tigase.halcyon.core.AbstractHalcyon
+
+actual class EventBus actual constructor(context: AbstractHalcyon) : AbstractEventBus(context) {
+
+	override fun createHandlersMap(): MutableMap<String, MutableSet<EventHandler<*>>> = HashMap()
+
+	override fun createHandlersSet(): MutableSet<EventHandler<*>> = HashSet()
+
+}

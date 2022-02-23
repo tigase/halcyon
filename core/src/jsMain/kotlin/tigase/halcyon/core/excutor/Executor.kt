@@ -15,6 +15,11 @@
  * along with this program. Look for COPYING file in the top folder.
  * If not, see http://www.gnu.org/licenses/.
  */
-rootProject.name = 'halcyon-core'
+package tigase.halcyon.core.excutor
 
-include(":core")
+actual class Executor actual constructor() {
+
+	actual fun execute(runnable: () -> Unit) {
+		runnable.invoke()
+	}
+}

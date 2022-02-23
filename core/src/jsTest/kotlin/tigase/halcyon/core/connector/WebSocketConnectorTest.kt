@@ -15,6 +15,15 @@
  * along with this program. Look for COPYING file in the top folder.
  * If not, see http://www.gnu.org/licenses/.
  */
-rootProject.name = 'halcyon-core'
+package tigase.halcyon.core.connector
 
-include(":core")
+import kotlin.test.Test
+
+class WebSocketConnectorTest {
+
+	@Test
+	fun testBasic() {
+
+	}
+
+}

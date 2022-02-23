@@ -15,6 +15,25 @@
  * along with this program. Look for COPYING file in the top folder.
  * If not, see http://www.gnu.org/licenses/.
  */
-rootProject.name = 'halcyon-core'
+package tigase.halcyon.core.xmpp
 
-include(":core")
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertNotEquals
+
+class ErrorConditionTest {
+
+	@Test
+	fun testElementByName() {
+		assertEquals(
+			ErrorCondition.FeatureNotImplemented, ErrorCondition.Companion.getByElementName("feature-not-implemented")
+		)
+		assertNotEquals(
+			ErrorCondition.Conflict, ErrorCondition.Companion.getByElementName("feature-not-implemented")
+		)
+		assertEquals(ErrorCondition.Unknown, ErrorCondition.Companion.getByElementName("###"))
+
+		assertEquals("feature-not-implemented", ErrorCondition.FeatureNotImplemented.elementName)
+	}
+
+}
