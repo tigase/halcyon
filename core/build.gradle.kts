@@ -18,7 +18,6 @@
 plugins {
 	kotlin("multiplatform") version "1.6.10"
 	kotlin("plugin.serialization") version "1.6.10"
-	id("org.asciidoctor.jvm.convert") version "3.3.2"
 }
 
 
@@ -94,23 +93,5 @@ kotlin {
 		val iosTest by getting {
 			dependsOn(commonTest)
 		}
-	}
-}
-
-asciidoctorj {
-	modules {
-		diagram.use()
-	}
-}
-
-tasks {
-	asciidoctor {
-		baseDirFollowsSourceDir()
-		setSourceDir(file("src/docs/asciidoc"))
-		sources(delegateClosureOf<PatternSet> {
-			include("index.asciidoc")
-		})
-		options(mapOf("doctype" to "book", "ruby" to "erubis"))
-		attributes(mapOf("source-highlighter" to "coderay", "toc" to "", "idprefix" to "", "idseparator" to "-"))
 	}
 }

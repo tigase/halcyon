@@ -15,6 +15,24 @@
  * along with this program. Look for COPYING file in the top folder.
  * If not, see http://www.gnu.org/licenses/.
  */
-rootProject.name = 'halcyon-core'
+plugins {
+	id("org.asciidoctor.jvm.convert") version "3.3.2"
+}
 
-include(":core")
+asciidoctorj {
+	modules {
+		diagram.use()
+	}
+}
+
+tasks {
+	asciidoctor {
+		baseDirFollowsSourceDir()
+		setSourceDir(file("src/asciidoc"))
+		sources(delegateClosureOf<PatternSet> {
+			include("index.asciidoc")
+		})
+		options(mapOf("doctype" to "book", "ruby" to "erubis"))
+		attributes(mapOf("source-highlighter" to "coderay", "toc" to "", "idprefix" to "", "idseparator" to "-"))
+	}
+}
