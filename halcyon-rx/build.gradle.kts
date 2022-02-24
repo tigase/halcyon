@@ -54,7 +54,7 @@ kotlin {
 		val commonMain by getting {
 			dependencies {
 				implementation(kotlin("stdlib-common"))
-				implementation(project(":core"))
+				implementation(project(":halcyon-core"))
 				implementation("com.badoo.reaktive:reaktive:1.2.1")
 				implementation("com.badoo.reaktive:reaktive-testing:1.2.1")
 				implementation("com.badoo.reaktive:utils:1.2.1")
