@@ -119,7 +119,7 @@ class Request<V, STT : Stanza<*>>(
 		}
 	}
 
-	internal fun setResponseStanza(response: Element, processStack: Boolean = true) {
+	fun setResponseStanza(response: Element, processStack: Boolean = true) {
 		log.finest { "Setting response in ${this@Request}" }
 		this.response = wrap(response)
 		isCompleted = true

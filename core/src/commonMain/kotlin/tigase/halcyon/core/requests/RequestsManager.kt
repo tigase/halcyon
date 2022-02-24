@@ -32,7 +32,7 @@ class RequestsManager {
 
 	private val requests = HashMap<String, Request<*, *>>()
 
-	internal fun register(request: Request<*, *>) {
+	fun register(request: Request<*, *>) {
 		requests[key(request.stanza)] = request
 	}
 
@@ -85,12 +85,13 @@ class RequestsManager {
 
 		requests.entries.filter {
 			it.value.creationTimestamp < maxCreationTimestamp
-		}.forEach {
-			requests.remove(it.key)
-			if (!it.value.isCompleted) {
-				execute { it.value.markTimeout() }
-			}
 		}
+			.forEach {
+				requests.remove(it.key)
+				if (!it.value.isCompleted) {
+					execute { it.value.markTimeout() }
+				}
+			}
 	}
 
 	fun findOutdated() {
