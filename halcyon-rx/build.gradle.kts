@@ -56,8 +56,6 @@ kotlin {
 				implementation(kotlin("stdlib-common"))
 				implementation(project(":halcyon-core"))
 				implementation("com.badoo.reaktive:reaktive:1.2.1")
-				implementation("com.badoo.reaktive:reaktive-testing:1.2.1")
-				implementation("com.badoo.reaktive:utils:1.2.1")
 
 			}
 		}
@@ -65,6 +63,7 @@ kotlin {
 			dependencies {
 				implementation(kotlin("test-common"))
 				implementation(kotlin("test-annotations-common"))
+				implementation("com.badoo.reaktive:reaktive-testing:1.2.1")
 			}
 		}
 		val jvmTest by getting {
