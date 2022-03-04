@@ -17,4 +17,4 @@
  */
 rootProject.name = "halcyon"
 
-include(":docs", ":halcyon-core", "halcyon-rx")
+include(":docs", ":halcyon-core", "halcyon-rx", "halcyon-coroutines")
