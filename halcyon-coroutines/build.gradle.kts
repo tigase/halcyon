@@ -16,68 +16,21 @@
  * If not, see http://www.gnu.org/licenses/.
  */
 plugins {
-	kotlin("multiplatform") version "1.6.10"
-	kotlin("plugin.serialization") version "1.6.10"
+	id("multiplatform-setup")
 }
 
-
 kotlin {
-	jvm {
-		compilations.all {
-			kotlinOptions.jvmTarget = "1.8"
-		}
-		withJava()
-		testRuns["test"].executionTask.configure {
-			useJUnit()
-		}
-	}
-	js(BOTH) {
-		browser {
-			commonWebpackConfig {
-				cssSupport.enabled = true
-			}
-			testTask {
-				useKarma {
-					useChromeHeadless()
-				}
-			}
-		}
-	}
-	ios()
-
 	sourceSets {
-		all {
-			languageSettings {
-				optIn("kotlin.RequiresOptIn")
-			}
-		}
-		val commonMain by getting {
+		commonMain{
 			dependencies {
-				implementation(kotlin("stdlib-common"))
 				implementation(project(":halcyon-core"))
-				implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.0")
+				implementation(Deps.JetBrains.Coroutines.core)
 			}
 		}
-		val commonTest by getting {
+		 commonTest {
 			dependencies {
-				implementation(kotlin("test-common"))
-				implementation(kotlin("test-annotations-common"))
-				implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.6.0")
+				implementation(Deps.JetBrains.Coroutines.test)
 			}
-		}
-		val jvmTest by getting {
-			dependencies {
-				implementation(kotlin("test-junit"))
-
-			}
-		}
-		val jsTest by getting {
-			dependencies {
-				implementation(kotlin("test-js"))
-			}
-		}
-		val iosTest by getting {
-			dependsOn(commonTest)
 		}
 	}
 }

@@ -16,82 +16,26 @@
  * If not, see http://www.gnu.org/licenses/.
  */
 plugins {
-	kotlin("multiplatform") version "1.6.10"
-	kotlin("plugin.serialization") version "1.6.10"
+	id("multiplatform-setup")
+	kotlin("plugin.serialization") version Deps.JetBrains.Kotlin.VERSION
 }
 
 
 kotlin {
-	jvm {
-		compilations.all {
-			kotlinOptions.jvmTarget = "1.8"
-		}
-		withJava()
-		testRuns["test"].executionTask.configure {
-			useJUnit()
-		}
-	}
-	js(BOTH) {
-		browser {
-			commonWebpackConfig {
-				cssSupport.enabled = true
-			}
-			testTask {
-				useKarma {
-					useChromeHeadless()
-				}
-			}
-		}
-	}
-	ios()
-
 	sourceSets {
-		all {
-			languageSettings {
-				optIn("kotlin.RequiresOptIn")
-			}
-		}
-		val commonMain by getting {
+		commonMain {
 			dependencies {
-				implementation(kotlin("stdlib-common"))
-				implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.3.2")
-				implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.3.2")
-				implementation("com.soywiz.korlibs.krypto:krypto:2.4.12")
+				implementation(Deps.JetBrains.Serialization.core)
+				implementation(Deps.JetBrains.KotlinX.dateTime)
+				implementation(Deps.Soywiz.krypto)
 			}
 		}
-		val commonTest by getting {
+		jvmMain {
 			dependencies {
-				implementation(kotlin("test-common"))
-				implementation(kotlin("test-annotations-common"))
+				implementation(Deps.Minidns.minidns)
 			}
 		}
-		val jvmMain by getting {
-			dependencies {
-				implementation("org.minidns:minidns-hla:1.0.2")
-			}
-		}
-		val jvmTest by getting {
-			dependencies {
-				implementation(kotlin("test-junit"))
-			}
-		}
-		val jsMain by getting {
-			dependencies {
-				implementation(kotlin("stdlib-js"))
-//				implementation("com.soywiz.korlibs.krypto:krypto-js:1.10.1")
-			}
-		}
-		val jsTest by getting {
-			dependencies {
-				implementation(kotlin("test-js"))
-			}
-		}
-
-		val iosMain by getting {
-			dependsOn(commonMain)
-		}
-		val iosTest by getting {
-			dependsOn(commonTest)
-		}
+		named("iosMain") { }
+		named("iosTest") { }
 	}
 }
