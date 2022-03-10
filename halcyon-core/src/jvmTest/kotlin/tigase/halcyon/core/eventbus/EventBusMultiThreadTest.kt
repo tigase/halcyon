@@ -17,11 +17,10 @@
  */
 package tigase.halcyon.core.eventbus
 
-import org.junit.Assert
-import org.junit.Test
 import tigase.halcyon.core.Halcyon
 import tigase.halcyon.core.eventbus.EventBusInterface.Companion.ALL_EVENTS
 import java.util.concurrent.ConcurrentLinkedQueue
+import kotlin.test.*
 
 class EventBusMultiThreadTest {
 
@@ -96,9 +95,9 @@ class EventBusMultiThreadTest {
 		}
 		working = false
 
-		Assert.assertEquals(THREADS * EVENTS, result0.size)
-		Assert.assertEquals(THREADS * EVENTS, result1.size)
-		Assert.assertEquals(THREADS * EVENTS, result2.size)
+		assertEquals(THREADS * EVENTS, result0.size)
+		assertEquals(THREADS * EVENTS, result1.size)
+		assertEquals(THREADS * EVENTS, result2.size)
 	}
 
 	internal class TestEvent(val value: String?) : Event(TYPE) { companion object {
@@ -117,7 +116,7 @@ class EventBusMultiThreadTest {
 				}
 			} catch (e: Exception) {
 				e.printStackTrace()
-				Assert.fail(prefix + " :: " + e.message)
+				fail(prefix + " :: " + e.message)
 			}
 
 		}

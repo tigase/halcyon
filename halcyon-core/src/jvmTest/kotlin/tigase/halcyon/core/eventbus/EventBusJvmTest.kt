@@ -17,10 +17,11 @@
  */
 package tigase.halcyon.core.eventbus
 
-import org.junit.Assert
-import org.junit.Test
+import kotlin.test.Test
 import tigase.halcyon.core.Halcyon
 import tigase.halcyon.core.eventbus.EventBusInterface.Companion.ALL_EVENTS
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 
 class EventBusJvmTest {
 
@@ -45,22 +46,22 @@ class EventBusJvmTest {
 		eventBus.fire(TestEvent("04"))
 		eventBus.fire(TestEvent("05"))
 
-		Assert.assertTrue(responses.contains("01"))
-		Assert.assertTrue(responses.contains("02"))
-		Assert.assertTrue(responses.contains("03"))
-		Assert.assertTrue(responses.contains("04"))
-		Assert.assertTrue(responses.contains("05"))
-		Assert.assertFalse(responses.contains("06"))
+		assertTrue(responses.contains("01"))
+		assertTrue(responses.contains("02"))
+		assertTrue(responses.contains("03"))
+		assertTrue(responses.contains("04"))
+		assertTrue(responses.contains("05"))
+		assertFalse(responses.contains("06"))
 
 		eventBus.unregister(handler)
 
 		eventBus.fire(TestEvent("06"))
-		Assert.assertFalse(responses.contains("06"))
+		assertFalse(responses.contains("06"))
 
 		eventBus.register(ALL_EVENTS, handler)
 
 		eventBus.fire(TestEvent("07"))
-		Assert.assertTrue(responses.contains("07"))
+		assertTrue(responses.contains("07"))
 
 	}
 

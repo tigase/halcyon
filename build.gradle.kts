@@ -40,8 +40,6 @@ allprojects {
 }
 
 subprojects {
-	apply { plugin("maven-publish") }
-
 	repositories {
 		mavenCentral()
 		mavenLocal()
@@ -49,21 +47,4 @@ subprojects {
 		maven(url = findProperty("tigaseMavenRepoSnapshot").toString())
 		jcenter()
 	}
-
-	publishing {
-		repositories {
-			maven {
-				url = if (project.version.toString().endsWith("-SNAPSHOT", ignoreCase = true)) {
-					uri(findProperty("tigaseMavenRepoSnapshot").toString())
-				} else {
-					uri(findProperty("tigaseMavenRepoRelease").toString())
-				}
-				credentials {
-					username = findProperty("mavenUsername").toString()
-					password = findProperty("mavenPassword").toString()
-				}
-			}
-		}
-	}
-
 }

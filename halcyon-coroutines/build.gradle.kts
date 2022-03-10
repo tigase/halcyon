@@ -20,19 +20,17 @@ plugins {
 	id("publishing-setup")
 }
 
-
 kotlin {
 	sourceSets {
-
-		commonMain {
+		commonMain{
 			dependencies {
 				implementation(project(":halcyon-core"))
-				implementation(Deps.Badoo.Reaktive.reaktive)
+				implementation(Deps.JetBrains.Coroutines.core)
 			}
 		}
-		commonTest {
+		 commonTest {
 			dependencies {
-				implementation(Deps.Badoo.Reaktive.reaktiveTesting)
+				implementation(Deps.JetBrains.Coroutines.test)
 			}
 		}
 	}
