@@ -17,6 +17,7 @@
  */
 plugins {
 	id("multiplatform-setup")
+	id("publishing-setup")
 	kotlin("plugin.serialization") version Deps.JetBrains.Kotlin.VERSION
 }
 
