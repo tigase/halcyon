@@ -1,0 +1,13 @@
+language = Objective-C
+package = OpenSSL
+#headers = openssl/ssl.h
+headers = openssl/OpenSSL.h
+#headers = OpenSSL.h
+#compilerOpts = -framework OpenSSL
+#compilerOpts = "-F$projectDir/frameworks -framework OpenSSL"
+compilerOpts.ios_x64 = -I../frameworks/OpenSSL.xcframework/ios-arm64_i386_x86_64-simulator/OpenSSL.framework/Headers
+#linkerOpts.ios_x64 = -L../frameworks/OpenSSL.xcframework/ios-arm64_i386_x86_64-simulator/OpenSSL.framework -lOpenSSL
+compilerOpts.ios_arm64 = -I../frameworks/OpenSSL.xcframework/ios-arm64_armv7/OpenSSL.framework/Headers
+#linkerOpts.ios_arm64 = -L../frameworks/OpenSSL.xcframework/ios-arm64_armv7/OpenSSL.framework", "-lOpenSSL
+#compilerOpts = "-I/usr/local/Cellar/openssl@1.1/1.1.1m/include"
+#linkerOpts = "-lssl -lcrypto"

@@ -43,8 +43,34 @@ kotlin {
 			}
 		}
 	}
-	ios()
 
+	ios {
+		// TODO: Before compilation you need to download https://github.com/tigase/openssl-swiftpm/releases/download/1.1.171/OpenSSL.xcframework.zip to "frameworks" directory and unpack this ZIP file.
+		// TODO: Before compilation it is required to go to OpenSSL.xcframework to each subdirectory and Headers and move all files there to "openssl" subdirectory inside Headers
+		compilations.getByName("main") {
+			val OpenSSL by cinterops.creating {
+				defFile("src/nativeInterop/cinterop/OpenSSL.def")
+				if (System.getenv("SDK_NAME")?.startsWith("iphoneos") == true)
+					compilerOpts("-F$projectDir/../frameworks/OpenSSL.xcframework/ios-arm64_armv7", "-framework", "OpenSSL")
+				else
+					//compilerOpts("-F$projectDir/framework/ios-arm64_i386_x86_64-simulator", "-framework", "OpenSSL")
+					compilerOpts("-F$projectDir/../frameworks/OpenSSL.xcframework/ios-arm64_i386_x86_64-simulator", "-framework", "OpenSSL")
+			}
+			binaries.all {
+				if (System.getenv("SDK_NAME")?.startsWith("iphoneos") == true)
+					linkerOpts("-F$projectDir/../frameworks/OpenSSL.xcframework/ios-arm64_armv7", "-framework", "OpenSSL")
+				else
+					linkerOpts("-F$projectDir/../frameworks/OpenSSL.xcframework/ios-arm64_i386_x86_64-simulator", "-framework", "OpenSSL")
+			}
+			binaries.getTest("DEBUG").apply {
+				if (System.getenv("SDK_NAME")?.startsWith("iphoneos") == true)
+					linkerOpts("-rpath", "$projectDir/../frameworks/OpenSSL.xcframework/ios-arm64_armv7")
+				else
+					linkerOpts("-rpath", "$projectDir/../frameworks/OpenSSL.xcframework/ios-arm64_i386_x86_64-simulator")
+			}
+		}
+	}
+	
 	sourceSets {
 		all {
 			languageSettings {
@@ -91,7 +117,7 @@ kotlin {
 			dependsOn(commonMain)
 		}
 		val iosTest by getting {
-			dependsOn(commonTest)
+			dependsOn(iosMain)
 		}
 	}
 }

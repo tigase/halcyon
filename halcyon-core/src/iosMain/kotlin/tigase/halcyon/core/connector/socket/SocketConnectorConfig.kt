@@ -15,27 +15,12 @@
  * along with this program. Look for COPYING file in the top folder.
  * If not, see http://www.gnu.org/licenses/.
  */
-package tigase.halcyon.core
+package tigase.halcyon.core.connector.socket
 
-import platform.posix.usleep
-import tigase.halcyon.core.connector.AbstractConnector
-import tigase.halcyon.core.connector.socket.SocketConnector
-import tigase.halcyon.core.logger.LoggerFactory
+import tigase.halcyon.core.connector.ConnectorConfig
 
-actual class Halcyon : AbstractHalcyon() {
+class SocketConnectorConfig: ConnectorConfig {
 
-	private val log = LoggerFactory.logger("tigase.halcyon.core.Halcyon")
-
-	override fun reconnect(immediately: Boolean) {
-		log.finer { "Called reconnect. immediately=$immediately" }
-		if (!immediately) usleep(3000)
-		state = State.Connecting
-		startConnector()
-	}
-
-	override fun createConnector(): AbstractConnector {
-		return SocketConnector(this)
-	}
-	
-
+    var port: Int = 5222
+    
 }
