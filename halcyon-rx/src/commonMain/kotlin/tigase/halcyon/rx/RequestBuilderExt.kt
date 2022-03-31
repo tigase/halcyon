@@ -1,11 +1,13 @@
 package tigase.halcyon.rx
 
+import com.badoo.reaktive.scheduler.ioScheduler
 import com.badoo.reaktive.single.Single
 import com.badoo.reaktive.single.single
+import com.badoo.reaktive.single.subscribeOn
 import tigase.halcyon.core.requests.RequestBuilder
 import tigase.halcyon.core.xmpp.stanzas.Stanza
 
-fun <V, STT : Stanza<*>> RequestBuilder<V, STT>.asSingle(): Single<V> = single(onSubscribe = { emitter ->
+fun <V, STT : Stanza<*>> RequestBuilder<V, STT>.asSingle(): Single<V> = single<V>(onSubscribe = { emitter ->
 	try {
 		this@asSingle.response { result ->
 			result.onSuccess {
@@ -19,4 +21,4 @@ fun <V, STT : Stanza<*>> RequestBuilder<V, STT>.asSingle(): Single<V> = single(o
 	} catch (e: Throwable) {
 		emitter.onError(e)
 	}
-})
+}).subscribeOn(ioScheduler)
