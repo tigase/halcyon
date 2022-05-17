@@ -27,27 +27,50 @@ kotlin {
 		// TODO: Before compilation you need to download https://github.com/tigase/openssl-swiftpm/releases/download/1.1.171/OpenSSL.xcframework.zip to "frameworks" directory and unpack this ZIP file.
 		// TODO: Before compilation it is required to go to OpenSSL.xcframework to each subdirectory and Headers and move all files there to "openssl" subdirectory inside Headers
 		compilations.getByName("main") {
+			val frameworkDir = if (System.getenv("SDK_NAME")
+					?.startsWith("iphoneos") == true
+			) {
+				"$projectDir/../frameworks/OpenSSL.xcframework/ios-arm64_armv7"
+			} else {
+				"$projectDir/../frameworks/OpenSSL.xcframework/ios-arm64_i386_x86_64-simulator"
+			}
+
 			val OpenSSL by cinterops.creating {
 				defFile("src/nativeInterop/cinterop/OpenSSL.def")
-				if (System.getenv("SDK_NAME")?.startsWith("iphoneos") == true)
-					compilerOpts("-F$projectDir/../frameworks/OpenSSL.xcframework/ios-arm64_armv7", "-framework", "OpenSSL")
-				else
-				//compilerOpts("-F$projectDir/framework/ios-arm64_i386_x86_64-simulator", "-framework", "OpenSSL")
-					compilerOpts("-F$projectDir/../frameworks/OpenSSL.xcframework/ios-arm64_i386_x86_64-simulator", "-framework", "OpenSSL")
+				includeDirs("$frameworkDir/")
+				compilerOpts(
+					"-F$frameworkDir",
+					"-framework",
+					"OpenSSL"
+				)
 			}
+			kotlinOptions.freeCompilerArgs = listOf(
+				"-include-binary", "$frameworkDir/OpenSSL.framework/OpenSSL"
+			)
 			binaries.all {
-				if (System.getenv("SDK_NAME")?.startsWith("iphoneos") == true)
-					linkerOpts("-F$projectDir/../frameworks/OpenSSL.xcframework/ios-arm64_armv7", "-framework", "OpenSSL")
-				else
-					linkerOpts("-F$projectDir/../frameworks/OpenSSL.xcframework/ios-arm64_i386_x86_64-simulator", "-framework", "OpenSSL")
+				linkerOpts(
+					"-F$frameworkDir",
+					"-framework",
+					"OpenSSL",
+//					"-rpath",
+//					"@loader_path/Frameworks",
+//					"-rpath",
+//					"@executable_path/Frameworks",
+//					"-rpath", frameworkDir
+				)
 			}
-			binaries.getTest("DEBUG").apply {
-				if (System.getenv("SDK_NAME")?.startsWith("iphoneos") == true)
-					linkerOpts("-rpath", "$projectDir/../frameworks/OpenSSL.xcframework/ios-arm64_armv7")
-				else
-					linkerOpts("-rpath", "$projectDir/../frameworks/OpenSSL.xcframework/ios-arm64_i386_x86_64-simulator")
+			binaries.getTest("DEBUG")
+				.apply {
+					linkerOpts(
+						"-rpath", frameworkDir
+					)
+				}
+		}
+		binaries {
+			staticLib {
 			}
 		}
+		compilations["main"].enableEndorsedLibs = true
 	}
 
 	sourceSets {
