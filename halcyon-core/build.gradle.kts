@@ -30,18 +30,16 @@ kotlin {
 			val frameworkDir = if (System.getenv("SDK_NAME")
 					?.startsWith("iphoneos") == true
 			) {
-				"$projectDir/../frameworks/OpenSSL.xcframework/ios-arm64_armv7"
+				"$rootDir/frameworks/OpenSSL.xcframework/ios-arm64_armv7"
 			} else {
-				"$projectDir/../frameworks/OpenSSL.xcframework/ios-arm64_i386_x86_64-simulator"
+				"$rootDir/frameworks/OpenSSL.xcframework/ios-arm64_i386_x86_64-simulator"
 			}
 
 			val OpenSSL by cinterops.creating {
 				defFile("src/nativeInterop/cinterop/OpenSSL.def")
 				includeDirs("$frameworkDir/")
 				compilerOpts(
-					"-F$frameworkDir",
-					"-framework",
-					"OpenSSL"
+					"-F$frameworkDir", "-framework", "OpenSSL"
 				)
 			}
 			kotlinOptions.freeCompilerArgs = listOf(
@@ -52,11 +50,6 @@ kotlin {
 					"-F$frameworkDir",
 					"-framework",
 					"OpenSSL",
-//					"-rpath",
-//					"@loader_path/Frameworks",
-//					"-rpath",
-//					"@executable_path/Frameworks",
-//					"-rpath", frameworkDir
 				)
 			}
 			binaries.getTest("DEBUG")
@@ -67,8 +60,7 @@ kotlin {
 				}
 		}
 		binaries {
-			staticLib {
-			}
+			staticLib { }
 		}
 		compilations["main"].enableEndorsedLibs = true
 	}
@@ -88,5 +80,34 @@ kotlin {
 		}
 		named("iosMain") { }
 		named("iosTest") { }
+	}
+}
+
+tasks["clean"].doLast {
+	delete("$rootDir/frameworks/OpenSSL.xcframework")
+}
+
+tasks["cinteropOpenSSLIosArm64"].dependsOn("prepareOpenSSL")
+
+tasks.register("prepareOpenSSL") {
+	description = "Downloads and unpack OpenSSL XCFramework."
+	val zipUrl = "https://github.com/tigase/openssl-swiftpm/releases/download/1.1.171/OpenSSL.xcframework.zip"
+
+	fun download(url: String, path: String) = ant.invokeMethod("get", mapOf("src" to url, "dest" to File(path)))
+
+	doLast {
+		if (!File("$rootDir/frameworks/OpenSSL.xcframework.zip").exists()) {
+			logger.lifecycle("Downloading OpenSSL framework...")
+			download(
+				zipUrl, "$rootDir/frameworks/"
+			)
+		}
+		if (!File("$rootDir/frameworks/OpenSSL.xcframework").exists()) {
+			logger.lifecycle("Unzipping OpenSSL framework...")
+			copy {
+				from(zipTree("$rootDir/frameworks/OpenSSL.xcframework.zip"))
+				into("$rootDir/frameworks/")
+			}
+		}
 	}
 }
