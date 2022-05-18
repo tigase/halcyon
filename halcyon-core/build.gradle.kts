@@ -39,7 +39,9 @@ kotlin {
 				defFile("src/nativeInterop/cinterop/OpenSSL.def")
 				includeDirs("$frameworkDir/")
 				compilerOpts(
-					"-F$frameworkDir", "-framework", "OpenSSL"
+					"-F$frameworkDir",
+					"-framework",
+					"OpenSSL"
 				)
 			}
 			kotlinOptions.freeCompilerArgs = listOf(
@@ -50,6 +52,11 @@ kotlin {
 					"-F$frameworkDir",
 					"-framework",
 					"OpenSSL",
+//					"-rpath",
+//					"@loader_path/Frameworks",
+//					"-rpath",
+//					"@executable_path/Frameworks",
+//					"-rpath", frameworkDir
 				)
 			}
 			binaries.getTest("DEBUG")
@@ -60,7 +67,8 @@ kotlin {
 				}
 		}
 		binaries {
-			staticLib { }
+			staticLib {
+			}
 		}
 		compilations["main"].enableEndorsedLibs = true
 	}
@@ -88,6 +96,7 @@ tasks["clean"].doLast {
 }
 
 tasks["cinteropOpenSSLIosArm64"].dependsOn("prepareOpenSSL")
+tasks["cinteropOpenSSLIosX64"].dependsOn("prepareOpenSSL")
 
 tasks.register("prepareOpenSSL") {
 	description = "Downloads and unpack OpenSSL XCFramework."
