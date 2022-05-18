@@ -20,11 +20,16 @@ package tigase.halcyon.core
 import platform.posix.usleep
 import tigase.halcyon.core.connector.AbstractConnector
 import tigase.halcyon.core.connector.socket.SocketConnector
+import tigase.halcyon.core.connector.socket.SocketConnectorConfig
 import tigase.halcyon.core.logger.LoggerFactory
 
 actual class Halcyon : AbstractHalcyon() {
 
 	private val log = LoggerFactory.logger("tigase.halcyon.core.Halcyon")
+
+	init {
+		this.config.connectorConfig = SocketConnectorConfig()
+	}
 
 	override fun reconnect(immediately: Boolean) {
 		log.finer { "Called reconnect. immediately=$immediately" }
@@ -36,6 +41,5 @@ actual class Halcyon : AbstractHalcyon() {
 	override fun createConnector(): AbstractConnector {
 		return SocketConnector(this)
 	}
-	
 
 }

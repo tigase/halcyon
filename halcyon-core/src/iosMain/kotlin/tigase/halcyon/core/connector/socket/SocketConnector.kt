@@ -62,7 +62,7 @@ class SocketConnector(halcyon: Halcyon) : AbstractConnector(halcyon) {
 
     var secured: Boolean = false
         private set
-    
+
     private val log = LoggerFactory.logger("tigase.halcyon.core.connector.socket.SocketConnector")
     private var config: SocketConnectorConfig = halcyon.config.connectorConfig as SocketConnectorConfig
     private var resolver: DnsResolver = DnsResolver();
@@ -101,11 +101,11 @@ class SocketConnector(halcyon: Halcyon) : AbstractConnector(halcyon) {
             halcyon.eventBus.fire(ParseErrorEvent(errorMessage))
         }
     }
-    
+
     private var socket: Socket? = null;
     private var sslEngine: SSLEngine? = null;
     private val queue = dispatch_queue_create("SocketConnector_Network", null);
-    
+
     override fun createSessionController(): SessionController {
         return SocketSessionController(halcyon, this);
     }
@@ -118,7 +118,7 @@ class SocketConnector(halcyon: Halcyon) : AbstractConnector(halcyon) {
             writeDataToSocket(bytes);
         }
     }
-    
+
     fun restartStream() {
         log.finest("restarting stream..")
         val userJid = halcyon.config.userJID!!
@@ -139,7 +139,7 @@ class SocketConnector(halcyon: Halcyon) : AbstractConnector(halcyon) {
         }
         halcyon.writer.writeDirectly(element)
     }
-    
+
     override fun start() {
         //this.ensureNeverFrozen();
         state = State.Connecting
@@ -232,13 +232,13 @@ class SocketConnector(halcyon: Halcyon) : AbstractConnector(halcyon) {
             else -> throw XMPPException(ErrorCondition.BadRequest)
         }
     }
-    
+
     private fun proceedTLS() {
         log.info { "Proceeding TLS" }
         sslEngine = SSLEngine(this, halcyon.config.userJID!!.domain);
         restartStream();
     }
-    
+
     private fun resolveTarget(completionHandler: (String,Int)->Unit) {
         val location = halcyon.getModule<StreamManagementModule>(StreamManagementModule.TYPE).resumptionContext.location
         if (location != null) {
@@ -277,8 +277,14 @@ class SocketConnector(halcyon: Halcyon) : AbstractConnector(halcyon) {
     }
 
     fun process(data: ByteArray) {
-        log.finest("received: ${data.toKString()}")
-        parser.parse(data.toKString());
+        log.finest {
+            "Received " + data.toKString()
+                .let {
+                    if (it.length <= 200) it else (it.subSequence(0, 200)
+                        .toString() + "...")
+                }
+        }
+        parser.parse(data.toKString())
     }
 
     fun writeDataToSocket(data: ByteArray) {

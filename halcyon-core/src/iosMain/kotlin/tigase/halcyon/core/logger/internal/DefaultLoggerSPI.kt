@@ -24,8 +24,10 @@ import tigase.halcyon.core.logger.Level
 import tigase.halcyon.core.logger.LoggerSPI
 
 actual class DefaultLoggerSPI actual constructor(val name: String, val enabled: Boolean) : LoggerSPI {
-	
-	actual override fun isLoggable(level: Level): Boolean = true
+
+	private val e = !name.startsWith("tigase.halcyon.core.xml.parser")
+
+	actual override fun isLoggable(level: Level): Boolean = e
 
 	actual override fun log(level: Level, msg: String, caught: Throwable?) {
 		val ts = Clock.System.now().toLocalDateTime(TimeZone.UTC).toString();
