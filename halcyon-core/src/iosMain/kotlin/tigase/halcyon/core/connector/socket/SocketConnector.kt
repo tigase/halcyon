@@ -20,7 +20,7 @@ package tigase.halcyon.core.connector.socket
 import kotlinx.cinterop.toKString
 import platform.Network.nw_error_get_error_code
 import platform.Network.nw_error_t
-import platform.darwin.dispatch_queue_create
+import platform.darwin.*
 import platform.posix.usleep
 import tigase.halcyon.core.Halcyon
 import tigase.halcyon.core.connector.*
@@ -88,7 +88,9 @@ class SocketConnector(halcyon: Halcyon) : AbstractConnector(halcyon) {
 
         override fun onStreamClosed() {
             log.finest { "Stream closed" }
-            halcyon.eventBus.fire(StreamTerminatedEvent())
+            if (state != State.Disconnected) {
+                halcyon.eventBus.fire(StreamTerminatedEvent())
+            }
         }
 
         override fun onStreamStarted(attrs: Map<String, String>) {
@@ -183,8 +185,12 @@ class SocketConnector(halcyon: Halcyon) : AbstractConnector(halcyon) {
                     socket?.disconnect();
                 }
             } finally {
-                state = State.Disconnected
-                eventsEnabled = false
+                // delayed firing "disconnected" event, to delay reconnection to process all events before reconnection
+                // will start - ending Socket kqueue loop
+                dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 10L * NSEC_PER_MSEC.toLong()), queue) {
+                    state = State.Disconnected
+                    eventsEnabled = false
+                }
             }
         }
     }

@@ -60,7 +60,7 @@ class Socket() {
                     log.finest("socket creation failed!");
                     state = State.disconnected;
                 } else {
-                    log.finest("connecting to ${ip}:${swapBytes(port.toUShort())}..")
+                    log.finest("connecting ${sockfd} to ${ip}:${swapBytes(port.toUShort())}..")
                     if (connect(sockfd, addr.ptr as CValuesRef<sockaddr>?, sockaddr_in.size.convert()) < 0) {
                         log.finest("connection failed!");
                         state = State.disconnected;
@@ -76,6 +76,7 @@ class Socket() {
     fun disconnect() {
         memScoped {
             close(sockfd);
+            sockfd = -1;
         }
     }
 
@@ -98,37 +99,41 @@ class Socket() {
 
             val evList = allocArray<kevent>(32);
             log.finest("starting processing of events...");
-            while (true) {
+            while (sockfd != -1) {
                 val nev = kevent(kq, null, 0, evList, 32, null);
 
-                log.finest("received ${nev} events");
+                log.finest("received ${nev} events from " + kq);
                 if (nev > 0) {
                     for (i in 0..(nev-1)) {
-                        val fd = evList[i].ident.toInt();
-                        log.finest("event ${evList[i].filter} for ${fd}, isRead: ${evList[i].filter == EVFILT_READ.toShort()}")
-                        if ((evList[i].fflags and EV_EOF.toUInt()) != 0.toUInt()) {
-                            state = State.disconnected;
-                            close(fd);
-                            break;
-                        } else if (evList[i].filter == EVFILT_READ.toShort()) {
-                            var read: ssize_t = 0;
-                            memScoped {
-                                do {
-                                    val data = allocArray<ByteVar>(1024);
-                                    read = read(fd, data, 1024.convert());
-                                    log.finest("read ${read} bytes from socket");
-                                    if (read > 0) {
-                                        readCallback?.invoke(data.readBytes(read.toInt()));
-                                    }
-                                } while (read > 0);
-                            }
+                        val fd = evList[i].ident.toInt()
+                        if (fd == sockfd) {
+                            log.finest("event ${evList[i].filter} for ${fd}, isRead: ${evList[i].filter == EVFILT_READ.toShort()}")
+                            if ((evList[i].fflags and EV_EOF.toUInt()) != 0.toUInt()) {
+                                state = State.disconnected;
+                                close(fd);
+                                sockfd = -1;
+                                break;
+                            } else if (evList[i].filter == EVFILT_READ.toShort()) {
+                                var read: ssize_t = 0;
+                                memScoped {
+                                    do {
+                                        val data = allocArray<ByteVar>(1024);
+                                        read = read(fd, data, 1024.convert());
+                                        log.finest("read ${read} bytes from socket " + fd);
+                                        if (read > 0) {
+                                            readCallback?.invoke(data.readBytes(read.toInt()));
+                                        }
+                                    } while (read > 0);
+                                }
 //                            if (read < 0) {
 //                                close(fd);
 //                                break;
 //                            }
+                            }
                         }
                     }
                 }
+                log.finest("ended events processing loop");
             }
             log.finest("processing of events finished..");
             }
