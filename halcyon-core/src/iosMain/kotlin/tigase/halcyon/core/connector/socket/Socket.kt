@@ -42,7 +42,6 @@ class Socket() {
     var readCallback: ((ByteArray)->Unit)? = null;
     var stateCallback: ((State)->Unit)? = null;
     private val queue = dispatch_queue_create("SocketReadQueue", null);
-    private val stableRef = StableRef.create(this);
 
     fun connect(name: String, port: Int) {
         dispatch_sync(queue) {
@@ -82,79 +81,64 @@ class Socket() {
     }
 
     fun startProcessing() {
-        log.finest("starting socket..");
-        val thisCPointer = stableRef.asCPointer();
-        val log = this.log;
-        var sockfd = this.sockfd;
-        runAsync(queue) {
-            memScoped {
-                val kq = kqueue();
-                val evSet = alloc<kevent>();
-                evSet.ident = sockfd.toULong();
-                evSet.filter = EVFILT_READ.toShort();
-                evSet.flags = EV_ADD.toUShort();
-                evSet.fflags = 0.toUInt();
-                evSet.data = 0;
-                evSet.udata = null;
+        dispatch_async(queue) {
+            log.finest("preparing kqueue...");
+        memScoped {
+            val kq = kqueue();
+            val evSet = alloc<kevent>();
+            evSet.ident = sockfd.toULong();
+            evSet.filter = EVFILT_READ.toShort();
+            evSet.flags = EV_ADD.toUShort();
+            evSet.fflags = 0.toUInt();
+            evSet.data = 0;
+            evSet.udata = null;
 
-                if (kevent(kq, evSet.ptr, 1, null, 0, null) < 0) {
-                    log.finest("kqueue init failed!");
-                } else {
-                    val evList = allocArray<kevent>(32);
-                    log.finest("starting processing of events...");
-                    while (sockfd != -1) {
-                        val nev = kevent(kq, null, 0, evList, 32, null);
+            if (kevent(kq, evSet.ptr, 1, null, 0, null) < 0) {
+                log.finest("kqueue init failed!");
+            } else {
 
-                        log.finest("received ${nev} events from " + kq);
-                        if (nev > 0) {
-                            for (i in 0..(nev-1)) {
-                                val fd = evList[i].ident.toInt()
-                                if (fd == sockfd) {
-                                    log.finest("event ${evList[i].filter} for ${fd}, isRead: ${evList[i].filter == EVFILT_READ.toShort()}")
-                                    if ((evList[i].fflags and EV_EOF.toUInt()) != 0.toUInt()) {
-                                        val block = {
-                                            var socket = thisCPointer.asStableRef<Socket>().get();
-                                            socket.state = State.disconnected;
-                                            close(fd);
-                                            socket.sockfd = -1;
-                                        };
-                                        dispatch_sync(dispatch_get_main_queue(), block)
-                                        break;
-                                    } else if (evList[i].filter == EVFILT_READ.toShort()) {
-                                        var read: ssize_t = 0;
-                                        memScoped {
-                                            do {
-                                                val data = allocArray<ByteVar>(1024);
-                                                read = read(fd, data, 1024.convert());
-                                                log.finest("read ${read} bytes from socket " + fd);
-                                                if (read > 0) {
-                                                    val block: dispatch_block_t = {
-                                                        val socket = thisCPointer.asStableRef<Socket>().get();
-                                                        socket.readCallback?.invoke(data.readBytes(read.toInt()));
-                                                    };
-                                                    dispatch_sync(dispatch_get_main_queue(), block)
-                                                }
-                                            } while (read > 0);
+            val evList = allocArray<kevent>(32);
+            log.finest("starting processing of events...");
+            while (sockfd != -1) {
+                val nev = kevent(kq, null, 0, evList, 32, null);
+
+                log.finest("received ${nev} events from " + kq);
+                if (nev > 0) {
+                    for (i in 0..(nev-1)) {
+                        val fd = evList[i].ident.toInt()
+                        if (fd == sockfd) {
+                            log.finest("event ${evList[i].filter} for ${fd}, isRead: ${evList[i].filter == EVFILT_READ.toShort()}")
+                            if ((evList[i].fflags and EV_EOF.toUInt()) != 0.toUInt()) {
+                                state = State.disconnected;
+                                close(fd);
+                                sockfd = -1;
+                                break;
+                            } else if (evList[i].filter == EVFILT_READ.toShort()) {
+                                var read: ssize_t = 0;
+                                memScoped {
+                                    do {
+                                        val data = allocArray<ByteVar>(1024);
+                                        read = read(fd, data, 1024.convert());
+                                        log.finest("read ${read} bytes from socket " + fd);
+                                        if (read > 0) {
+                                            readCallback?.invoke(data.readBytes(read.toInt()));
                                         }
+                                    } while (read > 0);
+                                }
 //                            if (read < 0) {
 //                                close(fd);
 //                                break;
 //                            }
-                                    }
-                                }
                             }
                         }
-                        log.finest("ended events processing loop");
                     }
-                    log.finest("processing of events finished..");
                 }
+                log.finest("ended events processing loop");
+            }
+            log.finest("processing of events finished..");
             }
         }
-    }
-
-    private fun runAsync(queue: platform.darwin.dispatch_queue_t?, block: dispatch_block_t) {
-        log.finest("running async block..")
-        dispatch_async(queue, block);
+        }
     }
 
     fun setBlockingEnabled(blocking: Boolean): Boolean {

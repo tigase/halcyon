@@ -19,7 +19,6 @@ package tigase.halcyon.core.connector.socket
 
 import kotlinx.cinterop.*
 import platform.darwin.*
-import platform.posix.*
 import tigase.halcyon.core.logger.Level
 import tigase.halcyon.core.logger.LoggerFactory
 import kotlin.native.concurrent.AtomicReference
@@ -31,6 +30,7 @@ class DnsResolver {
     private var sdRef: DNSServiceRefVar = memScoped { alloc<DNSServiceRefVar>(); }
     private var results: AtomicReference<List<SrvRecord>> = AtomicReference<List<SrvRecord>>(emptyList<SrvRecord>().freeze());
     private val stableRef = StableRef.create(this);
+    private var queue = dispatch_queue_create("dns_resolver_queue", null);
     private var domain: String = "";
 
     fun resolve(domain: String, completionHandler: (Result<List<SrvRecord>>)->Unit) {
@@ -48,84 +48,29 @@ class DnsResolver {
                 fail();
                 return;
             }
+            println("using dns socket: " + dnsSocket);
 
-            log.finest("opened DNS socket: " + dnsSocket);
-
-            var timeout = 30L;
-            var remainingTime = timeout;
-            var result = 0;
-            var err = 0;
-            var start = time(null);
-
-            while (remainingTime > 0L) {
-                var x: fd_set = memScoped { alloc<fd_set>() };
-                bzero(x.ptr, sizeOf<fd_set>().toULong());
-                __darwin_fd_set(dnsSocket, x.ptr);
-
-                var tv = cValue<timeval>();
-                tv.useContents {
-                    tv_sec = remainingTime;
-                    tv_usec = ((remainingTime - tv_usec) * 1000000).toInt();
+            val sdRef = this.sdRef;
+            val stableRef = this.stableRef;
+            val readSource = dispatch_source_create(DISPATCH_SOURCE_TYPE_READ, handle = dnsSocket.toULong(), mask = 0, queue = queue);//dispatch_get_main_queue());
+            val block: () -> Unit = {
+                println("processing result..");
+                val res = DNSServiceProcessResult(sdRef.value);
+                println("result processed: " + res);
+                if (res != kDNSServiceErr_NoError) {
+                    stableRef.get().fail();
+                    //this.fail();
                 }
-
-                assert(__darwin_fd_isset(dnsSocket, x.ptr) != 0);
-
-                val sdRef = this.sdRef;
-                result = select(dnsSocket+1, x.ptr, null, null, tv);
-                if (result > 0) {
-                    if (__darwin_fd_isset(dnsSocket, x.ptr) != 0) {
-                        log.finest("processing DNS result..")
-                        err = DNSServiceProcessResult(sdRef.value);
-                        if (err != kDNSServiceErr_NoError) {
-                            log.finest("DNS processing returned an error: " + err);
-                            break;
-                        }
-                    }
-                } else if (result == 0) {
-                    log.finest("ending processing DNS results..");
-                    break;
-                } else {
-                    err = -2;
-                    break;
-                }
-
-                remainingTime = timeout - (time(null) - start);
-                log.finest("remaining time: " + remainingTime)
             }
-            DNSServiceRefDeallocate(sdRef.value);
-            if (err == 0) {
-                val results = this.results.value.sortedBy { it.priority };
-                results.freeze();
-                log.finest("got results for " + domain + ": " + results);
-                completionHandler(Result.success(results));
-            } else {
-                log.finest("resolution error..");
-                completionHandler(Result.failure(DnsException(message = "DNS resolution failed!")));
+            //block.freeze();
+            dispatch_source_set_event_handler(readSource, block);
+            dispatch_source_set_cancel_handler(readSource) {
+                DNSServiceRefDeallocate(sdRef!!.value);
             }
-
-//            println("using dns socket: " + dnsSocket);
-//
-//            val sdRef = this.sdRef;
-//            val stableRef = this.stableRef;
-//            val readSource = dispatch_source_create(DISPATCH_SOURCE_TYPE_READ, handle = dnsSocket.toULong(), mask = 0, queue = queue);//dispatch_get_main_queue());
-//            val block: () -> Unit = {
-//                println("processing result..");
-//                val res = DNSServiceProcessResult(sdRef.value);
-//                println("result processed: " + res);
-//                if (res != kDNSServiceErr_NoError) {
-//                    stableRef.get().fail();
-//                    //this.fail();
-//                }
-//            }
-//            block.freeze();
-//            dispatch_source_set_event_handler(readSource, block);
-//            dispatch_source_set_cancel_handler(readSource) {
-//                DNSServiceRefDeallocate(sdRef!!.value);
-//            }
-//            //this.freeze();
-//            dispatch_resume(readSource);
+            //this.freeze();
+            dispatch_resume(readSource);
         } else {
-            completionHandler(Result.failure(DnsException(message = "DNS resolution failed!" )));
+            fail();
         }
     }
 
@@ -202,26 +147,30 @@ class DnsException(message: String): Exception(message = message) {
 
 }
 
-private val log = LoggerFactory.logger("tigase.halcyon.core.connector.socket.QueryRecordCallback")
-
 fun QueryRecordCallback(sdRef: DNSServiceRef?, flags: DNSServiceFlags, interfaceIndex: UInt, errorCode: DNSServiceErrorType, fullname: CPointer<ByteVarOf<kotlin.Byte>>?, rrtype: UShort, rrclass: UShort, rdlen: UShort, rdata: COpaquePointer?, ttl: UInt, context: COpaquePointer?) {
     val resolver: DnsResolver = context!!.asStableRef<DnsResolver>().get()
 
     if ((flags and kDNSServiceFlagsAdd) == 0.toUInt()) {
-        log.finest("no kDNSServiceFlagsAdd")
         return;
     }
 
-    log.finest("processing with error code: " + errorCode)
-
-    if (errorCode == kDNSServiceErr_NoError) {
-        if (rrtype != kDNSServiceType_SRV.toUShort()) {
+    when (errorCode) {
+        kDNSServiceErr_NoError -> {
+            if (rrtype != kDNSServiceType_SRV.toUShort()) {
+                resolver.failed();
+                return;
+            }
+            rdata?.reinterpret<UInt8Var>()?.readBytes(rdlen.toInt())?.toUByteArray()?.let { srvdata ->
+                DnsResolver.SrvRecord.parse(srvdata)?.let { record ->
+                    resolver.addRecord(record);
+                }
+            }
+            if ((flags and kDNSServiceFlagsMoreComing) != 0.toUInt()) {
+                return;
+            }
+            resolver.succeeded();
             return;
         }
-        rdata?.reinterpret<UInt8Var>()?.readBytes(rdlen.toInt())?.toUByteArray()?.let { srvdata ->
-            DnsResolver.SrvRecord.parse(srvdata)?.let { record ->
-                resolver.addRecord(record);
-            }
-        }
+        else -> resolver.failed();
     }
 }
