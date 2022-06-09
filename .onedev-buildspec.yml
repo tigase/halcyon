@@ -1,0 +1,17 @@
+version: 16
+jobs:
+- name: Push To GitHub
+  steps:
+  - !PushRepository
+    name: push
+    remoteUrl: https://github.com/tigase/halcyon.git
+    passwordSecret: github-access-token
+    withLfs: false
+    force: false
+    condition: ALL_PREVIOUS_STEPS_WERE_SUCCESSFUL
+  retryCondition: never
+  maxRetries: 3
+  retryDelay: 30
+  cpuRequirement: 250
+  memoryRequirement: 256
+  timeout: 3600
