@@ -30,6 +30,7 @@ import tigase.halcyon.core.xmpp.ErrorCondition
 import tigase.halcyon.core.xmpp.JID
 import tigase.halcyon.core.xmpp.XMPPException
 import tigase.halcyon.core.xmpp.forms.JabberDataForm
+import tigase.halcyon.core.xmpp.forms.XmppValuedEnum
 import tigase.halcyon.core.xmpp.getFromAttr
 import tigase.halcyon.core.xmpp.stanzas.*
 
@@ -63,7 +64,7 @@ sealed class PubSubItemEvent(
 /**
  * Affiliations.
  */
-enum class Affiliation(val xmppName: String) {
+enum class Affiliation(override val xmppValue: String) : XmppValuedEnum {
 
 	Owner("owner"),
 	Publisher("publisher"),
@@ -75,8 +76,8 @@ enum class Affiliation(val xmppName: String) {
 	companion object {
 
 		fun byXMPPName(affiliation: String): Affiliation =
-			values().firstOrNull { te -> te.xmppName == affiliation } ?: throw XMPPException(ErrorCondition.BadRequest,
-																							 "Unknown PubSub Affiliation '$affiliation'")
+			values().firstOrNull { te -> te.xmppValue == affiliation } ?: throw XMPPException(ErrorCondition.BadRequest,
+																							  "Unknown PubSub Affiliation '$affiliation'")
 	}
 
 }

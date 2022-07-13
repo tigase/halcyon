@@ -20,6 +20,7 @@ package tigase.halcyon.core
 import tigase.halcyon.core.requests.Request
 import tigase.halcyon.core.xml.Element
 
+@com.morfly.Function("akuku")
 interface PacketWriter {
 
 	/**

@@ -19,63 +19,64 @@ plugins {
 	id("multiplatform-setup")
 	id("publishing-setup")
 	kotlin("plugin.serialization") version Deps.JetBrains.Kotlin.VERSION
+	id("com.google.devtools.ksp")
 }
 
-
 kotlin {
-	ios {
-		// TODO: Before compilation you need to download https://github.com/tigase/openssl-swiftpm/releases/download/1.1.171/OpenSSL.xcframework.zip to "frameworks" directory and unpack this ZIP file.
-		// TODO: Before compilation it is required to go to OpenSSL.xcframework to each subdirectory and Headers and move all files there to "openssl" subdirectory inside Headers
-		compilations.getByName("main") {
-			val frameworkDir = if (System.getenv("SDK_NAME")
-					?.startsWith("iphoneos") == true
-			) {
-				"$rootDir/frameworks/OpenSSL.xcframework/ios-arm64_armv7"
-			} else {
-				"$rootDir/frameworks/OpenSSL.xcframework/ios-arm64_i386_x86_64-simulator"
-			}
-
-			val OpenSSL by cinterops.creating {
-				defFile("src/nativeInterop/cinterop/OpenSSL.def")
-				includeDirs("$frameworkDir/")
-				compilerOpts(
-					"-F$frameworkDir",
-					"-framework",
-					"OpenSSL"
-				)
-			}
-			kotlinOptions.freeCompilerArgs = listOf(
-				"-include-binary", "$frameworkDir/OpenSSL.framework/OpenSSL"
-			)
-			binaries.all {
-				linkerOpts(
-					"-F$frameworkDir",
-					"-framework",
-					"OpenSSL",
-//					"-rpath",
-//					"@loader_path/Frameworks",
-//					"-rpath",
-//					"@executable_path/Frameworks",
-//					"-rpath", frameworkDir
-				)
-			}
-			binaries.getTest("DEBUG")
-				.apply {
-					linkerOpts(
-						"-rpath", frameworkDir
-					)
-				}
-		}
-		binaries {
-			staticLib {
-			}
-		}
-		compilations["main"].enableEndorsedLibs = true
-	}
+//	ios {
+//		// TODO: Before compilation you need to download https://github.com/tigase/openssl-swiftpm/releases/download/1.1.171/OpenSSL.xcframework.zip to "frameworks" directory and unpack this ZIP file.
+//		// TODO: Before compilation it is required to go to OpenSSL.xcframework to each subdirectory and Headers and move all files there to "openssl" subdirectory inside Headers
+//		compilations.getByName("main") {
+//			val frameworkDir = if (System.getenv("SDK_NAME")
+//					?.startsWith("iphoneos") == true
+//			) {
+//				"$rootDir/frameworks/OpenSSL.xcframework/ios-arm64_armv7"
+//			} else {
+//				"$rootDir/frameworks/OpenSSL.xcframework/ios-arm64_i386_x86_64-simulator"
+//			}
+//
+//			val OpenSSL by cinterops.creating {
+//				defFile("src/nativeInterop/cinterop/OpenSSL.def")
+//				includeDirs("$frameworkDir/")
+//				compilerOpts(
+//					"-F$frameworkDir",
+//					"-framework",
+//					"OpenSSL"
+//				)
+//			}
+//			kotlinOptions.freeCompilerArgs = listOf(
+//				"-include-binary", "$frameworkDir/OpenSSL.framework/OpenSSL"
+//			)
+//			binaries.all {
+//				linkerOpts(
+//					"-F$frameworkDir",
+//					"-framework",
+//					"OpenSSL",
+////					"-rpath",
+////					"@loader_path/Frameworks",
+////					"-rpath",
+////					"@executable_path/Frameworks",
+////					"-rpath", frameworkDir
+//				)
+//			}
+//			binaries.getTest("DEBUG")
+//				.apply {
+//					linkerOpts(
+//						"-rpath", frameworkDir
+//					)
+//				}
+//		}
+//		binaries {
+//			staticLib {
+//			}
+//		}
+//		compilations["main"].enableEndorsedLibs = true
+//	}
 
 	sourceSets {
 		commonMain {
 			dependencies {
+				implementation(project(":serializer:annotations"))
 				implementation(Deps.JetBrains.Serialization.core)
 				implementation(Deps.JetBrains.KotlinX.dateTime)
 				implementation(Deps.Soywiz.krypto)
@@ -86,17 +87,27 @@ kotlin {
 				implementation(Deps.Minidns.minidns)
 			}
 		}
-		named("iosMain") { }
-		named("iosTest") { }
+//		named("iosMain") { }
+//		named("iosTest") { }
 	}
+}
+
+dependencies {
+//	add("kspCommonMainMetadata", project(":serializer"))
+//	add("kspJvm", project(":serializer"))
+//	add("kspJvmTest", project(":serializer"))
+//	add("kspJs", project(":serializer"))
+
+	kspCommonMainMetadata(project(":serializer:plugin"))
+//	kspJvmTest(project(":serializer"))
 }
 
 tasks["clean"].doLast {
 	delete("$rootDir/frameworks/OpenSSL.xcframework")
 }
 
-tasks["cinteropOpenSSLIosArm64"].dependsOn("prepareOpenSSL")
-tasks["cinteropOpenSSLIosX64"].dependsOn("prepareOpenSSL")
+//tasks["cinteropOpenSSLIosArm64"].dependsOn("prepareOpenSSL")
+//tasks["cinteropOpenSSLIosX64"].dependsOn("prepareOpenSSL")
 
 tasks.register("prepareOpenSSL") {
 	description = "Downloads and unpack OpenSSL XCFramework."

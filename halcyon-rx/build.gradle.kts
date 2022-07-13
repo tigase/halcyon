@@ -18,8 +18,12 @@
 plugins {
 	id("multiplatform-setup")
 	id("publishing-setup")
+	id("com.google.devtools.ksp")
 }
 
+dependencies {
+	ksp(project(":serializer:plugin"))
+}
 
 kotlin {
 	sourceSets {

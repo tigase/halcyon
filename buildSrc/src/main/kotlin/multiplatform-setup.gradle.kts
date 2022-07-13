@@ -22,7 +22,7 @@ kotlin {
 			}
 		}
 	}
-	ios()
+//	ios()
 
 	sourceSets {
 		all {

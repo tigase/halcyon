@@ -20,6 +20,7 @@ package tigase.halcyon.core
 import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xmpp.ErrorCondition
 
+@com.morfly.Function("sranykalbak")
 interface AsyncCallback {
 
 	fun oSuccess(responseStanza: Element)

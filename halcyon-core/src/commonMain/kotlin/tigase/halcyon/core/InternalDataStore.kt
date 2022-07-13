@@ -18,7 +18,6 @@
 package tigase.halcyon.core
 
 import tigase.halcyon.core.logger.LoggerFactory
-
 class InternalDataStore {
 
 	private val log = LoggerFactory.logger("tigase.halcyon.core.SessionObject")

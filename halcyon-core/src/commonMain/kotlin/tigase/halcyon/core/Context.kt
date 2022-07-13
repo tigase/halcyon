@@ -22,6 +22,7 @@ import tigase.halcyon.core.eventbus.EventBus
 import tigase.halcyon.core.modules.ModulesManager
 import tigase.halcyon.core.requests.RequestBuilderFactory
 
+@com.morfly.Function("teswowa")
 interface Context {
 
 	val eventBus: EventBus

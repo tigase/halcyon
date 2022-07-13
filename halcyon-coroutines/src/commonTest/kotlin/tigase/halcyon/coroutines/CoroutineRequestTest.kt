@@ -75,8 +75,9 @@ class CoroutineRequestTest {
 			attribute("type", "result")
 			attribute("from", "a@b.c")
 		}
-		assertNotNull(halcyon.requestsManager.getRequest(resp),
-					  "Request was not registered in RequestsManager").setResponseStanza(resp)
+		assertNotNull(
+			halcyon.requestsManager.getRequest(resp), "Request was not registered in RequestsManager"
+		).setResponseStanza(resp)
 		assertEquals(1, successCounter)
 	}
 
@@ -111,8 +112,9 @@ class CoroutineRequestTest {
 				}
 			}
 		}
-		assertNotNull(halcyon.requestsManager.getRequest(resp),
-					  "Request was not registered in RequestsManager").setResponseStanza(resp)
+		assertNotNull(
+			halcyon.requestsManager.getRequest(resp), "Request was not registered in RequestsManager"
+		).setResponseStanza(resp)
 		assertEquals(1, failureCounter)
 
 	}
@@ -145,8 +147,9 @@ class CoroutineRequestTest {
 			attribute("from", "a@b.c")
 
 		}
-		assertNotNull(halcyon.requestsManager.getRequest(resp),
-					  "Request was not registered in RequestsManager").setResponseStanza(resp)
+		assertNotNull(
+			halcyon.requestsManager.getRequest(resp), "Request was not registered in RequestsManager"
+		).setResponseStanza(resp)
 		assertEquals(1, failureCounter)
 
 	}
