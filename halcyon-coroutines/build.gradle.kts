@@ -16,21 +16,43 @@
  * If not, see http://www.gnu.org/licenses/.
  */
 plugins {
-	id("multiplatform-setup")
-	id("publishing-setup")
+	kotlin("multiplatform")
+	`maven-publish`
 }
 
 kotlin {
-	sourceSets {
-		commonMain{
-			dependencies {
-				implementation(project(":halcyon-core"))
-				implementation(Deps.JetBrains.Coroutines.core)
+	jvm {
+		withJava()
+		testRuns["test"].executionTask.configure {
+			useJUnit()
+		}
+	}
+	js(BOTH) {
+		browser {
+			commonWebpackConfig {
+				cssSupport.enabled = true
+			}
+			testTask {
+				useKarma {
+					useChromeHeadless()
+				}
 			}
 		}
-		 commonTest {
+	}
+	ios()
+	sourceSets {
+		named("commonMain")  {
 			dependencies {
-				implementation(Deps.JetBrains.Coroutines.test)
+				implementation(kotlin("stdlib-common"))
+				implementation(project(":halcyon-core"))
+				implementation(deps.kotlinx.coroutines.core)
+			}
+		}
+		named("commonTest") {
+			dependencies {
+				implementation(kotlin("test-common"))
+				implementation(kotlin("test-annotations-common"))
+				implementation(deps.kotlinx.coroutines.test)
 			}
 		}
 	}

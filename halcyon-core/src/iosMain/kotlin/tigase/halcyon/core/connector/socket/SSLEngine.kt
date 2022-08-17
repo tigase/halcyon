@@ -104,6 +104,7 @@ class SSLEngine(connector: SocketConnector, domain: String) {
         when (state) {
             State.handshaking -> doHandshaking();
             State.active -> readDataFromNetwork();
+            else -> {}
         }
     }
 

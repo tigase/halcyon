@@ -16,13 +16,31 @@
  * If not, see http://www.gnu.org/licenses/.
  */
 plugins {
-	id("multiplatform-setup")
-	id("publishing-setup")
-	kotlin("plugin.serialization") version Deps.JetBrains.Kotlin.VERSION
+	kotlin("multiplatform")
+	`maven-publish`
+	kotlin("plugin.serialization")
 }
 
 
 kotlin {
+	jvm {
+		withJava()
+		testRuns["test"].executionTask.configure {
+			useJUnit()
+		}
+	}
+	js(BOTH) {
+		browser {
+			commonWebpackConfig {
+				cssSupport.enabled = true
+			}
+			testTask {
+				useKarma {
+					useChromeHeadless()
+				}
+			}
+		}
+	}
 	ios {
 		// TODO: Before compilation you need to download https://github.com/tigase/openssl-swiftpm/releases/download/1.1.171/OpenSSL.xcframework.zip to "frameworks" directory and unpack this ZIP file.
 		// TODO: Before compilation it is required to go to OpenSSL.xcframework to each subdirectory and Headers and move all files there to "openssl" subdirectory inside Headers
@@ -39,9 +57,7 @@ kotlin {
 				defFile("src/nativeInterop/cinterop/OpenSSL.def")
 				includeDirs("$frameworkDir/")
 				compilerOpts(
-					"-F$frameworkDir",
-					"-framework",
-					"OpenSSL"
+					"-F$frameworkDir", "-framework", "OpenSSL"
 				)
 			}
 			kotlinOptions.freeCompilerArgs = listOf(
@@ -67,23 +83,49 @@ kotlin {
 				}
 		}
 		binaries {
-			staticLib {
-			}
+			staticLib { }
 		}
 		compilations["main"].enableEndorsedLibs = true
 	}
 
 	sourceSets {
-		commonMain {
-			dependencies {
-				implementation(Deps.JetBrains.Serialization.core)
-				implementation(Deps.JetBrains.KotlinX.dateTime)
-				implementation(Deps.Soywiz.krypto)
+		all {
+			languageSettings {
+				optIn("kotlin.RequiresOptIn")
 			}
 		}
-		jvmMain {
+		named("commonMain") {
 			dependencies {
-				implementation(Deps.Minidns.minidns)
+				implementation(kotlin("stdlib-common"))
+				implementation(deps.kotlinx.serialization.core)
+				implementation(deps.kotlinx.datetime)
+				implementation(deps.krypto)
+			}
+		}
+		named("commonTest") {
+			dependencies {
+				implementation(kotlin("test-common"))
+				implementation(kotlin("test-annotations-common"))
+			}
+		}
+		named("jvmMain") {
+			dependencies {
+				implementation(deps.minidns)
+			}
+		}
+		named("jvmTest") {
+			dependencies {
+				implementation(kotlin("test-junit"))
+			}
+		}
+		named("jsMain") {
+			dependencies {
+				implementation(kotlin("stdlib-js"))
+			}
+		}
+		named("jsTest") {
+			dependencies {
+				implementation(kotlin("test-js"))
 			}
 		}
 		named("iosMain") { }

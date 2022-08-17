@@ -16,24 +16,46 @@
  * If not, see http://www.gnu.org/licenses/.
  */
 plugins {
-	id("multiplatform-setup")
-	id("publishing-setup")
+	kotlin("multiplatform")
+	`maven-publish`
 }
 
 
 kotlin {
-	sourceSets {
-
-		commonMain {
-			dependencies {
-				implementation(project(":halcyon-core"))
-				implementation(Deps.Badoo.Reaktive.reaktive)
-			}
+	jvm {
+		withJava()
+		testRuns["test"].executionTask.configure {
+			useJUnit()
 		}
-		commonTest {
-			dependencies {
-				implementation(Deps.Badoo.Reaktive.reaktiveTesting)
+	}
+	js(BOTH) {
+		browser {
+			commonWebpackConfig {
+				cssSupport.enabled = true
+			}
+			testTask {
+				useKarma {
+					useChromeHeadless()
+				}
 			}
 		}
 	}
+	ios()
+
+	sourceSets {
+	named("commonMain") {
+		dependencies {
+			implementation(kotlin("stdlib-common"))
+			implementation(project(":halcyon-core"))
+			implementation(deps.reactive.reaktive)
+		}
+	}
+	named("commonTest") {
+		dependencies {
+			implementation(kotlin("test-common"))
+			implementation(kotlin("test-annotations-common"))
+			implementation(deps.reactive.testing)
+		}
+	}
+}
 }

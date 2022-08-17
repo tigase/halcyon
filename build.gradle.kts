@@ -26,6 +26,10 @@ buildscript {
 		mavenLocal()
 		jcenter()
 	}
+	dependencies {
+		classpath(deps.kotlin.kotlinGradlePlug)
+		classpath(deps.kotlinx.serialization.gradlePlug)
+	}
 }
 
 repositories {
@@ -37,6 +41,26 @@ repositories {
 allprojects {
 	group = "tigase.halcyon"
 	version = findProperty("halcyonVersion").toString()
+
+
+}
+
+publishing {
+	repositories {
+		maven {
+			url = if (project.version.toString()
+					.endsWith("-SNAPSHOT", ignoreCase = true)
+			) {
+				uri(findProperty("tigaseMavenRepoSnapshot").toString())
+			} else {
+				uri(findProperty("tigaseMavenRepoRelease").toString())
+			}
+			credentials {
+				username = findProperty("mavenUsername").toString()
+				password = findProperty("mavenPassword").toString()
+			}
+		}
+	}
 }
 
 subprojects {
@@ -47,4 +71,5 @@ subprojects {
 		maven(url = findProperty("tigaseMavenRepoSnapshot").toString())
 		jcenter()
 	}
+
 }

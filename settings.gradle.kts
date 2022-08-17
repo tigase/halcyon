@@ -17,4 +17,14 @@
  */
 rootProject.name = "halcyon"
 
+enableFeaturePreview("VERSION_CATALOGS")
+@Suppress("UnstableApiUsage")
+dependencyResolutionManagement {
+	versionCatalogs {
+		create("deps") {
+			from(files("deps.versions.toml"))
+		}
+	}
+}
+
 include(":docs", ":halcyon-core", "halcyon-rx", "halcyon-coroutines")
