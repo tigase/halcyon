@@ -1,6 +1,8 @@
 Halcyon
 =======
 
+![](docs/src/asciidoc/images/logo_320.png)
+
 > :warning: **THIS SOFTWARE IS NOT FINISHED YET**:
 > This library is under active development. We cannot ensure API stability.
 >
