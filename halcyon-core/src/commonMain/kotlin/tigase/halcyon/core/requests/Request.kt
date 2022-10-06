@@ -36,7 +36,8 @@ class Request<V, STT : Stanza<*>>(
 	private val handler: ResultHandler<V>?,
 	private val transform: (value: Any) -> V,
 	private val parentRequest: Request<*, STT>? = null,
-	private val callHandlerOnSent: Boolean,
+	@Deprecated("Will be removed") private val callHandlerOnSent: Boolean,
+	private val onSendHandler: SendHandler<V, STT>?,
 ) {
 
 	private val log = LoggerFactory.logger("tigase.halcyon.core.requests.Request")
@@ -103,10 +104,12 @@ class Request<V, STT : Stanza<*>>(
 							Result.failure<XMPPError>(e)
 						}
 					}
+
 					"error" -> {
 						val e = findCondition(response!!)
 						Result.failure(XMPPError(response!!, e.condition, e.message))
 					}
+
 					else -> {
 						Result.failure(XMPPError(response!!, ErrorCondition.UnexpectedRequest, null))
 					}
@@ -139,6 +142,8 @@ class Request<V, STT : Stanza<*>>(
 				req.calculatedResult = res as (Result<Nothing>)
 				req.callResponseHandler(res)
 			}
+
+			req.onSendHandler?.invoke(req)
 		}
 	}
 
@@ -170,9 +175,9 @@ class Request<V, STT : Stanza<*>>(
 	}
 
 	private fun findCondition(stanza: Element): Error {
-		val error =
-			stanza.children.firstOrNull { element -> element.name == "error" } ?: return Error(ErrorCondition.Unknown,
-																							   null)
+		val error = stanza.children.firstOrNull { element -> element.name == "error" } ?: return Error(
+			ErrorCondition.Unknown, null
+		)
 		// Condition Element
 		val cnd =
 			error.children.firstOrNull { element -> element.name != "text" && element.xmlns == XMPPException.XMLNS }

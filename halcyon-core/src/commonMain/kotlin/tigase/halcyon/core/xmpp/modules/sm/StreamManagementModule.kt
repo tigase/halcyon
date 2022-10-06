@@ -34,6 +34,9 @@ import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xml.element
 import tigase.halcyon.core.xmpp.ErrorCondition
 import tigase.halcyon.core.xmpp.XMPPException
+import tigase.halcyon.core.xmpp.stanzas.IQ
+import tigase.halcyon.core.xmpp.stanzas.Message
+import tigase.halcyon.core.xmpp.stanzas.Presence
 
 class StreamManagementModule(override val context: Context) : XmppModule {
 
@@ -143,16 +146,19 @@ class StreamManagementModule(override val context: Context) : XmppModule {
 		}
 	}
 
+	private inline fun isElementCounted(element: Element) =
+		element.xmlns != XMLNS && (element.name == Message.NAME || element.name == IQ.NAME || element.name == Presence.NAME)
+
 	private fun processElementReceived(element: Element) {
 		if (!resumptionContext.isAckActive) return
-		if (element.xmlns == XMLNS) return
+		if (!isElementCounted(element)) return
 
 		++resumptionContext.incomingH
 	}
 
 	private fun processElementSent(element: Element, request: Request<*, *>?) {
 		if (!resumptionContext.isAckActive) return
-		if (element.xmlns == XMLNS) return
+		if (!isElementCounted(element)) return
 
 		if (request != null) {
 			queue.add(request)
@@ -168,7 +174,10 @@ class StreamManagementModule(override val context: Context) : XmppModule {
 
 	private fun processFailed(element: Element) {
 		reset()
-		val e = ErrorCondition.getByElementName(element.getChildrenNS(XMPPException.XMLNS).first().name)
+		val e = ErrorCondition.getByElementName(
+			element.getChildrenNS(XMPPException.XMLNS)
+				.first().name
+		)
 		context.eventBus.fire(StreamManagementEvent.Failed(e))
 	}
 

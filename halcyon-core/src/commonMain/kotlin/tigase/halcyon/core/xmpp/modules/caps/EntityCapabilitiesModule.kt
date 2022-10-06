@@ -30,7 +30,6 @@ import tigase.halcyon.core.xmpp.BareJID
 import tigase.halcyon.core.xmpp.ErrorCondition
 import tigase.halcyon.core.xmpp.JID
 import tigase.halcyon.core.xmpp.XMPPException
-import tigase.halcyon.core.xmpp.modules.BindModule
 import tigase.halcyon.core.xmpp.modules.StreamFeaturesModule
 import tigase.halcyon.core.xmpp.modules.discovery.DiscoveryModule
 import tigase.halcyon.core.xmpp.modules.discovery.NodeDetailsProvider
@@ -57,7 +56,6 @@ class EntityCapabilitiesModule(override val context: Context) : XmppModule, HasI
 
 	private lateinit var discoModule: DiscoveryModule
 	private lateinit var streamFeaturesModule: StreamFeaturesModule
-	private lateinit var bindModule: BindModule
 
 	var node: String = "http://tigase.org/TigaseHalcyon"
 	var cache: EntityCapabilitiesCache = DefaultEntityCapabilitiesCache()
@@ -89,7 +87,6 @@ class EntityCapabilitiesModule(override val context: Context) : XmppModule, HasI
 		this.discoModule = context.modules.getModule(DiscoveryModule.TYPE)
 		this.discoModule.addNodeDetailsProvider(CapsNodeDetailsProvider())
 		this.streamFeaturesModule = context.modules.getModule(StreamFeaturesModule.TYPE)
-		this.bindModule = context.modules.getModule(BindModule.TYPE)
 
 		context.eventBus.register<HalcyonStateChangeEvent>(HalcyonStateChangeEvent.TYPE) {
 			if (it.newState == AbstractHalcyon.State.Connected) {
@@ -109,7 +106,7 @@ class EntityCapabilitiesModule(override val context: Context) : XmppModule, HasI
 
 	private fun checkServerFeatures() {
 		getServerNode()?.let { node ->
-			val jid = bindModule.boundJID ?: return
+			val jid = context.boundJID ?: return
 			if (cache.isCached(node)) return
 			discoModule.info(JID.parse(jid.domain), node).response {
 				if (it.isSuccess) storeInfo(node, it.getOrThrow())

@@ -1,8 +1,9 @@
-package tigase.halcyon.coroutines
+package tigase
 
 import tigase.halcyon.core.AbstractHalcyon
 import tigase.halcyon.core.connector.AbstractConnector
 import tigase.halcyon.core.connector.SessionController
+import tigase.halcyon.core.connector.State
 
 class DummyHalcyon : AbstractHalcyon() {
 
@@ -30,7 +31,7 @@ class DummyHalcyon : AbstractHalcyon() {
 		}
 
 		override fun stop() {
-			state = tigase.halcyon.core.connector.State.Disconnected
+//			state = tigase.halcyon.core.connector.State.Disconnected
 		}
 
 	}

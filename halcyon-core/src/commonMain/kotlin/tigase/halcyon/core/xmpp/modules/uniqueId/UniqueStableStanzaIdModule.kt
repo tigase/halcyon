@@ -62,7 +62,7 @@ class UniqueStableStanzaIdModule(override val context: Context) : XmppModule, Ha
 	}
 
 	fun getStanzaID(element: Element): String? {
-		val jid = context.modules.getModuleOrNull<BindModule>(BindModule.TYPE)?.boundJID?.bareJID ?: return null
+		val jid = context.boundJID?.bareJID ?: return null
 		return element.getStanzaIDBy(jid)
 	}
 

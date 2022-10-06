@@ -27,7 +27,6 @@ import tigase.halcyon.core.xmpp.ErrorCondition
 import tigase.halcyon.core.xmpp.JID
 import tigase.halcyon.core.xmpp.XMPPException
 import tigase.halcyon.core.xmpp.getFromAttr
-import tigase.halcyon.core.xmpp.modules.BindModule
 import tigase.halcyon.core.xmpp.modules.MessageModule
 import tigase.halcyon.core.xmpp.stanzas.IQ
 import tigase.halcyon.core.xmpp.stanzas.IQType
@@ -63,7 +62,7 @@ class MessageCarbonsModule(override val context: Context, private val forwardHan
 	}
 
 	override fun process(element: Element) {
-		val ownJid = context.modules.getModuleOrNull<BindModule>(BindModule.TYPE)?.boundJID?.bareJID
+		val ownJid = context.boundJID?.bareJID
 		val from = element.getFromAttr()
 		if (from != null && from.bareJID != ownJid) throw XMPPException(ErrorCondition.NotAcceptable)
 		element.getChildrenNS(XMLNS).firstOrNull()?.let {

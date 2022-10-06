@@ -17,8 +17,9 @@
  */
 package tigase.halcyon.core.xmpp.modules
 
-import tigase.halcyon.core.Context
+import tigase.halcyon.core.AbstractHalcyon
 import tigase.halcyon.core.Scope
+import tigase.halcyon.core.eventbus.Event
 import tigase.halcyon.core.modules.Criteria
 import tigase.halcyon.core.modules.XmppModule
 import tigase.halcyon.core.requests.RequestBuilder
@@ -29,8 +30,29 @@ import tigase.halcyon.core.xmpp.XMPPException
 import tigase.halcyon.core.xmpp.stanzas.IQ
 import tigase.halcyon.core.xmpp.stanzas.IQType
 import tigase.halcyon.core.xmpp.stanzas.iq
+import tigase.halcyon.core.xmpp.toJID
 
-class BindModule(override val context: Context) : XmppModule {
+sealed class BindEvent : Event(TYPE) {
+
+	companion object {
+
+		const val TYPE = "tigase.halcyon.core.xmpp.modules.BindEvent"
+	}
+
+	data class Success(val jid: JID) : BindEvent()
+	data class Failure(val error: Throwable) : BindEvent()
+
+}
+
+class BindModule(override val context: AbstractHalcyon) : XmppModule {
+
+	enum class State {
+
+		Unknown,
+		InProgress,
+		Success,
+		Failed
+	}
 
 	companion object {
 
@@ -42,36 +64,57 @@ class BindModule(override val context: Context) : XmppModule {
 	override val criteria: Criteria? = null
 	override val features = arrayOf(XMLNS)
 
-	var boundJID: JID? by propertySimple(Scope.Session, null)
+	@Deprecated("Moved to Context")
+	var boundJID: JID? by context::boundJID
+		internal set
+
+	var state: State by propertySimple(Scope.Session, State.Unknown)
 		internal set
 
 	override fun initialize() {}
 
-	fun bind(resource: String? = null): RequestBuilder<BindResult, IQ> {
+	fun boundAs(resource: String? = null): RequestBuilder<BindResult, IQ> {
 		val stanza = iq {
 			type = IQType.Set
-			"bind"{
+			"bind" {
 				xmlns = XMLNS
 				resource?.let {
-					"resource"{
+					"resource" {
 						value = it
 					}
 				}
 			}
 		}
-		return context.request.iq(stanza).map(this::createBindResult)
+		return context.request.iq(stanza)
+			.onSend { state = State.InProgress }
+			.map(this::createBindResult)
+			.response {
+				it.onSuccess { success ->
+					state = State.Success
+					context.boundJID = success.jid
+					context.eventBus.fire(BindEvent.Success(success.jid))
+				}
+				it.onFailure {
+					state = State.Failed
+					context.eventBus.fire(BindEvent.Failure(it))
+				}
+			}
 	}
 
 	private fun createBindResult(element: IQ): BindResult {
 		val bind = element.getChildrenNS("bind", XMLNS)!!
 		val jidElement = bind.getFirstChild("jid")!!
 		val jid = JID.parse(jidElement.value!!)
-		boundJID = jid
 		return BindResult(jid)
 	}
 
 	override fun process(element: Element) {
 		throw XMPPException(ErrorCondition.BadRequest)
+	}
+
+	internal fun boundAs(jid: String) {
+		context.boundJID = jid.toJID()
+		context.eventBus.fire(BindEvent.Success(context.boundJID!!))
 	}
 
 	data class BindResult(val jid: JID)

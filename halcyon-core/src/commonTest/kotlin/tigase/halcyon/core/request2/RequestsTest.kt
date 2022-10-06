@@ -19,11 +19,13 @@ package tigase.halcyon.core.request2
 
 import tigase.halcyon.core.AbstractHalcyon
 import tigase.halcyon.core.connector.AbstractConnector
+import tigase.halcyon.core.requests.Request
 import tigase.halcyon.core.requests.RequestBuilderFactory
 import tigase.halcyon.core.requests.XMPPError
 import tigase.halcyon.core.xmpp.ErrorCondition
 import tigase.halcyon.core.xmpp.stanzas.IQ
 import tigase.halcyon.core.xmpp.stanzas.IQType
+import tigase.halcyon.core.xmpp.stanzas.Message
 import tigase.halcyon.core.xmpp.stanzas.iq
 import tigase.halcyon.core.xmpp.toJID
 import kotlin.test.*
@@ -400,6 +402,7 @@ class RequestsTest {
 	@Test
 	fun testMarkAsSentIQ() {
 		var rr: Result<*>? = null
+		var sendCounter =0;
 
 		val req = factory.iq {
 			to = "a@b".toJID()
@@ -407,54 +410,65 @@ class RequestsTest {
 			type = IQType.Get
 		}.response {
 			rr = it
+		}.onSend {
+			++sendCounter
 		}.build()
 		req.markAsSent()
 
 		assertNull(rr, "Handler must not be executed for IQ stanza, if markAsRead() is called.")
 		assertTrue(req.isSent)
+		assertEquals(1, sendCounter)
+
 	}
 
 	@Test
 	fun testMarkAsSentIQStacked() {
 		var rr: Result<*>? = null
+		var sendCounter1 =0;
+		var sendCounter2 =0;
 
 		val req = factory.iq {
 			to = "a@b".toJID()
 			from = "x@y".toJID()
 			type = IQType.Get
+		}.onSend {
+			++sendCounter1
 		}.map { }.response {
 			rr = it
-		}.map { }.build()
+		}.map { }.onSend {
+			++sendCounter2
+		}.build()
 		req.markAsSent()
 
 		assertNull(rr, "Handler must not be executed for IQ stanza, if markAsRead() is called.")
 		assertTrue(req.isSent)
+		assertEquals(1, sendCounter2)
+		assertEquals(1, sendCounter1)
 	}
 
 	@Test
 	fun testMarkAsSentMessage() {
-		var rr: Result<*>? = null
+		var sendCounter =0;
 
 		val req = factory.message {
 			to = "a@b".toJID()
 			from = "x@y".toJID()
-		}.response {
-			rr = it
+		}.onSend {
+			++sendCounter;
 		}.build()
 		req.markAsSent()
 
-		val rrNN = assertNotNull(rr, "We should have any response here!")
-		assertTrue(rrNN.isSuccess, "Result should be success, because stanza is sent")
 		assertTrue(req.isSent)
+		assertEquals(1, sendCounter)
 	}
 
 	@Test
 	fun testMarkAsSentMessageStacked() {
-		var rr: Result<*>? = null
-		var rr1: Result<String>? = null
+		var rr: Request<*, Message>? = null
+		var rr1: Request<*, Message>? = null
 
-		var respCounter1 = 0
-		var respCounter2 = 0
+		var sentounter1 = 0
+		var sentCounter2 = 0
 		var mapCounter1 = 0
 		var mapCounter2 = 0
 
@@ -464,14 +478,14 @@ class RequestsTest {
 		}.map {
 			++mapCounter1
 			Unit
-		}.response {
-			++respCounter1
+		}.onSend {
+			++sentounter1
 			rr = it
 		}.map {
 			++mapCounter2
 			"Sent"
-		}.response {
-			++respCounter2
+		}.onSend {
+			++sentCounter2
 			rr1 = it
 		}.build()
 		req.markAsSent()
@@ -479,15 +493,14 @@ class RequestsTest {
 		assertTrue(req.isSent)
 
 		val rrNN = assertNotNull(rr, "We should have any response here!")
-		assertTrue(rrNN.isSuccess, "Result should be success, because stanza is sent")
+		assertTrue(rrNN.isSent, "Result should be success, because stanza is sent")
 
 		val rr1NN = assertNotNull(rr1, "We should have any response here!")
-		assertTrue(rr1NN.isSuccess, "Result should be success, because stanza is sent")
-		assertEquals("Sent", rr1NN.getOrNull())
+		assertTrue(rr1NN.isSent, "Result should be success, because stanza is sent")
 
-		assertEquals(1, respCounter1, "Response handler must be called once!")
-		assertEquals(1, respCounter2, "Response handler must be called once!")
-		assertEquals(1, mapCounter1, "Mapping must be executed once!")
-		assertEquals(1, mapCounter2, "Mapping must be executed once!")
+		assertEquals(1, sentounter1, "Response handler must be called once!")
+		assertEquals(1, sentCounter2, "Response handler must be called once!")
+		assertEquals(0, mapCounter1, "No response registered -- no map execution.")
+		assertEquals(0, mapCounter2, "No response registered -- no map execution.")
 	}
 }

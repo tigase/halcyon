@@ -50,6 +50,22 @@ class ResultHandler<V> {
 
 }
 
+class SendHandler<V, STT : Stanza<*>> {
+
+	private val handlers: MutableList<(Request<*, STT>) -> Unit> = mutableListOf()
+
+	fun add(handler: (Request<*, STT>) -> Unit) {
+		this.handlers.add(handler)
+	}
+
+	fun invoke(request: Request<*, STT>) {
+		handlers.forEach {
+			it.invoke(request)
+		}
+	}
+
+}
+
 class RequestBuilderFactory(private val context: Context) {
 
 	fun iq(stanza: Element): RequestBuilder<IQ, IQ> = RequestBuilder(halcyon = context, element = stanza) { it as IQ }
@@ -63,28 +79,25 @@ class RequestBuilderFactory(private val context: Context) {
 	}
 
 	fun presence(stanza: Element): RequestBuilder<Unit, Presence> =
-		RequestBuilder(halcyon = context, element = stanza, callHandlerOnSent = true) { }
+		RequestBuilder(halcyon = context, element = stanza) { }
 
 	fun presence(init: PresenceNode.() -> Unit): RequestBuilder<Unit, Presence> {
 		val n = PresenceNode(Presence(ElementImpl(Presence.NAME)))
 		n.init()
 		n.id()
 		val stanza = n.element as Presence
-		return RequestBuilder(halcyon = context, element = stanza, callHandlerOnSent = true) { }
+		return RequestBuilder(halcyon = context, element = stanza) { }
 	}
 
 	fun message(stanza: Element, writeDirectly: Boolean = false): RequestBuilder<Unit, Message> =
-		RequestBuilder(halcyon = context, element = stanza, callHandlerOnSent = true, writeDirectly = writeDirectly) { }
+		RequestBuilder(halcyon = context, element = stanza, writeDirectly = writeDirectly) { }
 
 	fun message(writeDirectly: Boolean = false, init: MessageNode.() -> Unit): RequestBuilder<Unit, Message> {
 		val n = MessageNode(Message(ElementImpl(Message.NAME)))
 		n.init()
 		n.id()
 		val stanza = n.element as Message
-		return RequestBuilder(halcyon = context,
-							  element = stanza,
-							  writeDirectly = writeDirectly,
-							  callHandlerOnSent = true) { }
+		return RequestBuilder(halcyon = context, element = stanza, writeDirectly = writeDirectly) { }
 	}
 
 }
@@ -93,7 +106,7 @@ class RequestBuilder<V, STT : Stanza<*>>(
 	private val halcyon: Context,
 	private val element: Element,
 	private val writeDirectly: Boolean = false,
-	private val callHandlerOnSent: Boolean = false,
+	@Deprecated("Use onSend() instead.") private val callHandlerOnSent: Boolean = false,
 	private val transform: (value: Any) -> V,
 ) {
 
@@ -107,17 +120,22 @@ class RequestBuilder<V, STT : Stanza<*>>(
 
 	private var responseStanzaHandler: ResponseStanzaHandler<STT>? = null
 
+	private var onSendHandler: SendHandler<V, STT>? = null
+
 	fun build(): Request<V, STT> {
 		val stanza = wrap<STT>(halcyon.modules.processSendInterceptors(element))
-		return Request(stanza.to,
-					   stanza.id!!,
-					   Clock.System.now(),
-					   stanza,
-					   timeoutDelay,
-					   resultHandler,
-					   transform,
-					   parentBuilder?.build(),
-					   callHandlerOnSent).apply {
+		return Request(
+			stanza.to,
+			stanza.id!!,
+			Clock.System.now(),
+			stanza,
+			timeoutDelay,
+			resultHandler,
+			transform,
+			parentBuilder?.build(),
+			callHandlerOnSent,
+			onSendHandler
+		).apply {
 			this.stanzaHandler = responseStanzaHandler
 			this.requestName = this@RequestBuilder.requestName
 		}
@@ -130,6 +148,7 @@ class RequestBuilder<V, STT : Stanza<*>>(
 			RequestBuilder<R, STT>(halcyon, element, writeDirectly, callHandlerOnSent, transform as (((Any) -> R)))
 		res.timeoutDelay = timeoutDelay
 		res.resultHandler = null
+		res.onSendHandler = null
 		res.parentBuilder = this
 		return res
 	}
@@ -156,6 +175,12 @@ class RequestBuilder<V, STT : Stanza<*>>(
 
 	fun timeToLive(duration: Duration): RequestBuilder<V, STT> {
 		timeoutDelay = duration
+		return this
+	}
+
+	fun onSend(handler: (Request<*, STT>) -> Unit): RequestBuilder<V, STT> {
+		if (this.onSendHandler == null) this.onSendHandler = SendHandler()
+		onSendHandler?.add(handler)
 		return this
 	}
 
@@ -187,7 +212,7 @@ class RequestConsumerBuilder<CSR, V, STT : Stanza<*>>(
 	private val halcyon: Context,
 	private val element: Element,
 	private val writeDirectly: Boolean = false,
-	private val callHandlerOnSent: Boolean = false,
+	@Deprecated("Use onSend() instead.") private val callHandlerOnSent: Boolean = false,
 	private val transform: (value: Any) -> V,
 ) {
 
@@ -203,17 +228,22 @@ class RequestConsumerBuilder<CSR, V, STT : Stanza<*>>(
 
 	private var responseStanzaHandler: ResponseStanzaHandler<STT>? = null
 
+	private var onSendHandler: SendHandler<V, STT>? = null
+
 	fun build(): Request<V, STT> {
 		val stanza = wrap<STT>(halcyon.modules.processSendInterceptors(element))
-		return Request(stanza.to,
-					   stanza.id!!,
-					   Clock.System.now(),
-					   stanza,
-					   timeoutDelay,
-					   resultHandler,
-					   transform,
-					   parentBuilder?.build(),
-					   callHandlerOnSent).apply {
+		return Request(
+			stanza.to,
+			stanza.id!!,
+			Clock.System.now(),
+			stanza,
+			timeoutDelay,
+			resultHandler,
+			transform,
+			parentBuilder?.build(),
+			callHandlerOnSent,
+			onSendHandler
+		).apply {
 			this.stanzaHandler = responseStanzaHandler
 			this.requestName = this@RequestConsumerBuilder.requestName
 		}
@@ -225,6 +255,7 @@ class RequestConsumerBuilder<CSR, V, STT : Stanza<*>>(
 		val res = RequestConsumerBuilder<CSR, R, STT>(halcyon, element, writeDirectly, callHandlerOnSent, xx)
 		res.timeoutDelay = timeoutDelay
 		res.resultHandler = null
+		res.onSendHandler = null
 		res.parentBuilder = this
 		return res
 	}
@@ -257,6 +288,12 @@ class RequestConsumerBuilder<CSR, V, STT : Stanza<*>>(
 
 	fun timeToLive(duration: Duration): RequestConsumerBuilder<CSR, V, STT> {
 		timeoutDelay = duration
+		return this
+	}
+
+	fun onSend(handler: (Request<*, STT>) -> Unit): RequestConsumerBuilder<CSR, V, STT> {
+		if (this.onSendHandler == null) this.onSendHandler = SendHandler()
+		onSendHandler?.add(handler)
 		return this
 	}
 

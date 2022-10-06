@@ -86,7 +86,7 @@ class VCardModule(override val context: Context) : XmppModule {
 	 * @param vcard VCard to be published.
 	 */
 	fun publish(vcard: VCard): RequestBuilder<Unit, IQ> {
-		val ownJid = context.modules.getModuleOrNull<BindModule>(BindModule.TYPE)?.boundJID?.bareJID
+		val ownJid = context.boundJID?.bareJID
 		val iq = iq {
 			type = IQType.Set
 			ownJid?.let {

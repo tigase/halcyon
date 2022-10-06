@@ -32,14 +32,17 @@ enum class MessageType(val value: String) { Chat("chat"),
 	Normal("normal")
 }
 
-class Message(wrappedElement: Element) : Stanza<MessageType?>(wrappedElement) { companion object {
+class Message(wrappedElement: Element) : Stanza<MessageType?>(wrappedElement) {
 
-	const val NAME = "message"
-}
+	companion object {
+
+		const val NAME = "message"
+	}
 
 	override var type: MessageType? by attributeProp(valueToString = { v -> v?.value }, stringToValue = { s: String? ->
 		s?.let {
-			MessageType.values().firstOrNull { te -> te.value == it } ?: throw XMPPException(
+			MessageType.values()
+				.firstOrNull { te -> te.value == it } ?: throw XMPPException(
 				ErrorCondition.BadRequest, "Unknown stanza type '$it'"
 			)
 		}
@@ -50,7 +53,8 @@ class Message(wrappedElement: Element) : Stanza<MessageType?>(wrappedElement) { 
 }
 
 fun Message.getTimestampOrNull(): Instant? {
-	return this.getChildrenNS("delay", "urn:xmpp:delay")?.let {
-		it.attributes["stamp"]?.let { stamp -> parseISO8601(stamp) }
-	}
+	return this.getChildrenNS("delay", "urn:xmpp:delay")
+		?.let {
+			it.attributes["stamp"]?.let { stamp -> parseISO8601(stamp) }
+		}
 }

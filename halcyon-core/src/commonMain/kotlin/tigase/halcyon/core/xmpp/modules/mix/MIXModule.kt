@@ -130,7 +130,7 @@ class MIXModule(override val context: Context) : XmppModule, RosterItemAnnotatio
 	}
 
 	private fun myJID(): JID =
-		context.modules.getModule<BindModule>(BindModule.TYPE).boundJID ?: throw HalcyonException("Resource not bound.")
+		context.boundJID ?: throw HalcyonException("Resource not bound.")
 
 	private fun invitationToElement(invitation: MIXInvitation, withXmlns: Boolean = false): Element {
 		return element("invitation") {

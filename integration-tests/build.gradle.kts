@@ -15,28 +15,33 @@
  * along with this program. Look for COPYING file in the top folder.
  * If not, see http://www.gnu.org/licenses/.
  */
-package tigase.halcyon.core
+plugins {
+	kotlin("multiplatform")
+	kotlin("plugin.serialization")
+}
 
-import tigase.halcyon.core.configuration.Configuration
-import tigase.halcyon.core.eventbus.EventBus
-import tigase.halcyon.core.modules.ModulesManager
-import tigase.halcyon.core.requests.RequestBuilderFactory
-import tigase.halcyon.core.xmpp.JID
-import tigase.halcyon.core.xmpp.modules.auth.SASLContext
 
-interface Context {
+kotlin {
+	jvm {
+		withJava()
+		testRuns["test"].executionTask.configure {
+			useJUnit()
+		}
+	}
 
-	val eventBus: EventBus
-
-	val config: Configuration
-
-	val writer: PacketWriter
-
-	val modules: ModulesManager
-
-	val request: RequestBuilderFactory
-
-	val authContext: SASLContext
-
-	val boundJID: JID?
+	sourceSets {
+		all {
+			languageSettings {
+				optIn("kotlin.RequiresOptIn")
+			}
+		}
+		named("jvmTest") {
+			dependencies {
+				implementation(kotlin("test-common"))
+				implementation(kotlin("test-annotations-common"))
+				implementation(kotlin("test-junit"))
+				implementation(project(":halcyon-core"))
+			}
+		}
+	}
 }

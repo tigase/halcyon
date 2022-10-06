@@ -367,8 +367,8 @@ class MUCModule(override val context: Context) : XmppModule {
 					attributes["since"] = timestampToISO8601(lmt)
 				}
 			}
-		}.response { r ->
-			r.onSuccess { room.state = State.RequestSent }
+		}.onSend {
+			room.state = State.RequestSent
 		}
 	}
 

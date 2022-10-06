@@ -41,15 +41,15 @@ interface XmppModule {
 	fun process(element: Element)
 
 	fun <T> propertySimple(scope: Scope, initialValue: T): ReadWriteProperty<Any?, T> =
-		ClearableValue(context.eventBus, scope) { initialValue }
+		context.propertySimple(scope, initialValue)
 
 	fun <T> property(scope: Scope, initialValueFactory: (() -> T)): ReadWriteProperty<Any?, T> =
-		ClearableValue(context.eventBus, scope, initialValueFactory)
+		context.property(scope, initialValueFactory)
 
 }
 
 class ClearableValue<T>(
-	eventBus: EventBus, private val scope: Scope, private val initialValueFactory: (() -> T)
+	eventBus: EventBus, private val scope: Scope, private val initialValueFactory: (() -> T),
 ) : ReadWriteProperty<Any?, T> {
 
 	private val log = LoggerFactory.logger("tigase.halcyon.core.modules.ClearableValue")
@@ -78,3 +78,9 @@ class ClearableValue<T>(
 	}
 
 }
+
+fun <T> Context.propertySimple(scope: Scope, initialValue: T): ReadWriteProperty<Any?, T> =
+	ClearableValue(eventBus, scope) { initialValue }
+
+fun <T> Context.property(scope: Scope, initialValueFactory: (() -> T)): ReadWriteProperty<Any?, T> =
+	ClearableValue(eventBus, scope, initialValueFactory)

@@ -22,7 +22,7 @@ import tigase.halcyon.core.xml.jidAttributeProperty
 import tigase.halcyon.core.xml.stringAttributeProperty
 import tigase.halcyon.core.xmpp.JID
 
-abstract class Stanza<STANZA_TYPE> protected constructor(protected val element: Element) : Element by element {
+sealed class Stanza<STANZA_TYPE>(protected val element: Element) : Element by element {
 
 	var to: JID? by jidAttributeProperty()
 	var from: JID? by jidAttributeProperty()

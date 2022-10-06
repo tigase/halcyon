@@ -18,6 +18,7 @@
 package tigase.halcyon.core.xmpp.modules
 
 import kotlinx.datetime.Clock
+import kotlinx.datetime.Instant
 import tigase.halcyon.core.Context
 import tigase.halcyon.core.modules.AbstractXmppIQModule
 import tigase.halcyon.core.modules.Criterion
@@ -47,12 +48,14 @@ class PingModule(context: Context) : AbstractXmppIQModule(
 		val stanza = iq {
 			type = IQType.Get
 			if (jid != null) to = jid
-			"ping"{
+			"ping" {
 				xmlns = XMLNS
 			}
 		}
-		val time0 = Clock.System.now()
-		return context.request.iq(stanza).map { Pong(Clock.System.now() - time0) }
+		var time0:Instant = Clock.System.now()
+		return context.request.iq(stanza)
+			.onSend { time0 = Clock.System.now() }
+			.map { Pong(Clock.System.now() - time0) }
 	}
 
 	override fun processGet(element: IQ) {

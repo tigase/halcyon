@@ -138,7 +138,7 @@ class JingleModule(
 				}
 			}
 			is MessageInitiationAction.Accept -> {
-				if (context.modules.getModule<BindModule>(BindModule.TYPE).boundJID?.equals(from) == true) {
+				if (context.boundJID?.equals(from) == true) {
 					return
 				}
 			}
@@ -188,7 +188,7 @@ class JingleModule(
 				attribute("action", Action.SessionInitiate.value)
 				attribute("sid", sid)
 				attribute("initiator",
-						  context.modules.getModule<BindModule>(BindModule.TYPE).boundJID?.toString()
+						  context.boundJID?.toString()
 							  ?: throw XMPPException(ErrorCondition.NotAuthorized))
 
 				contents.map { it.toElement() }.forEach { contentEl -> addChild(contentEl) }
@@ -219,7 +219,7 @@ class JingleModule(
 				attribute("action", Action.SessionAccept.value)
 				attribute("sid", sid)
 				attribute("responder",
-						  context.modules.getModule<BindModule>(BindModule.TYPE).boundJID?.toString()
+						  context.boundJID?.toString()
 							  ?: throw XMPPException(ErrorCondition.NotAuthorized))
 
 				contents.map { it.toElement() }.forEach { contentEl -> addChild(contentEl) }

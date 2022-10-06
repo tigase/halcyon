@@ -251,7 +251,7 @@ class RosterModule(context: Context) : AbstractXmppIQModule(context,
 	override fun processGet(element: IQ) = throw XMPPException(ErrorCondition.NotAllowed)
 
 	override fun processSet(element: IQ) {
-		val boundJID = context.modules.getModule<BindModule>(BindModule.TYPE).boundJID
+		val boundJID = context.boundJID
 			?: throw HalcyonException("Session is not bound. Cannot process roster request.")
 		val from = element.from
 		if (from != null && from.bareJID != boundJID.bareJID) {

@@ -430,7 +430,7 @@ class CommandsModule(override val context: Context) : XmppModule {
 	}
 
 	private fun getCommandItems(sender: BareJID): List<DiscoveryModule.Item> {
-		val jid = context.modules.get<BindModule>(BindModule.TYPE).boundJID
+		val jid = context.boundJID
 			?: throw XMPPException(ErrorCondition.ServiceUnavailable)
 		return registeredCommands.filter { it.value.isAllowed(sender) }
 			.map { DiscoveryModule.Item(jid, it.value.name, it.key) }

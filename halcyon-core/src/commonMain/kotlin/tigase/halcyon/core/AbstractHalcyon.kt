@@ -28,14 +28,19 @@ import tigase.halcyon.core.logger.Level
 import tigase.halcyon.core.logger.LoggerFactory
 import tigase.halcyon.core.modules.ModulesManager
 import tigase.halcyon.core.modules.XmppModule
+import tigase.halcyon.core.modules.property
+import tigase.halcyon.core.modules.propertySimple
 import tigase.halcyon.core.requests.Request
 import tigase.halcyon.core.requests.RequestBuilderFactory
 import tigase.halcyon.core.requests.RequestsManager
 import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xml.element
 import tigase.halcyon.core.xmpp.ErrorCondition
+import tigase.halcyon.core.xmpp.JID
 import tigase.halcyon.core.xmpp.XMPPException
 import tigase.halcyon.core.xmpp.modules.*
+import tigase.halcyon.core.xmpp.modules.auth.SASL2Module
+import tigase.halcyon.core.xmpp.modules.auth.SASLContext
 import tigase.halcyon.core.xmpp.modules.auth.SASLModule
 import tigase.halcyon.core.xmpp.modules.avatar.UserAvatarModule
 import tigase.halcyon.core.xmpp.modules.caps.EntityCapabilitiesModule
@@ -93,6 +98,9 @@ abstract class AbstractHalcyon : Context, PacketWriter {
 
 	protected var connector: AbstractConnector? = null
 	protected var sessionController: SessionController? = null
+	final override val eventBus: EventBus = EventBus(this)
+	override val authContext: SASLContext  by property(Scope.Connection) { SASLContext() }
+	override var boundJID: JID? by propertySimple(Scope.Session, null)
 
 	var autoReconnect: Boolean = true
 
@@ -100,7 +108,6 @@ abstract class AbstractHalcyon : Context, PacketWriter {
 
 	private var tickCounter: Long = 0
 
-	final override val eventBus: EventBus = EventBus(this)
 	override val config = Configuration()
 	override val writer: PacketWriter
 		get() = this
@@ -148,6 +155,7 @@ abstract class AbstractHalcyon : Context, PacketWriter {
 		modules.register(BlockingCommandModule(this))
 		modules.register(MUCModule(this))
 		modules.register(ReferenceModule(this))
+		modules.register(SASL2Module(this))
 	}
 
 	fun configure(cfg: ConfigDsl.() -> Unit) {
@@ -164,8 +172,9 @@ abstract class AbstractHalcyon : Context, PacketWriter {
 	}
 
 	private fun onSessionEstablished() {
+		log.info("Session established")
 		state = State.Connected
-		requestsManager.boundJID = getModule<BindModule>(BindModule.TYPE).boundJID
+		requestsManager.boundJID = boundJID
 	}
 
 	private fun processControllerErrorEvent(event: SessionController.SessionControllerEvents) {
@@ -301,7 +310,7 @@ abstract class AbstractHalcyon : Context, PacketWriter {
 
 	override fun writeDirectly(stanza: Element) {
 		val c = this.connector ?: throw HalcyonException("Connector is not initialized")
-		if (c.state != tigase.halcyon.core.connector.State.Connected) throw HalcyonException("Connector is not connected")
+		if (c.state != tigase.halcyon.core.connector.State.Connected) throw HalcyonException("Connector is not connected ${c.state}")
 		val toSend = modules.processSendInterceptors(stanza)
 		logSendingStanza(toSend)
 		c.send(toSend.getAsString())

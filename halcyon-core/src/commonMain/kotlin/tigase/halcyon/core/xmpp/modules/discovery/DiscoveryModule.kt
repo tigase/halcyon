@@ -205,7 +205,7 @@ class DiscoveryModule(override val context: Context) : XmppModule {
 	}
 
 	fun findComponent(predicate: (Info) -> Boolean, consumer: (Info) -> Unit) {
-		val domain = context.modules.getModuleOrNull<BindModule>(BindModule.TYPE)?.boundJID?.bareJID?.domain!!
+		val domain = context.boundJID?.bareJID?.domain!!
 		var found = false
 		items(domain.toJID()).response {
 			if (it.isSuccess) {
@@ -254,7 +254,7 @@ class DiscoveryModule(override val context: Context) : XmppModule {
 	fun getClientIdentity(): Identity = Identity(clientCategory, clientType, "$clientName $clientVersion")
 
 	internal fun discoverAccountFeatures() {
-		val ownJid = context.modules.getModuleOrNull<BindModule>(BindModule.TYPE)?.boundJID?.bareJID ?: return
+		val ownJid = context.boundJID?.bareJID ?: return
 		info(JID.parse(ownJid.toString())).response {
 			if (it.isSuccess) {
 				it.getOrNull()?.let { info ->
@@ -270,7 +270,7 @@ class DiscoveryModule(override val context: Context) : XmppModule {
 		if (caps != null) {
 			context.eventBus.fire(ServerFeaturesReceivedEvent(caps.identities, caps.features))
 		} else {
-			val ownJid = context.modules.getModuleOrNull<BindModule>(BindModule.TYPE)?.boundJID?.bareJID ?: return
+			val ownJid = context.boundJID?.bareJID ?: return
 			info(JID.parse(ownJid.domain)).response {
 				if (it.isSuccess) {
 					it.getOrNull()?.let { info ->

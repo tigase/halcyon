@@ -17,9 +17,15 @@
  */
 package tigase.halcyon.core.connector
 
+import tigase.halcyon.core.AbstractHalcyon
+import tigase.halcyon.core.Scope
 import tigase.halcyon.core.eventbus.Event
+import tigase.halcyon.core.modules.ClearableValue
+import kotlin.properties.ReadWriteProperty
 
 interface SessionController {
+
+	val halcyon: AbstractHalcyon
 
 	sealed class SessionControllerEvents : Event(TYPE) {
 

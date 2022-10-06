@@ -8,6 +8,9 @@ class DummyHalcyon : AbstractHalcyon() {
 
 	inner class DummySessionController : SessionController {
 
+		override val halcyon: AbstractHalcyon
+			get() = TODO("Not yet implemented")
+
 		override fun start() {
 		}
 

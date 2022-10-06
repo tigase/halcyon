@@ -42,6 +42,9 @@ class MockConnector(halcyon: AbstractHalcyon, val sentElements: MutableList<Elem
 
 	override fun createSessionController(): SessionController {
 		return object : SessionController {
+			override val halcyon: AbstractHalcyon
+				get() = TODO("Not yet implemented")
+
 			override fun start() {
 			}
 
@@ -103,7 +106,7 @@ class CommandsModuleTest {
 			override fun createConnector(): AbstractConnector = MockConnector(this, tmp)
 		}
 		halcyon.connect()
-		halcyon.getModule<BindModule>(BindModule.TYPE).boundJID = "requester@domain/123".toJID()
+		halcyon.boundJID = "requester@domain/123".toJID()
 	}
 
 	private fun processReceived(stanza: Element) {

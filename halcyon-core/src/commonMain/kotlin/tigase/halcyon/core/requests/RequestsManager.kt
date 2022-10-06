@@ -108,5 +108,8 @@ class RequestsManager {
 	}
 
 	fun getWaitingRequestsSize(): Int = requests.size
+	fun getRequestsIDs(): String =
+		requests.values.map { it.id }.joinToString { it }
+
 
 }
