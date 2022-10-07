@@ -2,6 +2,7 @@ package tigase.halcyon.core.xmpp.modules.auth
 
 import com.soywiz.krypto.sha1
 import tigase.halcyon.core.AbstractHalcyon
+import tigase.halcyon.core.exceptions.HalcyonException
 import tigase.halcyon.core.logger.LoggerFactory
 import tigase.halcyon.core.modules.Criterion
 import tigase.halcyon.core.modules.XmppModule
@@ -40,9 +41,9 @@ class SASL2Module(override val context: AbstractHalcyon) : XmppModule {
 		engine.add(SASLAnonymous())
 	}
 
-
-
 	fun startAuth(streamFeatures: Element) {
+		val saslStreamFeatures = streamFeatures.getChildrenNS("authentication", XMLNS)
+			?: throw HalcyonException("No SASL2 features in stream.")
 		val authData = engine.start()
 		val authElement = element("authenticate") {
 			xmlns = XMLNS
@@ -60,10 +61,20 @@ class SASL2Module(override val context: AbstractHalcyon) : XmppModule {
 				"device" { +deviceName }
 			}
 
+			val saslInlineFeatures = InlineFeatures.create(saslStreamFeatures)
+			context.modules.getModules()
+				.filterIsInstance<InlineProtocol>()
+				.mapNotNull { it.featureFor(saslInlineFeatures, InlineProtocolStage.AfterSasl) }
+				.forEach { addChild(it) }
 
-
+			val bindInlineFeatures = saslInlineFeatures.subInline("bind", BIND_XMLNS)
 			"bind" {
 				xmlns = BIND_XMLNS
+				"tag" { +"Halcyon" }
+				context.modules.getModules()
+					.filterIsInstance<InlineProtocol>()
+					.mapNotNull { it.featureFor(bindInlineFeatures, InlineProtocolStage.AfterBind) }
+					.forEach { addChild(it) }
 			}
 		}
 
@@ -80,17 +91,43 @@ class SASL2Module(override val context: AbstractHalcyon) : XmppModule {
 	}
 
 	private fun processSuccess(element: Element) {
+
 		engine.evaluateSuccess(null)
-		if (element.getChildrenNS("bound", BIND_XMLNS) != null) {
-			context.modules.getModule<BindModule>(BindModule.TYPE)
-				.boundAs(element.getFirstChild("authorization-identifier")!!.value!!)
+		InlineResponse(InlineProtocolStage.AfterSasl, element).let { response ->
+			context.modules.getModules()
+				.filterIsInstance<InlineProtocol>()
+				.forEach { consumer ->
+					consumer.process(response)
+				}
 		}
+
+		element.getChildrenNS("bound", BIND_XMLNS)
+			?.let { boundElement ->
+				context.modules.getModule<BindModule>(BindModule.TYPE)
+					.boundAs(element.getFirstChild("authorization-identifier")!!.value!!)
+				InlineResponse(InlineProtocolStage.AfterBind, boundElement).let { response ->
+					context.modules.getModules()
+						.filterIsInstance<InlineProtocol>()
+						.forEach { consumer ->
+							consumer.process(response)
+						}
+				}
+			}
+
 	}
 
 	private fun processFailure(element: Element) {
 	}
 
 	private fun processChallenge(element: Element) {
+		val v = element.value
+		val r = engine.evaluateChallenge(v)
+
+		val authElement = element("response") {
+			xmlns = SASLModule.XMLNS
+			if (r != null) +r
+		}
+		context.writer.writeDirectly(authElement)
 	}
 
 	fun isAllowed(streamFeatures: Element): Boolean = streamFeatures.getChildrenNS("authentication", XMLNS) != null

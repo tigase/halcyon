@@ -23,11 +23,13 @@ import tigase.halcyon.core.modules.Criterion
 import tigase.halcyon.core.modules.XmppModule
 import tigase.halcyon.core.requests.RequestBuilder
 import tigase.halcyon.core.xml.Element
+import tigase.halcyon.core.xml.element
 import tigase.halcyon.core.xmpp.ErrorCondition
 import tigase.halcyon.core.xmpp.JID
 import tigase.halcyon.core.xmpp.XMPPException
 import tigase.halcyon.core.xmpp.getFromAttr
 import tigase.halcyon.core.xmpp.modules.MessageModule
+import tigase.halcyon.core.xmpp.modules.auth.*
 import tigase.halcyon.core.xmpp.stanzas.IQ
 import tigase.halcyon.core.xmpp.stanzas.IQType
 import tigase.halcyon.core.xmpp.stanzas.Message
@@ -42,7 +44,8 @@ sealed class CarbonEvent(@Suppress("unused") val fromJID: JID?, val stanza: Mess
 	class Received(fromJID: JID?, stanza: Message) : CarbonEvent(fromJID, stanza)
 }
 
-class MessageCarbonsModule(override val context: Context, private val forwardHandler: (Message) -> Unit) : XmppModule {
+class MessageCarbonsModule(override val context: Context, private val forwardHandler: (Message) -> Unit) : XmppModule,
+																										   InlineProtocol {
 
 	private var messageModule: MessageModule? = null
 
@@ -65,33 +68,39 @@ class MessageCarbonsModule(override val context: Context, private val forwardHan
 		val ownJid = context.boundJID?.bareJID
 		val from = element.getFromAttr()
 		if (from != null && from.bareJID != ownJid) throw XMPPException(ErrorCondition.NotAcceptable)
-		element.getChildrenNS(XMLNS).firstOrNull()?.let {
-			when (it.name) {
-				"sent" -> processSent(it)
-				"received" -> processReceived(it)
-				else -> throw XMPPException(ErrorCondition.BadRequest)
+		element.getChildrenNS(XMLNS)
+			.firstOrNull()
+			?.let {
+				when (it.name) {
+					"sent" -> processSent(it)
+					"received" -> processReceived(it)
+					else -> throw XMPPException(ErrorCondition.BadRequest)
+				}
 			}
-		}
 	}
 
 	@Suppress("unused")
 	fun enable(): RequestBuilder<Unit, IQ> = context.request.iq {
 		type = IQType.Set
-		"enable"{
+		"enable" {
 			xmlns = XMLNS
 		}
-	}.map { }
+	}
+		.map { }
 
 	@Suppress("unused")
 	fun disable(): RequestBuilder<Unit, IQ> = context.request.iq {
 		type = IQType.Set
-		"disable"{
+		"disable" {
 			xmlns = XMLNS
 		}
-	}.map { }
+	}
+		.map { }
 
 	private fun processSent(carbon: Element) {
-		val msg = carbon.getChildrenNS("forwarded", FORWARD_XMLNS)?.getChildren(Message.NAME)?.firstOrNull()
+		val msg = carbon.getChildrenNS("forwarded", FORWARD_XMLNS)
+			?.getChildren(Message.NAME)
+			?.firstOrNull()
 			?.asStanza<Message>() ?: return
 
 		messageModule?.process(msg)
@@ -100,11 +109,22 @@ class MessageCarbonsModule(override val context: Context, private val forwardHan
 	}
 
 	private fun processReceived(carbon: Element) {
-		val msg = carbon.getChildrenNS("forwarded", FORWARD_XMLNS)?.getChildren(Message.NAME)?.firstOrNull()
+		val msg = carbon.getChildrenNS("forwarded", FORWARD_XMLNS)
+			?.getChildren(Message.NAME)
+			?.firstOrNull()
 			?.asStanza<Message>() ?: return
 
 		forwardHandler.invoke(msg)
 		context.eventBus.fire(CarbonEvent.Received(msg.from, msg))
+	}
+
+	override fun featureFor(features: InlineFeatures, stage: InlineProtocolStage): Element? {
+		return if (stage == InlineProtocolStage.AfterBind && features.supports(XMLNS)) {
+			element("enable") { xmlns = XMLNS }
+		} else null
+	}
+
+	override fun process(response: InlineResponse) {
 	}
 
 }
