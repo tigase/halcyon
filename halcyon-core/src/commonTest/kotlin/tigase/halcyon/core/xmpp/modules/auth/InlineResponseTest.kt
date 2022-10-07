@@ -50,4 +50,13 @@ class InlineResponseTest {
 		}
 	}
 
+//	@Test
+//	fun testWhenElse() {
+//		var found = false
+//		response.whenExists(InlineProtocolStage.AfterSasl, "nothing", "not:existed:0") {
+//			fail()
+//		} ifNotExists { found = true }
+//		assertTrue(found)
+//	}
+
 }

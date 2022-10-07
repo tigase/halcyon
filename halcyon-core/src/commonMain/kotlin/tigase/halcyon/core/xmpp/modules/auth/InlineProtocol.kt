@@ -42,6 +42,47 @@ data class InlineFeatures(val features: List<Element>) {
 
 }
 
+class InlineResponseHandler(
+	private val response: InlineResponse,
+	private val stage: InlineProtocolStage,
+	private val name: String,
+	private val xmlns: String,
+) {
+
+	internal fun ifExists(handler: (Element) -> Unit) {
+		if (stage == response.stage) {
+			response.element.children.find { it.name == name && it.xmlns == xmlns }
+				?.let {
+					handler.invoke(it)
+				}
+		}
+	}
+
+	internal fun ifNotExists(handler: () -> Unit) {
+		if (stage == response.stage) {
+			if (!response.element.children.any { it.name == name && it.xmlns == xmlns }) {
+				handler.invoke()
+			}
+		}
+	}
+
+}
+
+//fun InlineResponse.whenExists(
+//	stage: InlineProtocolStage,
+//	name: String,
+//	xmlns: String,
+//	handler: (Element) -> Unit,
+//): InlineResponseHandler {
+//	val r = InlineResponseHandler(this, stage, name, xmlns)
+//	r.ifExists(handler)
+//	return r
+//}
+//
+//infix fun InlineResponseHandler.ifNotExists(handler: () -> Unit) {
+//	this.ifNotExists(handler)
+//}
+
 fun InlineResponse.whenExists(stage: InlineProtocolStage, name: String, xmlns: String, handler: (Element) -> Unit) {
 	if (stage == this.stage) {
 		this.element.children.find { it.name == name && it.xmlns == xmlns }
@@ -56,6 +97,5 @@ fun InlineResponse.whenNotExists(stage: InlineProtocolStage, name: String, xmlns
 		if (!this.element.children.any { it.name == name && it.xmlns == xmlns }) {
 			handler.invoke()
 		}
-
 	}
 }

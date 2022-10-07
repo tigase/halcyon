@@ -34,11 +34,12 @@ import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xml.element
 import tigase.halcyon.core.xmpp.ErrorCondition
 import tigase.halcyon.core.xmpp.XMPPException
+import tigase.halcyon.core.xmpp.modules.auth.*
 import tigase.halcyon.core.xmpp.stanzas.IQ
 import tigase.halcyon.core.xmpp.stanzas.Message
 import tigase.halcyon.core.xmpp.stanzas.Presence
 
-class StreamManagementModule(override val context: Context) : XmppModule {
+class StreamManagementModule(override val context: Context) : XmppModule, InlineProtocol {
 
 	@Serializable
 	class ResumptionContext {
@@ -302,8 +303,37 @@ class StreamManagementModule(override val context: Context) : XmppModule {
 		context.writer.writeDirectly(element("resume") {
 			xmlns = XMLNS
 			attribute("h", h.toString())
-			attribute("previd", id + "1")
+			attribute("previd", id)
 		})
+	}
+
+	override fun featureFor(features: InlineFeatures, stage: InlineProtocolStage): Element? {
+		return when (stage) {
+			InlineProtocolStage.AfterSasl -> {
+				if (resumptionContext.isResumptionAvailable() && features.supports("sm", XMLNS)) {
+					val h = resumptionContext.incomingH
+					val id =
+						resumptionContext.resID ?: throw HalcyonException("Cannot resume session: no resumption ID")
+					element("resume") {
+						xmlns = XMLNS
+						attribute("h", h.toString())
+						attribute("previd", id)
+					}
+				} else null
+			}
+
+			InlineProtocolStage.AfterBind -> {
+				if (features.supports(XMLNS)) element("enable") {
+					xmlns = XMLNS
+					attribute("resume", "true")
+				} else null
+			}
+		}
+	}
+
+	override fun process(response: InlineResponse) {
+		response.whenExists(InlineProtocolStage.AfterSasl, "resumed", XMLNS) { processResumed(it) }
+		response.whenExists(InlineProtocolStage.AfterBind, "enabled", XMLNS) { processEnabled(it) }
 	}
 
 }

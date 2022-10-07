@@ -24,9 +24,12 @@ import tigase.halcyon.core.modules.Criteria
 import tigase.halcyon.core.modules.XmppModule
 import tigase.halcyon.core.requests.RequestBuilder
 import tigase.halcyon.core.xml.Element
+import tigase.halcyon.core.xml.element
 import tigase.halcyon.core.xmpp.ErrorCondition
 import tigase.halcyon.core.xmpp.JID
 import tigase.halcyon.core.xmpp.XMPPException
+import tigase.halcyon.core.xmpp.modules.auth.*
+import tigase.halcyon.core.xmpp.modules.sm.StreamManagementModule
 import tigase.halcyon.core.xmpp.stanzas.IQ
 import tigase.halcyon.core.xmpp.stanzas.IQType
 import tigase.halcyon.core.xmpp.stanzas.iq
@@ -44,7 +47,7 @@ sealed class BindEvent : Event(TYPE) {
 
 }
 
-class BindModule(override val context: AbstractHalcyon) : XmppModule {
+class BindModule(override val context: AbstractHalcyon) : XmppModule, InlineProtocol {
 
 	enum class State {
 
@@ -58,6 +61,8 @@ class BindModule(override val context: AbstractHalcyon) : XmppModule {
 
 		const val XMLNS = "urn:ietf:params:xml:ns:xmpp-bind"
 		const val TYPE = XMLNS
+		const val BIND2_XMLNS = "urn:xmpp:bind:0"
+
 	}
 
 	override val type = TYPE
@@ -90,9 +95,7 @@ class BindModule(override val context: AbstractHalcyon) : XmppModule {
 			.map(this::createBindResult)
 			.response {
 				it.onSuccess { success ->
-					state = State.Success
-					context.boundJID = success.jid
-					context.eventBus.fire(BindEvent.Success(success.jid))
+					boundAs(success.jid)
 				}
 				it.onFailure {
 					state = State.Failed
@@ -112,11 +115,46 @@ class BindModule(override val context: AbstractHalcyon) : XmppModule {
 		throw XMPPException(ErrorCondition.BadRequest)
 	}
 
-	internal fun boundAs(jid: String) {
-		context.boundJID = jid.toJID()
-		context.eventBus.fire(BindEvent.Success(context.boundJID!!))
+	private fun boundAs(jid: JID) {
+		state = State.Success
+		context.boundJID = jid
+		context.eventBus.fire(BindEvent.Success(jid))
 	}
 
 	data class BindResult(val jid: JID)
+
+	override fun featureFor(features: InlineFeatures, stage: InlineProtocolStage): Element? {
+		return if (stage == InlineProtocolStage.AfterSasl) {
+			val isResumptionAvailable =
+				context.getModule<StreamManagementModule>(StreamManagementModule.TYPE).resumptionContext.isResumptionAvailable()
+
+			if (!isResumptionAvailable) {
+				val bindInlineFeatures = features.subInline("bind", BIND2_XMLNS)
+				element("bind") {
+					xmlns = BIND2_XMLNS
+					"tag" { +"Halcyon" }
+					context.modules.getModules()
+						.filterIsInstance<InlineProtocol>()
+						.mapNotNull { it.featureFor(bindInlineFeatures, InlineProtocolStage.AfterBind) }
+						.forEach { addChild(it) }
+				}
+			} else null
+		} else null
+	}
+
+	override fun process(response: InlineResponse) {
+		response.whenExists(InlineProtocolStage.AfterSasl, "bound", BIND2_XMLNS) { boundElement ->
+			boundAs(response.element.getFirstChild("authorization-identifier")!!.value!!.toJID())
+
+			InlineResponse(InlineProtocolStage.AfterBind, boundElement).let { response ->
+				context.modules.getModules()
+					.filterIsInstance<InlineProtocol>()
+					.forEach { consumer ->
+						consumer.process(response)
+					}
+			}
+
+		}
+	}
 
 }
