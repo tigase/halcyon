@@ -35,10 +35,12 @@ import tigase.halcyon.core.xmpp.stanzas.IQType
 import tigase.halcyon.core.xmpp.stanzas.Message
 import tigase.halcyon.core.xmpp.stanzas.asStanza
 
-sealed class CarbonEvent(@Suppress("unused") val fromJID: JID?, val stanza: Message) : Event(TYPE) { companion object {
+sealed class CarbonEvent(@Suppress("unused") val fromJID: JID?, val stanza: Message) : Event(TYPE) {
 
-	const val TYPE = "tigase.halcyon.core.xmpp.modules.carbons.CarbonEvent"
-}
+	companion object {
+
+		const val TYPE = "tigase.halcyon.core.xmpp.modules.carbons.CarbonEvent"
+	}
 
 	class Sent(fromJID: JID?, stanza: Message) : CarbonEvent(fromJID, stanza)
 	class Received(fromJID: JID?, stanza: Message) : CarbonEvent(fromJID, stanza)

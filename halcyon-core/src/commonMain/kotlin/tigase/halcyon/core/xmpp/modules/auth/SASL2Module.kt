@@ -2,7 +2,9 @@ package tigase.halcyon.core.xmpp.modules.auth
 
 import com.soywiz.krypto.sha1
 import tigase.halcyon.core.AbstractHalcyon
+import tigase.halcyon.core.connector.SessionController
 import tigase.halcyon.core.exceptions.HalcyonException
+import tigase.halcyon.core.logger.Level
 import tigase.halcyon.core.logger.LoggerFactory
 import tigase.halcyon.core.modules.Criterion
 import tigase.halcyon.core.modules.XmppModule
@@ -80,13 +82,23 @@ class SASL2Module(override val context: AbstractHalcyon) : XmppModule {
 	}
 
 	private fun processSuccess(element: Element) {
-		engine.evaluateSuccess(null)
-		InlineResponse(InlineProtocolStage.AfterSasl, element).let { response ->
-			context.modules.getModules()
-				.filterIsInstance<InlineProtocol>()
-				.forEach { consumer ->
-					consumer.process(response)
-				}
+		try {
+			engine.evaluateSuccess(null)
+		} catch (e: Throwable) {
+			log.log(Level.SEVERE, "Error on SASL Success processing: ${e.message}", e)
+			context.eventBus.fire(SessionController.SessionControllerEvents.ErrorStop("Error on SASL Success processing: ${e.message}"))
+		}
+		try {
+			InlineResponse(InlineProtocolStage.AfterSasl, element).let { response ->
+				context.modules.getModules()
+					.filterIsInstance<InlineProtocol>()
+					.forEach { consumer ->
+						consumer.process(response)
+					}
+			}
+		} catch (e: Throwable) {
+			log.log(Level.SEVERE, "Error during inline processing: ${e.message}", e)
+			context.eventBus.fire(SessionController.SessionControllerEvents.ErrorStop("Error during inline processing: ${e.message}"))
 		}
 	}
 
