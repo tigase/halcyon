@@ -18,6 +18,7 @@
 package tigase.halcyon.core.xmpp.modules.auth
 
 import tigase.halcyon.core.configuration.Configuration
+import tigase.halcyon.core.toBase64
 
 class SASLPlain : SASLMechanism {
 
@@ -30,7 +31,15 @@ class SASLPlain : SASLMechanism {
 		val password = config.passwordCallback!!.getPassword()
 
 		saslContext.complete = true
-		return tigase.halcyon.core.Base64.encode('\u0000' + username + '\u0000' + password)
+		return buildString {
+			config.authzIdJID?.let {
+				append(it)
+			}
+			append('\u0000')
+			append(username)
+			append('\u0000')
+			append(password)
+		}.toBase64()
 	}
 
 	override fun isAllowedToUse(config: Configuration, saslContext: SASLContext): Boolean {

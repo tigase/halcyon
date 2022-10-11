@@ -35,6 +35,8 @@ class Configuration {
 
 	var domain: String? = null
 
+	var authzIdJID: BareJID? = null
+
 	lateinit var connectorConfig: ConnectorConfig
 
 }

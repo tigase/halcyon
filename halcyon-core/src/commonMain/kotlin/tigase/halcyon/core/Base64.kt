@@ -152,6 +152,7 @@ object Base64 {
 				output[--a] = '='
 				output[--a] = '='
 			}
+
 			2 -> output[--a] = '='
 		}
 		return output.concatToString()
@@ -179,12 +180,13 @@ object Base64 {
 				output[--a] = '='
 				output[--a] = '='
 			}
+
 			2 -> output[--a] = '='
 		}
 		return output.concatToString()
 	}
 
-	private fun findNexIt(s: String, idx: Int): Int {
+	private fun findNexIt(s: CharSequence, idx: Int): Int {
 		var i = idx
 		val sl = s.length - 1
 		var c2: Int
@@ -198,7 +200,7 @@ object Base64 {
 		return i
 	}
 
-	fun decodeToByteArray(s: String): ByteArray {
+	fun decodeToByteArray(s: CharSequence): ByteArray {
 		var separatorsCounter = 0
 		val inputLen = s.length
 		for (i in 0 until inputLen) {
@@ -273,3 +275,8 @@ object Base64 {
 		return buffer
 	}
 }
+
+fun CharSequence.toBase64() = Base64.encode(this)
+fun ByteArray.toBase64() = Base64.encode(this)
+
+fun CharSequence.fromBase64(): ByteArray = Base64.decodeToByteArray(this)

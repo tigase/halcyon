@@ -4,8 +4,9 @@ import com.soywiz.krypto.HMAC
 import com.soywiz.krypto.PBKDF2
 import com.soywiz.krypto.sha1
 import com.soywiz.krypto.sha256
-import tigase.halcyon.core.Base64
 import tigase.halcyon.core.configuration.Configuration
+import tigase.halcyon.core.fromBase64
+import tigase.halcyon.core.toBase64
 import kotlin.experimental.xor
 import kotlin.random.Random
 
@@ -41,7 +42,7 @@ enum class ScramHashAlgorithm {
 @Suppress("ArrayInDataClass")
 data class SCRAMData(
 	var authMessage: String? = null,
-	var bindData: ByteArray? = null,
+	var bindData: ByteArray = ByteArray(0),
 	var bindType: BindType? = null,
 	var cb: String? = null,
 	var clientFirstMessageBare: String? = null,
@@ -54,14 +55,15 @@ abstract class AbstractSASLScram(
 	override val name: String,
 	val hashAlgorithm: ScramHashAlgorithm,
 	private val randomGenerator: () -> String,
-	private val clientKeyData: ByteArray, private val serverKeyData: ByteArray,
+	private val clientKeyData: ByteArray = "Client Key".encodeToByteArray(),
+	private val serverKeyData: ByteArray = "Server Key".encodeToByteArray(),
 ) : SASLMechanism {
 
 	private val serverFirstMessageRegex = Regex(
-		"^(m=[^\\000=]+,)?r=([\\x21-\\x2B\\x2D-\\x7E]+),s=([a-zA-Z0-9/+=]+),i=(\\d+)(?:,.*)?$", RegexOption.IGNORE_CASE
+		"^(m=[^,]+,)?r=([^,]+),s=([^,]+),i=([0-9]+)(?:,.*)?$", RegexOption.IGNORE_CASE
 	)
 	private val serverLastMessageRegex = Regex(
-		"^(?:e=([^,]+)|v=([a-zA-Z0-9/+=]+)(?:,.*)?)$", RegexOption.IGNORE_CASE
+		"^(?:e=([^,]+)|v=([^,]+)(?:,.*)?)$", RegexOption.IGNORE_CASE
 	)
 
 	override fun isAllowedToUse(config: Configuration, saslContext: SASLContext): Boolean =
@@ -80,7 +82,7 @@ abstract class AbstractSASLScram(
 		if (data.stage == 0) {
 			data.conce = randomGenerator.invoke()
 			data.bindType = BindType.N // TODO Implement Support for binding
-			data.bindData = null
+			data.bindData = ByteArray(0)
 
 			data.cb = buildString {
 				when (data.bindType!!) {
@@ -91,9 +93,9 @@ abstract class AbstractSASLScram(
 				}
 				append(",")
 
-//		TODO Implement support for AuthzId
-//		 append("a=").append(config.userJID)
-//				append(config.userJID!!.localpart)
+				config.authzIdJID?.let {
+					append("a=").append(it)
+				}
 				append(",")
 			}
 
@@ -103,30 +105,28 @@ abstract class AbstractSASLScram(
 			}
 
 			++data.stage
-			return Base64.encode("${data.cb}${data.clientFirstMessageBare}")
+			return "${data.cb}${data.clientFirstMessageBare}".toBase64()
 		} else if (data.stage == 1) {
 			if (input == null) throw ClientSaslException("Unexpected empty input!")
 
-			val serverFirstMessage = Base64.decode(input)
-				.concatToString()
+			val serverFirstMessage = input.fromBase64()
+				.decodeToString()
 
 			val r = serverFirstMessageRegex.matchEntire(serverFirstMessage)
 				?: throw ClientSaslException("Bad challenge syntax")
 
 			// val mext = r.groups[1]?.value
 			val nonce = r.groups[2]?.value ?: throw ClientSaslException("Bad challenge syntax: missing nonce")
-			val salt = r.groups[3]?.value?.let { Base64.decodeToByteArray(it) }
-				?: throw ClientSaslException("Bad challenge syntax: missing salt")
+			val salt =
+				r.groups[3]?.value?.fromBase64() ?: throw ClientSaslException("Bad challenge syntax: missing salt")
 			val iterations =
 				r.groups[4]?.value?.toInt() ?: throw ClientSaslException("Bad challenge syntax: missing iterations")
 
 			if (!nonce.startsWith(data.conce!!)) throw ClientSaslException("Wrong nonce")
 
-			val bindData = ByteArray(0)
-
 			val clientFinalMessageStep1 = buildString {
 				append("c=")
-				append(Base64.encode(data.cb!!.encodeToByteArray() + bindData))
+				append((data.cb!!.encodeToByteArray() + data.bindData).toBase64())
 				append(",")
 
 				append("r=")
@@ -169,16 +169,16 @@ abstract class AbstractSASLScram(
 				append(clientFinalMessageStep1)
 				append(",")
 				append("p=")
-				append(Base64.encode(clientProof))
+				append(clientProof.toBase64())
 			}
 			++data.stage
-			return Base64.encode(clientFinalMessageStep2)
+			return clientFinalMessageStep2.toBase64()
 		} else if (data.stage == 2) {
 			if (input == null) throw ClientSaslException("Unexpected empty input!")
 
 			val r = serverLastMessageRegex.matchEntire(
-				Base64.decode(input)
-					.concatToString()
+				input.fromBase64()
+					.decodeToString()
 			) ?: throw ClientSaslException("Bad challenge syntax")
 
 			r.groups[1]?.let {
@@ -195,7 +195,7 @@ abstract class AbstractSASLScram(
 				ScramHashAlgorithm.SHA256 -> HMAC.hmacSHA256(key = serverKey, data.authMessage!!.encodeToByteArray())
 			}.bytes
 
-			if (!(serverSignature contentEquals Base64.decodeToByteArray(v))) {
+			if (!(serverSignature contentEquals v.fromBase64())) {
 				throw ClientSaslException("Invalid Server Signature")
 			}
 			++data.stage
