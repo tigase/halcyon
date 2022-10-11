@@ -18,6 +18,7 @@
 plugins {
 	kotlin("multiplatform")
 	`maven-publish`
+	kotlin("plugin.serialization")
 }
 
 
@@ -52,8 +53,7 @@ kotlin {
 	}
 	named("commonTest") {
 		dependencies {
-			implementation(kotlin("test-common"))
-			implementation(kotlin("test-annotations-common"))
+			implementation(kotlin("test"))
 			implementation(deps.reactive.testing)
 		}
 	}

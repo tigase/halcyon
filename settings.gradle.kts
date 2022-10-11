@@ -27,4 +27,5 @@ dependencyResolutionManagement {
 	}
 }
 
-include(":docs", ":halcyon-core", "halcyon-rx", "halcyon-coroutines", "integration-tests")
+include(":docs", ":halcyon-core", "halcyon-rx", "halcyon-coroutines",
+		"integration-tests")
