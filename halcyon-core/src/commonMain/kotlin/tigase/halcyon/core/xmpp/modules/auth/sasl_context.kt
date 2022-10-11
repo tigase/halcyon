@@ -10,10 +10,14 @@ enum class State {
 	Failed
 }
 
+interface MechanismData
+
 class SASLContext {
 
 	var mechanism: SASLMechanism? = null
 		internal set
+
+	var mechanismData: MechanismData? = null
 
 	var state: State = State.Unknown
 		internal set

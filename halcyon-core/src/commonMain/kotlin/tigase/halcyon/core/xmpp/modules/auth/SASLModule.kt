@@ -18,6 +18,7 @@
 package tigase.halcyon.core.xmpp.modules.auth
 
 import tigase.halcyon.core.Context
+import tigase.halcyon.core.exceptions.HalcyonException
 import tigase.halcyon.core.logger.LoggerFactory
 import tigase.halcyon.core.modules.Criterion
 import tigase.halcyon.core.modules.XmppModule
@@ -25,6 +26,14 @@ import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xml.element
 import tigase.halcyon.core.xmpp.ErrorCondition
 import tigase.halcyon.core.xmpp.XMPPException
+
+class ClientSaslException : HalcyonException {
+
+	constructor() : super()
+	constructor(message: String?) : super(message)
+	constructor(message: String?, cause: Throwable?) : super(message, cause)
+	constructor(cause: Throwable?) : super(cause)
+}
 
 class SASLModule(override val context: Context) : XmppModule {
 
@@ -83,7 +92,9 @@ class SASLModule(override val context: Context) : XmppModule {
 		 * within the receiving entity; sent in reply to an &lt;auth/&gt element
 		 * or &lt;response/&gt element.
 		 */
-		TemporaryAuthFailure("temporary-auth-failure");
+		TemporaryAuthFailure("temporary-auth-failure"),
+
+		Unknown("-");
 
 		companion object {
 
@@ -112,13 +123,21 @@ class SASLModule(override val context: Context) : XmppModule {
 
 	val saslContext: SASLContext by engine::saslContext
 
+	var enabled: Boolean = true
+
 	override fun initialize() {
+		engine.add(SASLScramSHA256())
+		engine.add(SASLScramSHA1())
 		engine.add(SASLPlain())
 		engine.add(SASLAnonymous())
 	}
 
-	fun startAuth() {
-		val authData = engine.start()
+	fun startAuth(streamFeatures: Element) {
+		val saslStreamFeatures =
+			streamFeatures.getChildrenNS("mechanisms", XMLNS) ?: throw HalcyonException("No SASL features in stream.")
+		val allowedMechanisms = saslStreamFeatures.children.filter { it.name == "mechanism" }
+			.mapNotNull { it.value }
+		val authData = engine.start(allowedMechanisms)
 		val authElement = element("auth") {
 			xmlns = XMLNS
 			attribute("mechanism", authData.mechanismName)
@@ -128,11 +147,16 @@ class SASLModule(override val context: Context) : XmppModule {
 	}
 
 	override fun process(element: Element) {
-		when (element.name) {
-			"success" -> engine.evaluateSuccess(element.value)
-			"failure" -> processFailure(element)
-			"challenge" -> processChallenge(element)
-			else -> throw XMPPException(ErrorCondition.BadRequest, "Unsupported element")
+		try {
+			when (element.name) {
+				"success" -> engine.evaluateSuccess(element.value)
+				"failure" -> processFailure(element)
+				"challenge" -> processChallenge(element)
+				else -> throw XMPPException(ErrorCondition.BadRequest, "Unsupported element")
+			}
+		} catch (e: ClientSaslException) {
+			engine.saslContext.state = State.Failed
+			context.eventBus.fire(SASLEvent.SASLError(SASLError.Unknown, e.message))
 		}
 	}
 
@@ -159,6 +183,7 @@ class SASLModule(override val context: Context) : XmppModule {
 		engine.evaluateFailure(saslError, errorText)
 	}
 
-	fun isAllowed(streamFeatures: Element): Boolean  = streamFeatures.getChildrenNS("mechanisms", XMLNS)!=null
+	fun isAllowed(streamFeatures: Element): Boolean =
+		enabled && streamFeatures.getChildrenNS("mechanisms", XMLNS) != null
 
 }

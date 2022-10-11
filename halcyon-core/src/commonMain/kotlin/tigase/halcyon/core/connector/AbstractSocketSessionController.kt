@@ -63,8 +63,8 @@ abstract class AbstractSocketSessionController(final override val halcyon: Abstr
 			if (sasl2Module.isAllowed(event.features)) {
 				sasl2Module.startAuth(event.features)
 			} else if (sasl1Module.isAllowed(event.features)) {
-				sasl1Module.startAuth()
-			} else throw HalcyonException("Cannot find supported auth mechanism.")
+				sasl1Module.startAuth(event.features)
+			} else throw HalcyonException("Cannot find supported auth method.")
 		}
 		if (authState == tigase.halcyon.core.xmpp.modules.auth.State.Success) {
 			if (isResumptionAvailable) {

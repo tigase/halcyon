@@ -35,7 +35,11 @@ class SASL2Module(override val context: AbstractHalcyon) : XmppModule {
 
 	private val engine = SASLEngine(context)
 
+	var enabled: Boolean = true
+
 	override fun initialize() {
+		engine.add(SASLScramSHA256())
+		engine.add(SASLScramSHA1())
 		engine.add(SASLPlain())
 		engine.add(SASLAnonymous())
 	}
@@ -43,7 +47,9 @@ class SASL2Module(override val context: AbstractHalcyon) : XmppModule {
 	fun startAuth(streamFeatures: Element) {
 		val saslStreamFeatures = streamFeatures.getChildrenNS("authentication", XMLNS)
 			?: throw HalcyonException("No SASL2 features in stream.")
-		val authData = engine.start()
+		val allowedMechanisms = saslStreamFeatures.children.filter { it.name == "mechanism" }
+			.mapNotNull { it.value }
+		val authData = engine.start(allowedMechanisms)
 		val authElement = element("authenticate") {
 			xmlns = XMLNS
 			attribute("mechanism", authData.mechanismName)
@@ -71,23 +77,21 @@ class SASL2Module(override val context: AbstractHalcyon) : XmppModule {
 	}
 
 	override fun process(element: Element) {
-		when (element.name) {
-			"success" -> processSuccess(element)
-			"failure" -> processFailure(element)
-			"challenge" -> processChallenge(element)
-			else -> throw XMPPException(
-				ErrorCondition.BadRequest, "Unsupported element ${element.getAsString(showValue = false)}"
-			)
+		try {
+			when (element.name) {
+				"success" -> processSuccess(element)
+				"failure" -> processFailure(element)
+				"challenge" -> processChallenge(element)
+				else -> throw XMPPException(ErrorCondition.BadRequest, "Unsupported element")
+			}
+		} catch (e: ClientSaslException) {
+			engine.saslContext.state = State.Failed
+			context.eventBus.fire(SASLEvent.SASLError(SASLModule.SASLError.Unknown, e.message))
 		}
 	}
 
 	private fun processSuccess(element: Element) {
-		try {
-			engine.evaluateSuccess(null)
-		} catch (e: Throwable) {
-			log.log(Level.SEVERE, "Error on SASL Success processing: ${e.message}", e)
-			context.eventBus.fire(SessionController.SessionControllerEvents.ErrorStop("Error on SASL Success processing: ${e.message}"))
-		}
+		engine.evaluateSuccess(element.getFirstChild("additional-data")?.value)
 		try {
 			InlineResponse(InlineProtocolStage.AfterSasl, element).let { response ->
 				context.modules.getModules()
@@ -119,12 +123,13 @@ class SASL2Module(override val context: AbstractHalcyon) : XmppModule {
 		val r = engine.evaluateChallenge(v)
 
 		val authElement = element("response") {
-			xmlns = SASLModule.XMLNS
+			xmlns = XMLNS
 			if (r != null) +r
 		}
 		context.writer.writeDirectly(authElement)
 	}
 
-	fun isAllowed(streamFeatures: Element): Boolean = streamFeatures.getChildrenNS("authentication", XMLNS) != null
+	fun isAllowed(streamFeatures: Element): Boolean =
+		enabled && streamFeatures.getChildrenNS("authentication", XMLNS) != null
 
 }

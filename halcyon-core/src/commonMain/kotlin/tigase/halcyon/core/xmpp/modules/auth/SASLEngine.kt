@@ -1,10 +1,8 @@
 package tigase.halcyon.core.xmpp.modules.auth
 
 import tigase.halcyon.core.Context
-import tigase.halcyon.core.Scope
 import tigase.halcyon.core.exceptions.HalcyonException
 import tigase.halcyon.core.logger.LoggerFactory
-import tigase.halcyon.core.modules.property
 
 data class AuthData(val mechanismName: String, val data: String?)
 
@@ -16,10 +14,10 @@ class SASLEngine(val context: Context) {
 
 	private val mechanisms: MutableList<SASLMechanism> = mutableListOf()
 
-	private fun selectMechanism(): SASLMechanism {
+	private fun selectMechanism(allowedMechanisms: List<String>): SASLMechanism {
 		for (mechanism in mechanisms) {
 			log.finer { "Checking mechanism ${mechanism.name}" }
-			if (mechanism.isAllowedToUse(context.config, saslContext)) {
+			if (allowedMechanisms.contains(mechanism.name) && mechanism.isAllowedToUse(context.config, saslContext)) {
 				log.fine { "Selected mechanism: ${mechanism.name}" }
 				return mechanism
 			}
@@ -29,9 +27,9 @@ class SASLEngine(val context: Context) {
 
 	fun add(mechanism: SASLMechanism) = mechanisms.add(mechanism)
 
-	fun start(): AuthData {
+	fun start(allowedMechanisms: List<String>): AuthData {
 		saslContext.state = State.InProgress
-		val mechanism = selectMechanism()
+		val mechanism = selectMechanism(allowedMechanisms)
 		val authData = mechanism.evaluateChallenge(null, context.config, saslContext)
 		saslContext.mechanism = mechanism
 		context.eventBus.fire(SASLEvent.SASLStarted(mechanism.name))
@@ -39,15 +37,22 @@ class SASLEngine(val context: Context) {
 	}
 
 	fun evaluateChallenge(data: String?): String? {
-		val mechanism = saslContext.mechanism ?: throw HalcyonException("SASL Context is empty")
-		if (saslContext.complete) throw HalcyonException("Mechanism ${mechanism.name} is finished but Server sent challenge.")
+		val mechanism = saslContext.mechanism ?: throw ClientSaslException("SASL Context is empty")
+		if (saslContext.complete) throw ClientSaslException("Mechanism ${mechanism.name} is finished but Server sent challenge.")
 		val r = mechanism.evaluateChallenge(data, context.config, saslContext)
 		return r
 	}
 
 	fun evaluateSuccess(data: String?) {
-		saslContext.state = State.Success
-		context.eventBus.fire(SASLEvent.SASLSuccess())
+		val mechanism = saslContext.mechanism ?: throw ClientSaslException("SASL Context is empty")
+		mechanism.evaluateChallenge(data, context.config, saslContext)
+		if (saslContext.complete) {
+			saslContext.state = State.Success
+			context.eventBus.fire(SASLEvent.SASLSuccess())
+		} else {
+			saslContext.state = State.Failed
+			throw ClientSaslException("Invalid state of SASL Engine")
+		}
 	}
 
 	fun evaluateFailure(saslError: SASLModule.SASLError, errorText: String?) {
