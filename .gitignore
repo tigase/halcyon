@@ -4,5 +4,5 @@ build
 /kotlin-js-store
 /Experiments
 /frameworks/
-src/restructured/_build
-src/main/restructured/locale/*/LC_MESSAGES/*.mo
+docs/src/restructured
+docs/src/restructured/locale/*/LC_MESSAGES/*.mo
