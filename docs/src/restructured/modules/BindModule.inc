@@ -10,8 +10,6 @@ Properties
 -  ``boundJID`` - contains full JID bound during resource binding
    process, or null if client isn’t logged in and/or not binded.
 
-.. __methods:
-
 Methods
 ^^^^^^^^^^^
 

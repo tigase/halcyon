@@ -10,7 +10,7 @@ fire.
 
 General code to registering events:
 
-.. code:: kotlin
+.. code:: text
 
    halcyon.eventBus.register<EVENT_TYPE>(EVENT_NAME) { event ->
    …
@@ -32,7 +32,7 @@ events types. Just create object inherited from
 ``tigase.halcyon.core.eventbus.Event`` and call method
 ``eventbus.fire()``:
 
-.. code:: kotlin
+.. code:: text
 
    data class SampleEvent(val sampleData: String) : Event(TYPE){
 
