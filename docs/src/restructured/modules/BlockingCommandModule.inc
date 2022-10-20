@@ -27,7 +27,7 @@ Event fired, when contact was unblocked. It contains one property:
 
 
 ``UnblockedAll``
-----------------
+~~~~~~~~~~~~~~~~~~
 
 Event fired when all contacts are unblocked.
 
