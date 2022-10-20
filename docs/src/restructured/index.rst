@@ -4,7 +4,7 @@ Tigase Halcyon XMPP Library
 ==========================================
 
 .. toctree::
-   :numbered:
+   :numbered: 3
    :maxdepth: 3
 
    Architecture
