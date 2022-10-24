@@ -27,12 +27,12 @@ class SASLPlain : SASLMechanism {
 	override fun evaluateChallenge(input: String?, config: Configuration, saslContext: SASLContext): String? {
 		if (saslContext.complete) return null
 
-		val username = config.userJID?.localpart!!
-		val password = config.passwordCallback!!.getPassword()
+		val username = config.account!!.userJID.localpart!!
+		val password = config.account.passwordCallback.invoke()
 
 		saslContext.complete = true
 		return buildString {
-			config.authzIdJID?.let {
+			config.account.authzIdJID?.let {
 				append(it)
 			}
 			append('\u0000')
@@ -42,8 +42,6 @@ class SASLPlain : SASLMechanism {
 		}.toBase64()
 	}
 
-	override fun isAllowedToUse(config: Configuration, saslContext: SASLContext): Boolean {
-		return config.userJID != null && config.passwordCallback != null
-	}
+	override fun isAllowedToUse(config: Configuration, saslContext: SASLContext): Boolean = config.account != null
 
 }

@@ -20,6 +20,7 @@ package tigase.halcyon.core.connector
 import platform.posix.sleep
 import tigase.halcyon.core.AbstractHalcyon
 import tigase.halcyon.core.Halcyon
+import tigase.halcyon.core.builder.createConfiguration
 import tigase.halcyon.core.connector.socket.DnsResolver
 import tigase.halcyon.core.xmpp.modules.auth.SASLEvent
 import tigase.halcyon.core.xmpp.modules.auth.SASLModule
@@ -39,36 +40,37 @@ class SocketConnectorTest {
 		val resultsStore = AtomicReference<List<DnsResolver.SrvRecord>>(emptyList())
 //        worker.execute(TransferMode.SAFE, {}) {
 		val dnsResolver = DnsResolver()
-        println("testing SRV resolution for domain tigase.org...")
+		println("testing SRV resolution for domain tigase.org...")
 		dnsResolver.resolve("tigase.org") { result ->
 			result.onSuccess { records ->
 				println("got results:")
 				records.forEach {
 					println("port: " + it.port + ", target: " + it.target)
-                }
+				}
 				println("done")
 				var results = emptyList<DnsResolver.SrvRecord>()
 				results += records
-                resultsStore.value = results.freeze()
-            }
+				resultsStore.value = results.freeze()
+			}
 				.onFailure { ex ->
 					println("got exception:")
 					ex.printStackTrace()
-                }
+				}
 		}
 //        }
 
 		sleep(1)
-        assertTrue { !resultsStore.value.isEmpty() }
+		assertTrue { !resultsStore.value.isEmpty() }
 	}
 
 	@Test
 	fun testConnector() {
-		val client = Halcyon()
-        client.configure {
-			userJID = "testuser@tigase.org".toBareJID()
-			password = "testuserpassword"
-		}
+		val client = Halcyon(createConfiguration {
+			account {
+				userJID = "testuser@tigase.org".toBareJID()
+				password { "testuserpassword" }
+			}
+		})
 
 		var receivedSaslError: SASLModule.SASLError? = null
 
@@ -78,9 +80,9 @@ class SocketConnectorTest {
 			}
 		}
 		client.connect()
-        sleep(45)
-        assertEquals(SASLModule.SASLError.NotAuthorized, receivedSaslError)
+		sleep(45)
+		assertEquals(SASLModule.SASLError.NotAuthorized, receivedSaslError)
 		println("connection timeout reached, checking state..")
-        assertNotEquals(AbstractHalcyon.State.Connected, client.state)
+		assertNotEquals(AbstractHalcyon.State.Connected, client.state)
 	}
 }

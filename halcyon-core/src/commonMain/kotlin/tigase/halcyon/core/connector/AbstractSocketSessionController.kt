@@ -23,6 +23,7 @@ import tigase.halcyon.core.eventbus.Event
 import tigase.halcyon.core.eventbus.EventHandler
 import tigase.halcyon.core.exceptions.HalcyonException
 import tigase.halcyon.core.logger.LoggerFactory
+import tigase.halcyon.core.xmpp.XMPPException
 import tigase.halcyon.core.xmpp.modules.*
 import tigase.halcyon.core.xmpp.modules.auth.SASL2Module
 import tigase.halcyon.core.xmpp.modules.auth.SASLEvent
@@ -31,6 +32,7 @@ import tigase.halcyon.core.xmpp.modules.discovery.DiscoveryModule
 import tigase.halcyon.core.xmpp.modules.presence.PresenceModule
 import tigase.halcyon.core.xmpp.modules.roster.RosterModule
 import tigase.halcyon.core.xmpp.modules.sm.StreamManagementModule
+import tigase.halcyon.core.xmpp.toBareJID
 
 abstract class AbstractSocketSessionController(final override val halcyon: AbstractHalcyon, loggerName: String) :
 	SessionController {
@@ -59,12 +61,15 @@ abstract class AbstractSocketSessionController(final override val halcyon: Abstr
 
 			val sasl1Module = halcyon.getModule<SASLModule>(SASLModule.TYPE)
 			val sasl2Module = halcyon.getModule<SASL2Module>(SASL2Module.TYPE)
+			val registrationModule = halcyon.getModuleOrNull<InBandRegistrationModule>(InBandRegistrationModule.TYPE)
 
 			if (sasl2Module.isAllowed(event.features)) {
 				sasl2Module.startAuth(event.features)
 			} else if (sasl1Module.isAllowed(event.features)) {
 				sasl1Module.startAuth(event.features)
-			} else throw HalcyonException("Cannot find supported auth method.")
+			} else if (registrationModule?.isAllowed(event.features) == true && halcyon.config.registration != null) {
+				processInBandRegistration()
+			} else throw HalcyonException("Cannot find supported auth or registration method.")
 		}
 		if (authState == tigase.halcyon.core.xmpp.modules.auth.State.Success) {
 			if (isResumptionAvailable) {
@@ -78,25 +83,65 @@ abstract class AbstractSocketSessionController(final override val halcyon: Abstr
 		}
 	}
 
+	private fun processInBandRegistration() {
+		val registrationModule = halcyon.getModule<InBandRegistrationModule>(InBandRegistrationModule.TYPE)
+		val reg = halcyon.config.registration!!
+		registrationModule.requestRegistrationForm(reg.domain.toBareJID())
+			.response {
+				it.onSuccess { requestForm ->
+					reg.formHandler?.invoke(requestForm)
+					reg.formHandlerWithResponse?.invoke(requestForm)
+						?.let { resultForm ->
+							registrationModule.submitRegistrationForm(reg.domain.toBareJID(), resultForm)
+								.response { registrationResponse ->
+									registrationResponse.onSuccess {
+										log.info("Account registered")
+										halcyon.disconnect()
+									}
+									registrationResponse.onFailure {
+										log.info(it) { "Cannot register account." }
+										throw HalcyonException("Cannot register account", it)
+									}
+								}
+								.send()
+						}
+				}
+				it.onFailure {
+					log.info(it) { "Cannot register account." }
+					throw HalcyonException("Cannot register account", it)
+				}
+			}
+			.send()
+
+	}
+
 	private fun bindResource() {
-		val resource = halcyon.config.resource
+		val resource = halcyon.config.account?.resource
 		halcyon.modules.getModule<BindModule>(BindModule.TYPE)
 			.boundAs(resource)
 			.send()
 	}
 
 	private fun processEvent(event: Event) {
-		when (event) {
-			is ParseErrorEvent -> processParseError(event)
-			is SASLEvent.SASLError -> processAuthError(event)
-			is StreamErrorEvent -> processStreamError(event)
-			is ConnectionErrorEvent -> processConnectionError(event)
-			is StreamFeaturesEvent -> processStreamFeaturesEvent(event)
-			is SASLEvent.SASLSuccess -> processAuthSuccessfull(event)
-			is StreamManagementModule.StreamManagementEvent -> processStreamManagementEvent(event)
-			is ConnectorStateChangeEvent -> processConnectorStateChangeEvent(event)
-			is BindEvent.Success -> processBindSuccess()
-			is BindEvent.Failure -> processBindError()
+		try {
+			when (event) {
+				is ParseErrorEvent -> processParseError(event)
+				is SASLEvent.SASLError -> processAuthError(event)
+				is StreamErrorEvent -> processStreamError(event)
+				is ConnectionErrorEvent -> processConnectionError(event)
+				is StreamFeaturesEvent -> processStreamFeaturesEvent(event)
+				is SASLEvent.SASLSuccess -> processAuthSuccessfull(event)
+				is StreamManagementModule.StreamManagementEvent -> processStreamManagementEvent(event)
+				is ConnectorStateChangeEvent -> processConnectorStateChangeEvent(event)
+				is BindEvent.Success -> processBindSuccess()
+				is BindEvent.Failure -> processBindError()
+			}
+		} catch (e: XMPPException) {
+			log.severe(e) { "Cannot establish connection" }
+			halcyon.eventBus.fire(SessionController.SessionControllerEvents.ErrorStop("Error in session processing"))
+		} catch (e: HalcyonException) {
+			log.severe(e) { "Cannot establish connection" }
+			halcyon.eventBus.fire(SessionController.SessionControllerEvents.ErrorStop("Error in session processing"))
 		}
 	}
 

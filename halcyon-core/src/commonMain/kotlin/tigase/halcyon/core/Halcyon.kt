@@ -17,4 +17,6 @@
  */
 package tigase.halcyon.core
 
-expect class Halcyon() : AbstractHalcyon
+import tigase.halcyon.core.configuration.Configuration
+
+expect class Halcyon(configuration: Configuration) : AbstractHalcyon

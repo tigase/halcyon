@@ -17,8 +17,8 @@
  */
 package tigase.halcyon.core.connector
 
-class WebSocketConnectorConfig : ConnectorConfig {
+import tigase.halcyon.core.configuration.Connection
 
-	var webSocketUrl: String? = null
-
-}
+data class WebSocketConnectorConfig(
+	val webSocketUrl: String,
+) : Connection

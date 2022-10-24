@@ -23,13 +23,11 @@ import tigase.halcyon.core.modules.Criteria
 import tigase.halcyon.core.modules.Criterion
 import tigase.halcyon.core.modules.XmppModule
 import tigase.halcyon.core.requests.RequestBuilder
-
 import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xmpp.BareJID
 import tigase.halcyon.core.xmpp.ErrorCondition
 import tigase.halcyon.core.xmpp.JID
 import tigase.halcyon.core.xmpp.XMPPException
-import tigase.halcyon.core.xmpp.modules.BindModule
 import tigase.halcyon.core.xmpp.stanzas.IQ
 import tigase.halcyon.core.xmpp.stanzas.IQType
 import tigase.halcyon.core.xmpp.stanzas.Message
@@ -111,15 +109,18 @@ class JingleModule(
 		val action = Action.fromValue(iq.attributes["action"] ?: throw XMPPException(ErrorCondition.BadRequest))
 			?: throw XMPPException(ErrorCondition.BadRequest)
 		val from = JID.parse(iq.attributes["from"] ?: throw XMPPException(ErrorCondition.BadRequest))
-		val sid = (jingle.attributes["sid"] ?: sessionManager.activateSessionSid(context.config.userJID!!, from))
-			?: throw XMPPException(ErrorCondition.BadRequest)
+		val sid =
+			(jingle.attributes["sid"] ?: sessionManager.activateSessionSid(context.config.account!!.userJID, from))
+				?: throw XMPPException(ErrorCondition.BadRequest)
 
 		val initiator = jingle.attributes["initiator"]?.let { JID.parse(it) } ?: from
 
-		val contents = jingle.children.map { Content.parse(it) }.filterNotNull()
+		val contents = jingle.children.map { Content.parse(it) }
+			.filterNotNull()
 		val bundle =
 			jingle.getChildrenNS("group", "urn:xmpp:jingle:apps:grouping:0")?.children?.filter { it.name == "content" }
-				?.map { it.attributes["name"] }?.filterNotNull()
+				?.map { it.attributes["name"] }
+				?.filterNotNull()
 
 		context.eventBus.fire(JingleEvent(from, action, initiator, sid, contents, bundle))
 	}
@@ -133,15 +134,18 @@ class JingleModule(
 		when (action) {
 			is MessageInitiationAction.Propose -> {
 				if (action.descriptions.none { features.contains(it.xmlns) }) {
-					this.sendMessageInitiation(MessageInitiationAction.Reject(action.id), from).send()
+					this.sendMessageInitiation(MessageInitiationAction.Reject(action.id), from)
+						.send()
 					return
 				}
 			}
+
 			is MessageInitiationAction.Accept -> {
 				if (context.boundJID?.equals(from) == true) {
 					return
 				}
 			}
+
 			else -> {
 			}
 		}
@@ -152,14 +156,18 @@ class JingleModule(
 		action: MessageInitiationAction, jid: JID,
 	): RequestBuilder<Unit, Message> {
 		when (action) {
-			is MessageInitiationAction.Proceed -> sendMessageInitiation(MessageInitiationAction.Accept(action.id),
-																		JID(context.config.userJID!!, null)).send()
+			is MessageInitiationAction.Proceed -> sendMessageInitiation(
+				MessageInitiationAction.Accept(action.id), JID(context.config.account!!.userJID, null)
+			).send()
+
 			is MessageInitiationAction.Reject -> {
-				if (jid.bareJID != context.config.userJID) {
-					sendMessageInitiation(MessageInitiationAction.Accept(action.id),
-										  JID(context.config.userJID!!, null)).send()
+				if (jid.bareJID != context.config.account!!.userJID) {
+					sendMessageInitiation(
+						MessageInitiationAction.Accept(action.id), JID(context.config.account!!.userJID, null)
+					).send()
 				}
 			}
+
 			else -> {
 			}
 		}
@@ -187,11 +195,12 @@ class JingleModule(
 				xmlns = XMLNS
 				attribute("action", Action.SessionInitiate.value)
 				attribute("sid", sid)
-				attribute("initiator",
-						  context.boundJID?.toString()
-							  ?: throw XMPPException(ErrorCondition.NotAuthorized))
+				attribute(
+					"initiator", context.boundJID?.toString() ?: throw XMPPException(ErrorCondition.NotAuthorized)
+				)
 
-				contents.map { it.toElement() }.forEach { contentEl -> addChild(contentEl) }
+				contents.map { it.toElement() }
+					.forEach { contentEl -> addChild(contentEl) }
 				bundle?.let { bundle ->
 					addChild(element("group") {
 						xmlns = "urn:xmpp:jingle:apps:grouping:0"
@@ -204,7 +213,8 @@ class JingleModule(
 					})
 				}
 			})
-		}.map { }
+		}
+			.map { }
 	}
 
 	fun acceptSession(
@@ -218,11 +228,12 @@ class JingleModule(
 				xmlns = XMLNS
 				attribute("action", Action.SessionAccept.value)
 				attribute("sid", sid)
-				attribute("responder",
-						  context.boundJID?.toString()
-							  ?: throw XMPPException(ErrorCondition.NotAuthorized))
+				attribute(
+					"responder", context.boundJID?.toString() ?: throw XMPPException(ErrorCondition.NotAuthorized)
+				)
 
-				contents.map { it.toElement() }.forEach { contentEl -> addChild(contentEl) }
+				contents.map { it.toElement() }
+					.forEach { contentEl -> addChild(contentEl) }
 				bundle?.let { bundle ->
 					addChild(element("group") {
 						xmlns = "urn:xmpp:jingle:apps:grouping:0"
@@ -235,7 +246,8 @@ class JingleModule(
 					})
 				}
 			})
-		}.map { }
+		}
+			.map { }
 	}
 
 	fun terminateSession(jid: JID, sid: String, reason: TerminateReason): RequestBuilder<Unit, IQ> {
@@ -249,7 +261,8 @@ class JingleModule(
 				attribute("sid", sid)
 				addChild(reason.toReasonElement())
 			})
-		}.map { }
+		}
+			.map { }
 	}
 
 	fun transportInfo(jid: JID, sid: String, contents: List<Content>): RequestBuilder<Unit, IQ> {
@@ -262,9 +275,11 @@ class JingleModule(
 				attribute("action", Action.SessionAccept.value)
 				attribute("sid", sid)
 
-				contents.map { it.toElement() }.forEach { contentEl -> addChild(contentEl) }
+				contents.map { it.toElement() }
+					.forEach { contentEl -> addChild(contentEl) }
 			})
-		}.map { }
+		}
+			.map { }
 	}
 }
 

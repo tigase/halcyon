@@ -18,17 +18,17 @@
 package tigase.halcyon.core
 
 import platform.posix.usleep
+import tigase.halcyon.core.configuration.Configuration
 import tigase.halcyon.core.connector.AbstractConnector
 import tigase.halcyon.core.connector.socket.SocketConnector
-import tigase.halcyon.core.connector.socket.SocketConnectorConfig
 import tigase.halcyon.core.logger.LoggerFactory
 
-actual class Halcyon : AbstractHalcyon() {
+actual class Halcyon actual constructor(configuration: Configuration) : AbstractHalcyon(configuration) {
 
 	private val log = LoggerFactory.logger("tigase.halcyon.core.Halcyon")
 
 	init {
-		this.config.connectorConfig = SocketConnectorConfig()
+		// this.config.connectorConfig = SocketConnectorConfig()
 	}
 
 	override fun reconnect(immediately: Boolean) {

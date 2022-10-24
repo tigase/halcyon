@@ -46,25 +46,29 @@ abstract class AbstractJingleSessionManager<S : AbstractJingleSession>(
 	private val contactChangeStatusEventHandler = handler<ContactChangeStatusEvent> { event ->
 		if (event.lastReceivedPresence.type == PresenceType.Unavailable) {
 			val toClose =
-				sessions.filter { it.jid == event.presence.from && it.account == event.context.config.userJID }
+				sessions.filter { it.jid == event.presence.from && it.account == event.context.config.account?.userJID }
 			toClose.forEach { it.terminate(TerminateReason.Success) }
 		}
 	}
 	private val jingleMessageInitiationEvent = handler<JingleMessageInitiationEvent> { event ->
-		val account = event.context.config.userJID!!
+		val account = event.context.config.account!!.userJID
 		when (event.action) {
 			is MessageInitiationAction.Propose -> {
 				if (session(account, event.jid, event.action.id) == null) {
-					val session = open(event.context.getModule(JingleModule.TYPE),
-									   account,
-									   event.jid,
-									   event.action.id,
-									   Content.Creator.Responder,
-									   InitiationType.Message)
-					val media = event.action.descriptions.filter { isDesciptionSupported(it) }.map { it.media }
+					val session = open(
+						event.context.getModule(JingleModule.TYPE),
+						account,
+						event.jid,
+						event.action.id,
+						Content.Creator.Responder,
+						InitiationType.Message
+					)
+					val media = event.action.descriptions.filter { isDesciptionSupported(it) }
+						.map { it.media }
 					fireIncomingSessionEvent(event.context, session, media)
 				}
 			}
+
 			is MessageInitiationAction.Retract -> sessionTerminated(account, event.jid, event.action.id)
 			is MessageInitiationAction.Accept -> sessionTerminated(account, event.action.id)
 			is MessageInitiationAction.Reject -> sessionTerminated(account, event.jid, event.action.id)
@@ -116,28 +120,31 @@ abstract class AbstractJingleSessionManager<S : AbstractJingleSession>(
 	}
 
 	protected fun sessionInitiated(event: JingleEvent) {
-		val account = event.context.config.userJID!!
+		val account = event.context.config.account!!.userJID
 		session(account, event.jid, event.sid)?.accepted(event.contents, event.bundle) ?: run {
-			val session = open(event.context.getModule(JingleModule.TYPE),
-							   account,
-							   event.jid,
-							   event.sid,
-							   Content.Creator.Responder,
-							   InitiationType.Iq)
+			val session = open(
+				event.context.getModule(JingleModule.TYPE),
+				account,
+				event.jid,
+				event.sid,
+				Content.Creator.Responder,
+				InitiationType.Iq
+			)
 			session.initiated(event.contents, event.bundle)
 			fireIncomingSessionEvent(event.context,
 									 session,
-									 event.contents.map { it.description?.media }.filterNotNull())
+									 event.contents.map { it.description?.media }
+										 .filterNotNull())
 		}
 	}
 
 	protected fun sessionAccepted(event: JingleEvent) {
-		val account = event.context.config.userJID!!
+		val account = event.context.config.account!!.userJID
 		session(account, event.jid, event.sid)?.accepted(event.contents, event.bundle)
 	}
 
 	protected fun sessionTerminated(event: JingleEvent) {
-		val account = event.context.config.userJID!!
+		val account = event.context.config.account!!.userJID
 		sessionTerminated(account, event.jid, event.sid)
 	}
 
@@ -151,10 +158,11 @@ abstract class AbstractJingleSessionManager<S : AbstractJingleSession>(
 	}
 
 	protected fun transportInfo(event: JingleEvent) {
-		val account = event.context.config.userJID!!
+		val account = event.context.config.account!!.userJID
 		session(account, event.jid, event.sid)?.let { session ->
 			for (content in event.contents) {
-				content.transports.flatMap { it.candidates }.forEach { session.addCandidate(it, content.name) }
+				content.transports.flatMap { it.candidates }
+					.forEach { session.addCandidate(it, content.name) }
 			}
 		}
 	}

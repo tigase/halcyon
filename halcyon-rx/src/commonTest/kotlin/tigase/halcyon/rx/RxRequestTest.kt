@@ -6,7 +6,6 @@ import tigase.halcyon.core.requests.XMPPError
 import tigase.halcyon.core.xml.element
 import tigase.halcyon.core.xmpp.ErrorCondition
 import tigase.halcyon.core.xmpp.stanzas.IQType
-import tigase.halcyon.core.xmpp.toBareJID
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.test.assertNotNull
@@ -15,11 +14,6 @@ import kotlin.test.fail
 class RxRequestTest {
 
 	val halcyon = DummyHalcyon().also {
-		it.configure {
-			userJID = "test@tester.com".toBareJID()
-			password = "test"
-			resource = "test"
-		}
 		it.connect()
 	}
 
@@ -74,8 +68,9 @@ class RxRequestTest {
 			attribute("type", "result")
 			attribute("from", "a@b.c")
 		}
-		assertNotNull(halcyon.requestsManager.getRequest(resp),
-					  "Request was not registered in RequestsManager").setResponseStanza(resp)
+		assertNotNull(
+			halcyon.requestsManager.getRequest(resp), "Request was not registered in RequestsManager"
+		).setResponseStanza(resp)
 		assertEquals(1, successCounter)
 	}
 
@@ -106,8 +101,9 @@ class RxRequestTest {
 				}
 			}
 		}
-		assertNotNull(halcyon.requestsManager.getRequest(resp),
-					  "Request was not registered in RequestsManager").setResponseStanza(resp)
+		assertNotNull(
+			halcyon.requestsManager.getRequest(resp), "Request was not registered in RequestsManager"
+		).setResponseStanza(resp)
 		assertEquals(1, failureCounter)
 
 	}
@@ -138,8 +134,9 @@ class RxRequestTest {
 			attribute("from", "a@b.c")
 
 		}
-		assertNotNull(halcyon.requestsManager.getRequest(resp),
-					  "Request was not registered in RequestsManager").setResponseStanza(resp)
+		assertNotNull(
+			halcyon.requestsManager.getRequest(resp), "Request was not registered in RequestsManager"
+		).setResponseStanza(resp)
 		assertEquals(1, failureCounter)
 
 	}
@@ -170,8 +167,9 @@ class RxRequestTest {
 			attribute("from", "a@b.c")
 
 		}
-		assertNotNull(halcyon.requestsManager.getRequest(resp),
-					  "Request was not registered in RequestsManager").setResponseStanza(resp)
+		assertNotNull(
+			halcyon.requestsManager.getRequest(resp), "Request was not registered in RequestsManager"
+		).setResponseStanza(resp)
 		assertEquals(1, failureCounter)
 
 	}

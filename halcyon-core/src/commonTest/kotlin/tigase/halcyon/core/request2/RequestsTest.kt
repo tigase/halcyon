@@ -17,8 +17,7 @@
  */
 package tigase.halcyon.core.request2
 
-import tigase.halcyon.core.AbstractHalcyon
-import tigase.halcyon.core.connector.AbstractConnector
+import tigase.DummyHalcyon
 import tigase.halcyon.core.requests.Request
 import tigase.halcyon.core.requests.RequestBuilderFactory
 import tigase.halcyon.core.requests.XMPPError
@@ -32,19 +31,13 @@ import kotlin.test.*
 
 class RequestsTest {
 
-	private val halcyon = object : AbstractHalcyon() {
-		override fun reconnect(immediately: Boolean) {
-			fail("It should not be called in this test!")
-		}
-
-		override fun createConnector(): AbstractConnector {
-			fail("It should not be called in this test!")
-		}
+	val halcyon = DummyHalcyon().apply {
+		connect()
 	}
 
 	private val factory = RequestBuilderFactory(halcyon)
 
-//	@Test
+	//	@Test
 	fun testMap2Stacking() {
 		var rr1: Result<Long>? = null
 		var rr12: Result<Long>? = null
@@ -57,62 +50,70 @@ class RequestsTest {
 		var mapCounter3 = 0
 		var mapCounter4 = 0
 
-	println("Create request")
+		println("Create request")
 		val req = factory.iq {
 			to = "a@b".toJID()
 			from = "x@y".toJID()
 			type = IQType.Get
-		}.map { value ->
-			++mapCounter1
-			value.getChildrenNS("response", "test")!!.value!!
-		}.map { value ->
-			++mapCounter2
-			value.toLong()
-		}.response { result ->
-			++respCounter1
-			rr1 = result
-		}.response { result ->
-			++respCounter1
-			rr12 = result
-		}.map { value ->
-			++mapCounter3
-			value + 1
-		}.map { value ->
-			++mapCounter4
-			1
-		}.response { result ->
-			++respCounter2
+		}
+			.map { value ->
+				++mapCounter1
+				value.getChildrenNS("response", "test")!!.value!!
+			}
+			.map { value ->
+				++mapCounter2
+				value.toLong()
+			}
+			.response { result ->
+				++respCounter1
+				rr1 = result
+			}
+			.response { result ->
+				++respCounter1
+				rr12 = result
+			}
+			.map { value ->
+				++mapCounter3
+				value + 1
+			}
+			.map { value ->
+				++mapCounter4
+				1
+			}
+			.response { result ->
+				++respCounter2
 //			rr2 = result
-		}.build()
+			}
+			.build()
 
-	println("Create response")
+		println("Create response")
 		val response = iq {
 			from = "a@b".toJID()
 			to = "x@y".toJID()
 			type = IQType.Result
-			"response"{
+			"response" {
 				xmlns = "test"
 				+"1234"
 			}
-			"response2"{
+			"response2" {
 				xmlns = "test"
 				+"9832"
 			}
 		}
-	println("Adding response to request")
+		println("Adding response to request")
 
-	req.setResponseStanza(response)
+		req.setResponseStanza(response)
 
-	println("Checking results")
+		println("Checking results")
 
-	assertNotNull(rr1).let {
-		assertTrue(it.isSuccess)
-		assertEquals(1234, it.getOrNull())
-	}
-	assertNotNull(rr12).let {
-		assertTrue(it.isSuccess)
-		assertEquals(1234, it.getOrNull())
-	}
+		assertNotNull(rr1).let {
+			assertTrue(it.isSuccess)
+			assertEquals(1234, it.getOrNull())
+		}
+		assertNotNull(rr12).let {
+			assertTrue(it.isSuccess)
+			assertEquals(1234, it.getOrNull())
+		}
 
 		assertNotNull(rr2).let {
 			assertTrue(it.isSuccess)
@@ -138,15 +139,18 @@ class RequestsTest {
 			to = "a@b".toJID()
 			from = "x@y".toJID()
 			type = IQType.Get
-		}.map { response -> response.getChildrenNS("response", "test")!!.value!! }.response { result ->
-			if (result.isSuccess) rr = result
-		}.build()
+		}
+			.map { response -> response.getChildrenNS("response", "test")!!.value!! }
+			.response { result ->
+				if (result.isSuccess) rr = result
+			}
+			.build()
 
 		val response = iq {
 			from = "a@b".toJID()
 			to = "x@y".toJID()
 			type = IQType.Result
-			"response"{
+			"response" {
 				xmlns = "test"
 				+"1234"
 			}
@@ -167,17 +171,21 @@ class RequestsTest {
 			to = "a@b".toJID()
 			from = "x@y".toJID()
 			type = IQType.Get
-		}.map { response -> response.getChildrenNS("response", "test")!!.value!! }.response { result ->
-			if (result.isSuccess) rr = result
-		}.handleResponseStanza { _, iq ->
-			rs = iq
-		}.build()
+		}
+			.map { response -> response.getChildrenNS("response", "test")!!.value!! }
+			.response { result ->
+				if (result.isSuccess) rr = result
+			}
+			.handleResponseStanza { _, iq ->
+				rs = iq
+			}
+			.build()
 
 		val response = iq {
 			from = "a@b".toJID()
 			to = "x@y".toJID()
 			type = IQType.Result
-			"response"{
+			"response" {
 				xmlns = "test"
 				+"1234"
 			}
@@ -199,13 +207,15 @@ class RequestsTest {
 			to = "a@b".toJID()
 			from = "x@y".toJID()
 			type = IQType.Get
-		}.response { rr = it }.build()
+		}
+			.response { rr = it }
+			.build()
 
 		val response = iq {
 			from = "a@b".toJID()
 			to = "x@y".toJID()
 			type = IQType.Result
-			"response"{
+			"response" {
 				xmlns = "test"
 				+"1234"
 			}
@@ -226,13 +236,17 @@ class RequestsTest {
 			to = "a@b".toJID()
 			from = "x@y".toJID()
 			type = IQType.Get
-		}.response { rr1 = it }.response { rr2 = it }.response { rr3 = it }.build()
+		}
+			.response { rr1 = it }
+			.response { rr2 = it }
+			.response { rr3 = it }
+			.build()
 
 		val response = iq {
 			from = "a@b".toJID()
 			to = "x@y".toJID()
 			type = IQType.Result
-			"response"{
+			"response" {
 				xmlns = "test"
 				+"1234"
 			}
@@ -254,7 +268,11 @@ class RequestsTest {
 			to = "a@b".toJID()
 			from = "x@y".toJID()
 			type = IQType.Get
-		}.response { rr1 = it }.response { rr2 = it }.response { rr3 = it }.build()
+		}
+			.response { rr1 = it }
+			.response { rr2 = it }
+			.response { rr3 = it }
+			.build()
 
 		val response = iq {
 			from = "a@b".toJID()
@@ -276,9 +294,11 @@ class RequestsTest {
 			to = "a@b".toJID()
 			from = "x@y".toJID()
 			type = IQType.Get
-		}.response {
-			rr = it
-		}.build()
+		}
+			.response {
+				rr = it
+			}
+			.build()
 		req.markTimeout()
 
 		val exNotNull = assertNotNull(assertNotNull(rr).exceptionOrNull())
@@ -299,16 +319,20 @@ class RequestsTest {
 			to = "a@b".toJID()
 			from = "x@y".toJID()
 			type = IQType.Get
-		}.response {
-			++respCounter1
-			rr1 = it
-		}.map {
-			++mapCounter1
-			it.getChildrenNS("response", "test")!!.value!!
-		}.response {
-			++respCounter2
-			rr2 = it
-		}.build()
+		}
+			.response {
+				++respCounter1
+				rr1 = it
+			}
+			.map {
+				++mapCounter1
+				it.getChildrenNS("response", "test")!!.value!!
+			}
+			.response {
+				++respCounter2
+				rr2 = it
+			}
+			.build()
 		req.markTimeout()
 
 		val exNotNull = assertNotNull(assertNotNull(rr1).exceptionOrNull())
@@ -331,19 +355,21 @@ class RequestsTest {
 			to = "a@b".toJID()
 			from = "x@y".toJID()
 			type = IQType.Get
-		}.response {
-			rr = it
-		}.build()
+		}
+			.response {
+				rr = it
+			}
+			.build()
 
 		val response = iq {
 			from = "a@b".toJID()
 			to = "x@y".toJID()
 			type = IQType.Error
-			"error"{
+			"error" {
 				attributes["code"] = "404"
 				attributes["type"] = "cancel"
-				"item-not-found"{ xmlns = "urn:ietf:params:xml:ns:xmpp-stanzas" }
-				"text"{
+				"item-not-found" { xmlns = "urn:ietf:params:xml:ns:xmpp-stanzas" }
+				"text" {
 					xmlns = "urn:ietf:params:xml:ns:xmpp-stanzas"
 					+"Test message"
 				}
@@ -369,19 +395,23 @@ class RequestsTest {
 			to = "a@b".toJID()
 			from = "x@y".toJID()
 			type = IQType.Get
-		}.map { it }.map { it.name }.response {
-			rr = it
-		}.build()
+		}
+			.map { it }
+			.map { it.name }
+			.response {
+				rr = it
+			}
+			.build()
 
 		val response = iq {
 			from = "a@b".toJID()
 			to = "x@y".toJID()
 			type = IQType.Error
-			"error"{
+			"error" {
 				attributes["code"] = "404"
 				attributes["type"] = "cancel"
-				"item-not-found"{ xmlns = "urn:ietf:params:xml:ns:xmpp-stanzas" }
-				"text"{
+				"item-not-found" { xmlns = "urn:ietf:params:xml:ns:xmpp-stanzas" }
+				"text" {
 					xmlns = "urn:ietf:params:xml:ns:xmpp-stanzas"
 					+"Test message"
 				}
@@ -402,17 +432,20 @@ class RequestsTest {
 	@Test
 	fun testMarkAsSentIQ() {
 		var rr: Result<*>? = null
-		var sendCounter =0;
+		var sendCounter = 0
 
 		val req = factory.iq {
 			to = "a@b".toJID()
 			from = "x@y".toJID()
 			type = IQType.Get
-		}.response {
-			rr = it
-		}.onSend {
-			++sendCounter
-		}.build()
+		}
+			.response {
+				rr = it
+			}
+			.onSend {
+				++sendCounter
+			}
+			.build()
 		req.markAsSent()
 
 		assertNull(rr, "Handler must not be executed for IQ stanza, if markAsRead() is called.")
@@ -424,20 +457,26 @@ class RequestsTest {
 	@Test
 	fun testMarkAsSentIQStacked() {
 		var rr: Result<*>? = null
-		var sendCounter1 =0;
-		var sendCounter2 =0;
+		var sendCounter1 = 0
+		var sendCounter2 = 0
 
 		val req = factory.iq {
 			to = "a@b".toJID()
 			from = "x@y".toJID()
 			type = IQType.Get
-		}.onSend {
-			++sendCounter1
-		}.map { }.response {
-			rr = it
-		}.map { }.onSend {
-			++sendCounter2
-		}.build()
+		}
+			.onSend {
+				++sendCounter1
+			}
+			.map { }
+			.response {
+				rr = it
+			}
+			.map { }
+			.onSend {
+				++sendCounter2
+			}
+			.build()
 		req.markAsSent()
 
 		assertNull(rr, "Handler must not be executed for IQ stanza, if markAsRead() is called.")
@@ -448,14 +487,16 @@ class RequestsTest {
 
 	@Test
 	fun testMarkAsSentMessage() {
-		var sendCounter =0;
+		var sendCounter = 0
 
 		val req = factory.message {
 			to = "a@b".toJID()
 			from = "x@y".toJID()
-		}.onSend {
-			++sendCounter;
-		}.build()
+		}
+			.onSend {
+				++sendCounter
+			}
+			.build()
 		req.markAsSent()
 
 		assertTrue(req.isSent)
@@ -475,19 +516,24 @@ class RequestsTest {
 		val req = factory.message {
 			to = "a@b".toJID()
 			from = "x@y".toJID()
-		}.map {
-			++mapCounter1
-			Unit
-		}.onSend {
-			++sentounter1
-			rr = it
-		}.map {
-			++mapCounter2
-			"Sent"
-		}.onSend {
-			++sentCounter2
-			rr1 = it
-		}.build()
+		}
+			.map {
+				++mapCounter1
+				Unit
+			}
+			.onSend {
+				++sentounter1
+				rr = it
+			}
+			.map {
+				++mapCounter2
+				"Sent"
+			}
+			.onSend {
+				++sentCounter2
+				rr1 = it
+			}
+			.build()
 		req.markAsSent()
 
 		assertTrue(req.isSent)

@@ -4,9 +4,11 @@ import com.badoo.reaktive.test.base.assertNotError
 import com.badoo.reaktive.test.observable.TestObservableObserver
 import com.badoo.reaktive.test.observable.assertValues
 import tigase.halcyon.core.AbstractHalcyon
+import tigase.halcyon.core.builder.createConfiguration
 import tigase.halcyon.core.connector.AbstractConnector
 import tigase.halcyon.core.eventbus.Event
 import tigase.halcyon.core.eventbus.EventBus
+import tigase.halcyon.core.xmpp.toBareJID
 import kotlin.test.Test
 
 class EventBusRxTest {
@@ -29,7 +31,14 @@ class EventBusRxTest {
 
 	@Test
 	fun testObserve() {
-		val eventBus = EventBus(object : AbstractHalcyon() {
+		val eventBus = EventBus(object : AbstractHalcyon(createConfiguration {
+			account {
+				userJID = "test@tester.com".toBareJID()
+				passwordCallback = { "test" }
+				resource = "test"
+
+			}
+		}) {
 			override fun reconnect(immediately: Boolean) = TODO("Not yet implemented")
 			override fun createConnector(): AbstractConnector = TODO("Not yet implemented")
 		})

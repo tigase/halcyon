@@ -1,10 +1,19 @@
 package tigase.halcyon.coroutines
 
 import tigase.halcyon.core.AbstractHalcyon
+import tigase.halcyon.core.builder.createConfiguration
 import tigase.halcyon.core.connector.AbstractConnector
 import tigase.halcyon.core.connector.SessionController
+import tigase.halcyon.core.xmpp.toBareJID
 
-class DummyHalcyon : AbstractHalcyon() {
+class DummyHalcyon : AbstractHalcyon(createConfiguration {
+	account {
+		userJID = "test@tester.com".toBareJID()
+		passwordCallback = { "test" }
+		resource = "test"
+
+	}
+}) {
 
 	inner class DummySessionController : SessionController {
 

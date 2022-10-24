@@ -17,28 +17,19 @@
  */
 package tigase.halcyon.core.xmpp.modules.mix
 
-import tigase.halcyon.core.AbstractHalcyon
-import tigase.halcyon.core.connector.AbstractConnector
+import tigase.DummyHalcyon
 import tigase.halcyon.core.xmpp.modules.roster.RosterItem
 import tigase.halcyon.core.xmpp.modules.roster.RosterModule
 import tigase.halcyon.core.xmpp.stanzas.message
 import tigase.halcyon.core.xmpp.toBareJID
 import tigase.halcyon.core.xmpp.toJID
-import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertFalse
 
 class MIXModuleTest {
 
-	lateinit var halcyon: AbstractHalcyon
-
-	@BeforeTest
-	fun setUp() {
-		this.halcyon = object : AbstractHalcyon() {
-			override fun reconnect(immediately: Boolean) = TODO("not implemented")
-			override fun createConnector(): AbstractConnector = TODO("not implemented")
-		}
-		this.halcyon.modules.initModules()
+	val halcyon = DummyHalcyon().apply {
+		connect()
 	}
 
 	/**
@@ -46,11 +37,13 @@ class MIXModuleTest {
 	 */
 	@Test
 	fun testMIXMessageEventCalling() {
-		halcyon.getModule<RosterModule>(RosterModule.TYPE).store.addItem("arturs@mix.tigase.org".toBareJID(),
-																		 RosterItem("arturs@mix.tigase.org".toBareJID(),
-																					"MIX",
-																					annotations = arrayOf(
-																						MIXRosterItemAnnotation("123"))))
+		halcyon.getModule<RosterModule>(RosterModule.TYPE).store.addItem(
+			"arturs@mix.tigase.org".toBareJID(), RosterItem(
+				"arturs@mix.tigase.org".toBareJID(), "MIX", annotations = arrayOf(
+					MIXRosterItemAnnotation("123")
+				)
+			)
+		)
 
 		val module = halcyon.getModule<MIXModule>(MIXModule.TYPE)
 
@@ -64,13 +57,13 @@ class MIXModuleTest {
 			from = "arturs@mix.tigase.org".toJID()
 			to = "kobit@tigase.org".toJID()
 			attributes["id"] = "4"
-			"event"{
+			"event" {
 				xmlns = "http://jabber.org/protocol/pubsub#event"
-				"items"{
+				"items" {
 					attributes["node"] = "urn:xmpp:mix:nodes:participants"
 				}
 			}
-			"stanza-id"{
+			"stanza-id" {
 				xmlns = "urn:xmpp:sid:0"
 				attributes["id"] = "2b40219a-8f51-419f-ab0f-71ee03d278e9"
 				attributes["by"] = "kobit@tigase.org"

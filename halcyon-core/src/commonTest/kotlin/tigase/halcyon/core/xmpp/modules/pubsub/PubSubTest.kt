@@ -17,8 +17,7 @@
  */
 package tigase.halcyon.core.xmpp.modules.pubsub
 
-import tigase.halcyon.core.AbstractHalcyon
-import tigase.halcyon.core.connector.AbstractConnector
+import tigase.DummyHalcyon
 import tigase.halcyon.core.xml.element
 import tigase.halcyon.core.xmpp.stanzas.message
 import tigase.halcyon.core.xmpp.toJID
@@ -31,9 +30,8 @@ class PubSubTest {
 
 	@Test
 	fun testProcessAndEvents() {
-		val halcyon = object : AbstractHalcyon() {
-			override fun reconnect(immediately: Boolean) = TODO("not implemented")
-			override fun createConnector(): AbstractConnector = TODO("not implemented")
+		val halcyon = DummyHalcyon().apply {
+			connect()
 		}
 		val pubsub = assertNotNull(halcyon.getModule<PubSubModule>(PubSubModule.TYPE))
 
@@ -50,17 +48,17 @@ class PubSubTest {
 		pubsub.process(message {
 			from = "pubsub.shakespeare.lit".toJID()
 			to = "francisco@denmark.lit".toJID()
-			"event"{
+			"event" {
 				xmlns = "http://jabber.org/protocol/pubsub#event"
-				"items"{
+				"items" {
 					attribute("node", "princely_musings")
-					"item"{
+					"item" {
 						attribute("id", "item-1")
-						"data"{
+						"data" {
 							+"test"
 						}
 					}
-					"item"{
+					"item" {
 						attribute("id", "item-2")
 					}
 				}
@@ -75,11 +73,11 @@ class PubSubTest {
 		pubsub.process(message {
 			from = "pubsub.shakespeare.lit".toJID()
 			to = "bernardo@denmark.lit".toJID()
-			"event"{
+			"event" {
 				xmlns = "http://jabber.org/protocol/pubsub#event"
-				"items"{
+				"items" {
 					attribute("node", "princely_musings")
-					"retract"{
+					"retract" {
 						attribute("id", "item-3")
 					}
 				}

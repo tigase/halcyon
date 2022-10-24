@@ -6,14 +6,14 @@ import tigase.halcyon.core.connector.SentXMLElementEvent
 import tigase.halcyon.core.xmpp.toBareJID
 
 fun createHalcyon(): Halcyon {
-	return Halcyon().apply {
-		configure {
+	return tigase.halcyon.core.builder.createHalcyon {
+		account {
 			userJID = "admin@sailboat.local".toBareJID()
-			password = "admin"
-			domain = "sailboat.local"
-			socketConnector { }
+			password { "admin" }
 		}
-		eventBus.register<ReceivedXMLElementEvent>(ReceivedXMLElementEvent.TYPE) { println(">> ${it.element.getAsString()}") }
-		eventBus.register<SentXMLElementEvent>(SentXMLElementEvent.TYPE) { println("<< ${it.element.getAsString()}") }
 	}
+		.apply {
+			eventBus.register<ReceivedXMLElementEvent>(ReceivedXMLElementEvent.TYPE) { println(">> ${it.element.getAsString()}") }
+			eventBus.register<SentXMLElementEvent>(SentXMLElementEvent.TYPE) { println("<< ${it.element.getAsString()}") }
+		}
 }

@@ -129,7 +129,6 @@ class SASLModule(override val context: Context) : XmppModule {
 		engine.add(SASLScramSHA256())
 		engine.add(SASLScramSHA1())
 		engine.add(SASLPlain())
-		engine.add(SASLAnonymous())
 	}
 
 	fun startAuth(streamFeatures: Element) {
@@ -184,6 +183,6 @@ class SASLModule(override val context: Context) : XmppModule {
 	}
 
 	fun isAllowed(streamFeatures: Element): Boolean =
-		enabled && streamFeatures.getChildrenNS("mechanisms", XMLNS) != null
+		context.config.account != null && enabled && streamFeatures.getChildrenNS("mechanisms", XMLNS) != null
 
 }

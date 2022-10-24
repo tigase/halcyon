@@ -18,13 +18,20 @@
 package tigase.halcyon.core.eventbus
 
 import tigase.halcyon.core.Halcyon
+import tigase.halcyon.core.builder.createConfiguration
 import tigase.halcyon.core.eventbus.EventBusInterface.Companion.ALL_EVENTS
+import tigase.halcyon.core.xmpp.toBareJID
 import java.util.concurrent.ConcurrentLinkedQueue
 import kotlin.test.*
 
 class EventBusMultiThreadTest {
 
-	private val halcyon = Halcyon()
+	private val halcyon = Halcyon(createConfiguration {
+		account {
+			userJID = "testuser@tigase.org".toBareJID()
+			passwordCallback = { "testuserpassword" }
+		}
+	})
 	val eventBus = EventBus(halcyon)
 
 	private var working: Boolean = false
@@ -90,7 +97,10 @@ class EventBusMultiThreadTest {
 
 
 
-		while (threads.stream().filter { t -> t.isAlive }.count() > 0) {
+		while (threads.stream()
+				.filter { t -> t.isAlive }
+				.count() > 0
+		) {
 			Thread.sleep(510)
 		}
 		working = false

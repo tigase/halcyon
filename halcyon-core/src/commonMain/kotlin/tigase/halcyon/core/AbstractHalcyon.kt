@@ -17,7 +17,6 @@
  */
 package tigase.halcyon.core
 
-import tigase.halcyon.core.configuration.ConfigDsl
 import tigase.halcyon.core.configuration.Configuration
 import tigase.halcyon.core.connector.*
 import tigase.halcyon.core.eventbus.Event
@@ -82,14 +81,16 @@ data class TickEvent(val counter: Long) : Event(TYPE) {
 }
 
 @Suppress("LeakingThis")
-abstract class AbstractHalcyon : Context, PacketWriter {
+abstract class AbstractHalcyon(override val config: Configuration) : Context, PacketWriter {
 
 	var running: Boolean = false
 		private set
 
 	private val log = LoggerFactory.logger("tigase.halcyon.core.AbstractHalcyon")
 
-	enum class State { Connecting,
+	enum class State {
+
+		Connecting,
 		Connected,
 		Disconnecting,
 		Disconnected,
@@ -99,7 +100,7 @@ abstract class AbstractHalcyon : Context, PacketWriter {
 	protected var connector: AbstractConnector? = null
 	protected var sessionController: SessionController? = null
 	final override val eventBus: EventBus = EventBus(this)
-	override val authContext: SASLContext  by property(Scope.Connection) { SASLContext() }
+	override val authContext: SASLContext by property(Scope.Connection) { SASLContext() }
 	override var boundJID: JID? by propertySimple(Scope.Session, null)
 
 	var autoReconnect: Boolean = true
@@ -108,7 +109,6 @@ abstract class AbstractHalcyon : Context, PacketWriter {
 
 	private var tickCounter: Long = 0
 
-	override val config = Configuration()
 	override val writer: PacketWriter
 		get() = this
 	final override val modules: ModulesManager = ModulesManager()
@@ -156,17 +156,15 @@ abstract class AbstractHalcyon : Context, PacketWriter {
 		modules.register(MUCModule(this))
 		modules.register(ReferenceModule(this))
 		modules.register(SASL2Module(this))
-	}
-
-	fun configure(cfg: ConfigDsl.() -> Unit) {
-		val c = ConfigDsl(config)
-		c.cfg()
+		modules.register(InBandRegistrationModule(this))
 	}
 
 	protected open fun onSessionControllerEvent(event: SessionController.SessionControllerEvents) {
 		when (event) {
 			is SessionController.SessionControllerEvents.ErrorStop, is SessionController.SessionControllerEvents.ErrorReconnect -> processControllerErrorEvent(
-				event)
+				event
+			)
+
 			is SessionController.SessionControllerEvents.Successful -> onSessionEstablished()
 		}
 	}
@@ -247,7 +245,7 @@ abstract class AbstractHalcyon : Context, PacketWriter {
 				attribute("to", this)
 			}
 
-			"error"{
+			"error" {
 				errorCondition.type?.let {
 					attribute("type", it)
 				}
@@ -260,7 +258,7 @@ abstract class AbstractHalcyon : Context, PacketWriter {
 				}
 
 				msg?.let {
-					"text"{
+					"text" {
 						attribute("xmlns", XMPPException.XMLNS)
 						+it
 					}
@@ -281,9 +279,10 @@ abstract class AbstractHalcyon : Context, PacketWriter {
 					writeDirectly(this)
 				}
 			}
+
 			else -> {
 				writeDirectly(element("stream:error") {
-					"unsupported-stanza-type"{
+					"unsupported-stanza-type" {
 						xmlns = "urn:ietf:params:xml:ns:xmpp-streams"
 					}
 				})
@@ -298,7 +297,8 @@ abstract class AbstractHalcyon : Context, PacketWriter {
 		eventBus.fire(TickEvent(++tickCounter))
 	}
 
-	protected fun getConnectorState(): tigase.halcyon.core.connector.State = this.connector?.state ?: tigase.halcyon.core.connector.State.Disconnected
+	protected fun getConnectorState(): tigase.halcyon.core.connector.State =
+		this.connector?.state ?: tigase.halcyon.core.connector.State.Disconnected
 
 	private fun logSendingStanza(element: Element) {
 		when {
@@ -423,12 +423,14 @@ abstract class AbstractHalcyon : Context, PacketWriter {
 			this.running = false
 			log.info { "Disconnecting" }
 
-			modules.getModuleOrNull<StreamManagementModule>(StreamManagementModule.TYPE)?.let {
-				val ackEnabled = getModule<StreamManagementModule>(StreamManagementModule.TYPE).resumptionContext.isAckActive
-				if (ackEnabled && getConnectorState() == tigase.halcyon.core.connector.State.Connected) {
-					it.sendAck(true)
+			modules.getModuleOrNull<StreamManagementModule>(StreamManagementModule.TYPE)
+				?.let {
+					val ackEnabled =
+						getModule<StreamManagementModule>(StreamManagementModule.TYPE).resumptionContext.isAckActive
+					if (ackEnabled && getConnectorState() == tigase.halcyon.core.connector.State.Connected) {
+						it.sendAck(true)
+					}
 				}
-			}
 
 			state = State.Disconnecting
 			onDisconnecting()
@@ -442,7 +444,9 @@ abstract class AbstractHalcyon : Context, PacketWriter {
 
 	internal fun clear(scope: Scope) {
 		internalDataStore.clear(scope)
-		val scopes = Scope.values().filter { s -> s.ordinal <= scope.ordinal }.toTypedArray()
+		val scopes = Scope.values()
+			.filter { s -> s.ordinal <= scope.ordinal }
+			.toTypedArray()
 		eventBus.fire(ClearedEvent(scopes))
 	}
 }

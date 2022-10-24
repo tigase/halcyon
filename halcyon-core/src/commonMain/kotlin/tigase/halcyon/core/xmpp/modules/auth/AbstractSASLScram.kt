@@ -66,8 +66,7 @@ abstract class AbstractSASLScram(
 		"^(?:e=([^,]+)|v=([^,]+)(?:,.*)?)$", RegexOption.IGNORE_CASE
 	)
 
-	override fun isAllowedToUse(config: Configuration, saslContext: SASLContext): Boolean =
-		config.userJID != null && config.passwordCallback != null
+	override fun isAllowedToUse(config: Configuration, saslContext: SASLContext): Boolean = config.account != null
 
 	private fun scramData(saslContext: SASLContext): SCRAMData {
 		if (saslContext.mechanismData == null) {
@@ -93,14 +92,14 @@ abstract class AbstractSASLScram(
 				}
 				append(",")
 
-				config.authzIdJID?.let {
+				config.account?.authzIdJID?.let {
 					append("a=").append(it)
 				}
 				append(",")
 			}
 
 			data.clientFirstMessageBare = buildString {
-				append("n=${config.userJID!!.localpart},")
+				append("n=${config.account!!.userJID.localpart},")
 				append("r=${data.conce}")
 			}
 
@@ -137,12 +136,12 @@ abstract class AbstractSASLScram(
 
 			data.saltedPassword = when (hashAlgorithm) {
 				ScramHashAlgorithm.SHA1 -> PBKDF2.pbkdf2WithHmacSHA1(
-					password = config.passwordCallback!!.getPassword()
+					password = config.account!!.passwordCallback.invoke()
 						.encodeToByteArray(), salt = salt, iterationCount = iterations, 160
 				)
 
 				ScramHashAlgorithm.SHA256 -> PBKDF2.pbkdf2WithHmacSHA256(
-					password = config.passwordCallback!!.getPassword()
+					password = config.account!!.passwordCallback.invoke()
 						.encodeToByteArray(), salt = salt, iterationCount = iterations, 256
 				)
 			}

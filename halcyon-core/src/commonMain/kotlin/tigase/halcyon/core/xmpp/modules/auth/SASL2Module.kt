@@ -41,7 +41,6 @@ class SASL2Module(override val context: AbstractHalcyon) : XmppModule {
 		engine.add(SASLScramSHA256())
 		engine.add(SASLScramSHA1())
 		engine.add(SASLPlain())
-		engine.add(SASLAnonymous())
 	}
 
 	fun startAuth(streamFeatures: Element) {
@@ -130,6 +129,6 @@ class SASL2Module(override val context: AbstractHalcyon) : XmppModule {
 	}
 
 	fun isAllowed(streamFeatures: Element): Boolean =
-		enabled && streamFeatures.getChildrenNS("authentication", XMLNS) != null
+		context.config.account != null && enabled && streamFeatures.getChildrenNS("authentication", XMLNS) != null
 
 }

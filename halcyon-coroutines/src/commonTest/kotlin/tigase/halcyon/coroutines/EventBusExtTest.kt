@@ -3,9 +3,11 @@ package tigase.halcyon.coroutines
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.filterIsInstance
 import tigase.halcyon.core.AbstractHalcyon
+import tigase.halcyon.core.builder.createConfiguration
 import tigase.halcyon.core.connector.AbstractConnector
 import tigase.halcyon.core.eventbus.Event
 import tigase.halcyon.core.eventbus.EventBus
+import tigase.halcyon.core.xmpp.toBareJID
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -31,7 +33,14 @@ class EventBusExtTest {
 	@ObsoleteCoroutinesApi
 	@Test
 	fun testObserve() {
-		val eventBus = EventBus(object : AbstractHalcyon() {
+		val eventBus = EventBus(object : AbstractHalcyon(createConfiguration {
+			account {
+				userJID = "test@tester.com".toBareJID()
+				passwordCallback = { "test" }
+				resource = "test"
+
+			}
+		}) {
 			override fun reconnect(immediately: Boolean) = TODO("Not yet implemented")
 			override fun createConnector(): AbstractConnector = TODO("Not yet implemented")
 		})
@@ -66,12 +75,11 @@ class EventBusExtTest {
 
 		eventBus.fire(Test2Event("2.3"))
 
-		assertEquals(o1,
-					 listOf(Test1Event("1.1"),
-							Test2Event("2.1"),
-							Test1Event("1.2"),
-							Test2Event("2.2"),
-							Test2Event("2.3")))
+		assertEquals(
+			o1, listOf(
+				Test1Event("1.1"), Test2Event("2.1"), Test1Event("1.2"), Test2Event("2.2"), Test2Event("2.3")
+			)
+		)
 		assertEquals(o2, listOf(Test1Event("1.1"), Test1Event("1.2")))
 		assertEquals(o3, listOf(Test2Event("2.1"), Test2Event("2.2"), Test2Event("2.3")))
 	}
@@ -79,7 +87,14 @@ class EventBusExtTest {
 	@ObsoleteCoroutinesApi
 	@Test
 	fun testObserveFilter() {
-		val eventBus = EventBus(object : AbstractHalcyon() {
+		val eventBus = EventBus(object : AbstractHalcyon(createConfiguration {
+			account {
+				userJID = "test@tester.com".toBareJID()
+				passwordCallback = { "test" }
+				resource = "test"
+
+			}
+		}) {
 			override fun reconnect(immediately: Boolean) = TODO("Not yet implemented")
 			override fun createConnector(): AbstractConnector = TODO("Not yet implemented")
 		})
@@ -116,12 +131,11 @@ class EventBusExtTest {
 
 		eventBus.fire(Test2Event("2.3"))
 
-		assertEquals(o1,
-					 listOf(Test1Event("1.1"),
-							Test2Event("2.1"),
-							Test1Event("1.2"),
-							Test2Event("2.2"),
-							Test2Event("2.3")))
+		assertEquals(
+			o1, listOf(
+				Test1Event("1.1"), Test2Event("2.1"), Test1Event("1.2"), Test2Event("2.2"), Test2Event("2.3")
+			)
+		)
 		assertEquals(o2, listOf(Test1Event("1.1"), Test1Event("1.2")))
 		assertEquals(o3, listOf(Test2Event("2.1"), Test2Event("2.2"), Test2Event("2.3")))
 	}

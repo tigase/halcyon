@@ -17,16 +17,16 @@
  */
 package tigase.halcyon.core
 
+import tigase.halcyon.core.configuration.Configuration
 import tigase.halcyon.core.connector.AbstractConnector
 import tigase.halcyon.core.connector.socket.SocketConnector
-import tigase.halcyon.core.connector.socket.SocketConnectorConfig
 import tigase.halcyon.core.eventbus.EventBus
 import tigase.halcyon.core.eventbus.EventHandler
 import tigase.halcyon.core.exceptions.HalcyonException
 import tigase.halcyon.core.logger.LoggerFactory
 import java.util.*
 
-actual class Halcyon actual constructor() : AbstractHalcyon() {
+actual class Halcyon actual constructor(configuration: Configuration) : AbstractHalcyon(configuration) {
 
 	private val log = LoggerFactory.logger("tigase.halcyon.core.Halcyon")
 
@@ -49,7 +49,7 @@ actual class Halcyon actual constructor() : AbstractHalcyon() {
 
 	init {
 		eventBus.mode = EventBus.Mode.ThreadPerHandler
-		this.config.connectorConfig = SocketConnectorConfig()
+//		this.config.connectorConfig = SocketConnectorConfig()
 	}
 
 	override fun onConnecting() {
@@ -93,7 +93,7 @@ actual class Halcyon actual constructor() : AbstractHalcyon() {
 			synchronized(lock) {
 				lock.wait(30000)
 			}
-			if (state != State.Connected) {
+			if (state != State.Connected && state != State.Stopped) {
 				throw HalcyonException("Cannot connect to XMPP server.")
 			}
 		} finally {

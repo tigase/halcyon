@@ -48,8 +48,10 @@ class Field(val element: Element) {
 	var fieldType: FieldType?
 		set(value) = element.setAtt("type", value?.xmppValue)
 		get() = element.attributes["type"]?.let {
-			FieldType.values().firstOrNull { te -> te.xmppValue == it }
-				?: throw XMPPException(ErrorCondition.BadRequest, "Unknown field type '$it'")
+			FieldType.values()
+				.firstOrNull { te -> te.xmppValue == it } ?: throw XMPPException(
+				ErrorCondition.BadRequest, "Unknown field type '$it'"
+			)
 		}
 
 	var fieldDesc: String?
@@ -62,14 +64,17 @@ class Field(val element: Element) {
 
 	var fieldValues: List<String>
 		set(value) = setValuesInt(value)
-		get() = element.children.filter { it.name == "value" }.mapNotNull { it.value }.toList()
+		get() = element.children.filter { it.name == "value" }
+			.mapNotNull { it.value }
+			.toList()
 
 	var fieldValue: String?
 		set(value) = setValueInt(value)
 		get() = getValueInt()
 
 	private fun getValueInt(): String? {
-		val x = element.children.filter { it.name == "value" }.mapNotNull { it.value }
+		val x = element.children.filter { it.name == "value" }
+			.mapNotNull { it.value }
 		return when {
 			x.isEmpty() -> null
 			x.count() == 1 -> x.first()
@@ -86,7 +91,8 @@ class Field(val element: Element) {
 	}
 
 	private fun setRequiredInternal(value: Boolean) {
-		val r = element.children.filter { it.name == "required" }.toList()
+		val r = element.children.filter { it.name == "required" }
+			.toList()
 		if (!value && r.count() > 0) {
 			r.forEach {
 				element.remove(it)
@@ -97,9 +103,11 @@ class Field(val element: Element) {
 	}
 
 	private fun setValuesInt(values: List<String>) {
-		element.children.filter { it.name == "value" }.toList().forEach {
-			element.remove(it)
-		}
+		element.children.filter { it.name == "value" }
+			.toList()
+			.forEach {
+				element.remove(it)
+			}
 		values.forEach { v ->
 			element.add(element("value") { +v })
 		}
@@ -167,7 +175,8 @@ class JabberDataForm(val element: Element) {
 	var type: FormType
 		set(value) = element.attributes.set("type", value.xmppValue)
 		get() = element.attributes["type"]?.let { typeName ->
-			FormType.values().firstOrNull { it.xmppValue == typeName } ?: throw XMPPException(
+			FormType.values()
+				.firstOrNull { it.xmppValue == typeName } ?: throw XMPPException(
 				ErrorCondition.BadRequest, "Unknown form type '$typeName'."
 			)
 		} ?: throw XMPPException(ErrorCondition.BadRequest, "Empty form type.")
@@ -196,13 +205,15 @@ class JabberDataForm(val element: Element) {
 	}
 
 	fun getAllFields(): List<Field> {
-		return element.getChildren("field").map { Field(it) }
+		return element.getChildren("field")
+			.map { Field(it) }
 	}
 
 	fun getFieldByVar(varName: String): Field? {
-		val fieldElement = element.getChildren("field").firstOrNull { field ->
-			field.attributes["var"] == varName
-		} ?: return null
+		val fieldElement = element.getChildren("field")
+			.firstOrNull { field ->
+				field.attributes["var"] == varName
+			} ?: return null
 		return Field(fieldElement)
 	}
 
@@ -214,21 +225,34 @@ class JabberDataForm(val element: Element) {
 
 	fun addField(field: Field): Field {
 		if (field.fieldName != null) {
-			element.getChildren("field").firstOrNull { it.attributes["var"] == field.fieldName }?.let {
-				element.remove(it)
-			}
+			element.getChildren("field")
+				.firstOrNull { it.attributes["var"] == field.fieldName }
+				?.let {
+					element.remove(it)
+				}
 		}
 		element.add(field.element)
 		return field
+	}
+
+	fun removeField(varName: String) {
+		element.getChildren("field")
+			.filter { field ->
+				field.attributes["var"] == varName
+			}
+			.forEach {
+				element.remove(it)
+			}
 	}
 
 	/**
 	 * Removes all fields, title and description.
 	 */
 	fun clearForm() {
-		element.children.toList().forEach {
-			element.remove(it)
-		}
+		element.children.toList()
+			.forEach {
+				element.remove(it)
+			}
 	}
 
 	/**
@@ -238,19 +262,21 @@ class JabberDataForm(val element: Element) {
 	 * Only fields and its values are copied.
 	 */
 	fun createSubmitForm(): Element {
-		val fields = element.getChildren("field").filter { it.attributes["var"] != null }
+		val fields = element.getChildren("field")
+			.filter { it.attributes["var"] != null }
 		return element("x") {
 			xmlns = XMLNS
 			attribute("type", FormType.Submit.xmppValue)
 			fields.forEach { field ->
-				"field"{
+				"field" {
 					attribute("var", field.attributes["var"]!!)
-					val vls = field.getChildren("value").filter { v -> v.value != null }
+					val vls = field.getChildren("value")
+						.filter { v -> v.value != null }
 					if (vls.count() == 0) {
-						"value"{}
+						"value" {}
 					} else {
 						vls.forEach { v ->
-							"value"{ +v.value!! }
+							"value" { +v.value!! }
 						}
 					}
 				}
@@ -264,7 +290,8 @@ class JabberDataForm(val element: Element) {
 	}
 
 	fun setReportedColumns(columns: List<Field>) {
-		element.getFirstChild("reported")?.let { r -> element.remove(r) }
+		element.getFirstChild("reported")
+			?.let { r -> element.remove(r) }
 
 		val reported = element("reported") {
 			columns.forEach {
@@ -289,7 +316,8 @@ class JabberDataForm(val element: Element) {
 
 	fun getItems(): List<Item> {
 		val columns = getReportedColumns()
-		return element.getChildren("item").map { Item(columns, it) }
+		return element.getChildren("item")
+			.map { Item(columns, it) }
 	}
 
 }

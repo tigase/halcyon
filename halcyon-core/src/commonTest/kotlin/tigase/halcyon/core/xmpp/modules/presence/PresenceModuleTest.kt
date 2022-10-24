@@ -17,8 +17,7 @@
  */
 package tigase.halcyon.core.xmpp.modules.presence
 
-import tigase.halcyon.core.AbstractHalcyon
-import tigase.halcyon.core.connector.AbstractConnector
+import tigase.DummyHalcyon
 import tigase.halcyon.core.xmpp.stanzas.Presence
 import tigase.halcyon.core.xmpp.stanzas.PresenceType
 import tigase.halcyon.core.xmpp.stanzas.Show
@@ -32,9 +31,8 @@ import kotlin.test.assertNull
 
 class PresenceModuleTest {
 
-	val halcyon = object : AbstractHalcyon() {
-		override fun reconnect(immediately: Boolean) = TODO("not implemented")
-		override fun createConnector(): AbstractConnector = TODO("not implemented")
+	val halcyon = DummyHalcyon().apply {
+		connect()
 	}
 
 	@Test

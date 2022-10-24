@@ -23,6 +23,7 @@ import platform.Network.nw_error_t
 import platform.darwin.*
 import platform.posix.usleep
 import tigase.halcyon.core.Halcyon
+import tigase.halcyon.core.configuration.domain
 import tigase.halcyon.core.connector.*
 import tigase.halcyon.core.excutor.TickExecutor
 import tigase.halcyon.core.logger.Level
@@ -37,263 +38,275 @@ import kotlin.time.Duration.Companion.seconds
 
 sealed class SocketConnectionErrorEvent : ConnectionErrorEvent() {
 
-    class TLSFailureEvent : SocketConnectionErrorEvent()
-    class HostNotFount : SocketConnectionErrorEvent()
-    class Timeout : SocketConnectionErrorEvent()
-    class Unknown(val caught: nw_error_t?) : SocketConnectionErrorEvent() {
+	class TLSFailureEvent : SocketConnectionErrorEvent()
+	class HostNotFount : SocketConnectionErrorEvent()
+	class Timeout : SocketConnectionErrorEvent()
+	class Unknown(val caught: nw_error_t?) : SocketConnectionErrorEvent() {
 
-        override fun toString(): String {
-            return "tigase.halcyon.core.connector.socket.SocketConnectionErrorEvent.Unknown:NWERROR:" + nw_error_get_error_code(caught);
-        }
-    }
+		override fun toString(): String {
+			return "tigase.halcyon.core.connector.socket.SocketConnectionErrorEvent.Unknown:NWERROR:" + nw_error_get_error_code(
+				caught
+			)
+		}
+	}
 
 }
 
 class SocketConnector(halcyon: Halcyon) : AbstractConnector(halcyon) {
 
-    companion object {
+	companion object {
 
-        const val SERVER_HOST = "tigase.halcyon.core.connector.socket.SocketConnector#serverHost"
-        const val SERVER_PORT = "tigase.halcyon.core.connector.socket.SocketConnector#serverPort"
-        const val SEE_OTHER_HOST_KEY = "tigase.halcyon.core.connector.socket.SocketConnector#seeOtherHost"
+		const val SERVER_HOST = "tigase.halcyon.core.connector.socket.SocketConnector#serverHost"
+		const val SERVER_PORT = "tigase.halcyon.core.connector.socket.SocketConnector#serverPort"
+		const val SEE_OTHER_HOST_KEY = "tigase.halcyon.core.connector.socket.SocketConnector#seeOtherHost"
 
-        const val XMLNS_START_TLS = "urn:ietf:params:xml:ns:xmpp-tls"
-    }
+		const val XMLNS_START_TLS = "urn:ietf:params:xml:ns:xmpp-tls"
+	}
 
-    var secured: Boolean = false
-        private set
+	var secured: Boolean = false
+		private set
 
-    private val log = LoggerFactory.logger("tigase.halcyon.core.connector.socket.SocketConnector")
-    private var config: SocketConnectorConfig = halcyon.config.connectorConfig as SocketConnectorConfig
-    private var resolver: DnsResolver = DnsResolver();
-    private val whitespacePingExecutor = TickExecutor(halcyon.eventBus, 30.seconds) { onTick() }
-    private val parser = object : StreamParser() {
+	private val log = LoggerFactory.logger("tigase.halcyon.core.connector.socket.SocketConnector")
+	private var config: SocketConnectorConfig = halcyon.config.connection as SocketConnectorConfig
+	private var resolver: DnsResolver = DnsResolver()
+	private val whitespacePingExecutor = TickExecutor(halcyon.eventBus, 30.seconds) { onTick() }
+	private val parser = object : StreamParser() {
 
-        private fun logReceivedStanza(element: Element) {
-            when {
-                log.isLoggable(Level.FINEST) -> log.finest("Received element ${element.getAsString()}")
-                log.isLoggable(Level.FINER) -> log.finer("Received element ${
-                    element.getAsString(deep = 3, showValue = false)
-                }")
-                log.isLoggable(Level.FINE) -> log.fine("Received element ${
-                    element.getAsString(deep = 2, showValue = false)
-                }")
-            }
-        }
+		private fun logReceivedStanza(element: Element) {
+			when {
+				log.isLoggable(Level.FINEST) -> log.finest("Received element ${element.getAsString()}")
+				log.isLoggable(Level.FINER) -> log.finer(
+					"Received element ${
+						element.getAsString(deep = 3, showValue = false)
+					}"
+				)
 
-        override fun onNextElement(element: Element) {
-            logReceivedStanza(element)
-            processReceivedElement(element)
-        }
+				log.isLoggable(Level.FINE) -> log.fine(
+					"Received element ${
+						element.getAsString(deep = 2, showValue = false)
+					}"
+				)
+			}
+		}
 
-        override fun onStreamClosed() {
-            log.finest { "Stream closed" }
-            if (state != State.Disconnected) {
-                halcyon.eventBus.fire(StreamTerminatedEvent())
-            }
-        }
+		override fun onNextElement(element: Element) {
+			logReceivedStanza(element)
+			processReceivedElement(element)
+		}
 
-        override fun onStreamStarted(attrs: Map<String, String>) {
-            log.finest { "Stream started: $attrs" }
-            halcyon.eventBus.fire(StreamStartedEvent(attrs))
-        }
+		override fun onStreamClosed() {
+			log.finest { "Stream closed" }
+			if (state != State.Disconnected) {
+				halcyon.eventBus.fire(StreamTerminatedEvent())
+			}
+		}
 
-        override fun onParseError(errorMessage: String) {
-            log.finest { "Parse error: $errorMessage" }
-            halcyon.eventBus.fire(ParseErrorEvent(errorMessage))
-        }
-    }
+		override fun onStreamStarted(attrs: Map<String, String>) {
+			log.finest { "Stream started: $attrs" }
+			halcyon.eventBus.fire(StreamStartedEvent(attrs))
+		}
 
-    private var socket: Socket? = null;
-    private var sslEngine: SSLEngine? = null;
-    private val queue = dispatch_queue_create("SocketConnector_Network", null);
+		override fun onParseError(errorMessage: String) {
+			log.finest { "Parse error: $errorMessage" }
+			halcyon.eventBus.fire(ParseErrorEvent(errorMessage))
+		}
+	}
 
-    override fun createSessionController(): SessionController {
-        return SocketSessionController(halcyon, this);
-    }
+	private var socket: Socket? = null
+	private var sslEngine: SSLEngine? = null
+	private val queue = dispatch_queue_create("SocketConnector_Network", null)
 
-    override fun send(data: CharSequence) {
-        val bytes = StringBuilder().append(data).toString().encodeToByteArray();
-        sslEngine?.let { sslEngine ->
-            sslEngine?.encrypt(bytes);
-        } ?: run {
-            writeDataToSocket(bytes);
-        }
-    }
+	override fun createSessionController(): SessionController {
+		return SocketSessionController(halcyon, this)
+	}
 
-    fun restartStream() {
-        log.finest("restarting stream..")
-        val userJid = halcyon.config.userJID!!
+	override fun send(data: CharSequence) {
+		val bytes = StringBuilder().append(data)
+			.toString()
+			.encodeToByteArray()
+		sslEngine?.let { sslEngine ->
+			sslEngine.encrypt(bytes)
+		} ?: run {
+			writeDataToSocket(bytes)
+		}
+	}
 
-        val sb = buildString {
-            append("<stream:stream xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams' ")
-            append("version='1.0' ")
-            append("from='$userJid' ")
-            append("to='${userJid.domain}'>")
-        }
-        send(sb)
-    }
+	fun restartStream() {
+		log.finest("restarting stream..")
+		val userJid = halcyon.config.account?.userJID
 
-    fun startTLS() {
-        log.info { "Running StartTLS" }
-        val element = element("starttls") {
-            xmlns = XMLNS_START_TLS
-        }
-        halcyon.writer.writeDirectly(element)
-    }
+		val sb = buildString {
+			append("<stream:stream xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams' ")
+			append("version='1.0' ")
+			if (userJid != null) append("from='$userJid' ")
+			append("to='${halcyon.config.domain}'")
+			append(">")
+		}
+		send(sb)
+	}
 
-    override fun start() {
-        //this.ensureNeverFrozen();
-        state = State.Connecting
+	fun startTLS() {
+		log.info { "Running StartTLS" }
+		val element = element("starttls") {
+			xmlns = XMLNS_START_TLS
+		}
+		halcyon.writer.writeDirectly(element)
+	}
 
-        val userJid = halcyon.config.userJID!!
+	override fun start() {
+		//this.ensureNeverFrozen();
+		state = State.Connecting
 
-        socket = Socket();
-        resolveTarget() { name, port ->
-            socket?.readCallback = { data ->
-                this.processSocketData(data);
-            }
-            socket?.stateCallback = { state ->
-                when (state) {
-                    Socket.State.connecting -> {}
-                    Socket.State.connected -> {
-                        log.fine { "Connection established" }
-                        this.state = State.Connected;
-                        restartStream()
-                    };
-                    Socket.State.disconnected -> {
-                        this.state = State.Disconnected;
-                    }
-                }
-            }
+		socket = Socket()
+		resolveTarget { name, port ->
+			socket?.readCallback = { data ->
+				this.processSocketData(data)
+			}
+			socket?.stateCallback = { state ->
+				when (state) {
+					Socket.State.connecting -> {}
+					Socket.State.connected -> {
+						log.fine { "Connection established" }
+						this.state = State.Connected
+						restartStream()
+					}
 
-            log.fine { "Opening socket connection" }
-            socket?.connect(name = name, port = port);
-            socket?.startProcessing();
-        }
-    }
+					Socket.State.disconnected -> {
+						this.state = State.Disconnected
+					}
+				}
+			}
 
-    override fun stop() {
-        if ((state != State.Disconnected)) {
-            log.fine { "Stopping..." }
-            try {
-                if (state == State.Connected) closeStream()
-                state = State.Disconnecting
-                whitespacePingExecutor.stop()
-                usleep(175000)
-                if (state != State.Disconnected) {
-                    socket?.disconnect();
-                }
-            } finally {
-                // delayed firing "disconnected" event, to delay reconnection to process all events before reconnection
-                // will start - ending Socket kqueue loop
-                dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 10L * NSEC_PER_MSEC.toLong()), queue) {
-                    state = State.Disconnected
-                    eventsEnabled = false
-                }
-            }
-        }
-    }
+			log.fine { "Opening socket connection" }
+			socket?.connect(name = name, port = port)
+			socket?.startProcessing()
+		}
+	}
 
-    private fun closeStream() {
-        send("</stream:stream>");
-    }
+	override fun stop() {
+		if ((state != State.Disconnected)) {
+			log.fine { "Stopping..." }
+			try {
+				if (state == State.Connected) closeStream()
+				state = State.Disconnecting
+				whitespacePingExecutor.stop()
+				usleep(175000)
+				if (state != State.Disconnected) {
+					socket?.disconnect()
+				}
+			} finally {
+				// delayed firing "disconnected" event, to delay reconnection to process all events before reconnection
+				// will start - ending Socket kqueue loop
+				dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 10L * NSEC_PER_MSEC.toLong()), queue) {
+					state = State.Disconnected
+					eventsEnabled = false
+				}
+			}
+		}
+	}
 
-    private fun connectionError(cause: SocketConnectionErrorEvent) {
-        halcyon.eventBus.fire(cause);
-        state = when (state) {
-            State.Connecting -> State.Disconnected
-            State.Connected -> State.Disconnecting
-            State.Disconnecting -> State.Disconnected
-            State.Disconnected -> State.Disconnected
-        }
-        if (state == State.Disconnected) eventsEnabled = false
-    }
+	private fun closeStream() {
+		send("</stream:stream>")
+	}
 
-    private fun processSocketData(data: ByteArray) {
-        sslEngine?.let { sslEngine ->
-            sslEngine?.decrypt(data);
-        } ?: run {
-            process(data);
-        }
-    }
+	private fun connectionError(cause: SocketConnectionErrorEvent) {
+		halcyon.eventBus.fire(cause)
+		state = when (state) {
+			State.Connecting -> State.Disconnected
+			State.Connected -> State.Disconnecting
+			State.Disconnecting -> State.Disconnected
+			State.Disconnected -> State.Disconnected
+		}
+		if (state == State.Disconnected) eventsEnabled = false
+	}
 
-    private fun processReceivedElement(element: Element) {
-        when (element.xmlns) {
-            // FIXME: NOT IMPLEMENTED YET!!
-            XMLNS_START_TLS -> processTLSStanza(element)
-            else -> halcyon.eventBus.fire(ReceivedXMLElementEvent(element))
-        }
-    }
+	private fun processSocketData(data: ByteArray) {
+		sslEngine?.let { sslEngine ->
+			sslEngine.decrypt(data)
+		} ?: run {
+			process(data)
+		}
+	}
 
-    private fun processTLSStanza(element: Element) {
-        when (element.name) {
-            "proceed" -> {
-                proceedTLS()
-            }
-            "failure" -> {
-                log.warning { "Cannot establish TLS connection!" }
-                halcyon.eventBus.fire(SocketConnectionErrorEvent.TLSFailureEvent())
-            }
-            else -> throw XMPPException(ErrorCondition.BadRequest)
-        }
-    }
+	private fun processReceivedElement(element: Element) {
+		when (element.xmlns) {
+			// FIXME: NOT IMPLEMENTED YET!!
+			XMLNS_START_TLS -> processTLSStanza(element)
+			else -> halcyon.eventBus.fire(ReceivedXMLElementEvent(element))
+		}
+	}
 
-    private fun proceedTLS() {
-        log.info { "Proceeding TLS" }
-        sslEngine = SSLEngine(this, halcyon.config.userJID!!.domain);
-        restartStream();
-    }
+	private fun processTLSStanza(element: Element) {
+		when (element.name) {
+			"proceed" -> {
+				proceedTLS()
+			}
 
-    private fun resolveTarget(completionHandler: (String,Int)->Unit) {
-        val location = halcyon.getModule<StreamManagementModule>(StreamManagementModule.TYPE).resumptionContext.location
-        if (location != null) {
-            return completionHandler(location, config.port);
-        }
+			"failure" -> {
+				log.warning { "Cannot establish TLS connection!" }
+				halcyon.eventBus.fire(SocketConnectionErrorEvent.TLSFailureEvent())
+			}
 
-        val seeOther = halcyon.internalDataStore.getData<String>(SEE_OTHER_HOST_KEY)
-        if (seeOther != null) {
-            return completionHandler(seeOther, config.port);
-        }
+			else -> throw XMPPException(ErrorCondition.BadRequest)
+		}
+	}
+
+	private fun proceedTLS() {
+		log.info { "Proceeding TLS" }
+		val hostname = (halcyon.config.connection as SocketConnectorConfig).hostname
+		sslEngine = SSLEngine(this, hostname)
+		restartStream()
+	}
+
+	private fun resolveTarget(completionHandler: (String, Int) -> Unit) {
+		val location = halcyon.getModule<StreamManagementModule>(StreamManagementModule.TYPE).resumptionContext.location
+		if (location != null) {
+			return completionHandler(location, config.port)
+		}
+
+		val seeOther = halcyon.internalDataStore.getData<String>(SEE_OTHER_HOST_KEY)
+		if (seeOther != null) {
+			return completionHandler(seeOther, config.port)
+		}
 
 //		val forcedHost = halcyon.sessionObject.getProperty<String>(SERVER_HOST)
 //		if (forcedHost != null) {
 //			return Socket(InetAddress.getByName(forcedHost), config.port)
 //		}
+		val hostname = (halcyon.config.connection as SocketConnectorConfig).hostname
+		resolver = DnsResolver()
+		resolver.resolve(hostname) { result ->
+			result.onSuccess { records ->
+				completionHandler(records.first().target, records.first().port.toInt())
+			}
+				.onFailure {
+					completionHandler(hostname, config.port)
+				}
+		}
+	}
 
-        val userJid = halcyon.config.userJID!!
-        resolver = DnsResolver();
-        resolver.resolve(userJid.domain) { result ->
-            result.onSuccess { records ->
-                completionHandler(records.first().target, records.first().port.toInt())
-            }.onFailure {
-                completionHandler(userJid.domain, config.port);
-            }
-        }
-    }
-
-    private fun onTick() {
-        // FIXME: Do we need whitespace ping??
+	private fun onTick() {
+		// FIXME: Do we need whitespace ping??
 //        if (state == State.Connected && whiteSpaceEnabled) {
 //            log.finer { "Whitespace ping" }
 //            log.finer { "Whitespace ping" }
 //            worker.writer.write(' '.code)
 //            worker.writer.flush()
 //        }
-    }
+	}
 
-    fun process(data: ByteArray) {
-        log.finest {
-            "Received " + data.toKString()
-                .let {
-                    if (it.length <= 200) it else (it.subSequence(0, 200)
-                        .toString() + "...")
-                }
-        }
-        parser.parse(data.toKString())
-    }
+	fun process(data: ByteArray) {
+		log.finest {
+			"Received " + data.toKString()
+				.let {
+					if (it.length <= 200) it else (it.subSequence(0, 200)
+						.toString() + "...")
+				}
+		}
+		parser.parse(data.toKString())
+	}
 
-    fun writeDataToSocket(data: ByteArray) {
-        socket?.send(data);
-    }
+	fun writeDataToSocket(data: ByteArray) {
+		socket?.send(data)
+	}
 }

@@ -40,7 +40,6 @@ class RequestsManager {
 
 	private fun key(element: Element): String = "${element.name}:${element.attributes["id"]}"
 
-	@Suppress("UNCHECKED_CAST")
 	fun getRequest(response: Element): Request<*, *>? {
 		val id = key(response)
 
@@ -108,8 +107,7 @@ class RequestsManager {
 	}
 
 	fun getWaitingRequestsSize(): Int = requests.size
-	fun getRequestsIDs(): String =
-		requests.values.map { it.id }.joinToString { it }
-
+	fun getRequestsIDs(): String = requests.values.map { it.id }
+		.joinToString { it }
 
 }

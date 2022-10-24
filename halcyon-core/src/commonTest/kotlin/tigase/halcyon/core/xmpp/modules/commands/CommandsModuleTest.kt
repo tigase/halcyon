@@ -17,20 +17,14 @@
  */
 package tigase.halcyon.core.xmpp.modules.commands
 
-import tigase.halcyon.core.AbstractHalcyon
-import tigase.halcyon.core.connector.AbstractConnector
-import tigase.halcyon.core.connector.ReceivedXMLElementEvent
-import tigase.halcyon.core.connector.SessionController
-import tigase.halcyon.core.connector.State
-import tigase.halcyon.core.xml.Element
+import tigase.DummyHalcyon
+import tigase.assertContains
 import tigase.halcyon.core.xml.element
-import tigase.halcyon.core.xml.parser.parseXML
 import tigase.halcyon.core.xmpp.BareJID
 import tigase.halcyon.core.xmpp.forms.Field
 import tigase.halcyon.core.xmpp.forms.FieldType
 import tigase.halcyon.core.xmpp.forms.FormType
 import tigase.halcyon.core.xmpp.forms.JabberDataForm
-import tigase.halcyon.core.xmpp.modules.BindModule
 import tigase.halcyon.core.xmpp.modules.discovery.DiscoveryModule
 import tigase.halcyon.core.xmpp.stanzas.IQType
 import tigase.halcyon.core.xmpp.stanzas.iq
@@ -38,79 +32,10 @@ import tigase.halcyon.core.xmpp.toBareJID
 import tigase.halcyon.core.xmpp.toJID
 import kotlin.test.*
 
-class MockConnector(halcyon: AbstractHalcyon, val sentElements: MutableList<Element>) : AbstractConnector(halcyon) {
-
-	override fun createSessionController(): SessionController {
-		return object : SessionController {
-			override val halcyon: AbstractHalcyon
-				get() = TODO("Not yet implemented")
-
-			override fun start() {
-			}
-
-			override fun stop() {
-			}
-		}
-	}
-
-	override fun send(data: CharSequence) {
-		try {
-			val pr = parseXML(data.toString())
-			pr.element?.let {
-				sentElements.add(it)
-			}
-		} catch (ignore: Throwable) {
-		}
-	}
-
-	override fun start() {
-		state = State.Connected
-	}
-
-	override fun stop() {
-		state = State.Disconnected
-	}
-}
-
-fun assertContains(expected: Element, actual: Element, message: String? = null) {
-	fun check(expected: Element, actual: Element): Boolean {
-		if (expected.name != actual.name) return false
-		if (expected.value != null && expected.value != actual.value) return false
-		if (!expected.attributes.filter { it.key != "id" }
-				.all { e -> actual.attributes[e.key] == e.value }) return false
-		if (!expected.children.all { e ->
-				actual.children.any { a -> check(e, a) }
-			}) return false
-		return true
-	}
-
-	fun messagePrefix(message: String?) = if (message == null) "" else "$message. "
-
-	if (!check(expected, actual)) {
-		fail(messagePrefix(message) + "Expected all of ${expected.getAsString()}, actual ${actual.getAsString()}.")
-	}
-}
-
 class CommandsModuleTest {
 
-	lateinit var halcyon: AbstractHalcyon
-	lateinit var sentElements: MutableList<Element>
-
-	@BeforeTest
-	fun setUpHalcyon() {
-		val tmp: MutableList<Element> = mutableListOf()
-		sentElements = tmp
-		halcyon = object : AbstractHalcyon() {
-
-			override fun reconnect(immediately: Boolean) = throw NotImplementedError()
-			override fun createConnector(): AbstractConnector = MockConnector(this, tmp)
-		}
-		halcyon.connect()
-		halcyon.boundJID = "requester@domain/123".toJID()
-	}
-
-	private fun processReceived(stanza: Element) {
-		halcyon.eventBus.fire(ReceivedXMLElementEvent(stanza))
+	val halcyon = DummyHalcyon().apply {
+		connect()
 	}
 
 	@Test
@@ -118,34 +43,36 @@ class CommandsModuleTest {
 		val module = halcyon.getModule<CommandsModule>(CommandsModule.TYPE)
 
 		var response: DiscoveryModule.Info? = null
-		val reqId = module.retrieveCommandInfo("responder@domain".toJID(), "config").response {
-			it.onSuccess { response = it }
-		}.send().id
+		val reqId = module.retrieveCommandInfo("responder@domain".toJID(), "config")
+			.response {
+				it.onSuccess { response = it }
+			}
+			.send().id
 
 		assertContains(iq {
 			type = IQType.Get
 			to = "responder@domain".toJID()
-			"query"{
+			"query" {
 				xmlns = "http://jabber.org/protocol/disco#info"
 				attributes["node"] = "config"
 			}
-		}, sentElements.removeLast(), "Invalid output stanza,")
+		}, halcyon.peekLastSend(), "Invalid output stanza,")
 
-		processReceived(iq {
+		halcyon.addReceived(iq {
 			type = IQType.Result
 			attributes["id"] = reqId
 			to = "requester@domain".toJID()
 			from = "responder@domain".toJID()
-			"query"{
+			"query" {
 				xmlns = "http://jabber.org/protocol/disco#info"
 				attributes["node"] = "config"
-				"identity"{
+				"identity" {
 					attributes["name"] = "Configure Service"
 					attributes["category"] = "automation"
 					attributes["type"] = "command-node"
 				}
-				"feature"{ attributes["var"] = "http://jabber.org/protocol/commands" }
-				"feature"{ attributes["var"] = "jabber:x:data" }
+				"feature" { attributes["var"] = "http://jabber.org/protocol/commands" }
+				"feature" { attributes["var"] = "jabber:x:data" }
 			}
 		})
 
@@ -168,40 +95,42 @@ class CommandsModuleTest {
 		val module = halcyon.getModule<CommandsModule>(CommandsModule.TYPE)
 
 		var response: DiscoveryModule.Items? = null
-		val reqId = module.retrieveCommandList("responder@domain".toJID()).response {
-			it.onSuccess {
-				response = it
+		val reqId = module.retrieveCommandList("responder@domain".toJID())
+			.response {
+				it.onSuccess {
+					response = it
+				}
 			}
-		}.send().id
+			.send().id
 
 		assertContains(iq {
 			type = IQType.Get
 			to = "responder@domain".toJID()
-			"query"{
+			"query" {
 				xmlns = "http://jabber.org/protocol/disco#items"
 				attributes["node"] = "http://jabber.org/protocol/commands"
 			}
-		}, sentElements.removeLast(), "Invalid output stanza,")
+		}, halcyon.peekLastSend(), "Invalid output stanza,")
 
-		processReceived(iq {
+		halcyon.addReceived(iq {
 			type = IQType.Result
 			attributes["id"] = reqId
 			to = "requester@domain".toJID()
 			from = "responder@domain".toJID()
-			"query"{
+			"query" {
 				xmlns = "http://jabber.org/protocol/disco#items"
 				attributes["node"] = "http://jabber.org/protocol/commands"
-				"item"{
+				"item" {
 					attributes["jid"] = "responder@domain"
 					attributes["node"] = "list"
 					attributes["name"] = "List Service Configurations"
 				}
-				"item"{
+				"item" {
 					attributes["jid"] = "responder@domain"
 					attributes["node"] = "config"
 					attributes["name"] = "Configure Service"
 				}
-				"item"{
+				"item" {
 					attributes["jid"] = "responder@domain"
 					attributes["node"] = "reset"
 					attributes["name"] = "Reset Service Configuration"
@@ -234,41 +163,43 @@ class CommandsModuleTest {
 		val module = halcyon.getModule<CommandsModule>(CommandsModule.TYPE)
 
 		var result: AdHocResult? = null
-		val reqId = module.executeCommand("responder@domain".toJID(), "list").response {
-			it.onSuccess { result = it }
-		}.send().id
+		val reqId = module.executeCommand("responder@domain".toJID(), "list")
+			.response {
+				it.onSuccess { result = it }
+			}
+			.send().id
 
 		assertContains(iq {
 			type = IQType.Set
 			to = "responder@domain".toJID()
-			"command"{
+			"command" {
 				xmlns = "http://jabber.org/protocol/commands"
 				attributes["node"] = "list"
 				attributes["action"] = "execute"
 			}
-		}, sentElements.removeLast(), "Invalid output stanza,")
+		}, halcyon.peekLastSend(), "Invalid output stanza,")
 
-		processReceived(iq {
+		halcyon.addReceived(iq {
 			attributes["id"] = reqId
 			type = IQType.Result
 			from = "responder@domain".toJID()
 			to = "requester@domain".toJID()
-			"command"{
+			"command" {
 				xmlns = "http://jabber.org/protocol/commands"
 				attributes["sessionid"] = "list:20020923T213616Z-700"
 				attributes["node"] = "list"
 				attributes["status"] = "completed"
-				"x"{
+				"x" {
 					xmlns = "jabber:x:data"
 					attributes["type"] = "result"
 					"title" + { "Configure Service" }
 					"instructions" + { "Please select the service to configure." }
-					"field"{
+					"field" {
 						attributes["var"] = "service"
 						attributes["label"] = "Service"
 						attributes["type"] = "list-single"
-						"option"{ "value"{ +"httpd" } }
-						"option"{ "value"{ +"jabberd" } }
+						"option" { "value" { +"httpd" } }
+						"option" { "value" { +"jabberd" } }
 					}
 				}
 
@@ -296,36 +227,38 @@ class CommandsModuleTest {
 		val module = halcyon.getModule<CommandsModule>(CommandsModule.TYPE)
 
 		var result: AdHocResult? = null
-		var reqId = module.executeCommand("responder@domain".toJID(), "config").response {
-			it.onSuccess { result = it }
-		}.send().id
+		var reqId = module.executeCommand("responder@domain".toJID(), "config")
+			.response {
+				it.onSuccess { result = it }
+			}
+			.send().id
 
-		processReceived(iq {
+		halcyon.addReceived(iq {
 			attributes["id"] = reqId
 			type = IQType.Result
 			from = "responder@domain".toJID()
 			to = "requester@domain".toJID()
-			"command"{
+			"command" {
 				xmlns = "http://jabber.org/protocol/commands"
 				attributes["sessionid"] = "config:20020923T213616Z-700"
 				attributes["node"] = "config"
 				attributes["status"] = "executing"
-				"actions"{
+				"actions" {
 					attributes["execute"] = "next"
-					"next"{}
+					"next" {}
 				}
-				"x"{
+				"x" {
 					xmlns = "jabber:x:data"
 					attributes["type"] = "form"
 					"title" + { "Configure Service" }
 					"instructions" + { "Please select the service to configure." }
-					"field"{
+					"field" {
 						attributes["var"] = "service"
 						attributes["label"] = "Service"
 						attributes["type"] = "list-single"
-						"option"{ "value"{ +"httpd" } }
-						"option"{ "value"{ +"jabberd" } }
-						"option"{ "value"{ +"postgresql" } }
+						"option" { "value" { +"httpd" } }
+						"option" { "value" { +"jabberd" } }
+						"option" { "value" { +"postgresql" } }
 					}
 				}
 
@@ -353,60 +286,60 @@ class CommandsModuleTest {
 		result = null
 
 		frm.getFieldByVar("service")!!.fieldValue = "httpd"
-		reqId = module.executeCommand("responder@domain".toJID(),
-									  "config",
-									  frm.createSubmitForm(),
-									  null,
-									  "config:20020923T213616Z-700").response {
-			it.onSuccess { result = it }
-		}.send().id
+		reqId = module.executeCommand(
+			"responder@domain".toJID(), "config", frm.createSubmitForm(), null, "config:20020923T213616Z-700"
+		)
+			.response {
+				it.onSuccess { result = it }
+			}
+			.send().id
 
 
 		assertContains(iq {
 			type = IQType.Set
 			to = "responder@domain".toJID()
-			"command"{
+			"command" {
 				xmlns = "http://jabber.org/protocol/commands"
 				attributes["sessionid"] = "config:20020923T213616Z-700"
 				attributes["node"] = "config"
-				"x"{
+				"x" {
 					xmlns = "jabber:x:data"
 					attributes["type"] = "submit"
-					"field"{
+					"field" {
 						attributes["var"] = "service"
-						"value"{ +"httpd" }
+						"value" { +"httpd" }
 					}
 				}
 			}
-		}, sentElements.removeLast(), "Invalid output stanza,")
+		}, halcyon.peekLastSend(), "Invalid output stanza,")
 
-		processReceived(iq {
+		halcyon.addReceived(iq {
 			attributes["id"] = reqId
 			type = IQType.Result
 			from = "responder@domain".toJID()
 			to = "requester@domain".toJID()
-			"command"{
+			"command" {
 				xmlns = "http://jabber.org/protocol/commands"
 				attributes["sessionid"] = "config:20020923T213616Z-700"
 				attributes["node"] = "config"
 				attributes["status"] = "executing"
-				"actions"{
+				"actions" {
 					attributes["execute"] = "complete"
-					"prev"{}
-					"complete"{}
+					"prev" {}
+					"complete" {}
 				}
-				"x"{
+				"x" {
 					xmlns = "jabber:x:data"
 					attributes["type"] = "form"
 					"title" + { "Configure Service" }
 					"instructions" + { "Please select the service to configure." }
-					"field"{
+					"field" {
 						attributes["var"] = "state"
 						attributes["label"] = "Run State"
 						attributes["type"] = "list-single"
-						"value"{ +"off" }
-						"option"{ attributes["label"] = "Active"; "value"{ +"off" } }
-						"option"{ attributes["label"] = "Inactive"; "value"{ +"on" } }
+						"value" { +"off" }
+						"option" { attributes["label"] = "Active"; "value" { +"off" } }
+						"option" { attributes["label"] = "Inactive"; "value" { +"on" } }
 					}
 				}
 			}
@@ -426,25 +359,27 @@ class CommandsModuleTest {
 		reqId = module.executeCommand(result!!.jid, result!!.node, element("x") {
 			xmlns = "jabber:x:data"
 			attributes["type"] = "submit"
-			"field"{
+			"field" {
 				attributes["var"] = "state"
-				"value"{ +"on" }
+				"value" { +"on" }
 			}
-		}, null, "config:20020923T213616Z-700").response {
-			it.onSuccess { result = it }
-		}.send().id
+		}, null, "config:20020923T213616Z-700")
+			.response {
+				it.onSuccess { result = it }
+			}
+			.send().id
 
-		processReceived(iq {
+		halcyon.addReceived(iq {
 			attributes["id"] = reqId
 			type = IQType.Result
 			from = "responder@domain".toJID()
 			to = "requester@domain".toJID()
-			"command"{
+			"command" {
 				xmlns = "http://jabber.org/protocol/commands"
 				attributes["sessionid"] = "config:20020923T213616Z-700"
 				attributes["node"] = "config"
 				attributes["status"] = "completed"
-				"note"{
+				"note" {
 					attributes["type"] = "info"
 					+"Service 'httpd' has been configured."
 				}
@@ -464,36 +399,38 @@ class CommandsModuleTest {
 		val module = halcyon.getModule<CommandsModule>(CommandsModule.TYPE)
 
 		var result: AdHocResult? = null
-		var reqId = module.executeCommand("responder@domain".toJID(), "config").response {
-			it.onSuccess { result = it }
-		}.send().id
+		var reqId = module.executeCommand("responder@domain".toJID(), "config")
+			.response {
+				it.onSuccess { result = it }
+			}
+			.send().id
 
-		processReceived(iq {
+		halcyon.addReceived(iq {
 			attributes["id"] = reqId
 			type = IQType.Result
 			from = "responder@domain".toJID()
 			to = "requester@domain".toJID()
-			"command"{
+			"command" {
 				xmlns = "http://jabber.org/protocol/commands"
 				attributes["sessionid"] = "config:20020923T213616Z-700"
 				attributes["node"] = "config"
 				attributes["status"] = "executing"
-				"actions"{
+				"actions" {
 					attributes["execute"] = "next"
-					"next"{}
+					"next" {}
 				}
-				"x"{
+				"x" {
 					xmlns = "jabber:x:data"
 					attributes["type"] = "form"
 					"title" + { "Configure Service" }
 					"instructions" + { "Please select the service to configure." }
-					"field"{
+					"field" {
 						attributes["var"] = "service"
 						attributes["label"] = "Service"
 						attributes["type"] = "list-single"
-						"option"{ "value"{ +"httpd" } }
-						"option"{ "value"{ +"jabberd" } }
-						"option"{ "value"{ +"postgresql" } }
+						"option" { "value" { +"httpd" } }
+						"option" { "value" { +"jabberd" } }
+						"option" { "value" { +"postgresql" } }
 					}
 				}
 			}
@@ -502,26 +439,27 @@ class CommandsModuleTest {
 		reqId = module.executeCommand(result!!.jid, result!!.node, null, Action.Cancel, "config:20020923T213616Z-700")
 			.response {
 				it.onSuccess { result = it }
-			}.send().id
+			}
+			.send().id
 
 		assertContains(iq {
 			type = IQType.Set
 			to = "responder@domain".toJID()
-			"command"{
+			"command" {
 				xmlns = "http://jabber.org/protocol/commands"
 				attributes["sessionid"] = "config:20020923T213616Z-700"
 				attributes["node"] = "config"
 				attributes["action"] = "cancel"
 			}
-		}, sentElements.removeLast(), "Invalid output stanza,")
+		}, halcyon.peekLastSend(), "Invalid output stanza,")
 
 
-		processReceived(iq {
+		halcyon.addReceived(iq {
 			attributes["id"] = reqId
 			type = IQType.Result
 			from = "responder@domain".toJID()
 			to = "requester@domain".toJID()
-			"command"{
+			"command" {
 				xmlns = "http://jabber.org/protocol/commands"
 				attributes["sessionid"] = "config:20020923T213616Z-700"
 				attributes["node"] = "config"
@@ -543,11 +481,11 @@ class CommandsModuleTest {
 			override fun process(request: AdHocRequest, response: AdHocResponse) = TODO("Not yet implemented")
 		})
 
-		processReceived(iq {
+		halcyon.addReceived(iq {
 			to = "requester@domain".toJID()
 			from = "responder@domain".toJID()
 			type = IQType.Get
-			"query"{
+			"query" {
 				xmlns = "http://jabber.org/protocol/disco#items"
 				attributes["node"] = "http://jabber.org/protocol/commands"
 			}
@@ -555,32 +493,32 @@ class CommandsModuleTest {
 		assertContains(iq {
 			type = IQType.Result
 			to = "responder@domain".toJID()
-			"query"{
+			"query" {
 				xmlns = "http://jabber.org/protocol/disco#items"
 				attributes["node"] = "http://jabber.org/protocol/commands"
-				"item"{
+				"item" {
 					attributes["node"] = "test"
 					attributes["name"] = "Testowy"
 				}
 			}
-		}, sentElements.removeLast(), "Invalid output stanza,")
+		}, halcyon.peekLastSend(), "Invalid output stanza,")
 
-		processReceived(iq {
+		halcyon.addReceived(iq {
 			to = "requester@domain".toJID()
 			from = "mallet@domain".toJID()
 			type = IQType.Get
-			"query"{
+			"query" {
 				xmlns = "http://jabber.org/protocol/disco#items"
 				attributes["node"] = "http://jabber.org/protocol/commands"
 			}
 		})
-		assertEquals(0, assertNotNull(sentElements.removeLast()).getFirstChild("query")!!.children.size)
+		assertEquals(0, assertNotNull(halcyon.peekLastSend()).getFirstChild("query")!!.children.size)
 
-		processReceived(iq {
+		halcyon.addReceived(iq {
 			to = "requester@domain".toJID()
 			from = "responder@domain".toJID()
 			type = IQType.Get
-			"query"{
+			"query" {
 				xmlns = "http://jabber.org/protocol/disco#info"
 				attributes["node"] = "test"
 			}
@@ -588,24 +526,24 @@ class CommandsModuleTest {
 		assertContains(iq {
 			type = IQType.Result
 			to = "responder@domain".toJID()
-			"query"{
+			"query" {
 				xmlns = "http://jabber.org/protocol/disco#info"
 				attributes["node"] = "test"
-				"identity"{
+				"identity" {
 					attributes["name"] = "Testowy"
 					attributes["category"] = "automation"
 					attributes["type"] = "command-node"
 				}
-				"feature"{ attributes["var"] = "http://jabber.org/protocol/commands" }
-				"feature"{ attributes["var"] = "jabber:x:data" }
+				"feature" { attributes["var"] = "http://jabber.org/protocol/commands" }
+				"feature" { attributes["var"] = "jabber:x:data" }
 			}
-		}, sentElements.removeLast(), "Invalid output stanza,")
+		}, halcyon.peekLastSend(), "Invalid output stanza,")
 
-		processReceived(iq {
+		halcyon.addReceived(iq {
 			to = "requester@domain".toJID()
 			from = "mallet@domain".toJID()
 			type = IQType.Get
-			"query"{
+			"query" {
 				xmlns = "http://jabber.org/protocol/disco#info"
 				attributes["node"] = "test"
 			}
@@ -613,13 +551,13 @@ class CommandsModuleTest {
 		assertContains(iq {
 			type = IQType.Error
 			to = "mallet@domain".toJID()
-			"error"{
+			"error" {
 				attributes["type"] = "auth"
-				"forbidden"{
+				"forbidden" {
 					xmlns = "urn:ietf:params:xml:ns:xmpp-stanzas"
 				}
 			}
-		}, sentElements.removeLast(), "Invalid output stanza,")
+		}, halcyon.peekLastSend(), "Invalid output stanza,")
 
 	}
 
@@ -636,12 +574,13 @@ class CommandsModuleTest {
 					response.notes = arrayOf(Note.Info("Done"))
 					response.status = Status.Completed
 				} else {
-					val form = JabberDataForm.create(FormType.Form).apply {
-						title = "Auth"
-						addField("otp", FieldType.TextPrivate).apply {
-							fieldLabel = "Enter OneTimePassword number"
+					val form = JabberDataForm.create(FormType.Form)
+						.apply {
+							title = "Auth"
+							addField("otp", FieldType.TextPrivate).apply {
+								fieldLabel = "Enter OneTimePassword number"
+							}
 						}
-					}
 					request.getSession().values["stage"] = "requestSent"
 					response.form = form
 					response.actions = arrayOf(Action.Next)
@@ -651,33 +590,33 @@ class CommandsModuleTest {
 			}
 		})
 
-		processReceived(iq {
+		halcyon.addReceived(iq {
 			to = "requester@domain".toJID()
 			from = "responder@domain".toJID()
 			type = IQType.Set
-			"command"{
+			"command" {
 				xmlns = "http://jabber.org/protocol/commands"
 				attributes["node"] = "test"
 				attributes["action"] = "execute"
 			}
 		})
-		val respStanza = sentElements.removeLast()
+		val respStanza = assertNotNull(halcyon.peekLastSend())
 		val sessionId = respStanza.getFirstChild("command")?.attributes?.get("sessionid") ?: fail("Missing sessionid")
 		assertContains(iq {
 			type = IQType.Result
-			"command"{
+			"command" {
 				xmlns = "http://jabber.org/protocol/commands"
 				attributes["node"] = "test"
 				attributes["status"] = "executing"
-				"actions"{
+				"actions" {
 					attributes["execute"] = "next"
-					"next"{}
+					"next" {}
 				}
-				"x"{
+				"x" {
 					xmlns = "jabber:x:data"
 					attributes["type"] = "form"
-					"title"{ +"Auth" }
-					"field"{
+					"title" { +"Auth" }
+					"field" {
 						attributes["type"] = "text-private"
 						attributes["var"] = "otp"
 						attributes["label"] = "Enter OneTimePassword number"
@@ -686,20 +625,20 @@ class CommandsModuleTest {
 			}
 		}, respStanza, "Invalid output stanza,")
 
-		processReceived(iq {
+		halcyon.addReceived(iq {
 			to = "requester@domain".toJID()
 			from = "responder@domain".toJID()
 			type = IQType.Set
-			"command"{
+			"command" {
 				xmlns = "http://jabber.org/protocol/commands"
 				attributes["node"] = "test"
 				attributes["sessionid"] = sessionId
-				"x"{
+				"x" {
 					xmlns = "jabber:x:data"
 					attributes["type"] = "submit"
-					"field"{
+					"field" {
 						attributes["var"] = "otp"
-						"value"{ +"8756334" }
+						"value" { +"8756334" }
 					}
 				}
 			}
@@ -707,17 +646,17 @@ class CommandsModuleTest {
 
 		assertContains(iq {
 			type = IQType.Result
-			"command"{
+			"command" {
 				xmlns = "http://jabber.org/protocol/commands"
 				attributes["node"] = "test"
 				attributes["sessionid"] = sessionId
 				attributes["status"] = "completed"
-				"note"{
+				"note" {
 					attributes["type"] = "info"
 					+"Done"
 				}
 			}
-		}, sentElements.removeLast(), "Invalid output stanza,")
+		}, halcyon.peekLastSend(), "Invalid output stanza,")
 
 	}
 
@@ -729,25 +668,38 @@ class CommandsModuleTest {
 			override val name = "Testowy"
 			override val node = "test"
 			override fun process(request: AdHocRequest, response: AdHocResponse) {
-				val form = JabberDataForm.create(FormType.Result).apply {
-					title = "Available Services"
-					setReportedColumns(listOf(Field.create("service").apply { fieldLabel = "Service" },
-											  Field.create("status").apply { fieldLabel = "Status" }))
-					addItem(listOf(Field.create("service").apply { fieldValue = "httpd" },
-								   Field.create("status").apply { fieldValue = "on" }))
-					addItem(listOf(Field.create("service").apply { fieldValue = "postgresql" },
-								   Field.create("status").apply { fieldValue = "off" }))
-				}
+				val form = JabberDataForm.create(FormType.Result)
+					.apply {
+						title = "Available Services"
+						setReportedColumns(
+							listOf(Field.create("service")
+									   .apply { fieldLabel = "Service" },
+								   Field.create("status")
+									   .apply { fieldLabel = "Status" })
+						)
+						addItem(
+							listOf(Field.create("service")
+									   .apply { fieldValue = "httpd" },
+								   Field.create("status")
+									   .apply { fieldValue = "on" })
+						)
+						addItem(
+							listOf(Field.create("service")
+									   .apply { fieldValue = "postgresql" },
+								   Field.create("status")
+									   .apply { fieldValue = "off" })
+						)
+					}
 				response.form = form
 				response.status = Status.Completed
 			}
 		})
 
-		processReceived(iq {
+		halcyon.addReceived(iq {
 			to = "requester@domain".toJID()
 			from = "responder@domain".toJID()
 			type = IQType.Set
-			"command"{
+			"command" {
 				xmlns = "http://jabber.org/protocol/commands"
 				attributes["node"] = "test"
 				attributes["action"] = "execute"
@@ -755,47 +707,47 @@ class CommandsModuleTest {
 		})
 		assertContains(iq {
 			type = IQType.Result
-			"command"{
+			"command" {
 				xmlns = "http://jabber.org/protocol/commands"
 				attributes["node"] = "test"
 				attributes["status"] = "completed"
-				"x"{
+				"x" {
 					xmlns = "jabber:x:data"
 					attributes["type"] = "result"
-					"title"{ +"Available Services" }
-					"reported"{
-						"field"{
+					"title" { +"Available Services" }
+					"reported" {
+						"field" {
 							attributes["var"] = "service"
 							attributes["label"] = "Service"
 						}
-						"field"{
+						"field" {
 							attributes["var"] = "status"
 							attributes["label"] = "Status"
 						}
 					}
-					"item"{
-						"field"{
+					"item" {
+						"field" {
 							attributes["var"] = "service"
-							"value"{ +"httpd" }
+							"value" { +"httpd" }
 						}
-						"field"{
+						"field" {
 							attributes["var"] = "status"
-							"value"{ +"on" }
+							"value" { +"on" }
 						}
 					}
-					"item"{
-						"field"{
+					"item" {
+						"field" {
 							attributes["var"] = "service"
-							"value"{ +"postgresql" }
+							"value" { +"postgresql" }
 						}
-						"field"{
+						"field" {
 							attributes["var"] = "status"
-							"value"{ +"off" }
+							"value" { +"off" }
 						}
 					}
 				}
 			}
-		}, sentElements.removeLast(), "Invalid output stanza,")
+		}, halcyon.peekLastSend(), "Invalid output stanza,")
 
 	}
 

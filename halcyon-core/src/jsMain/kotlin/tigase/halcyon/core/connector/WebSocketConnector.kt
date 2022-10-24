@@ -21,7 +21,7 @@ import org.w3c.dom.MessageEvent
 import org.w3c.dom.WebSocket
 import org.w3c.dom.events.Event
 import tigase.halcyon.core.Halcyon
-import tigase.halcyon.core.exceptions.HalcyonException
+import tigase.halcyon.core.configuration.domain
 import tigase.halcyon.core.excutor.TickExecutor
 import tigase.halcyon.core.logger.Level
 import tigase.halcyon.core.logger.LoggerFactory
@@ -35,7 +35,7 @@ class WebSocketConnector(halcyon: Halcyon) : AbstractConnector(halcyon) {
 
 	private val log = LoggerFactory.logger("tigase.halcyon.core.connector.WebSocketConnector")
 
-	private var config: WebSocketConnectorConfig = halcyon.config.connectorConfig as WebSocketConnectorConfig
+	private var config: WebSocketConnectorConfig = halcyon.config.connection as WebSocketConnectorConfig
 
 	private val whitespacePingExecutor = TickExecutor(halcyon.eventBus, 25.seconds) { onTick() }
 
@@ -43,12 +43,17 @@ class WebSocketConnector(halcyon: Halcyon) : AbstractConnector(halcyon) {
 		private fun logReceivedStanza(element: Element) {
 			when {
 				log.isLoggable(Level.FINEST) -> log.finest("Received element ${element.getAsString()}")
-				log.isLoggable(Level.FINER) -> log.finer("Received element ${
-					element.getAsString(deep = 3, showValue = false)
-				}")
-				log.isLoggable(Level.FINE) -> log.fine("Received element ${
-					element.getAsString(deep = 2, showValue = false)
-				}")
+				log.isLoggable(Level.FINER) -> log.finer(
+					"Received element ${
+						element.getAsString(deep = 3, showValue = false)
+					}"
+				)
+
+				log.isLoggable(Level.FINE) -> log.fine(
+					"Received element ${
+						element.getAsString(deep = 2, showValue = false)
+					}"
+				)
 			}
 		}
 
@@ -88,17 +93,11 @@ class WebSocketConnector(halcyon: Halcyon) : AbstractConnector(halcyon) {
 		}
 	}
 
-	private fun getDomain(): String {
-		val userJid = halcyon.config.userJID
-		val domain = halcyon.config.domain
-		return domain ?: userJid?.domain ?: throw HalcyonException("No domain is specified")
-	}
-
 	override fun start() {
 		log.fine { "Starting WebSocket connector" }
 		state = State.Connecting
 
-		val url = config.webSocketUrl ?: "ws://${getDomain()}:5290/"
+		val url = config.webSocketUrl
 
 		log.finer { "Connecting to $url" }
 
@@ -165,7 +164,7 @@ class WebSocketConnector(halcyon: Halcyon) : AbstractConnector(halcyon) {
 
 	fun restartStream() {
 		log.finest { "Send new stream" }
-		val userJid = halcyon.config.userJID
+		val userJid = halcyon.config.account?.userJID
 
 		val sb = buildString {
 			append("<stream:stream ")
@@ -173,7 +172,7 @@ class WebSocketConnector(halcyon: Halcyon) : AbstractConnector(halcyon) {
 			append("xmlns:stream='http://etherx.jabber.org/streams' ")
 			append("version='1.0' ")
 			if (userJid != null) append("from='${userJid}' ")
-			append("to='${getDomain()}' ")
+			append("to='${halcyon.config.domain}' ")
 			append(">")
 		}
 

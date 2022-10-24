@@ -17,26 +17,28 @@
  */
 package tigase.halcyon.core.configuration
 
-import tigase.halcyon.core.connector.ConnectorConfig
+import tigase.halcyon.core.exceptions.HalcyonException
 import tigase.halcyon.core.xmpp.BareJID
+import tigase.halcyon.core.xmpp.forms.JabberDataForm
 
-interface PasswordCallback {
+data class Account(
+	val userJID: BareJID,
+	val resource: String?,
+	val domain: String?,
+	val authzIdJID: BareJID?,
+	val passwordCallback: () -> String,
+)
 
-	fun getPassword(): String
-}
+data class Registration(
+	val domain: String,
+	val formHandler: ((JabberDataForm) -> Unit)?,
+	val formHandlerWithResponse: ((JabberDataForm) -> JabberDataForm)?,
+)
 
-class Configuration {
+interface Connection
 
-	var userJID: BareJID? = null
+data class Configuration(val account: Account?, val connection: Connection, val registration: Registration? = null)
 
-	var resource: String? = null
-
-	var passwordCallback: PasswordCallback? = null
-
-	var domain: String? = null
-
-	var authzIdJID: BareJID? = null
-
-	lateinit var connectorConfig: ConnectorConfig
-
-}
+val Configuration.domain: String
+	get() = this.account?.userJID?.domain ?: this.registration?.domain
+	?: throw HalcyonException("Cannot determine domain.")

@@ -18,6 +18,8 @@
 package tigase.halcyon.core.eventbus
 
 import tigase.halcyon.core.Halcyon
+import tigase.halcyon.core.builder.createConfiguration
+import tigase.halcyon.core.xmpp.toBareJID
 import kotlin.test.Test
 
 class EventBusTest {
@@ -30,7 +32,12 @@ class EventBusTest {
 
 	@Test
 	fun testEventBus() {
-		val halcyon = Halcyon()
+		val halcyon = Halcyon(createConfiguration {
+			account {
+				userJID = "user@example.com".toBareJID()
+				password { "pencil" }
+			}
+		})
 		val eventBus = EventBus(halcyon)
 
 		eventBus.register(Event01.TYPE, object : EventHandler<Event01> {

@@ -4,8 +4,7 @@ import com.soywiz.krypto.PBKDF2
 import com.soywiz.krypto.encoding.base64
 import com.soywiz.krypto.encoding.fromBase64
 import tigase.halcyon.core.Base64
-import tigase.halcyon.core.configuration.Configuration
-import tigase.halcyon.core.configuration.PasswordCallback
+import tigase.halcyon.core.builder.createConfiguration
 import tigase.halcyon.core.xmpp.toBareJID
 import kotlin.test.*
 
@@ -104,10 +103,10 @@ class SASLScramSHATest {
 			"fyko+d2lbbFgONRv9qkxdawL"
 		})
 
-		val configuration = Configuration().apply {
-			userJID = "user@example.com".toBareJID()
-			passwordCallback = object : PasswordCallback {
-				override fun getPassword(): String = "pencil"
+		val configuration = createConfiguration {
+			account {
+				userJID = "user@example.com".toBareJID()
+				password { "pencil" }
 			}
 		}
 		val context = SASLContext()
@@ -150,10 +149,10 @@ class SASLScramSHATest {
 			"rOprNGfwEbeRWgbNEkqO"
 		})
 
-		val configuration = Configuration().apply {
-			userJID = "user@example.com".toBareJID()
-			passwordCallback = object : PasswordCallback {
-				override fun getPassword(): String = "pencil"
+		val configuration = createConfiguration {
+			account {
+				userJID = "user@example.com".toBareJID()
+				password { "pencil" }
 			}
 		}
 		val context = SASLContext()
@@ -198,10 +197,10 @@ class SASLScramSHATest {
 			"rOprNGfwEbeRWgbNEkqO"
 		})
 
-		val configuration = Configuration().apply {
-			userJID = "user@example.com".toBareJID()
-			passwordCallback = object : PasswordCallback {
-				override fun getPassword(): String = "pencil"
+		val configuration = createConfiguration {
+			account {
+				userJID = "user@example.com".toBareJID()
+				password { "pencil" }
 			}
 		}
 		val context = SASLContext()

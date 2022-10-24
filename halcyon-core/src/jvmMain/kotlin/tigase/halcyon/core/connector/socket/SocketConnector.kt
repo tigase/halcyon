@@ -21,6 +21,7 @@ import org.minidns.dnssec.DnssecValidationFailedException
 import org.minidns.hla.DnssecResolverApi
 import org.minidns.hla.srv.SrvType
 import tigase.halcyon.core.Halcyon
+import tigase.halcyon.core.configuration.domain
 import tigase.halcyon.core.connector.*
 import tigase.halcyon.core.excutor.TickExecutor
 import tigase.halcyon.core.logger.Level
@@ -77,19 +78,24 @@ class SocketConnector(halcyon: Halcyon) : AbstractConnector(halcyon) {
 
 	private var whiteSpaceEnabled: Boolean = true
 
-	private var config: SocketConnectorConfig = halcyon.config.connectorConfig as SocketConnectorConfig
+	private var config: SocketConnectorConfig = halcyon.config.connection as SocketConnectorConfig
 
 	private val parser = object : StreamParser() {
 
 		private fun logReceivedStanza(element: Element) {
 			when {
 				log.isLoggable(Level.FINEST) -> log.finest("Received element ${element.getAsString()}")
-				log.isLoggable(Level.FINER) -> log.finer("Received element ${
-					element.getAsString(deep = 3, showValue = false)
-				}")
-				log.isLoggable(Level.FINE) -> log.fine("Received element ${
-					element.getAsString(deep = 2, showValue = false)
-				}")
+				log.isLoggable(Level.FINER) -> log.finer(
+					"Received element ${
+						element.getAsString(deep = 3, showValue = false)
+					}"
+				)
+
+				log.isLoggable(Level.FINE) -> log.fine(
+					"Received element ${
+						element.getAsString(deep = 2, showValue = false)
+					}"
+				)
 			}
 		}
 
@@ -126,10 +132,12 @@ class SocketConnector(halcyon: Halcyon) : AbstractConnector(halcyon) {
 			"proceed" -> {
 				proceedTLS()
 			}
+
 			"failure" -> {
 				log.warning { "Cannot establish TLS connection!" }
 				halcyon.eventBus.fire(SocketConnectionErrorEvent.TLSFailureEvent())
 			}
+
 			else -> throw XMPPException(ErrorCondition.BadRequest)
 		}
 	}
@@ -145,13 +153,12 @@ class SocketConnector(halcyon: Halcyon) : AbstractConnector(halcyon) {
 	private fun proceedTLS() {
 		log.info { "Proceeding TLS" }
 		try {
-			val userJid = halcyon.config.userJID!!
 			log.finest { "Disabling whitespace ping" }
 			whiteSpaceEnabled = false
 
 			val factory = getSocketFactory()
 
-			val s1 = factory.createSocket(socket, userJid.domain, socket.port, true) as SSLSocket
+			val s1 = factory.createSocket(socket, config.hostname, socket.port, true) as SSLSocket
 			s1.soTimeout = 0
 			s1.keepAlive = false
 			s1.tcpNoDelay = true
@@ -193,12 +200,10 @@ class SocketConnector(halcyon: Halcyon) : AbstractConnector(halcyon) {
 //			return Socket(InetAddress.getByName(forcedHost), config.port)
 //		}
 
-		val userJid = halcyon.config.userJID!!
-
-		val result = DnssecResolverApi.INSTANCE.resolveSrv(SrvType.xmpp_client, userJid.domain)
+		val result = DnssecResolverApi.INSTANCE.resolveSrv(SrvType.xmpp_client, config.hostname)
 
 		if (!result.wasSuccessful() || result.answers.isEmpty()) {
-			return Socket(InetAddress.getByName(userJid.domain), config.port)
+			return Socket(InetAddress.getByName(config.hostname), config.port)
 		}
 
 		val srvRecords = result.answers
@@ -218,8 +223,7 @@ class SocketConnector(halcyon: Halcyon) : AbstractConnector(halcyon) {
 	override fun start() {
 		state = State.Connecting
 
-		val userJid = halcyon.config.userJID!!
-
+		val userJid = halcyon.config.account?.userJID
 		try {
 			this.socket = createSocket()
 			socket.soTimeout = 20 * 1000
@@ -234,8 +238,10 @@ class SocketConnector(halcyon: Halcyon) : AbstractConnector(halcyon) {
 			val sb = buildString {
 				append("<stream:stream xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams' ")
 				append("version='1.0' ")
-				append("from='$userJid' ")
-				append("to='${userJid.domain}'>")
+				if (userJid != null) append("from='$userJid' ")
+				append("to='${halcyon.config.domain}'")
+				append(">")
+
 			}
 			send(sb)
 
@@ -305,20 +311,20 @@ class SocketConnector(halcyon: Halcyon) : AbstractConnector(halcyon) {
 	}
 
 	fun restartStream() {
-		val userJid = halcyon.config.userJID!!
+		val userJid = halcyon.config.account?.userJID
 
 		val sb = buildString {
 			append("<stream:stream xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams' ")
 			append("version='1.0' ")
-			append("from='$userJid' ")
-			append("to='${userJid.domain}'>")
+			if (userJid != null) append("from='$userJid' ")
+			append("to='${halcyon.config.domain}'")
+			append(">")
 		}
 		send(sb)
 	}
 
 	private fun onTick() {
 		if (state == State.Connected && whiteSpaceEnabled) {
-			log.finer { "Whitespace ping" }
 			log.finer { "Whitespace ping" }
 			worker.writer.write(' '.code)
 			worker.writer.flush()

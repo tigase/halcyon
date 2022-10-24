@@ -17,8 +17,7 @@
  */
 package tigase.halcyon.core.xmpp
 
-import tigase.halcyon.core.AbstractHalcyon
-import tigase.halcyon.core.connector.AbstractConnector
+import tigase.DummyHalcyon
 import tigase.halcyon.core.requests.RequestsManager
 import tigase.halcyon.core.requests.XMPPError
 import tigase.halcyon.core.xml.element
@@ -27,14 +26,8 @@ import kotlin.test.*
 
 class RequestManagerTest {
 
-	val halcyon = object : AbstractHalcyon() {
-		override fun reconnect(immediately: Boolean) {
-			TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-		}
-
-		override fun createConnector(): AbstractConnector {
-			TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-		}
+	val halcyon = DummyHalcyon().apply {
+		connect()
 	}
 
 	@Test
@@ -216,6 +209,7 @@ class RequestManagerTest {
 					result.isSuccess -> {
 						++successCounter
 					}
+
 					else -> fail()
 				}
 			}
@@ -389,9 +383,9 @@ class RequestManagerTest {
 			attribute("from", "to@jid.com")
 			attribute("type", "error")
 			attribute("id", req.id)
-			"error"{
+			"error" {
 				attribute("type", "cancel")
-				"service-unavailable"{
+				"service-unavailable" {
 					xmlns = "urn:ietf:params:xml:ns:xmpp-stanzas"
 				}
 			}

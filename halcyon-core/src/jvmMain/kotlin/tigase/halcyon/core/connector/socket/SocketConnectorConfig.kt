@@ -17,23 +17,11 @@
  */
 package tigase.halcyon.core.connector.socket
 
-import tigase.halcyon.core.connector.ConnectorConfig
-import java.security.cert.X509Certificate
+import tigase.halcyon.core.configuration.Connection
 import javax.net.ssl.TrustManager
-import javax.net.ssl.X509TrustManager
 
-class SocketConnectorConfig : ConnectorConfig {
-
-	var port: Int = 5222
-
-	var trustManager: TrustManager = object : X509TrustManager {
-		override fun checkClientTrusted(p0: Array<out X509Certificate>?, p1: String?) {
-		}
-
-		override fun checkServerTrusted(p0: Array<out X509Certificate>?, p1: String?) {
-		}
-
-		override fun getAcceptedIssuers(): Array<X509Certificate> = emptyArray()
-	}
-
-}
+data class SocketConnectorConfig(
+	val hostname: String,
+	val port: Int,
+	val trustManager: TrustManager,
+) : Connection

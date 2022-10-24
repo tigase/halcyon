@@ -17,17 +17,15 @@
  */
 package tigase.halcyon.core.xmpp.modules.caps
 
-import tigase.halcyon.core.AbstractHalcyon
-import tigase.halcyon.core.connector.AbstractConnector
+import tigase.DummyHalcyon
 import tigase.halcyon.core.xmpp.modules.discovery.DiscoveryModule
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class EntityCapabilitiesModuleTest {
 
-	val halcyon = object : AbstractHalcyon() {
-		override fun reconnect(immediately: Boolean) = TODO("not implemented")
-		override fun createConnector(): AbstractConnector = TODO("not implemented")
+	val halcyon = DummyHalcyon().apply {
+		connect()
 	}
 
 	@ExperimentalStdlibApi
