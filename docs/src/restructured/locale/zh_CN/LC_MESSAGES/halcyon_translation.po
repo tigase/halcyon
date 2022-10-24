@@ -1,0 +1,1655 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2004-2022, Tigase, Inc
+# This file is distributed under the same license as the TigaseDoc package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2022.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: TigaseDoc \n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2022-10-19 16:20-0700\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.10.3\n"
+
+#: ../../Architecture.rst:2
+msgid "Design and implementation"
+msgstr ""
+
+#: ../../Architecture.rst:5
+msgid "Tigase Halcyon"
+msgstr ""
+
+#: ../../Architecture.rst:7
+msgid "**Halcyon** is a multiplatform extensible XMPP client library"
+msgstr ""
+
+#: ../../Architecture.rst:10
+msgid "Design"
+msgstr ""
+
+#: ../../Architecture.rst:12
+msgid "|architecture|"
+msgstr ""
+
+#: ../../Architecture.rst:14
+msgid "architecture"
+msgstr ""
+
+#: ../../JabberDataForm.rst:2
+msgid "Jabber Data Form"
+msgstr ""
+
+#: ../../JabberDataForm.rst:4
+msgid ""
+"Jabber Data Form is described in `XEP-0004 "
+"<https://xmpp.org/extensions/xep-0004.html>`__. Data forms are useful in "
+"all workflows not described in XEPs. For example service configuration or"
+" search results."
+msgstr ""
+
+#: ../../JabberDataForm.rst:7
+msgid "Working with forms"
+msgstr ""
+
+#: ../../JabberDataForm.rst:9
+msgid ""
+"To access fields of received form, we have to create ``JabberDataForm`` "
+"object:"
+msgstr ""
+
+#: ../../JabberDataForm.rst:15
+msgid ""
+"Where ``formElement`` is representation of ``<x xmlns='jabber:x:data'>`` "
+"XML element."
+msgstr ""
+
+#: ../../JabberDataForm.rst:17
+msgid "Each form may have properties like:"
+msgstr ""
+
+#: ../../JabberDataForm.rst:19
+msgid ""
+"``type`` - `form type <https://xmpp.org/extensions/xep-0004.html"
+"#protocol-formtypes>`__,"
+msgstr ""
+
+#: ../../JabberDataForm.rst:21
+msgid "``title`` - optional title of form,"
+msgstr ""
+
+#: ../../JabberDataForm.rst:23
+msgid "``description`` - optional, human-readable, description of form."
+msgstr ""
+
+#: ../../JabberDataForm.rst:25
+msgid ""
+"Fields are identified by ``var`` name. Each field may have `field type "
+"<https://xmpp.org/extensions/xep-0004.html#protocol-fieldtypes>`__ (it is"
+" optional)."
+msgstr ""
+
+#: ../../JabberDataForm.rst:27
+msgid "Let look, how to list all fields with values:"
+msgstr ""
+
+#: ../../JabberDataForm.rst:40
+msgid "To get field by name, simple use:"
+msgstr ""
+
+#: ../../JabberDataForm.rst:46
+msgid "Value of those fields may be modified:"
+msgstr ""
+
+#: ../../JabberDataForm.rst:52
+msgid ""
+"After all form modification, sometimes we need to send filled form back. "
+"There is separated method to prepare submit-ready form:"
+msgstr ""
+
+#: ../../JabberDataForm.rst:58
+msgid ""
+"This method prepares ``<x xmlns='jabber:x:data'>`` XML element with type "
+"``submit`` and all fields are cleared up from unnecessary elements like "
+"descriptions or labels. It just leaves simple filed with name and value."
+msgstr ""
+
+#: ../../JabberDataForm.rst:61
+msgid "Creating forms"
+msgstr ""
+
+#: ../../JabberDataForm.rst:63
+msgid "We can create new form, set title and description, and add fields:"
+msgstr ""
+
+#: ../../JabberDataForm.rst:75
+msgid "To get XML element containing form without cleaning it, just use:"
+msgstr ""
+
+#: ../../JabberDataForm.rst:82
+msgid "Multi value response"
+msgstr ""
+
+#: ../../JabberDataForm.rst:84
+msgid ""
+"There is a variant of form containing many sets of fields. This kind of "
+"form has declared set of column with names and set of items containing "
+"field with names declared before."
+msgstr ""
+
+#: ../../JabberDataForm.rst:86
+msgid "This example shows how to display all fields with values:"
+msgstr ""
+
+#: ../../JabberDataForm.rst:100
+msgid ""
+"Creating multi value form is also simple. First we have to set list of "
+"reported columns, because when new item is added, field names are checked"
+" against declared columns."
+msgstr ""
+
+#: ../../Modules.rst:2
+msgid "Modules"
+msgstr ""
+
+#: ../../Modules.rst:4
+msgid ""
+"Halcyon contains set of modules responsible for implementation of various"
+" tasks: sending and receiving messages, authentication, pinging, "
+"uploading files, handling roster, presences, etc."
+msgstr ""
+
+#: ../../Modules.rst:8
+msgid "Modules:"
+msgstr ""
+
+#: ../../modules/BindModule.inc:2
+msgid "BindModule"
+msgstr ""
+
+#: ../../modules/BindModule.inc:4
+msgid ""
+"Resource Binding module. This module is responsible for resource binding "
+"as described in `RFC <https://xmpp.org/rfcs/rfc6120.html#bind>`__."
+msgstr ""
+
+#: ../../modules/BindModule.inc:8 ../../modules/DiscoveryModule.inc:7
+#: ../../modules/SASLModule.inc:7 ../../modules/VCard4Module.inc:7
+msgid "Properties"
+msgstr ""
+
+#: ../../modules/BindModule.inc:10
+msgid ""
+"``boundJID`` - contains full JID bound during resource binding process, "
+"or null if client isn’t logged in and/or not binded."
+msgstr ""
+
+#: ../../modules/BindModule.inc:14 ../../modules/BlockingCommandModule.inc:46
+#: ../../modules/CommandModule.inc:7 ../../modules/DiscoveryModule.inc:36
+#: ../../modules/MAMModule.inc:25 ../../modules/MUCModule.inc:87
+#: ../../modules/MessageCarbonsModule.inc:22 ../../modules/PingModule.inc:12
+#: ../../modules/PresenceModule.inc:38 ../../modules/PubSubModule.inc:12
+#: ../../modules/RosterModule.inc:25 ../../modules/SASLModule.inc:47
+#: ../../modules/SIMSModule.inc:9 ../../modules/VCard4Module.inc:20
+msgid "Methods"
+msgstr ""
+
+#: ../../modules/BindModule.inc:16 ../../modules/SASLModule.inc:49
+msgid ""
+"There is no reason to call methods from this module in client. This "
+"module is used internally by Halcyon library."
+msgstr ""
+
+#: ../../modules/BindModule.inc:20
+msgid "``bind(String)``"
+msgstr ""
+
+#: ../../modules/BindModule.inc:22
+msgid ""
+"Method prepares request to bind resource. As parameters it gets proposed "
+"resource name or ``null`` if resource name should be generated by server."
+" In response it returns object ``BindResult`` contains full bound JID."
+msgstr ""
+
+#: ../../modules/DiscoveryModule.inc:2
+msgid "DiscoveryModule"
+msgstr ""
+
+#: ../../modules/DiscoveryModule.inc:4
+msgid ""
+"This module implements `XEP-0030: Service Discovery "
+"<https://xmpp.org/extensions/xep-0030.html>`__."
+msgstr ""
+
+#: ../../modules/DiscoveryModule.inc:9
+msgid "There are few properties to set in this module:"
+msgstr ""
+
+#: ../../modules/DiscoveryModule.inc:11
+msgid "``clientName`` - Client name."
+msgstr ""
+
+#: ../../modules/DiscoveryModule.inc:13
+msgid "``clientVersion`` - Version of client."
+msgstr ""
+
+#: ../../modules/DiscoveryModule.inc:15
+msgid "``clientCategory`` - Category of client."
+msgstr ""
+
+#: ../../modules/DiscoveryModule.inc:17
+msgid "``clientType`` - Type of client."
+msgstr ""
+
+#: ../../modules/DiscoveryModule.inc:19
+msgid ""
+"Category and type of client are described in `Service Discovery "
+"Identities <https://xmpp.org/registrar/disco-categories.html>`__ "
+"document."
+msgstr ""
+
+#: ../../modules/BlockingCommandModule.inc:7
+#: ../../modules/DiscoveryModule.inc:23 ../../modules/MAMModule.inc:7
+#: ../../modules/MUCModule.inc:7 ../../modules/MessageCarbonsModule.inc:7
+#: ../../modules/PresenceModule.inc:7 ../../modules/PubSubModule.inc:7
+#: ../../modules/RosterModule.inc:7 ../../modules/SASLModule.inc:19
+#: ../../modules/VCard4Module.inc:12
+msgid "Events"
+msgstr ""
+
+#: ../../modules/DiscoveryModule.inc:26
+msgid "``ServerFeaturesReceivedEvent``"
+msgstr ""
+
+#: ../../modules/DiscoveryModule.inc:28
+msgid ""
+"Fired when server features, to where client is connected, are received. "
+"Client asks for server features automatically during login process."
+msgstr ""
+
+#: ../../modules/DiscoveryModule.inc:31
+msgid "``AccountFeaturesReceivedEvent``"
+msgstr ""
+
+#: ../../modules/DiscoveryModule.inc:33
+msgid ""
+"Fired when user account features are received. Client asks for those "
+"features automatically."
+msgstr ""
+
+#: ../../modules/DiscoveryModule.inc:39
+msgid "``info(JID, String)``"
+msgstr ""
+
+#: ../../modules/DiscoveryModule.inc:41
+msgid ""
+"Method prepares ``disco#info`` request. As parameters it takes JID of "
+"entity and node name. Both are optional. In response returns object "
+"``Info`` contains JID of entity, node name, list of identities and list "
+"of features."
+msgstr ""
+
+#: ../../modules/DiscoveryModule.inc:44
+msgid "``items(JID, String)``"
+msgstr ""
+
+#: ../../modules/DiscoveryModule.inc:46
+msgid ""
+"Method prepares ``disco#items`` request. As parameters it takes JID of "
+"entity and node name. Both are optional. In response returns object "
+"``Items`` contains JID of entity, node name and list of items."
+msgstr ""
+
+#: ../../modules/DiscoveryModule.inc:49
+msgid "``findComponent((Info) → Boolean, (Info) → Unit)``"
+msgstr ""
+
+#: ../../modules/DiscoveryModule.inc:51
+msgid ""
+"This method may be used to find component on currently connected server "
+"with specific features or type."
+msgstr ""
+
+#: ../../modules/DiscoveryModule.inc:53
+msgid ""
+"As first parameter it takes condition checker, which much check if given "
+"``Info`` is this object what we are searching for. Second parameter is "
+"consumer."
+msgstr ""
+
+#: ../../modules/MessageCarbonsModule.inc:2
+msgid "MessageCarbonsModule"
+msgstr ""
+
+#: ../../modules/MessageCarbonsModule.inc:4
+msgid ""
+"This module implements `XEP-0280: Message Carbons "
+"<https://xmpp.org/extensions/xep-0280.html>`__."
+msgstr ""
+
+#: ../../modules/MessageCarbonsModule.inc:10
+msgid "``Sent``"
+msgstr ""
+
+#: ../../modules/MessageCarbonsModule.inc:12
+msgid ""
+"Fired when client receives carbon of message sent by other entity using "
+"the same account. Event contains carboned message."
+msgstr ""
+
+#: ../../modules/MessageCarbonsModule.inc:16
+msgid "``Received``"
+msgstr ""
+
+#: ../../modules/MessageCarbonsModule.inc:18
+msgid ""
+"Fired when client receives carbon of message received by other entity "
+"using the same account. Event contains carboned message."
+msgstr ""
+
+#: ../../modules/MessageCarbonsModule.inc:25
+msgid "``enable()``"
+msgstr ""
+
+#: ../../modules/MessageCarbonsModule.inc:27
+msgid "Method prepares request to enable carbon messages in current session."
+msgstr ""
+
+#: ../../modules/MessageCarbonsModule.inc:30
+msgid "``disable()``"
+msgstr ""
+
+#: ../../modules/MessageCarbonsModule.inc:32
+msgid "Method prepares request to disable carbon messages in current session."
+msgstr ""
+
+#: ../../modules/PingModule.inc:2
+msgid "PingModule"
+msgstr ""
+
+#: ../../modules/PingModule.inc:4
+msgid ""
+"This module implements `XEP-0199: XMPP Ping "
+"<https://xmpp.org/extensions/xep-0199.html>`__. It allows to ping XMPP "
+"entities over XML stream."
+msgstr ""
+
+#: ../../modules/PingModule.inc:7
+msgid "Published features"
+msgstr ""
+
+#: ../../modules/PingModule.inc:9
+msgid "``urn:xmpp:ping``"
+msgstr ""
+
+#: ../../modules/PingModule.inc:15
+msgid "``ping(JID)``"
+msgstr ""
+
+#: ../../modules/PingModule.inc:17
+msgid ""
+"This method prepares ping request. Response object ``Pong`` contains "
+"measured round-trip time in miliseconds."
+msgstr ""
+
+#: ../../modules/PresenceModule.inc:2
+msgid "PresenceModule"
+msgstr ""
+
+#: ../../modules/PresenceModule.inc:4
+msgid "Module for handling received presence information."
+msgstr ""
+
+#: ../../modules/PresenceModule.inc:10
+msgid "``PresenceReceivedEvent``"
+msgstr ""
+
+#: ../../modules/PresenceModule.inc:12
+msgid "Fired when any Presence stanza is received by client."
+msgstr ""
+
+#: ../../modules/PresenceModule.inc:14 ../../modules/SASLModule.inc:26
+#: ../../modules/SASLModule.inc:40
+msgid "Fields:"
+msgstr ""
+
+#: ../../modules/PresenceModule.inc:16
+msgid "``jid`` - Stanza sender JID."
+msgstr ""
+
+#: ../../modules/PresenceModule.inc:18
+msgid "``stanzaType`` - Presence stanza type."
+msgstr ""
+
+#: ../../modules/PresenceModule.inc:20
+msgid "``stanza`` - Whole received presence stanza."
+msgstr ""
+
+#: ../../modules/PresenceModule.inc:23
+msgid "``ContactChangeStatusEvent``"
+msgstr ""
+
+#: ../../modules/PresenceModule.inc:25
+msgid ""
+"Fired when Presence stanza is received but it contains different set of "
+"fields:"
+msgstr ""
+
+#: ../../modules/PresenceModule.inc:27
+msgid "``jid`` - Bare JID of contact."
+msgstr ""
+
+#: ../../modules/PresenceModule.inc:29
+msgid "``status`` - Human readable status set by contact."
+msgstr ""
+
+#: ../../modules/PresenceModule.inc:31
+msgid ""
+"``presence`` - Current \"best\" presence stanza, based on presence "
+"priority."
+msgstr ""
+
+#: ../../modules/PresenceModule.inc:33
+msgid "``lastReceivedPresence`` - Just received presence stanza."
+msgstr ""
+
+#: ../../modules/PresenceModule.inc:35
+msgid ""
+"Note that ``presence`` in this event may contain stanza received long "
+"time ago. Current event is caused by receiving presence from entity with "
+"lower priority."
+msgstr ""
+
+#: ../../modules/PresenceModule.inc:41
+msgid "``getPresenceOf(jid: JID)``"
+msgstr ""
+
+#: ../../modules/PresenceModule.inc:43
+msgid ""
+"Returns presence of given entity or null if never received presence from "
+"this entity."
+msgstr ""
+
+#: ../../modules/PresenceModule.inc:46
+msgid "``getBestPresenceOf(jid: BareJID)``"
+msgstr ""
+
+#: ../../modules/PresenceModule.inc:48
+msgid "Returns best known presence of given bare JID."
+msgstr ""
+
+#: ../../modules/PresenceModule.inc:51
+msgid ""
+"``sendPresence(jid: JID?, type: PresenceType?, show: Show?, status: "
+"String)``"
+msgstr ""
+
+#: ../../modules/PresenceModule.inc:53
+msgid "Sends presence stanza to specific jid."
+msgstr ""
+
+#: ../../modules/PresenceModule.inc:57
+msgid "``sendSubscriptionSet(jid: JID, presenceType: PresenceType)``"
+msgstr ""
+
+#: ../../modules/PresenceModule.inc:59
+msgid "Method for quick send response for subscription request."
+msgstr ""
+
+#: ../../modules/PubSubModule.inc:2 ../../modules/RosterModule.inc:2
+msgid "RosterModule"
+msgstr ""
+
+#: ../../modules/PubSubModule.inc:4
+msgid ""
+"This module implements `XEP-0060: Publish-Subscribe "
+"<https://xmpp.org/extensions/xep-0060.html>`__. It adds publish-subscribe"
+" functionality."
+msgstr ""
+
+#: ../../modules/PubSubModule.inc:9
+msgid "PubSubEventReceivedEvent"
+msgstr ""
+
+#: ../../modules/PubSubModule.inc:14
+msgid "create(pubSubJID: JID, node: String, configForm: JabberDataForm? = null)"
+msgstr ""
+
+#: ../../modules/PubSubModule.inc:16
+msgid "fun subscribe(pubSubJID: JID, node: String, jid: JID)"
+msgstr ""
+
+#: ../../modules/PubSubModule.inc:18
+msgid "fun purgeItems(pubSubJID: JID, node: String)"
+msgstr ""
+
+#: ../../modules/PubSubModule.inc:20
+msgid "fun retrieveSubscriptions(pubSubJID: JID, node: String)"
+msgstr ""
+
+#: ../../modules/PubSubModule.inc:22
+msgid ""
+"fun modifySubscriptions(pubSubJID: JID, node: String, subscriptions: "
+"List<Subscription>)"
+msgstr ""
+
+#: ../../modules/PubSubModule.inc:24
+msgid "fun deleteItem(jid: JID, node: String, itemId: String)"
+msgstr ""
+
+#: ../../modules/PubSubModule.inc:26
+msgid "fun retrieveItem(jid: JID, node: String, itemId: String? = null)"
+msgstr ""
+
+#: ../../modules/PubSubModule.inc:28
+msgid ""
+"fun publish(jid: JID?, node: String, itemId: String?, payload: Element? ="
+" null)"
+msgstr ""
+
+#: ../../modules/PubSubModule.inc:30
+msgid "fun retrieveAffiliations(jid: JID?, node: String? = null)"
+msgstr ""
+
+#: ../../modules/RosterModule.inc:4
+msgid "Module is reponsible for keeping and managing roster items."
+msgstr ""
+
+#: ../../modules/RosterModule.inc:10
+msgid "``ItemAdded``"
+msgstr ""
+
+#: ../../modules/RosterModule.inc:12
+msgid "Fired when new item is added to roster."
+msgstr ""
+
+#: ../../modules/RosterModule.inc:15
+msgid "``ItemUpdated``"
+msgstr ""
+
+#: ../../modules/RosterModule.inc:17
+msgid "Fired when item is modified."
+msgstr ""
+
+#: ../../modules/RosterModule.inc:20
+msgid "``ItemRemoved``"
+msgstr ""
+
+#: ../../modules/RosterModule.inc:22
+msgid "Fired when item is removed from roster."
+msgstr ""
+
+#: ../../modules/RosterModule.inc:28
+msgid "``addItem(vararg items: RosterItem)``"
+msgstr ""
+
+#: ../../modules/RosterModule.inc:30
+msgid ""
+"Method prepares request which add or update item to roster. When server "
+"confirms action, event ``ItemAdded`` or ``ItemUpdated`` will be fired."
+msgstr ""
+
+#: ../../modules/RosterModule.inc:34
+msgid "``deleteItem(vararg jids: BareJID)``"
+msgstr ""
+
+#: ../../modules/RosterModule.inc:36
+msgid ""
+"Method prepares request to remove item from roster. When server confirms "
+"operation, event ``ItemRemoved`` will be fired."
+msgstr ""
+
+#: ../../modules/RosterModule.inc:39
+msgid "``getAllItems()``"
+msgstr ""
+
+#: ../../modules/RosterModule.inc:41
+msgid "Method returns add known roster items."
+msgstr ""
+
+#: ../../modules/RosterModule.inc:44
+msgid "Implementing own storage"
+msgstr ""
+
+#: ../../modules/RosterModule.inc:46
+msgid ""
+"RosterModule supports roster versioning, but it requires custom "
+"implementation of ``RosterStore`` to allow storing roster locally. By "
+"default, Halcyon has in-memory roster store. To do that, there is "
+"interface ``tigase.halcyon.core.xmpp.modules.roster.RosterStore`` what "
+"need to be extend. To use custom implementation of ``RosterStore`` simply"
+" put it to property ``store`` in ``RosterModule``. Note, that it have to "
+"be done before login."
+msgstr ""
+
+#: ../../modules/SASLModule.inc:2
+msgid "SASLModule"
+msgstr ""
+
+#: ../../modules/SASLModule.inc:4
+msgid "Module is responsible for whole client authentication process."
+msgstr ""
+
+#: ../../modules/SASLModule.inc:9
+msgid ""
+"``saslContext`` contains context of module. Context is cleared when "
+"connection is started. It has several fields to read:"
+msgstr ""
+
+#: ../../modules/SASLModule.inc:11
+msgid "``mechanism`` - used SASL mechanism,"
+msgstr ""
+
+#: ../../modules/SASLModule.inc:13
+msgid "``state`` - current state of authentication process,"
+msgstr ""
+
+#: ../../modules/SASLModule.inc:15
+msgid ""
+"``complete`` - ``true`` if authentication process is finished (it doesn’t"
+" matter with success or with error)."
+msgstr ""
+
+#: ../../modules/SASLModule.inc:22
+msgid "``SASLStarted``"
+msgstr ""
+
+#: ../../modules/SASLModule.inc:24
+msgid "Fired when authentication process begins."
+msgstr ""
+
+#: ../../modules/SASLModule.inc:28
+msgid "``mechanism`` - name of used SASL mechanism."
+msgstr ""
+
+#: ../../modules/SASLModule.inc:31
+msgid "``SASLSuccess``"
+msgstr ""
+
+#: ../../modules/SASLModule.inc:33
+msgid "Fired when authentication is successful."
+msgstr ""
+
+#: ../../modules/SASLModule.inc:36
+msgid "``SASLError``"
+msgstr ""
+
+#: ../../modules/SASLModule.inc:38
+msgid "Fired when authentication finished with error."
+msgstr ""
+
+#: ../../modules/SASLModule.inc:42
+msgid ""
+"``error`` - enum with type of error. SASL errors are described if `RFC "
+"<https://xmpp.org/rfcs/rfc6120.html#sasl-errors>`__."
+msgstr ""
+
+#: ../../modules/SASLModule.inc:44
+msgid ""
+"``description`` - human readable description of error (if provided by "
+"server)."
+msgstr ""
+
+#: ../../modules/SASLModule.inc:52
+msgid "``startAuth()``"
+msgstr ""
+
+#: ../../modules/SASLModule.inc:54
+msgid ""
+"This method begins authentication process. It doesn’t return Request "
+"object."
+msgstr ""
+
+#: ../../modules/VCard4Module.inc:2
+msgid "VCardModule"
+msgstr ""
+
+#: ../../modules/VCard4Module.inc:4
+msgid ""
+"This module allows to publishing and retrieving VCard4 as described in "
+"`XEP-0292 <https://xmpp.org/extensions/xep-0292.html>`__."
+msgstr ""
+
+#: ../../modules/VCard4Module.inc:9
+msgid ""
+"``autoRetrieve`` - If ``true`` then module automatically retrieve VCard "
+"before firing ``VCardUpdatedEvent``. It is ``false`` by default."
+msgstr ""
+
+#: ../../modules/VCard4Module.inc:15
+msgid "``VCardUpdatedEvent``"
+msgstr ""
+
+#: ../../modules/VCard4Module.inc:17
+msgid ""
+"Fired when VCard update is received from PEP. Contains JID that the "
+"update applies to. If ``autoRetrieve`` is set to ``true`` then event will"
+" contains current VCard."
+msgstr ""
+
+#: ../../modules/VCard4Module.inc:23
+msgid "``retrieveVCard(jid: BareJID)``"
+msgstr ""
+
+#: ../../modules/VCard4Module.inc:25
+msgid ""
+"This method prepare request for retrieving VCard of given JID. As result "
+"returns ``VCard`` object."
+msgstr ""
+
+#: ../../modules/VCard4Module.inc:29
+msgid "``fun publish(vcard: VCard)``"
+msgstr ""
+
+#: ../../modules/VCard4Module.inc:31
+msgid "This method prepare request for publishing own vcard."
+msgstr ""
+
+#: ../../modules/VCard4Module.inc:35
+msgid "Usage example"
+msgstr ""
+
+#: ../../modules/VCard4Module.inc:38
+msgid "Retrieving VCard"
+msgstr ""
+
+#: ../../modules/VCard4Module.inc:72
+msgid "Publishing VCard"
+msgstr ""
+
+#: ../../modules/VCard4Module.inc:74
+msgid "Publishing own vcard is very simple:"
+msgstr ""
+
+#: ../../modules/VCard4Module.inc:84
+msgid ""
+"VCard object is mutable and can be edited. To create new VCard instance "
+"you can use VCard builder:"
+msgstr ""
+
+#: ../../modules/BlockingCommandModule.inc:2
+msgid "BlockingCommandModule"
+msgstr ""
+
+#: ../../modules/BlockingCommandModule.inc:4
+msgid ""
+"This module implements `XEP-0191: Blocking Command "
+"<https://xmpp.org/extensions/xep-0191.html>`__ and `XEP-0377: Spam "
+"Reporting <https://xmpp.org/extensions/xep-0377.html>`__"
+msgstr ""
+
+#: ../../modules/BlockingCommandModule.inc:10
+msgid "``Blocked``"
+msgstr ""
+
+#: ../../modules/BlockingCommandModule.inc:12
+msgid "Event fired when new contact was blocked. It contains few properties:"
+msgstr ""
+
+#: ../../modules/BlockingCommandModule.inc:14
+msgid "``jid`` - blocked JabberID"
+msgstr ""
+
+#: ../../modules/BlockingCommandModule.inc:16
+msgid "``reason`` - reason of blocking."
+msgstr ""
+
+#: ../../modules/BlockingCommandModule.inc:18
+msgid "``text`` - optional human-readable description of blocking reason."
+msgstr ""
+
+#: ../../modules/BlockingCommandModule.inc:22
+msgid "``Unblocked``"
+msgstr ""
+
+#: ../../modules/BlockingCommandModule.inc:24
+msgid "Event fired, when contact was unblocked. It contains one property:"
+msgstr ""
+
+#: ../../modules/BlockingCommandModule.inc:26
+msgid "``jid`` - unblocked JabberID"
+msgstr ""
+
+#: ../../modules/BlockingCommandModule.inc:30
+msgid "``UnblockedAll``"
+msgstr ""
+
+#: ../../modules/BlockingCommandModule.inc:32
+msgid "Event fired when all contacts are unblocked."
+msgstr ""
+
+#: ../../modules/BlockingCommandModule.inc:48
+msgid "Samples:"
+msgstr ""
+
+#: ../../modules/BlockingCommandModule.inc:51
+msgid "``retrieveList(JID, String)``"
+msgstr ""
+
+#: ../../modules/BlockingCommandModule.inc:53
+msgid ""
+"Retrieves list of blocked contacts. It allows to get list of blocked "
+"list, without information about reason."
+msgstr ""
+
+#: ../../modules/BlockingCommandModule.inc:66
+msgid "``block``"
+msgstr ""
+
+#: ../../modules/BlockingCommandModule.inc:68
+msgid "Blocks given contact."
+msgstr ""
+
+#: ../../modules/BlockingCommandModule.inc:70
+#: ../../modules/BlockingCommandModule.inc:92
+msgid "Params:"
+msgstr ""
+
+#: ../../modules/BlockingCommandModule.inc:72
+msgid "``jid`` - BareJID of contact to block"
+msgstr ""
+
+#: ../../modules/BlockingCommandModule.inc:74
+msgid ""
+"``reason`` - reason of blocking (optional, default value is "
+"``NotSpecified``)"
+msgstr ""
+
+#: ../../modules/BlockingCommandModule.inc:76
+msgid "``text`` - optional, human-readable description of blocking"
+msgstr ""
+
+#: ../../modules/BlockingCommandModule.inc:88
+msgid "``unblock``"
+msgstr ""
+
+#: ../../modules/BlockingCommandModule.inc:90
+msgid "Unblocks given contact."
+msgstr ""
+
+#: ../../modules/BlockingCommandModule.inc:94
+msgid "``jids`` - BareJIDs of contacts to unblock"
+msgstr ""
+
+#: ../../modules/BlockingCommandModule.inc:98
+msgid "If ``jids`` will be empty, all blocked contacts will be unblocked!"
+msgstr ""
+
+#: ../../modules/BlockingCommandModule.inc:110
+msgid "``unblockAll``"
+msgstr ""
+
+#: ../../modules/BlockingCommandModule.inc:112
+msgid "Unblocks all blocked contacts."
+msgstr ""
+
+#: ../../modules/CommandModule.inc:2
+msgid "CommandModule"
+msgstr ""
+
+#: ../../modules/CommandModule.inc:4
+msgid ""
+"This module implements `XEP-0050: Ad-Hoc Commands "
+"<https://xmpp.org/extensions/xep-0050.html>`__."
+msgstr ""
+
+#: ../../modules/CommandModule.inc:10
+msgid "``retrieveCommandList``"
+msgstr ""
+
+#: ../../modules/CommandModule.inc:12
+msgid ""
+"Retrieves list of commands allowed to execute on given XMPP entity. "
+"Because this command is just wrapper to ``DiscoveryModule.items()`` "
+"method, in response it returns ``DiscoveryModule.Items`` class."
+msgstr ""
+
+#: ../../modules/CommandModule.inc:16
+msgid "``retrieveCommandInfo``"
+msgstr ""
+
+#: ../../modules/CommandModule.inc:18
+msgid ""
+"Retrieves detailed information about specified command. Because this "
+"command is just wrapper to ``DiscoveryModule.info()`` method, in response"
+" it returns ``DiscoveryModule.Info`` class."
+msgstr ""
+
+#: ../../modules/CommandModule.inc:22
+msgid "``executeCommand``"
+msgstr ""
+
+#: ../../modules/CommandModule.inc:24
+msgid "This method executes Ad-hoc Command on XMPP entity specified by JabberID."
+msgstr ""
+
+#: ../../modules/CommandModule.inc:26 ../../modules/MAMModule.inc:32
+msgid "Arguments:"
+msgstr ""
+
+#: ../../modules/CommandModule.inc:28
+msgid "``jid`` - Jabber ID of command executor,"
+msgstr ""
+
+#: ../../modules/CommandModule.inc:30
+msgid "``command`` - command name,"
+msgstr ""
+
+#: ../../modules/CommandModule.inc:32
+msgid "``form`` - optional element containing data form,"
+msgstr ""
+
+#: ../../modules/CommandModule.inc:34
+msgid "``action`` - command action,"
+msgstr ""
+
+#: ../../modules/CommandModule.inc:36
+msgid ""
+"``sessionId`` - session identifier, if command is executed in session "
+"(identifier is generated by executor)."
+msgstr ""
+
+#: ../../modules/CommandModule.inc:38
+msgid ""
+"As response method returns object of ``AdHocResult`` class. It contains "
+"result form (optional) and status of command execution."
+msgstr ""
+
+#: ../../modules/CommandModule.inc:50
+msgid ""
+"If this command creates session, we can simply use data from ``result`` "
+"to execute next command in it:"
+msgstr ""
+
+#: ../../modules/CommandModule.inc:65
+msgid ""
+"Above example uses default action in second step (``null`` on arguments "
+"list)."
+msgstr ""
+
+#: ../../modules/CommandModule.inc:68
+msgid "``registerAdHocCommand(command: AdHocCommand)``"
+msgstr ""
+
+#: ../../modules/CommandModule.inc:70
+msgid ""
+"In addition to executing commands on other XMPP entities, module allows "
+"to register ad-hoc commands, to be executed in client by others."
+msgstr ""
+
+#: ../../modules/CommandModule.inc:72
+msgid "Command must implement ``AdHocCommand`` interface."
+msgstr ""
+
+#: ../../modules/CommandModule.inc:90
+msgid ""
+"Above sample command may be executed only by ``owner@example.com``. It "
+"even be hidden on commands list for others."
+msgstr ""
+
+#: ../../modules/CommandModule.inc:92
+msgid "Created command must be registered in ``CommandModule``:"
+msgstr ""
+
+#: ../../modules/CommandModule.inc:98
+msgid ""
+"Ad-hoc commands supports sessions. Session allows to store some data in "
+"session context and creates multiple stages commands. By default sessions"
+" are not started automatically. To access to session in command, use "
+"method ``request.getSession()``. This method returns current session "
+"context or creates new one if it is necessary."
+msgstr ""
+
+#: ../../modules/CommandModule.inc:125
+msgid ""
+"If response status is ``Completed`` or ``Canceled``, then session context"
+" is destroyed after command execution."
+msgstr ""
+
+#: ../../modules/CommandModule.inc:129
+msgid ""
+"Remember, that single instance of Ad-Hoc Command may process calls from "
+"many callers."
+msgstr ""
+
+#: ../../modules/MUCModule.inc:2
+msgid "MUCModule"
+msgstr ""
+
+#: ../../modules/MUCModule.inc:4
+msgid ""
+"This module implements `XEP-0045: Multi-User Chat "
+"<https://xmpp.org/extensions/xep-0045.html>`__."
+msgstr ""
+
+#: ../../modules/MUCModule.inc:9
+msgid "There are two kinds of events in ``MUCModule``:"
+msgstr ""
+
+#: ../../modules/MUCModule.inc:11
+msgid "Room related events."
+msgstr ""
+
+#: ../../modules/MUCModule.inc:13
+msgid "Other events"
+msgstr ""
+
+#: ../../modules/MUCModule.inc:15
+msgid "Currently the only event from second category is ``InvitationReceived``:"
+msgstr ""
+
+#: ../../modules/MUCModule.inc:23
+msgid ""
+"All room related events contains ``Room`` object, and all have common "
+"parent:"
+msgstr ""
+
+#: ../../modules/MUCModule.inc:38
+msgid "``InvitationReceived``"
+msgstr ""
+
+#: ../../modules/MUCModule.inc:40
+msgid ""
+"Event fired when an invitation is received. Contains ``Invitation`` "
+"object."
+msgstr ""
+
+#: ../../modules/MUCModule.inc:44
+msgid "``YouJoined``"
+msgstr ""
+
+#: ../../modules/MUCModule.inc:46
+msgid "Event fired when server responses for join request with success."
+msgstr ""
+
+#: ../../modules/MUCModule.inc:50
+msgid "``YouLeaved``"
+msgstr ""
+
+#: ../../modules/MUCModule.inc:52
+msgid ""
+"Event fired, when you leave room. It may be confirmation of you leave "
+"request, or you are kicked out from room."
+msgstr ""
+
+#: ../../modules/MUCModule.inc:55
+msgid "``JoinError``"
+msgstr ""
+
+#: ../../modules/MUCModule.inc:57
+msgid "Event fired when server not accepted join request."
+msgstr ""
+
+#: ../../modules/MUCModule.inc:61
+msgid "``Created``"
+msgstr ""
+
+#: ../../modules/MUCModule.inc:63
+msgid "Event informs that room you joined is just created (by join request)."
+msgstr ""
+
+#: ../../modules/MUCModule.inc:66
+msgid "``OccupantCame``"
+msgstr ""
+
+#: ../../modules/MUCModule.inc:68
+msgid "Informs that new occupant joined to room."
+msgstr ""
+
+#: ../../modules/MUCModule.inc:72
+msgid "``OccupantLeave``"
+msgstr ""
+
+#: ../../modules/MUCModule.inc:74
+msgid "Informs that occupant leaves the room."
+msgstr ""
+
+#: ../../modules/MUCModule.inc:77
+msgid "``OccupantChangedPresence``"
+msgstr ""
+
+#: ../../modules/MUCModule.inc:79
+msgid "Informs that occupant updated his presence."
+msgstr ""
+
+#: ../../modules/MUCModule.inc:82
+msgid "``ReceivedMessage``"
+msgstr ""
+
+#: ../../modules/MUCModule.inc:84
+msgid "Event fired when group chat message from room is received."
+msgstr ""
+
+#: ../../modules/MUCModule.inc:90
+msgid "``join(roomJID, nickname, password)``"
+msgstr ""
+
+#: ../../modules/MUCModule.inc:92
+msgid "Builds join request to MUC Room."
+msgstr ""
+
+#: ../../modules/MUCModule.inc:94
+msgid "Here is simple example to show how to join to room."
+msgstr ""
+
+#: ../../modules/MUCModule.inc:104
+msgid ""
+"Note, that because of MUC protocol specificity, confirmation of join will"
+" be delivered as separated event."
+msgstr ""
+
+#: ../../modules/MUCModule.inc:108
+msgid "``leave(room: Room)``"
+msgstr ""
+
+#: ../../modules/MUCModule.inc:110
+msgid "Builds request to leaves MUC Room."
+msgstr ""
+
+#: ../../modules/MUCModule.inc:114
+msgid "``destroy(room: Room)``"
+msgstr ""
+
+#: ../../modules/MUCModule.inc:116
+msgid "Builds room destroy request."
+msgstr ""
+
+#: ../../modules/MUCModule.inc:120
+msgid "``invite(room: Room, invitedJid: BareJID, reason: String? = null)``"
+msgstr ""
+
+#: ../../modules/MUCModule.inc:122
+msgid "Builds mediated invitation request."
+msgstr ""
+
+#: ../../modules/MUCModule.inc:126
+msgid ""
+"``inviteDirectly(room: Room, invitedJid: BareJID, reason: String? = "
+"null)``"
+msgstr ""
+
+#: ../../modules/MUCModule.inc:128
+msgid "Builds direct invitation request."
+msgstr ""
+
+#: ../../modules/MUCModule.inc:131
+msgid "``retrieveRoomConfig(room: Room)``"
+msgstr ""
+
+#: ../../modules/MUCModule.inc:133
+msgid ""
+"Builds retrieve room configuration request. In response it returns data "
+"form with configuration."
+msgstr ""
+
+#: ../../modules/MUCModule.inc:136
+msgid "``updateRoomConfig(room: Room, form: JabberDataForm)``"
+msgstr ""
+
+#: ../../modules/MUCModule.inc:138
+msgid "Builds update room configuration request."
+msgstr ""
+
+#: ../../modules/MUCModule.inc:141
+msgid "``message(room: Room, msg: String)``"
+msgstr ""
+
+#: ../../modules/MUCModule.inc:143
+msgid "Builds group chat message request."
+msgstr ""
+
+#: ../../modules/MUCModule.inc:146
+msgid "``decline(invitation: Invitation, reason: String? = null)``"
+msgstr ""
+
+#: ../../modules/MUCModule.inc:148
+msgid "Builds decline request for received invitation"
+msgstr ""
+
+#: ../../modules/MUCModule.inc:151
+msgid "``accept(invitation: Invitation, nickname: String)``"
+msgstr ""
+
+#: ../../modules/MUCModule.inc:153
+msgid "Builds join request to MUC Room based on received invitation."
+msgstr ""
+
+#: ../../modules/MUCModule.inc:156
+msgid "``retrieveAffiliations(room: Room, filter: Affiliation? = null)``"
+msgstr ""
+
+#: ../../modules/MUCModule.inc:158
+msgid ""
+"Builds request for retrieve affiliations list from MUC room. In response "
+"it returns collection of RoomAffiliation."
+msgstr ""
+
+#: ../../modules/MUCModule.inc:161
+msgid ""
+"``updateAffiliations(room: Room, affiliations: "
+"Collection<RoomAffiliation>)``"
+msgstr ""
+
+#: ../../modules/MUCModule.inc:163
+msgid "Builds request for update affiliations list."
+msgstr ""
+
+#: ../../modules/MUCModule.inc:166
+msgid "``updateRoomSubject(room: Room, subject: String?)``"
+msgstr ""
+
+#: ../../modules/MUCModule.inc:168
+msgid "Builds request for set room subject."
+msgstr ""
+
+#: ../../modules/MUCModule.inc:171
+msgid "``ping(room: Room)``"
+msgstr ""
+
+#: ../../modules/MUCModule.inc:173
+msgid ""
+"Build request for self ping, as described in `XEP-0410: MUC Self-Ping "
+"(Schrödinger’s Chat) <https://xmpp.org/extensions/xep-0410.html>`__."
+msgstr ""
+
+#: ../../modules/MUCModule.inc:176
+msgid "Store"
+msgstr ""
+
+#: ../../modules/MUCModule.inc:178
+msgid ""
+"MUCModule requires Room Storage to store rooms data. By default, Halcyon "
+"comes with in-memory store."
+msgstr ""
+
+#: ../../modules/MUCModule.inc:180
+msgid "To build own Store you have to implement this interface:"
+msgstr ""
+
+#: ../../modules/MUCModule.inc:191
+msgid ""
+"Remember, that MUC protocol is not suitable to mobile clients, so "
+"``state`` of room join (in ``Room`` object) may not represent real state."
+" For example, after reconnection client may keep state ``Joined`` but "
+"server received information about disconnection and removes occupant from"
+" room. To check if rejoin is required, please use ``ping(room)`` "
+"function."
+msgstr ""
+
+#: ../../modules/SIMSModule.inc:2
+msgid "SIMSModule"
+msgstr ""
+
+#: ../../modules/SIMSModule.inc:4
+msgid ""
+"This module implements partially `XEP-0385: Stateless Inline Media "
+"Sharing (SIMS) <https://xmpp.org/extensions/xep-0385.html>`__. It "
+"describes file sharing metadata."
+msgstr ""
+
+#: ../../modules/SIMSModule.inc:6
+msgid ""
+"``SIMSModule`` isn’t module in Halcyon architecture sense. This is rather"
+" collection of extensions to help retrieve and generate SIMS structures."
+msgstr ""
+
+#: ../../modules/SIMSModule.inc:12
+msgid "``getReferenceOrNull()``"
+msgstr ""
+
+#: ../../modules/SIMSModule.inc:14
+msgid "Method returns ``Reference`` object if exists."
+msgstr ""
+
+#: ../../modules/SIMSModule.inc:17
+msgid "``getMediaSharingFileOrNull()``"
+msgstr ""
+
+#: ../../modules/SIMSModule.inc:19
+msgid "This method (extends ``Reference``) returns shared file details."
+msgstr ""
+
+#: ../../modules/SIMSModule.inc:22
+msgid "``createFileSharingReference()``"
+msgstr ""
+
+#: ../../modules/SIMSModule.inc:24
+msgid ""
+"This method creates complete ``Reference`` object with shared file "
+"details."
+msgstr ""
+
+#: ../../modules/MAMModule.inc:2
+msgid "MAMModule"
+msgstr ""
+
+#: ../../modules/MAMModule.inc:4
+msgid ""
+"This module implements `XEP-0313: Message Archive Management "
+"<https://xmpp.org/extensions/xep-0313.html>`__."
+msgstr ""
+
+#: ../../modules/MAMModule.inc:10
+msgid "``MAMMessageEvent``"
+msgstr ""
+
+#: ../../modules/MAMModule.inc:12
+msgid "This event is fired, when each result for ``query()`` method is received."
+msgstr ""
+
+#: ../../modules/MAMModule.inc:14
+msgid "This event contains fields:"
+msgstr ""
+
+#: ../../modules/MAMModule.inc:16
+msgid "``resultStanza`` - whole received Message stanza (response for query),"
+msgstr ""
+
+#: ../../modules/MAMModule.inc:18
+msgid "``queryId`` - query identifier,"
+msgstr ""
+
+#: ../../modules/MAMModule.inc:20
+msgid "``id`` - result identifier,"
+msgstr ""
+
+#: ../../modules/MAMModule.inc:22
+msgid ""
+"``forwardedStanza`` - result for query containing stanza from archive and"
+" original receiving timestamp"
+msgstr ""
+
+#: ../../modules/MAMModule.inc:28
+msgid ""
+"``query(to: BareJID? = null, node: String? = null, rsm: RSM.Query? = "
+"null, with: String? = null, start: Long? = null, end: Long? = null)``"
+msgstr ""
+
+#: ../../modules/MAMModule.inc:30
+msgid "Main method to retrieve chat history from archive."
+msgstr ""
+
+#: ../../modules/MAMModule.inc:34
+msgid ""
+"``to`` - JID of MAM component. If null, then default MAM component of "
+"user server is used,"
+msgstr ""
+
+#: ../../modules/MAMModule.inc:36
+msgid "``node`` - name of node,"
+msgstr ""
+
+#: ../../modules/MAMModule.inc:38
+msgid "``rsm`` - Result Set Management object,"
+msgstr ""
+
+#: ../../modules/MAMModule.inc:40
+msgid "``with`` - name (JID) of interlocutor"
+msgstr ""
+
+#: ../../modules/MAMModule.inc:42
+msgid "``start``, ``end`` - timestamps to filter messages by receive date"
+msgstr ""
+
+#: ../../modules/MAMModule.inc:44
+msgid "All of above argoments may be ``null``."
+msgstr ""
+
+#: ../../modules/MAMModule.inc:47
+msgid "``retrievePreferences()``"
+msgstr ""
+
+#: ../../modules/MAMModule.inc:49
+msgid "Retrieves MAM preferences."
+msgstr ""
+
+#: ../../modules/MAMModule.inc:51
+msgid "In response, you will get ``Preferences`` object containing:"
+msgstr ""
+
+#: ../../modules/MAMModule.inc:53
+msgid ""
+"``default`` - default behaviour of message archiving: ``Always``, "
+"``Never``, ``Roster``."
+msgstr ""
+
+#: ../../modules/MAMModule.inc:55
+msgid ""
+"``always`` - collection of BareJIDs with whom conversations will always "
+"be archived."
+msgstr ""
+
+#: ../../modules/MAMModule.inc:57
+msgid ""
+"``never`` - collection of BareJIDs with whom conversations will never be "
+"archived."
+msgstr ""
+
+#: ../../modules/MAMModule.inc:60
+msgid "``updatePreferences(preferences: Preferences)``"
+msgstr ""
+
+#: ../../modules/MAMModule.inc:62
+msgid "Updates MAM preferences."
+msgstr ""
+
+#: ../../modules/MAMModule.inc:65
+msgid "Usage"
+msgstr ""
+
+#: ../../modules/MAMModule.inc:67
+msgid ""
+"When client establish connection to server, it should ask server for all "
+"messages exchanged with other clients connected to the same account."
+msgstr ""
+
+#: ../../modules/MAMModule.inc:69
+msgid ""
+"It can be done by asking server for all messages since, last received "
+"message:"
+msgstr ""
+
+#: ../../modules/MAMModule.inc:95
+msgid ""
+"Because MAM server has defined maximum amount of returned messages, we "
+"have to ask until query is not complete. In example it is done by "
+"recurrent execution of method ``ask()`` with filled Result Set Management"
+" object. ``RSM.Query(after = it.rsm!!.last)`` means that in result must "
+"be included only messages located after last message identifier from "
+"currently received package of messages."
+msgstr ""
+
+#: ../../modules/MAMModule.inc:97
+msgid ""
+"Note, that parameter ``with`` of method ``query()`` is optional, so you "
+"can ask for all messages since specific time exchanged with specific JID,"
+" or you can ask for all messages stored in archive."
+msgstr ""
+
+#: ../../modules/MAMModule.inc:99
+msgid ""
+"The second way to retrieve messages from archive is asking for messages "
+"located before or after specific message identifier."
+msgstr ""
+
+#: ../../modules/MAMModule.inc:124
+msgid ""
+"To get MAM related message ID, you have to use ``getStanzaIDBy()`` "
+"function (As parameter, you have to put name of own account):"
+msgstr ""
+
+#: ../../modules/MAMModule.inc:130
+msgid ""
+"It is useful when message is received \"in normal way\", so when it is "
+"pushed to client by server."
+msgstr ""
+
+#: ../../modules/MAMModule.inc:132
+msgid ""
+"When message is received as result of using method ``query()`` (in "
+"consumer), identifier is given in ``ForwardedStanza``:"
+msgstr ""
+
+#: ../../modules/MAMModule.inc:138
+msgid ""
+"The same mechanism you can use to load older messages in history (not "
+"loaded yet by client):"
+msgstr ""
+
+#: ../../modules/MAMModule.inc:159
+msgid ""
+"In above example, client is asking for 20 messages located in history "
+"before message ``2753e4a8-9150-4e34-8757-4cd5e8419159``."
+msgstr ""
+
+#: ../../modules/MAMModule.inc:163
+msgid ""
+"Message Archive returns requested amount of messages. Not every message "
+"may contain body to show. Some of those messages may contain only "
+"confirmation of message read or other controlling commands."
+msgstr ""
+
+#: ../../Quickstart.rst:2
+msgid "Quickstart"
+msgstr ""
+
+#: ../../Quickstart.rst:5
+msgid "Simplest client"
+msgstr ""
+
+#: ../../Quickstart.rst:7
+msgid "Here is example of simplest client sending one message."
+msgstr ""
+
+#: ../../Quickstart.rst:9
+msgid "**SimplestClient.kt.**"
+msgstr ""
+
+#: ../../Quickstart.rst:30
+msgid "Handling changes of connection status"
+msgstr ""
+
+#: ../../Quickstart.rst:32
+msgid "We can listen for changing status of connection:"
+msgstr ""
+
+#: ../../Quickstart.rst:40
+msgid "Available states:"
+msgstr ""
+
+#: ../../Quickstart.rst:42
+msgid ""
+"``Connecting`` - this state means, that method ``connect()`` was called, "
+"and connection to server is in progress."
+msgstr ""
+
+#: ../../Quickstart.rst:44
+msgid "``Connected`` - connection is fully established."
+msgstr ""
+
+#: ../../Quickstart.rst:46
+msgid ""
+"``Disconnecting`` - connection is closing because of error or manual "
+"disconnecting."
+msgstr ""
+
+#: ../../Quickstart.rst:48
+msgid ""
+"``Disconnected`` - Halcyon is disconnected from XMPP server, but it is "
+"still active. It may start reconnecting to server automatically."
+msgstr ""
+
+#: ../../Quickstart.rst:50
+msgid "``Stopped`` - Halcyon is turned off (not active)."
+msgstr ""
+
+#: ../../WorkingWithEvents.rst:3
+msgid "Working with events"
+msgstr ""
+
+#: ../../WorkingWithEvents.rst:5
+msgid ""
+"Halcyon is events driven library. It means you have to listen for events "
+"to receive message, react for disconnection or so. There is single events"
+" bus inside, to which you can register listeners. Each part of library "
+"(like modules, connectors, etc.) may have set of own events to fire."
+msgstr ""
+
+#: ../../WorkingWithEvents.rst:11
+msgid "General code to registering events:"
+msgstr ""
+
+#: ../../WorkingWithEvents.rst:19
+msgid ""
+"In Halcyon, name of event is defined as constant variable named ``TYPE`` "
+"in each event."
+msgstr ""
+
+#: ../../WorkingWithEvents.rst:22
+msgid "For example:"
+msgstr ""
+
+#: ../../WorkingWithEvents.rst:30
+msgid ""
+"You can use EventBus for you own applications. No need to register events"
+" types. Just create object inherited from "
+"``tigase.halcyon.core.eventbus.Event`` and call method "
+"``eventbus.fire()``:"
+msgstr ""
+
+#: ../../WorkingWithRequests.rst:2
+msgid "Working with requests"
+msgstr ""
+
+#: ../../WorkingWithRequests.rst:4
+msgid ""
+"Each module may perform some requests on other XMPP entities, and (if "
+"yes) must return ``RequestBuilder`` object to allow check status of "
+"request and receive response."
+msgstr ""
+
+#: ../../WorkingWithRequests.rst:6
+msgid ""
+"For example, suppose we want to ping XMPP server (as described in "
+"`XEP-0199 <https://xmpp.org/extensions/xep-0199.html>`__):"
+msgstr ""
+
+#: ../../WorkingWithRequests.rst:8
+msgid "**Sample ping request and response.**"
+msgstr ""
+
+#: ../../WorkingWithRequests.rst:20
+msgid "There is module ``PingModule`` in Halcyon to do it:"
+msgstr ""
+
+#: ../../WorkingWithRequests.rst:22
+msgid "**Kotlin sample.**"
+msgstr ""
+
+#: ../../WorkingWithRequests.rst:29
+msgid ""
+"In this case, method ``ping()`` returns ``RequestBuilder`` to allow add "
+"result handler, change default timeout and other operations. To send "
+"stanza you have to call method 'send()'. There is also available method "
+"``build()`` what also creates request object, but doesn’t sends it."
+msgstr ""
+
+#: ../../WorkingWithRequests.rst:33
+msgid "On JVM, methods of handler will be called from separate thread."
+msgstr ""
+
+#: ../../WorkingWithRequests.rst:35
+msgid ""
+"Most universal way to receive result in asynchronous way is add response "
+"handler to request builder:"
+msgstr ""
+
+#: ../../index.rst:4
+msgid "Tigase Halcyon XMPP Library"
+msgstr ""
+
