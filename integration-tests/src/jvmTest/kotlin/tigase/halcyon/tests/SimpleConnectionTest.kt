@@ -2,12 +2,14 @@ package tigase.halcyon.tests
 
 import tigase.halcyon.core.AbstractHalcyon
 import tigase.halcyon.core.ReflectionModuleManager
+import tigase.halcyon.core.connector.ReceivedXMLElementEvent
+import tigase.halcyon.core.connector.SentXMLElementEvent
 import tigase.halcyon.core.eventbus.Event
-import tigase.halcyon.core.xmpp.modules.BindModule
-import tigase.halcyon.core.xmpp.modules.StreamFeaturesEvent
+import tigase.halcyon.core.exceptions.AuthenticationException
 import tigase.halcyon.core.xmpp.modules.auth.SASLModule
 import tigase.halcyon.core.xmpp.modules.auth.State
 import tigase.halcyon.core.xmpp.modules.discovery.DiscoveryModule
+import tigase.halcyon.core.xmpp.toBareJID
 import tigase.halcyon.core.xmpp.toJID
 import kotlin.test.*
 
@@ -45,6 +47,28 @@ class SimpleConnectionTest {
 		assertTrue(serverFeatues.isNotEmpty())
 		halcyon.disconnect()
 		assertEquals(AbstractHalcyon.State.Stopped, halcyon.state, "Client should be connected to server.")
+	}
+
+	@Test
+	fun notExistingUserLogin() {
+		val halcyon = tigase.halcyon.core.builder.createHalcyon {
+			account {
+				userJID = "oiujhgyuiklkjhb@sailboat.local".toBareJID()
+				password { "dfghjsdnfgvsdfhjasdfasdfsdf" }
+			}
+		}
+			.apply {
+				eventBus.register<ReceivedXMLElementEvent>(ReceivedXMLElementEvent.TYPE) { println(">> ${it.element.getAsString()}") }
+				eventBus.register<SentXMLElementEvent>(SentXMLElementEvent.TYPE) { println("<< ${it.element.getAsString()}") }
+			}
+
+		halcyon.eventBus.register<Event> {
+			println("EVENT: $it")
+		}
+
+		assertFailsWith(AuthenticationException::class) {
+			halcyon.connectAndWait()
+		}
 	}
 
 }

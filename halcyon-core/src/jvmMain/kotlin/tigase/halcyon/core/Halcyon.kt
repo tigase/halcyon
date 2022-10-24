@@ -20,10 +20,13 @@ package tigase.halcyon.core
 import tigase.halcyon.core.configuration.Configuration
 import tigase.halcyon.core.connector.AbstractConnector
 import tigase.halcyon.core.connector.socket.SocketConnector
+import tigase.halcyon.core.eventbus.Event
 import tigase.halcyon.core.eventbus.EventBus
 import tigase.halcyon.core.eventbus.EventHandler
+import tigase.halcyon.core.exceptions.AuthenticationException
 import tigase.halcyon.core.exceptions.HalcyonException
 import tigase.halcyon.core.logger.LoggerFactory
+import tigase.halcyon.core.xmpp.modules.auth.SASLEvent
 import java.util.*
 
 actual class Halcyon actual constructor(configuration: Configuration) : AbstractHalcyon(configuration) {
@@ -78,21 +81,27 @@ actual class Halcyon actual constructor(configuration: Configuration) : Abstract
 	}
 
 	fun connectAndWait() {
-		val handler = object : EventHandler<HalcyonStateChangeEvent> {
-			override fun onEvent(event: HalcyonStateChangeEvent) {
-				if (event.newState == State.Connected || event.newState == State.Stopped) {
-					synchronized(lock) {
-						lock.notify()
+		var exceptionToThrow: Throwable? = null
+		val handler = object : EventHandler<Event> {
+			override fun onEvent(event: Event) {
+				if (event is SASLEvent.SASLError) {
+					exceptionToThrow = AuthenticationException(event.error, event.description ?: "Authentication error")
+				} else if (event is HalcyonStateChangeEvent) {
+					if (event.newState == State.Connected || event.newState == State.Stopped) {
+						synchronized(lock) {
+							lock.notify()
+						}
 					}
 				}
 			}
 		}
 		try {
-			eventBus.register(HalcyonStateChangeEvent.TYPE, handler)
+			eventBus.register(handler = handler)
 			super.connect()
 			synchronized(lock) {
 				lock.wait(30000)
 			}
+			exceptionToThrow?.let { throw it }
 			if (state != State.Connected && state != State.Stopped) {
 				throw HalcyonException("Cannot connect to XMPP server.")
 			}
