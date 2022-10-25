@@ -18,11 +18,10 @@
 package tigase.halcyon.core.connector.socket
 
 import org.minidns.dnssec.DnssecValidationFailedException
-import org.minidns.hla.DnssecResolverApi
-import org.minidns.hla.srv.SrvType
 import tigase.halcyon.core.Halcyon
 import tigase.halcyon.core.configuration.domain
 import tigase.halcyon.core.connector.*
+import tigase.halcyon.core.exceptions.HalcyonException
 import tigase.halcyon.core.excutor.TickExecutor
 import tigase.halcyon.core.logger.Level
 import tigase.halcyon.core.logger.LoggerFactory
@@ -32,7 +31,6 @@ import tigase.halcyon.core.xml.parser.StreamParser
 import tigase.halcyon.core.xmpp.ErrorCondition
 import tigase.halcyon.core.xmpp.XMPPException
 import tigase.halcyon.core.xmpp.modules.sm.StreamManagementModule
-import java.net.InetAddress
 import java.net.Socket
 import java.net.UnknownHostException
 import java.security.SecureRandom
@@ -53,6 +51,10 @@ sealed class SocketConnectionErrorEvent : ConnectionErrorEvent() {
 	}
 
 }
+
+class HostNotFound : HalcyonException()
+
+typealias HostPort = Pair<String, Int>
 
 class SocketConnector(halcyon: Halcyon) : AbstractConnector(halcyon) {
 
@@ -184,40 +186,41 @@ class SocketConnector(halcyon: Halcyon) : AbstractConnector(halcyon) {
 
 	override fun createSessionController(): SessionController = SocketSessionController(halcyon, this)
 
-	private fun createSocket(): Socket {
+	private fun createSocket(completionHandler: (Socket) -> Unit) {
+		val hosts = mutableListOf<HostPort>()
+
 		val location = halcyon.getModule<StreamManagementModule>(StreamManagementModule.TYPE).resumptionContext.location
 		if (location != null) {
-			return Socket(InetAddress.getByName(location), config.port)
+			hosts += HostPort(location, config.port)
 		}
 
 		val seeOther = halcyon.internalDataStore.getData<String>(SEE_OTHER_HOST_KEY)
 		if (seeOther != null) {
-			return Socket(InetAddress.getByName(seeOther), config.port)
+			hosts += HostPort(seeOther, config.port)
 		}
 
-//		val forcedHost = halcyon.sessionObject.getProperty<String>(SERVER_HOST)
-//		if (forcedHost != null) {
-//			return Socket(InetAddress.getByName(forcedHost), config.port)
-//		}
-
-		val result = DnssecResolverApi.INSTANCE.resolveSrv(SrvType.xmpp_client, config.hostname)
-
-		if (!result.wasSuccessful() || result.answers.isEmpty()) {
-			return Socket(InetAddress.getByName(config.hostname), config.port)
-		}
-
-		val srvRecords = result.answers
-		srvRecords.forEach {
-			try {
-				val port = it.port
-				val name = it.target.toString()
-				return Socket(InetAddress.getByName(name), port)
-			} catch (e: Exception) {
-				e.printStackTrace()
+		log.fine { "Resolving DNS of ${config.hostname}" }
+		config.dnsResolver.resolve(config.hostname) { result ->
+			result.onFailure {
+				hosts += HostPort(config.hostname, config.port)
+			}
+			result.onSuccess {
+				hosts.addAll(it.shuffled()
+								 .map { HostPort(it.target, it.port.toInt()) })
 			}
 
+			hosts.forEach { hp ->
+				try {
+					log.fine { "Checking ${hp.first}:${hp.second}" }
+					val s = Socket(hp.first, hp.second)
+					completionHandler(s)
+					return@resolve
+				} catch (e: Throwable) {
+					log.fine { "Host ${hp.first}:${hp.second} is unreachable." }
+				}
+			}
+			throw HostNotFound()
 		}
-		throw ConnectorException("Cannot open socket")
 	}
 
 	override fun start() {
@@ -225,28 +228,32 @@ class SocketConnector(halcyon: Halcyon) : AbstractConnector(halcyon) {
 
 		val userJid = halcyon.config.account?.userJID
 		try {
-			this.socket = createSocket()
-			socket.soTimeout = 20 * 1000
-			socket.keepAlive = false
-			socket.tcpNoDelay = true
-			log.fine { "Opening socket connection to ${this.socket.inetAddress}" }
+			createSocket { sckt ->
+				this.socket = sckt
+				socket.soTimeout = 20 * 1000
+				socket.keepAlive = false
+				socket.tcpNoDelay = true
+				log.fine { "Opening socket connection to ${this.socket.inetAddress}" }
+				this.worker = SocketWorker(socket, parser)
+				this.worker.onError = { exception -> onWorkerException(exception) }
+				worker.start()
+				val sb = buildString {
+					append("<stream:stream xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams' ")
+					append("version='1.0' ")
+					if (userJid != null) append("from='$userJid' ")
+					append("to='${halcyon.config.domain}'")
+					append(">")
 
-			this.worker = SocketWorker(socket, parser)
-			this.worker.onError = { exception -> onWorkerException(exception) }
-			worker.start()
+				}
+				send(sb)
 
-			val sb = buildString {
-				append("<stream:stream xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams' ")
-				append("version='1.0' ")
-				if (userJid != null) append("from='$userJid' ")
-				append("to='${halcyon.config.domain}'")
-				append(">")
-
+				state = State.Connected
+				whitespacePingExecutor.start()
 			}
-			send(sb)
-
-			state = State.Connected
-			whitespacePingExecutor.start()
+		} catch (e: HostNotFound) {
+			state = State.Disconnected
+			halcyon.eventBus.fire(SocketConnectionErrorEvent.HostNotFount())
+			eventsEnabled = false
 		} catch (e: Exception) {
 			state = State.Disconnected
 			halcyon.eventBus.fire(createSocketConnectionErrorEvent(e))

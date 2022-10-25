@@ -11,10 +11,22 @@ import tigase.halcyon.core.xmpp.modules.auth.State
 import tigase.halcyon.core.xmpp.modules.discovery.DiscoveryModule
 import tigase.halcyon.core.xmpp.toBareJID
 import tigase.halcyon.core.xmpp.toJID
+import java.util.logging.ConsoleHandler
+import java.util.logging.Handler
+import java.util.logging.Level
+import java.util.logging.Logger
 import kotlin.test.*
 
 class SimpleConnectionTest {
 
+	init {
+		val logger = Logger.getLogger("tigase")
+		val handler: Handler = ConsoleHandler()
+		handler.level = Level.ALL
+		logger.addHandler(handler)
+		logger.level = Level.ALL
+
+	}
 	@OptIn(ReflectionModuleManager::class)
 	@Test
 	fun simpleConnectionAndDisconnection() {
