@@ -33,9 +33,6 @@ class AccountBuilder : ConfigItemBuilder<Account> {
 
 	var resource: String? = null
 
-	@Deprecated("Will be removed ASAP")
-	var domain: String? = null
-
 	var authzIdJID: BareJID? = null
 
 	var passwordCallback: (() -> String)? = null
@@ -49,7 +46,6 @@ class AccountBuilder : ConfigItemBuilder<Account> {
 			userJID = userJID ?: throw ConfigurationException("User JID not specified."),
 			passwordCallback = passwordCallback ?: throw ConfigurationException("Password not specified."),
 			resource = resource,
-			domain = domain,
 			authzIdJID = authzIdJID
 		)
 	}

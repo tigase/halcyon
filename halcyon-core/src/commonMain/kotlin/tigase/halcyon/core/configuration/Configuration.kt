@@ -24,7 +24,6 @@ import tigase.halcyon.core.xmpp.forms.JabberDataForm
 data class Account(
 	val userJID: BareJID,
 	val resource: String?,
-	val domain: String?,
 	val authzIdJID: BareJID?,
 	val passwordCallback: () -> String,
 )
