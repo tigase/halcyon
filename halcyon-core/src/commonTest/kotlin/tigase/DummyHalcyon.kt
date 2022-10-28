@@ -3,6 +3,7 @@ package tigase
 import tigase.halcyon.core.AbstractHalcyon
 import tigase.halcyon.core.builder.createConfiguration
 import tigase.halcyon.core.configuration.Configuration
+import tigase.halcyon.core.configuration.JIDPasswordSaslConfig
 import tigase.halcyon.core.connector.AbstractConnector
 import tigase.halcyon.core.connector.ReceivedXMLElementEvent
 import tigase.halcyon.core.connector.SessionController
@@ -12,7 +13,7 @@ import tigase.halcyon.core.xmpp.JID
 import tigase.halcyon.core.xmpp.toBareJID
 
 val dummyConfig = createConfiguration {
-	account {
+	auth {
 		userJID = "user@example.com".toBareJID()
 		password { "pencil" }
 	}
@@ -59,7 +60,7 @@ class DummyHalcyon(cf: Configuration = dummyConfig) : AbstractHalcyon(cf) {
 	override fun reconnect(immediately: Boolean) = throw NotImplementedError()
 
 	override fun onConnecting() {
-		boundJID = config.account?.userJID?.let { JID(it, "1234") } ?: throw RuntimeException("No UserJID to bind!")
+		boundJID = (config.sasl as JIDPasswordSaslConfig?)?.userJID?.let { JID(it, "1234") } ?: throw RuntimeException("No UserJID to bind!")
 		requestsManager.boundJID = boundJID
 	}
 

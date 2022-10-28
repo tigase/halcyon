@@ -33,7 +33,7 @@ class EventBusTest {
 	@Test
 	fun testEventBus() {
 		val halcyon = Halcyon(createConfiguration {
-			account {
+			auth {
 				userJID = "user@example.com".toBareJID()
 				password { "pencil" }
 			}

@@ -24,6 +24,7 @@ import platform.darwin.*
 import platform.posix.usleep
 import tigase.halcyon.core.Halcyon
 import tigase.halcyon.core.configuration.domain
+import tigase.halcyon.core.configuration.userJID
 import tigase.halcyon.core.connector.*
 import tigase.halcyon.core.excutor.TickExecutor
 import tigase.halcyon.core.logger.Level
@@ -133,7 +134,7 @@ class SocketConnector(halcyon: Halcyon) : AbstractConnector(halcyon) {
 
 	fun restartStream() {
 		log.finest("restarting stream..")
-		val userJid = halcyon.config.account?.userJID
+		val userJid = halcyon.config.userJID
 
 		val sb = buildString {
 			append("<stream:stream xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams' ")

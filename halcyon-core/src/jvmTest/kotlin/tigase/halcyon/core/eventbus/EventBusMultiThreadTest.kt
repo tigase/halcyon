@@ -27,7 +27,7 @@ import kotlin.test.*
 class EventBusMultiThreadTest {
 
 	private val halcyon = Halcyon(createConfiguration {
-		account {
+		auth {
 			userJID = "testuser@tigase.org".toBareJID()
 			passwordCallback = { "testuserpassword" }
 		}

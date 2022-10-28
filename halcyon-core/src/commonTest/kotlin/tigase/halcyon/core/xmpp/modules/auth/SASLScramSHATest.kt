@@ -98,13 +98,65 @@ class SASLScramSHATest {
 	}
 
 	@Test
+	fun test_first_message_with_authcid() {
+		val scram = SASLScramSHA1(randomGenerator = {
+			"fyko+d2lbbFgONRv9qkxdawL"
+		})
+
+		val configuration = createConfiguration {
+			auth {
+				userJID = "user@example.com".toBareJID()
+				authenticationName = "differentusername"
+				password { "pencil" }
+			}
+		}
+		val context = SASLContext()
+
+		// first client message
+		assertEquals(
+			"n,a=user@example.com,n=differentusername,r=fyko+d2lbbFgONRv9qkxdawL",
+			scram.evaluateChallenge(null, configuration, context)!!
+				.fromBase64()
+				.decodeToString(),
+			"Invalid first client message"
+		)
+
+	}
+
+	@Test
+	fun test_first_message_with_authcid_equals_localpart() {
+		val scram = SASLScramSHA1(randomGenerator = {
+			"fyko+d2lbbFgONRv9qkxdawL"
+		})
+
+		val configuration = createConfiguration {
+			auth {
+				userJID = "user@example.com".toBareJID()
+				authenticationName = "user"
+				password { "pencil" }
+			}
+		}
+		val context = SASLContext()
+
+		// first client message
+		assertEquals(
+			"n,a=user@example.com,n=user,r=fyko+d2lbbFgONRv9qkxdawL",
+			scram.evaluateChallenge(null, configuration, context)!!
+				.fromBase64()
+				.decodeToString(),
+			"Invalid first client message"
+		)
+
+	}
+
+	@Test
 	fun test_messages_sha1() {
 		val scram = SASLScramSHA1(randomGenerator = {
 			"fyko+d2lbbFgONRv9qkxdawL"
 		})
 
 		val configuration = createConfiguration {
-			account {
+			auth {
 				userJID = "user@example.com".toBareJID()
 				password { "pencil" }
 			}
@@ -150,7 +202,7 @@ class SASLScramSHATest {
 		})
 
 		val configuration = createConfiguration {
-			account {
+			auth {
 				userJID = "user@example.com".toBareJID()
 				password { "pencil" }
 			}
@@ -198,7 +250,7 @@ class SASLScramSHATest {
 		})
 
 		val configuration = createConfiguration {
-			account {
+			auth {
 				userJID = "user@example.com".toBareJID()
 				password { "pencil" }
 			}

@@ -22,6 +22,7 @@ import org.w3c.dom.WebSocket
 import org.w3c.dom.events.Event
 import tigase.halcyon.core.Halcyon
 import tigase.halcyon.core.configuration.domain
+import tigase.halcyon.core.configuration.userJID
 import tigase.halcyon.core.excutor.TickExecutor
 import tigase.halcyon.core.logger.Level
 import tigase.halcyon.core.logger.LoggerFactory
@@ -164,7 +165,7 @@ class WebSocketConnector(halcyon: Halcyon) : AbstractConnector(halcyon) {
 
 	fun restartStream() {
 		log.finest { "Send new stream" }
-		val userJid = halcyon.config.account?.userJID
+		val userJid = halcyon.config.userJID
 
 		val sb = buildString {
 			append("<stream:stream ")

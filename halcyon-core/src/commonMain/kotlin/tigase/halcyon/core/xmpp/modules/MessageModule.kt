@@ -18,6 +18,7 @@
 package tigase.halcyon.core.xmpp.modules
 
 import tigase.halcyon.core.Context
+import tigase.halcyon.core.builder.XmppModuleProvider
 import tigase.halcyon.core.eventbus.Event
 import tigase.halcyon.core.logger.LoggerFactory
 import tigase.halcyon.core.modules.Criteria
@@ -40,7 +41,9 @@ data class MessageReceivedEvent(val fromJID: JID?, val stanza: Message) : Event(
 	}
 }
 
-class MessageModule(override val context: Context) : XmppModule {
+interface MessageModuleConfig
+
+class MessageModule(override val context: Context) : XmppModule, MessageModuleConfig {
 
 	private val log = LoggerFactory.logger("tigase.halcyon.core.xmpp.modules.MessageModule")
 
@@ -49,9 +52,12 @@ class MessageModule(override val context: Context) : XmppModule {
 	override val features: Array<String>? = null
 	//	override val criteria = Criterion.name(Message.NAME)
 
-	companion object {
+	companion object : XmppModuleProvider<MessageModule, MessageModuleConfig> {
 
-		const val TYPE = "MessageModule"
+		override val TYPE = "MessageModule"
+		override fun instance(context: Context): MessageModule = MessageModule(context)
+
+		override fun configure(module: MessageModule, cfg: MessageModuleConfig.() -> Unit) = module.cfg()
 	}
 
 	override fun initialize() {

@@ -19,6 +19,7 @@ package tigase.halcyon.core.xmpp.modules.avatar
 
 import kotlinx.serialization.Serializable
 import tigase.halcyon.core.Context
+import tigase.halcyon.core.builder.XmppModuleProvider
 import tigase.halcyon.core.eventbus.Event
 import tigase.halcyon.core.logger.LoggerFactory
 import tigase.halcyon.core.modules.Criteria
@@ -38,13 +39,19 @@ data class UserAvatarUpdatedEvent(val jid: BareJID, val avatarId: String) : Even
 }
 }
 
-class UserAvatarModule(override val context: Context) : XmppModule {
+interface UserAvatarModuleConfig
 
-	companion object {
+class UserAvatarModule(override val context: Context) : XmppModule, UserAvatarModuleConfig {
 
-		const val TYPE = "urn:xmpp:avatar"
+	companion object : XmppModuleProvider<UserAvatarModule, UserAvatarModuleConfig> {
+
+		override val TYPE = "urn:xmpp:avatar"
 		const val XMLNS_DATA = "urn:xmpp:avatar:data"
 		const val XMLNS_METADATA = "urn:xmpp:avatar:metadata"
+		override fun instance(context: Context): UserAvatarModule = UserAvatarModule(context)
+
+		override fun configure(module: UserAvatarModule, cfg: UserAvatarModuleConfig.() -> Unit) = module.cfg()
+
 	}
 
 	private val log = LoggerFactory.logger("tigase.halcyon.core.xmpp.modules.avatar.UserAvatarModule")
@@ -97,7 +104,8 @@ class UserAvatarModule(override val context: Context) : XmppModule {
 
 	private fun processMetadataItem(stanza: Message, metadata: Element) {
 		val userJID = stanza.from?.bareJID ?: return
-		val info = metadata.getFirstChild("info")?.let { parseInfo(it) }
+		val info = metadata.getFirstChild("info")
+			?.let { parseInfo(it) }
 		if (info == null) {
 			store.store(userJID, null, null)
 			return
@@ -105,21 +113,26 @@ class UserAvatarModule(override val context: Context) : XmppModule {
 
 		val stored = store.isStored(userJID, info.id)
 		if (!stored) {
-			retrieveAvatar(userJID.toString().toJID(), info.id).response {
+			retrieveAvatar(
+				userJID.toString()
+					.toJID(), info.id
+			).response {
 				if (it.isSuccess) {
 					log.finest { "Storing UserAvatar data $info.id " + it.getOrNull() }
-					val avatar = it.getOrNull()?.let { data ->
-						if (data.base64Data == null) {
-							null
-						} else {
-							Avatar(info, data)
+					val avatar = it.getOrNull()
+						?.let { data ->
+							if (data.base64Data == null) {
+								null
+							} else {
+								Avatar(info, data)
+							}
 						}
-					}
 					store.store(userJID, info.id, avatar)
 					log.fine { "Stored data! $userJID" }
 					context.eventBus.fire(UserAvatarUpdatedEvent(userJID, info.id))
 				}
-			}.send()
+			}
+				.send()
 		} else {
 			context.eventBus.fire(UserAvatarUpdatedEvent(userJID, info.id))
 		}
@@ -133,15 +146,16 @@ class UserAvatarModule(override val context: Context) : XmppModule {
 
 	@Serializable
 	data class AvatarInfo(
-		val bytes: Int, val height: Int?, val id: String, val type: String, val url: String?, val width: Int?
+		val bytes: Int, val height: Int?, val id: String, val type: String, val url: String?, val width: Int?,
 	)
 
 	fun retrieveAvatar(jid: JID, avatarID: String): RequestBuilder<AvatarData, IQ> {
-		return pubSubModule.retrieveItem(JID.parse(jid.bareJID.toString()), XMLNS_DATA, avatarID).map { response ->
-			val item = response.items.first()
-			val data = item.content!!.value
-			AvatarData(avatarID, data)
-		}
+		return pubSubModule.retrieveItem(JID.parse(jid.bareJID.toString()), XMLNS_DATA, avatarID)
+			.map { response ->
+				val item = response.items.first()
+				val data = item.content!!.value
+				AvatarData(avatarID, data)
+			}
 	}
 
 	override fun process(element: Element) = throw XMPPException(ErrorCondition.FeatureNotImplemented)
@@ -157,7 +171,7 @@ class UserAvatarModule(override val context: Context) : XmppModule {
 	fun publish(data: AvatarInfo): RequestBuilder<PubSubModule.PublishingInfo, IQ> {
 		val payload = element("metadata") {
 			xmlns = XMLNS_METADATA
-			"info"{
+			"info" {
 				attribute("id", data.id)
 				attribute("type", data.type)
 				attribute("bytes", "${data.bytes}")

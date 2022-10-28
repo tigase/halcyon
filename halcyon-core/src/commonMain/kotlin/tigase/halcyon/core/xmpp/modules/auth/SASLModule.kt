@@ -18,6 +18,7 @@
 package tigase.halcyon.core.xmpp.modules.auth
 
 import tigase.halcyon.core.Context
+import tigase.halcyon.core.builder.XmppModuleProvider
 import tigase.halcyon.core.exceptions.HalcyonException
 import tigase.halcyon.core.logger.LoggerFactory
 import tigase.halcyon.core.modules.Criterion
@@ -35,7 +36,13 @@ class ClientSaslException : HalcyonException {
 	constructor(cause: Throwable?) : super(cause)
 }
 
-class SASLModule(override val context: Context) : XmppModule {
+interface SASLModuleConfig {
+
+	var enabled: Boolean
+
+}
+
+class SASLModule(override val context: Context) : XmppModule, SASLModuleConfig {
 
 	enum class SASLError(val elementName: String) {
 
@@ -104,10 +111,13 @@ class SASLModule(override val context: Context) : XmppModule {
 		}
 	}
 
-	companion object {
+	companion object : XmppModuleProvider<SASLModule, SASLModuleConfig> {
 
 		const val XMLNS = "urn:ietf:params:xml:ns:xmpp-sasl"
-		const val TYPE = "tigase.halcyon.core.xmpp.modules.auth.SASLModule"
+		override val TYPE = "tigase.halcyon.core.xmpp.modules.auth.SASLModule"
+		override fun configure(module: SASLModule, cfg: SASLModuleConfig.() -> Unit) = module.cfg()
+
+		override fun instance(context: Context): SASLModule = SASLModule(context)
 	}
 
 	private val log = LoggerFactory.logger("tigase.halcyon.core.xmpp.modules.auth.SASLModule")
@@ -123,7 +133,7 @@ class SASLModule(override val context: Context) : XmppModule {
 
 	val saslContext: SASLContext by engine::saslContext
 
-	var enabled: Boolean = true
+	override var enabled: Boolean = true
 
 	override fun initialize() {
 		engine.add(SASLScramSHA256())
@@ -183,6 +193,6 @@ class SASLModule(override val context: Context) : XmppModule {
 	}
 
 	fun isAllowed(streamFeatures: Element): Boolean =
-		context.config.account != null && enabled && streamFeatures.getChildrenNS("mechanisms", XMLNS) != null
+		context.config.sasl != null && enabled && streamFeatures.getChildrenNS("mechanisms", XMLNS) != null
 
 }

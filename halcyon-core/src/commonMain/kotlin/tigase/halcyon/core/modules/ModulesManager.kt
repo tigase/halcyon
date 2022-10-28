@@ -18,6 +18,7 @@
 package tigase.halcyon.core.modules
 
 import tigase.halcyon.core.ReflectionModuleManager
+import tigase.halcyon.core.builder.ConfigurationException
 import tigase.halcyon.core.xml.Element
 import kotlin.reflect.KClass
 
@@ -35,6 +36,7 @@ class ModulesManager {
 	private val modulesToInitialize = mutableListOf<XmppModule>()
 
 	fun register(module: XmppModule) {
+		if (modulesByType.containsKey(module.type)) throw ConfigurationException("Module '${module.type}' is installed already.")
 		modulesOrdered.add(module)
 		modulesByType[module.type] = module
 		modulesByClass[module::class] = module
@@ -77,7 +79,8 @@ class ModulesManager {
 	fun getModulesFor(element: Element): Array<XmppModule> {
 		return modulesOrdered.filter { xmppModule ->
 			(xmppModule.criteria != null && xmppModule.criteria!!.match(element))
-		}.toTypedArray()
+		}
+			.toTypedArray()
 	}
 
 	internal fun processReceiveInterceptors(element: Element): Element? {

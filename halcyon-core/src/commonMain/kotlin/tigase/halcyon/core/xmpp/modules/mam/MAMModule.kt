@@ -20,6 +20,7 @@ package tigase.halcyon.core.xmpp.modules.mam
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import tigase.halcyon.core.Context
+import tigase.halcyon.core.builder.XmppModuleProvider
 import tigase.halcyon.core.eventbus.Event
 import tigase.halcyon.core.logger.LoggerFactory
 import tigase.halcyon.core.modules.Criteria
@@ -58,9 +59,10 @@ class ForwardedStanza<TYPE : Stanza<*>>(val resultId: String, private val elemen
 		get() = getForwardedStanza()
 
 	private fun getXmppDelay(): Instant? {
-		return element.getChildrenNS("delay", "urn:xmpp:delay")?.let {
-			it.attributes["stamp"]?.let { stamp -> parseISO8601(stamp) }
-		}
+		return element.getChildrenNS("delay", "urn:xmpp:delay")
+			?.let {
+				it.attributes["stamp"]?.let { stamp -> parseISO8601(stamp) }
+			}
 	}
 
 	private fun getForwardedStanza(): TYPE {
@@ -90,7 +92,8 @@ enum class DefaultBehaviour(val xmppValue: String) {
 
 data class Preferences(val default: DefaultBehaviour, val always: Collection<BareJID>, val never: Collection<BareJID>)
 
-class MAMModule(override val context: Context) : XmppModule {
+interface MAMModuleConfig
+class MAMModule(override val context: Context) : XmppModule, MAMModuleConfig {
 
 	data class Fin(val complete: Boolean = false, val rsm: RSM.Result?)
 
@@ -101,10 +104,13 @@ class MAMModule(override val context: Context) : XmppModule {
 		var publisher: ConsumerPublisher<ForwardedStanza<Message>>? = null,
 	)
 
-	companion object {
+	companion object : XmppModuleProvider<MAMModule, MAMModuleConfig> {
 
 		const val XMLNS = "urn:xmpp:mam:2"
-		const val TYPE = XMLNS
+		override val TYPE = XMLNS
+		override fun instance(context: Context): MAMModule = MAMModule(context)
+
+		override fun configure(module: MAMModule, cfg: MAMModuleConfig.() -> Unit) = module.cfg()
 	}
 
 	override val type = TYPE
@@ -189,8 +195,12 @@ class MAMModule(override val context: Context) : XmppModule {
 	private fun createResponse(responseStanza: Element, registeredQuery: RegisteredQuery): Fin {
 		val fin = responseStanza.getChildrenNS("fin", XMLNS)
 		registeredQuery.validUntil = Clock.System.now() + 10.seconds
-		val rsm: RSM.Result? = fin?.getChildrenNS(RSM.NAME, RSM.XMLNS)?.let { p -> RSM.parseResult(p) }
-		return Fin(complete = fin?.attributes?.get("complete").toBool(), rsm = rsm)
+		val rsm: RSM.Result? = fin?.getChildrenNS(RSM.NAME, RSM.XMLNS)
+			?.let { p -> RSM.parseResult(p) }
+		return Fin(
+			complete = fin?.attributes?.get("complete")
+				.toBool(), rsm = rsm
+		)
 	}
 
 	private fun String?.toBool(): Boolean {
@@ -203,42 +213,49 @@ class MAMModule(override val context: Context) : XmppModule {
 	private fun parsePreferences(iq: IQ): Preferences {
 		val prefs =
 			iq.getChildrenNS("prefs", XMLNS) ?: throw XMPPError(iq, ErrorCondition.BadRequest, "No 'prefs' element")
-		val always = prefs.getChildren("always").mapNotNull { p -> p.getFirstChild("jid")?.value?.toBareJID() }.toList()
-		val never = prefs.getChildren("never").mapNotNull { p -> p.getFirstChild("jid")?.value?.toBareJID() }.toList()
+		val always = prefs.getChildren("always")
+			.mapNotNull { p -> p.getFirstChild("jid")?.value?.toBareJID() }
+			.toList()
+		val never = prefs.getChildren("never")
+			.mapNotNull { p -> p.getFirstChild("jid")?.value?.toBareJID() }
+			.toList()
 		val b = prefs.attributes["default"]
-		val default =
-			DefaultBehaviour.values().find { db -> db.xmppValue == b } ?: throw XMPPException(ErrorCondition.BadRequest,
-																							  "Unknown default value: $b")
+		val default = DefaultBehaviour.values()
+			.find { db -> db.xmppValue == b } ?: throw XMPPException(
+			ErrorCondition.BadRequest, "Unknown default value: $b"
+		)
 		return Preferences(default, always, never)
 	}
 
 	fun retrievePreferences(): RequestBuilder<Preferences, IQ> {
 		return context.request.iq {
 			type = IQType.Get
-			"prefs"{
+			"prefs" {
 				xmlns = XMLNS
 			}
-		}.map(this@MAMModule::parsePreferences)
+		}
+			.map(this@MAMModule::parsePreferences)
 	}
 
 	fun updatePreferences(preferences: Preferences): RequestBuilder<Unit, IQ> {
 		return context.request.iq {
 			type = IQType.Set
-			"prefs"{
+			"prefs" {
 				xmlns = XMLNS
 				attributes["default"] = preferences.default.xmppValue
-				"always"{
+				"always" {
 					preferences.always.forEach { jid ->
-						"jid"{ +"$jid" }
+						"jid" { +"$jid" }
 					}
 				}
-				"never"{
+				"never" {
 					preferences.never.forEach { jid ->
-						"jid"{ +"$jid" }
+						"jid" { +"$jid" }
 					}
 				}
 			}
-		}.map { }
+		}
+			.map { }
 	}
 
 }

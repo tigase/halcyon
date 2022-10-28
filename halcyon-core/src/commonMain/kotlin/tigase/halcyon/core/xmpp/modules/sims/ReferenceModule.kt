@@ -18,17 +18,24 @@
 package tigase.halcyon.core.xmpp.modules.sims
 
 import tigase.halcyon.core.Context
+import tigase.halcyon.core.builder.XmppModuleProvider
 import tigase.halcyon.core.modules.AbstractXmppModule
 import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xmpp.ErrorCondition
 import tigase.halcyon.core.xmpp.XMPPException
 
-class ReferenceModule(context: Context) : AbstractXmppModule(context, TYPE, arrayOf(XMLNS)) {
+interface ReferenceModuleConfig
 
-	companion object {
+class ReferenceModule(context: Context) : ReferenceModuleConfig, AbstractXmppModule(context, TYPE, arrayOf(XMLNS)) {
+
+	companion object : XmppModuleProvider<ReferenceModule, ReferenceModuleConfig> {
 
 		const val XMLNS = "urn:xmpp:reference:0"
-		const val TYPE = XMLNS
+		override val TYPE = XMLNS
+
+		override fun instance(context: Context): ReferenceModule = ReferenceModule(context)
+
+		override fun configure(module: ReferenceModule, cfg: ReferenceModuleConfig.() -> Unit) = module.cfg()
 	}
 
 	override fun process(element: Element) = throw XMPPException(ErrorCondition.FeatureNotImplemented)

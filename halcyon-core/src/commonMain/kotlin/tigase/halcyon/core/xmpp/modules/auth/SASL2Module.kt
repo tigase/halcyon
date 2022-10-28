@@ -2,6 +2,8 @@ package tigase.halcyon.core.xmpp.modules.auth
 
 import com.soywiz.krypto.sha1
 import tigase.halcyon.core.AbstractHalcyon
+import tigase.halcyon.core.Context
+import tigase.halcyon.core.builder.XmppModuleProvider
 import tigase.halcyon.core.connector.SessionController
 import tigase.halcyon.core.exceptions.HalcyonException
 import tigase.halcyon.core.logger.Level
@@ -14,15 +16,17 @@ import tigase.halcyon.core.xmpp.ErrorCondition
 import tigase.halcyon.core.xmpp.XMPPException
 import tigase.halcyon.core.xmpp.modules.discovery.DiscoveryModule
 
-class SASL2Module(override val context: AbstractHalcyon) : XmppModule {
+class SASL2Module(override val context: AbstractHalcyon) : XmppModule, SASLModuleConfig {
 
 	private val log = LoggerFactory.logger("tigase.halcyon.core.xmpp.modules.auth.SASL2Module")
 
-	companion object {
+	companion object : XmppModuleProvider<SASL2Module, SASLModuleConfig> {
 
 		const val XMLNS = "urn:xmpp:sasl:2"
-		const val TYPE = "tigase.halcyon.core.xmpp.modules.auth.SASL2Module"
+		override val TYPE = "tigase.halcyon.core.xmpp.modules.auth.SASL2Module"
+		override fun configure(module: SASL2Module, cfg: SASLModuleConfig.() -> Unit) = module.cfg()
 
+		override fun instance(context: Context): SASL2Module = SASL2Module(context as AbstractHalcyon)
 	}
 
 	override val type = TYPE
@@ -35,7 +39,7 @@ class SASL2Module(override val context: AbstractHalcyon) : XmppModule {
 
 	private val engine = SASLEngine(context)
 
-	var enabled: Boolean = true
+	override var enabled: Boolean = true
 
 	override fun initialize() {
 		engine.add(SASLScramSHA256())
@@ -129,6 +133,6 @@ class SASL2Module(override val context: AbstractHalcyon) : XmppModule {
 	}
 
 	fun isAllowed(streamFeatures: Element): Boolean =
-		context.config.account != null && enabled && streamFeatures.getChildrenNS("authentication", XMLNS) != null
+		context.config.sasl != null && enabled && streamFeatures.getChildrenNS("authentication", XMLNS) != null
 
 }

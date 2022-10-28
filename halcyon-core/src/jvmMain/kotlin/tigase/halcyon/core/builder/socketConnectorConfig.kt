@@ -7,7 +7,7 @@ import java.security.cert.X509Certificate
 import javax.net.ssl.X509TrustManager
 
 @ConfigurationDSLMarker
-class SocketConnectionBuilder : ConfigItemBuilder<SocketConnectorConfig> {
+class SocketConnectionBuilder : ConnectionConfigItemBuilder<SocketConnectorConfig> {
 
 	var hostname: String? = null
 
@@ -17,20 +17,20 @@ class SocketConnectionBuilder : ConfigItemBuilder<SocketConnectorConfig> {
 
 	var dnsResolver: DnsResolver = DnsResolverMiniDns()
 
-	override fun build(root: ConfigurationBuilder): SocketConnectorConfig {
-		return SocketConnectorConfig(hostname = hostname ?: root.account?.userJID?.domain ?: root.registration?.domain
-		?: throw ConfigurationException("Cannot determine domain name."),
-									 port = port,
-									 trustManager = trustManager ?: object : X509TrustManager {
-										 override fun checkClientTrusted(p0: Array<out X509Certificate>?, p1: String?) {
-										 }
+	override fun build(root: ConfigurationBuilder, defaultDomain: String?): SocketConnectorConfig {
+		return SocketConnectorConfig(
+			hostname = hostname ?: defaultDomain ?: throw ConfigurationException("Cannot determine domain name."),
+			port = port,
+			trustManager = trustManager ?: object : X509TrustManager {
+				override fun checkClientTrusted(p0: Array<out X509Certificate>?, p1: String?) {
+				}
 
-										 override fun checkServerTrusted(p0: Array<out X509Certificate>?, p1: String?) {
-										 }
+				override fun checkServerTrusted(p0: Array<out X509Certificate>?, p1: String?) {
+				}
 
-										 override fun getAcceptedIssuers(): Array<X509Certificate> = emptyArray()
-									 },
-									 dnsResolver = dnsResolver
+				override fun getAcceptedIssuers(): Array<X509Certificate> = emptyArray()
+			},
+			dnsResolver = dnsResolver
 		)
 	}
 }

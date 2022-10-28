@@ -17,7 +17,10 @@
  */
 package tigase.halcyon.core.xmpp.modules.carbons
 
+import tigase.halcyon.core.AbstractHalcyon
 import tigase.halcyon.core.Context
+import tigase.halcyon.core.builder.ConfigurationException
+import tigase.halcyon.core.builder.XmppModuleProvider
 import tigase.halcyon.core.eventbus.Event
 import tigase.halcyon.core.modules.Criterion
 import tigase.halcyon.core.modules.XmppModule
@@ -46,20 +49,31 @@ sealed class CarbonEvent(@Suppress("unused") val fromJID: JID?, val stanza: Mess
 	class Received(fromJID: JID?, stanza: Message) : CarbonEvent(fromJID, stanza)
 }
 
-class MessageCarbonsModule(override val context: Context, private val forwardHandler: (Message) -> Unit) : XmppModule,
-																										   InlineProtocol {
+interface MessageCarbonsModuleConfig
 
-	private var messageModule: MessageModule? = null
+class MessageCarbonsModule(override val context: Context, private val forwardHandler: (Message) -> Unit) : XmppModule,
+																										   InlineProtocol,
+																										   MessageCarbonsModuleConfig {
 
 	override val type = TYPE
 	override val criteria = Criterion.chain(Criterion.name(Message.NAME), Criterion.xmlns(XMLNS))
 	override val features: Array<String> = arrayOf(XMLNS)
 
-	companion object {
+	private var messageModule: MessageModule? = null
+
+	companion object : XmppModuleProvider<MessageCarbonsModule, MessageCarbonsModuleConfig> {
 
 		const val XMLNS = "urn:xmpp:carbons:2"
-		const val TYPE = XMLNS
+		override val TYPE = XMLNS
 		private const val FORWARD_XMLNS = "urn:xmpp:forward:0"
+
+		override fun instance(context: Context): MessageCarbonsModule {
+			if (!(context is AbstractHalcyon)) throw ConfigurationException("Cannot create instance of MessageCarbonModule. Unsupported type of context.")
+			return MessageCarbonsModule(context, context::processReceivedXmlElement)
+		}
+
+		override fun configure(module: MessageCarbonsModule, cfg: MessageCarbonsModuleConfig.() -> Unit) = module.cfg()
+
 	}
 
 	override fun initialize() {

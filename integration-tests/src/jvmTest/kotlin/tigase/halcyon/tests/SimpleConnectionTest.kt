@@ -64,7 +64,7 @@ class SimpleConnectionTest {
 	@Test
 	fun notExistingUserLogin() {
 		val halcyon = tigase.halcyon.core.builder.createHalcyon {
-			account {
+			auth {
 				userJID = "oiujhgyuiklkjhb@sailboat.local".toBareJID()
 				password { "dfghjsdnfgvsdfhjasdfasdfsdf" }
 			}

@@ -18,7 +18,9 @@
 package tigase.halcyon.core.xmpp.modules
 
 import tigase.halcyon.core.AbstractHalcyon
+import tigase.halcyon.core.Context
 import tigase.halcyon.core.Scope
+import tigase.halcyon.core.builder.XmppModuleProvider
 import tigase.halcyon.core.eventbus.Event
 import tigase.halcyon.core.modules.Criteria
 import tigase.halcyon.core.modules.XmppModule
@@ -47,7 +49,12 @@ sealed class BindEvent : Event(TYPE) {
 
 }
 
-class BindModule(override val context: AbstractHalcyon) : XmppModule, InlineProtocol {
+interface BindModuleConfig {
+
+	var resource: String?
+}
+
+class BindModule(override val context: AbstractHalcyon) : XmppModule, InlineProtocol, BindModuleConfig {
 
 	enum class State {
 
@@ -57,12 +64,17 @@ class BindModule(override val context: AbstractHalcyon) : XmppModule, InlineProt
 		Failed
 	}
 
-	companion object {
+	companion object : XmppModuleProvider<BindModule, BindModuleConfig> {
 
-		const val XMLNS = "urn:ietf:params:xml:ns:xmpp-bind"
-		const val TYPE = XMLNS
 		const val BIND2_XMLNS = "urn:xmpp:bind:0"
+		const val XMLNS = "urn:ietf:params:xml:ns:xmpp-bind"
+		override val TYPE = XMLNS
+		override fun configure(module: BindModule, cfg: BindModuleConfig.() -> Unit) {
+			module.cfg()
+		}
 
+		override fun instance(context: Context): BindModule =
+			BindModule(context as AbstractHalcyon)
 	}
 
 	override val type = TYPE
@@ -76,9 +88,11 @@ class BindModule(override val context: AbstractHalcyon) : XmppModule, InlineProt
 	var state: State by propertySimple(Scope.Session, State.Unknown)
 		internal set
 
+	override var resource: String? = null
+
 	override fun initialize() {}
 
-	fun boundAs(resource: String? = null): RequestBuilder<BindResult, IQ> {
+	fun bind(resource: String? = this.resource): RequestBuilder<BindResult, IQ> {
 		val stanza = iq {
 			type = IQType.Set
 			"bind" {
@@ -95,7 +109,7 @@ class BindModule(override val context: AbstractHalcyon) : XmppModule, InlineProt
 			.map(this::createBindResult)
 			.response {
 				it.onSuccess { success ->
-					boundAs(success.jid)
+					bind(success.jid)
 				}
 				it.onFailure {
 					state = State.Failed
@@ -115,7 +129,7 @@ class BindModule(override val context: AbstractHalcyon) : XmppModule, InlineProt
 		throw XMPPException(ErrorCondition.BadRequest)
 	}
 
-	private fun boundAs(jid: JID) {
+	private fun bind(jid: JID) {
 		state = State.Success
 		context.boundJID = jid
 		context.eventBus.fire(BindEvent.Success(jid))
@@ -144,7 +158,7 @@ class BindModule(override val context: AbstractHalcyon) : XmppModule, InlineProt
 
 	override fun process(response: InlineResponse) {
 		response.whenExists(InlineProtocolStage.AfterSasl, "bound", BIND2_XMLNS) { boundElement ->
-			boundAs(response.element.getFirstChild("authorization-identifier")!!.value!!.toJID())
+			bind(response.element.getFirstChild("authorization-identifier")!!.value!!.toJID())
 
 			InlineResponse(InlineProtocolStage.AfterBind, boundElement).let { response ->
 				context.modules.getModules()

@@ -7,7 +7,7 @@ import tigase.halcyon.core.xmpp.toBareJID
 
 fun createHalcyon(): Halcyon {
 	return tigase.halcyon.core.builder.createHalcyon {
-		account {
+		auth {
 			userJID = "admin@sailboat.local".toBareJID()
 			password { "admin" }
 		}

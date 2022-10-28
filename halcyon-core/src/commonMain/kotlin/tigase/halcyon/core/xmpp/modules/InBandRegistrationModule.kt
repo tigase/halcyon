@@ -1,6 +1,7 @@
 package tigase.halcyon.core.xmpp.modules
 
 import tigase.halcyon.core.Context
+import tigase.halcyon.core.builder.XmppModuleProvider
 import tigase.halcyon.core.modules.AbstractXmppModule
 import tigase.halcyon.core.modules.Criterion
 import tigase.halcyon.core.requests.RequestBuilder
@@ -15,17 +16,25 @@ import tigase.halcyon.core.xmpp.forms.JabberDataForm
 import tigase.halcyon.core.xmpp.stanzas.IQ
 import tigase.halcyon.core.xmpp.stanzas.IQType
 
-class InBandRegistrationModule(context: Context) : AbstractXmppModule(
+interface InBandRegistrationModuleConfig
+
+class InBandRegistrationModule(context: Context) : InBandRegistrationModuleConfig, AbstractXmppModule(
 	context = context, type = TYPE, features = arrayOf(XMLNS), criteria = Criterion.chain(
 		Criterion.name(IQ.NAME), Criterion.xmlns(XMLNS)
 	)
 ) {
 
-	companion object {
+	companion object : XmppModuleProvider<InBandRegistrationModule, InBandRegistrationModuleConfig> {
 
 		const val XMLNS = "jabber:iq:register"
-		const val TYPE = XMLNS
+		override val TYPE = XMLNS
 		private const val REGISTRATION_FORM_TYPE = "tigase:private#form_type"
+
+		override fun instance(context: Context): InBandRegistrationModule = InBandRegistrationModule(context)
+
+		override fun configure(module: InBandRegistrationModule, cfg: InBandRegistrationModuleConfig.() -> Unit) =
+			module.cfg()
+
 	}
 
 	private val allowedRegistrationFields = listOf(

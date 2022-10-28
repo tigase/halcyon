@@ -20,6 +20,7 @@ package tigase.halcyon.core.xmpp.modules.caps
 import com.soywiz.krypto.sha1
 import kotlinx.serialization.Serializable
 import tigase.halcyon.core.*
+import tigase.halcyon.core.builder.XmppModuleProvider
 import tigase.halcyon.core.modules.Criteria
 import tigase.halcyon.core.modules.HasInterceptors
 import tigase.halcyon.core.modules.StanzaInterceptor
@@ -36,17 +37,30 @@ import tigase.halcyon.core.xmpp.modules.discovery.NodeDetailsProvider
 import tigase.halcyon.core.xmpp.stanzas.Presence
 import tigase.halcyon.core.xmpp.stanzas.wrap
 
-class EntityCapabilitiesModule(override val context: Context) : XmppModule, HasInterceptors, StanzaInterceptor {
+interface EntityCapabilitiesModuleConfig {
+
+	var node: String
+
+	var cache: EntityCapabilitiesCache
+
+}
+
+class EntityCapabilitiesModule(override val context: Context) : XmppModule, HasInterceptors, StanzaInterceptor,
+																EntityCapabilitiesModuleConfig {
 
 	@Serializable
 	data class Caps(
 		val node: String, val identities: List<DiscoveryModule.Identity>, val features: List<String>,
 	)
 
-	companion object {
+	companion object : XmppModuleProvider<EntityCapabilitiesModule, EntityCapabilitiesModuleConfig> {
 
 		const val XMLNS = "http://jabber.org/protocol/caps"
-		const val TYPE = XMLNS
+		override val TYPE = XMLNS
+		override fun instance(context: Context): EntityCapabilitiesModule = EntityCapabilitiesModule(context)
+
+		override fun configure(module: EntityCapabilitiesModule, cfg: EntityCapabilitiesModuleConfig.() -> Unit) =
+			module.cfg()
 	}
 
 	override val type: String = TYPE
@@ -57,8 +71,8 @@ class EntityCapabilitiesModule(override val context: Context) : XmppModule, HasI
 	private lateinit var discoModule: DiscoveryModule
 	private lateinit var streamFeaturesModule: StreamFeaturesModule
 
-	var node: String = "http://tigase.org/TigaseHalcyon"
-	var cache: EntityCapabilitiesCache = DefaultEntityCapabilitiesCache()
+	override var node: String = "http://tigase.org/TigaseHalcyon"
+	override var cache: EntityCapabilitiesCache = DefaultEntityCapabilitiesCache()
 
 	private var verificationStringCache: String? by propertySimple(Scope.Session, null)
 
@@ -97,7 +111,8 @@ class EntityCapabilitiesModule(override val context: Context) : XmppModule, HasI
 
 	private fun getVerificationString(): String {
 		if (verificationStringCache == null) {
-			val clientFeatures = context.modules.getAvailableFeatures().toList()
+			val clientFeatures = context.modules.getAvailableFeatures()
+				.toList()
 			val clientIdentities = listOf(discoModule.getClientIdentity())
 			verificationStringCache = calculateVer(clientIdentities, clientFeatures)
 		}
@@ -108,18 +123,21 @@ class EntityCapabilitiesModule(override val context: Context) : XmppModule, HasI
 		getServerNode()?.let { node ->
 			val jid = context.boundJID ?: return
 			if (cache.isCached(node)) return
-			discoModule.info(JID.parse(jid.domain), node).response {
-				if (it.isSuccess) storeInfo(node, it.getOrThrow())
-			}.send()
+			discoModule.info(JID.parse(jid.domain), node)
+				.response {
+					if (it.isSuccess) storeInfo(node, it.getOrThrow())
+				}
+				.send()
 		}
 	}
 
 	private fun getServerNode(): String? {
-		return streamFeaturesModule.streamFeatures?.getChildrenNS("c", XMLNS)?.let { c ->
-			val node = c.attributes["node"]
-			val ver = c.attributes["ver"]
-			"$node#$ver"
-		}
+		return streamFeaturesModule.streamFeatures?.getChildrenNS("c", XMLNS)
+			?.let { c ->
+				val node = c.attributes["node"]
+				val ver = c.attributes["ver"]
+				"$node#$ver"
+			}
 	}
 
 	override fun process(element: Element) = throw XMPPException(ErrorCondition.FeatureNotImplemented)
@@ -132,18 +150,23 @@ class EntityCapabilitiesModule(override val context: Context) : XmppModule, HasI
 
 		if (cache.isCached("$node#$ver")) return
 
-		discoModule.info(presence.from, "$node#$ver").response {
-			if (it.isSuccess) storeInfo("$node#$ver", it.getOrThrow())
-		}.send()
+		discoModule.info(presence.from, "$node#$ver")
+			.response {
+				if (it.isSuccess) storeInfo("$node#$ver", it.getOrThrow())
+			}
+			.send()
 	}
 
 	internal fun calculateVer(identities: List<DiscoveryModule.Identity>, features: List<String>): String {
-		val ids = identities.map { i -> i.category + "/" + i.type + "//" + i.name }.sorted()
+		val ids = identities.map { i -> i.category + "/" + i.type + "//" + i.name }
+			.sorted()
 			.joinToString(separator = "<", postfix = "<")
-		val ftrs = features.sorted().joinToString(separator = "<", postfix = "<")
+		val ftrs = features.sorted()
+			.joinToString(separator = "<", postfix = "<")
 		val s = "$ids$ftrs"
 
-		val hash = s.encodeToByteArray().sha1().bytes
+		val hash = s.encodeToByteArray()
+			.sha1().bytes
 		return Base64.encode(hash)
 	}
 

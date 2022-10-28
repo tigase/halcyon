@@ -32,10 +32,9 @@ class EventBusRxTest {
 	@Test
 	fun testObserve() {
 		val eventBus = EventBus(object : AbstractHalcyon(createConfiguration {
-			account {
+			auth {
 				userJID = "test@tester.com".toBareJID()
 				passwordCallback = { "test" }
-				resource = "test"
 
 			}
 		}) {

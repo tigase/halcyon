@@ -5,6 +5,7 @@ import com.soywiz.krypto.PBKDF2
 import com.soywiz.krypto.sha1
 import com.soywiz.krypto.sha256
 import tigase.halcyon.core.configuration.Configuration
+import tigase.halcyon.core.configuration.JIDPasswordSaslConfig
 import tigase.halcyon.core.fromBase64
 import tigase.halcyon.core.toBase64
 import kotlin.experimental.xor
@@ -41,6 +42,8 @@ enum class ScramHashAlgorithm {
 
 @Suppress("ArrayInDataClass")
 data class SCRAMData(
+	var authzId: String? = null,
+	var authcId: String? = null,
 	var authMessage: String? = null,
 	var bindData: ByteArray = ByteArray(0),
 	var bindType: BindType? = null,
@@ -66,7 +69,8 @@ abstract class AbstractSASLScram(
 		"^(?:e=([^,]+)|v=([^,]+)(?:,.*)?)$", RegexOption.IGNORE_CASE
 	)
 
-	override fun isAllowedToUse(config: Configuration, saslContext: SASLContext): Boolean = config.account != null
+	override fun isAllowedToUse(config: Configuration, saslContext: SASLContext): Boolean =
+		config.sasl is JIDPasswordSaslConfig
 
 	private fun scramData(saslContext: SASLContext): SCRAMData {
 		if (saslContext.mechanismData == null) {
@@ -77,11 +81,17 @@ abstract class AbstractSASLScram(
 
 	override fun evaluateChallenge(input: String?, config: Configuration, saslContext: SASLContext): String? {
 		val data = scramData(saslContext)
+		val credentials = config.sasl as JIDPasswordSaslConfig
 
 		if (data.stage == 0) {
 			data.conce = randomGenerator.invoke()
 			data.bindType = BindType.N // TODO Implement Support for binding
 			data.bindData = ByteArray(0)
+			data.authcId = credentials.authcId ?: credentials.userJID.localpart!!
+			data.authzId = if (credentials.authcId != null) {
+				credentials.userJID.toString()
+			} else null
+
 
 			data.cb = buildString {
 				when (data.bindType!!) {
@@ -92,14 +102,16 @@ abstract class AbstractSASLScram(
 				}
 				append(",")
 
-				config.account?.authzIdJID?.let {
+				data.authzId?.let {
 					append("a=").append(it)
 				}
 				append(",")
 			}
 
+
+
 			data.clientFirstMessageBare = buildString {
-				append("n=${config.account!!.userJID.localpart},")
+				append("n=${data.authcId},")
 				append("r=${data.conce}")
 			}
 
@@ -136,12 +148,12 @@ abstract class AbstractSASLScram(
 
 			data.saltedPassword = when (hashAlgorithm) {
 				ScramHashAlgorithm.SHA1 -> PBKDF2.pbkdf2WithHmacSHA1(
-					password = config.account!!.passwordCallback.invoke()
+					password = config.sasl!!.passwordCallback.invoke()
 						.encodeToByteArray(), salt = salt, iterationCount = iterations, 160
 				)
 
 				ScramHashAlgorithm.SHA256 -> PBKDF2.pbkdf2WithHmacSHA256(
-					password = config.account!!.passwordCallback.invoke()
+					password = config.sasl!!.passwordCallback.invoke()
 						.encodeToByteArray(), salt = salt, iterationCount = iterations, 256
 				)
 			}

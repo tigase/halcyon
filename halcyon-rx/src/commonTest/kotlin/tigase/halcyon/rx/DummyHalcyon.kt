@@ -7,11 +7,9 @@ import tigase.halcyon.core.connector.SessionController
 import tigase.halcyon.core.xmpp.toBareJID
 
 class DummyHalcyon : AbstractHalcyon(createConfiguration {
-	account {
+	auth {
 		userJID = "test@tester.com".toBareJID()
 		passwordCallback = { "test" }
-		resource = "test"
-
 	}
 }) {
 

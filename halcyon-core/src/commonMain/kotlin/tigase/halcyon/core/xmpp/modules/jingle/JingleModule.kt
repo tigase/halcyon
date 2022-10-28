@@ -109,9 +109,8 @@ class JingleModule(
 		val action = Action.fromValue(iq.attributes["action"] ?: throw XMPPException(ErrorCondition.BadRequest))
 			?: throw XMPPException(ErrorCondition.BadRequest)
 		val from = JID.parse(iq.attributes["from"] ?: throw XMPPException(ErrorCondition.BadRequest))
-		val sid =
-			(jingle.attributes["sid"] ?: sessionManager.activateSessionSid(context.config.account!!.userJID, from))
-				?: throw XMPPException(ErrorCondition.BadRequest)
+		val sid = (jingle.attributes["sid"] ?: sessionManager.activateSessionSid(context.boundJID!!.bareJID, from))
+			?: throw XMPPException(ErrorCondition.BadRequest)
 
 		val initiator = jingle.attributes["initiator"]?.let { JID.parse(it) } ?: from
 
@@ -157,13 +156,13 @@ class JingleModule(
 	): RequestBuilder<Unit, Message> {
 		when (action) {
 			is MessageInitiationAction.Proceed -> sendMessageInitiation(
-				MessageInitiationAction.Accept(action.id), JID(context.config.account!!.userJID, null)
+				MessageInitiationAction.Accept(action.id), context.boundJID!!.copy(resource = null)
 			).send()
 
 			is MessageInitiationAction.Reject -> {
-				if (jid.bareJID != context.config.account!!.userJID) {
+				if (jid.bareJID != context.boundJID?.bareJID) {
 					sendMessageInitiation(
-						MessageInitiationAction.Accept(action.id), JID(context.config.account!!.userJID, null)
+						MessageInitiationAction.Accept(action.id), context.boundJID!!.copy(resource = null)
 					).send()
 				}
 			}

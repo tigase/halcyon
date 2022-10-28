@@ -17,16 +17,18 @@
  */
 package tigase.halcyon.core.configuration
 
+import tigase.halcyon.core.builder.ModulesConfigBuilder
 import tigase.halcyon.core.exceptions.HalcyonException
 import tigase.halcyon.core.xmpp.BareJID
 import tigase.halcyon.core.xmpp.forms.JabberDataForm
 
-data class Account(
-	val userJID: BareJID,
-	val resource: String?,
-	val authzIdJID: BareJID?,
-	val passwordCallback: () -> String,
-)
+interface SaslConfig
+
+interface DomainProvider {
+
+	val domain: String
+
+}
 
 data class Registration(
 	val domain: String,
@@ -36,8 +38,19 @@ data class Registration(
 
 interface Connection
 
-data class Configuration(val account: Account?, val connection: Connection, val registration: Registration? = null)
+data class Configuration(
+	val sasl: SaslConfig?,
+	val connection: Connection,
+	val registration: Registration? = null,
+	internal val modulesConfigurator: (ModulesConfigBuilder.() -> Unit)? = null,
+)
 
 val Configuration.domain: String
-	get() = this.account?.userJID?.domain ?: this.registration?.domain
-	?: throw HalcyonException("Cannot determine domain.")
+	get() = if (this.sasl is DomainProvider) {
+		this.sasl.domain
+	} else if (this.registration != null) {
+		this.registration.domain
+	} else throw HalcyonException("Cannot determine domain.")
+
+val Configuration.userJID: BareJID?
+	get() = null

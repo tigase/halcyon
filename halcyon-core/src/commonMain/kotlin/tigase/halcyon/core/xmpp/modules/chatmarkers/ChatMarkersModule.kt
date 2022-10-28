@@ -18,6 +18,7 @@
 package tigase.halcyon.core.xmpp.modules.chatmarkers
 
 import tigase.halcyon.core.Context
+import tigase.halcyon.core.builder.XmppModuleProvider
 import tigase.halcyon.core.eventbus.Event
 import tigase.halcyon.core.modules.Criteria
 import tigase.halcyon.core.modules.HasInterceptors
@@ -51,7 +52,8 @@ data class ChatMarkerEvent(val jid: JID, val msgId: String, val stanza: Message,
  *
  *
  */
-class ChatMarkersModule(override val context: Context) : XmppModule, HasInterceptors, StanzaInterceptor {
+
+interface ChatMarkersModuleConfig {
 
 	enum class Mode {
 
@@ -73,6 +75,14 @@ class ChatMarkersModule(override val context: Context) : XmppModule, HasIntercep
 		Off
 	}
 
+	var mode: Mode
+	var autoSendReceived: Boolean
+
+}
+
+class ChatMarkersModule(override val context: Context) : XmppModule, HasInterceptors, StanzaInterceptor,
+														 ChatMarkersModuleConfig {
+
 	enum class Marker(val xmppValue: String) {
 
 		/**
@@ -91,10 +101,14 @@ class ChatMarkersModule(override val context: Context) : XmppModule, HasIntercep
 		Acknowledged("acknowledged")
 	}
 
-	companion object {
+	companion object : XmppModuleProvider<ChatMarkersModule, ChatMarkersModuleConfig> {
 
 		const val XMLNS = "urn:xmpp:chat-markers:0"
-		const val TYPE = XMLNS
+		override val TYPE = XMLNS
+
+		override fun instance(context: Context): ChatMarkersModule = ChatMarkersModule(context)
+
+		override fun configure(module: ChatMarkersModule, cfg: ChatMarkersModuleConfig.() -> Unit) = module.cfg()
 	}
 
 	override val criteria: Criteria? = null
@@ -102,8 +116,8 @@ class ChatMarkersModule(override val context: Context) : XmppModule, HasIntercep
 	override val type = TYPE
 	override val stanzaInterceptors: Array<StanzaInterceptor> = arrayOf(this)
 
-	var mode: Mode = Mode.Auto
-	var autoSendReceived = false
+	override var mode: ChatMarkersModuleConfig.Mode = ChatMarkersModuleConfig.Mode.Auto
+	override var autoSendReceived = false
 
 	override fun initialize() {
 
@@ -133,35 +147,41 @@ class ChatMarkersModule(override val context: Context) : XmppModule, HasIntercep
 		if (element.attributes["type"] == MessageType.Error.value) return element
 		val from = element.attributes["from"]?.toJID() ?: return element
 
-		val command = element.getChildrenNS(XMLNS).firstOrNull() ?: return element
+		val command = element.getChildrenNS(XMLNS)
+			.firstOrNull() ?: return element
 		when (command.name) {
 			"markable" -> {
 				if (autoSendReceived) element.getOriginID() ?: element.attributes["id"]?.let { id ->
 					markMessage(from, id, Marker.Received).send()
 				}
 			}
+
 			Marker.Received.xmppValue -> {
 				val id = command.attributes["id"]
 				if (id != null) context.eventBus.fire(ChatMarkerEvent(from, id, wrap(element), Marker.Received))
 			}
+
 			Marker.Acknowledged.xmppValue -> {
 				val id = command.attributes["id"]
 				if (id != null) context.eventBus.fire(ChatMarkerEvent(from, id, wrap(element), Marker.Acknowledged))
 			}
+
 			Marker.Displayed.xmppValue -> {
 				val id = command.attributes["id"]
 				if (id != null) context.eventBus.fire(ChatMarkerEvent(from, id, wrap(element), Marker.Displayed))
 			}
-			else -> throw XMPPException(ErrorCondition.FeatureNotImplemented,
-										"Unsupported chat marker '${command.name}'")
+
+			else -> throw XMPPException(
+				ErrorCondition.FeatureNotImplemented, "Unsupported chat marker '${command.name}'"
+			)
 		}
 		return element
 	}
 
 	private fun isMarkable(to: JID): Boolean = when (mode) {
-		Mode.Off -> false
-		Mode.All -> true
-		Mode.Auto -> when (to.resource) {
+		ChatMarkersModuleConfig.Mode.Off -> false
+		ChatMarkersModuleConfig.Mode.All -> true
+		ChatMarkersModuleConfig.Mode.Auto -> when (to.resource) {
 			null -> true
 			else -> isChatMarkerSupported(to)
 		}
@@ -207,7 +227,8 @@ fun Element.getChatMarkerOrNull(): ChatMarker? {
 	if (this.name != Message.NAME) return null
 	if (this.attributes["type"] == MessageType.Error.value) return null
 	val from = this.attributes["from"]?.toJID() ?: return null
-	val command = this.getChildrenNS(ChatMarkersModule.XMLNS).firstOrNull() ?: return null
+	val command = this.getChildrenNS(ChatMarkersModule.XMLNS)
+		.firstOrNull() ?: return null
 	val id = command.attributes["id"] ?: return null
 
 	return when (command.name) {

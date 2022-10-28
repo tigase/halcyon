@@ -18,6 +18,7 @@
 package tigase.halcyon.core.xmpp.modules.chatstates
 
 import tigase.halcyon.core.Context
+import tigase.halcyon.core.builder.XmppModuleProvider
 import tigase.halcyon.core.eventbus.Event
 import tigase.halcyon.core.modules.Criteria
 import tigase.halcyon.core.modules.XmppModule
@@ -31,10 +32,12 @@ import tigase.halcyon.core.xmpp.modules.MessageReceivedEvent
 import tigase.halcyon.core.xmpp.stanzas.Message
 import tigase.halcyon.core.xmpp.stanzas.message
 
-enum class ChatState(val xmppValue: String) { /**
- * User is actively participating in the chat session.
- */
-Active("active"),
+enum class ChatState(val xmppValue: String) {
+
+	/**
+	 * User is actively participating in the chat session.
+	 */
+	Active("active"),
 
 	/**
 	 * User has not been actively participating in the chat session.
@@ -61,13 +64,15 @@ private fun findChatState(element: Element): ChatState? {
 	val csi = element.children.find {
 		it.xmlns == ChatStateModule.XMLNS
 	} ?: return null
-	return ChatState.values().find { chatState -> chatState.xmppValue == csi.name } ?: throw XMPPException(
-		ErrorCondition.BadRequest,
-		"Unknown chat state ${csi.name}")
+	return ChatState.values()
+		.find { chatState -> chatState.xmppValue == csi.name } ?: throw XMPPException(
+		ErrorCondition.BadRequest, "Unknown chat state ${csi.name}"
+	)
 }
 
 private fun setChatState(element: Element, state: ChatState?) {
-	element.children.find { it.xmlns == ChatStateModule.XMLNS }?.let { element.remove(it) }
+	element.children.find { it.xmlns == ChatStateModule.XMLNS }
+		?.let { element.remove(it) }
 	state?.let {
 		element.add(element(state.xmppValue) {
 			xmlns = ChatStateModule.XMLNS
@@ -79,23 +84,31 @@ var Message.chatState: ChatState?
 	get() = findChatState(this)
 	set(value) = setChatState(this, value)
 
-data class ChatStateEvent(val jid: JID, val state: ChatState) : Event(TYPE) { companion object {
+data class ChatStateEvent(val jid: JID, val state: ChatState) : Event(TYPE) {
 
-	const val TYPE = "tigase.halcyon.core.xmpp.modules.chatstates.ChatStateEvent"
-}
+	companion object {
+
+		const val TYPE = "tigase.halcyon.core.xmpp.modules.chatstates.ChatStateEvent"
+	}
 }
 
-class ChatStateModule(override val context: Context) : XmppModule {
+interface ChatStateModuleConfig
+
+class ChatStateModule(override val context: Context) : XmppModule, ChatStateModuleConfig {
 //	private val log LoggerFactory.logger("tigase.halcyon.core.xmpp.modules.chatstates.ChatStateModule")
 
 	override val type = TYPE
 	override val criteria: Criteria? = null
 	override val features: Array<String> = arrayOf(XMLNS)
 
-	companion object {
+	companion object : XmppModuleProvider<ChatStateModule, ChatStateModuleConfig> {
 
 		const val XMLNS = "http://jabber.org/protocol/chatstates"
-		const val TYPE = XMLNS
+		override val TYPE = XMLNS
+
+		override fun instance(context: Context): ChatStateModule = ChatStateModule(context)
+
+		override fun configure(module: ChatStateModule, cfg: ChatStateModuleConfig.() -> Unit) = module.cfg()
 	}
 
 	override fun initialize() {
@@ -117,11 +130,12 @@ class ChatStateModule(override val context: Context) : XmppModule {
 			state.xmppValue {
 				xmlns = XMLNS
 			}
-			"no-store"{
+			"no-store" {
 				xmlns = "urn:xmpp:hints"
 			}
 		}
-		context.request.message(msg).send()
+		context.request.message(msg)
+			.send()
 	}
 
 	override fun process(element: Element) = throw XMPPException(ErrorCondition.FeatureNotImplemented)

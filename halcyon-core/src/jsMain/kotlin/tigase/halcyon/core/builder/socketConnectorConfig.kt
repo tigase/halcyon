@@ -10,7 +10,7 @@ class WebSocketConnectionBuilder : ConfigItemBuilder<WebSocketConnectorConfig> {
 	var webSocketUrl: String? = null
 
 	override fun build(root: ConfigurationBuilder): WebSocketConnectorConfig {
-		val d = domain ?: root.account?.userJID?.domain ?: root.registration?.domain
+		val d = domain ?: root.auth?.userJID?.domain ?: root.registration?.domain
 		?: throw ConfigurationException("Cannot determine domain name.")
 		return WebSocketConnectorConfig(
 			webSocketUrl = webSocketUrl ?: "ws://$d:5290/"

@@ -17,6 +17,8 @@
  */
 package tigase.halcyon.core
 
+import tigase.halcyon.core.builder.XmppModuleProvider
+import tigase.halcyon.core.builder.initializeModules
 import tigase.halcyon.core.configuration.Configuration
 import tigase.halcyon.core.connector.*
 import tigase.halcyon.core.eventbus.Event
@@ -126,37 +128,37 @@ abstract class AbstractHalcyon(override val config: Configuration) : Context, Pa
 	init {
 		modules.context = this
 		eventBus.register(ReceivedXMLElementEvent.TYPE, ::processReceivedXmlElementEvent)
-
 		eventBus.register(SessionController.SessionControllerEvents.TYPE, ::onSessionControllerEvent)
 		eventBus.register<TickEvent>(TickEvent.TYPE) { requestsManager.findOutdated() }
 
-		modules.register(DiscoveryModule(this))
-		modules.register(RosterModule(this))
-		modules.register(PresenceModule(this))
-		modules.register(MIXModule(this))
-		modules.register(MAMModule(this))
-		modules.register(PubSubModule(this))
-		modules.register(MessageCarbonsModule(this, ::processReceivedXmlElement))
-		modules.register(MessageModule(this))
-		modules.register(StreamManagementModule(this))
-		modules.register(SASLModule(this))
-		modules.register(BindModule(this))
-		modules.register(PingModule(this))
-		modules.register(StreamErrorModule(this))
-		modules.register(StreamFeaturesModule(this))
-		modules.register(EntityCapabilitiesModule(this))
-		modules.register(UserAvatarModule(this))
-		modules.register(VCardModule(this))
-		modules.register(DeliveryReceiptsModule(this))
-		modules.register(ChatStateModule(this))
-		modules.register(ChatMarkersModule(this))
-		modules.register(UniqueStableStanzaIdModule(this))
-		modules.register(CommandsModule(this))
-		modules.register(BlockingCommandModule(this))
-		modules.register(MUCModule(this))
-		modules.register(ReferenceModule(this))
-		modules.register(SASL2Module(this))
-		modules.register(InBandRegistrationModule(this))
+//		modules.register(DiscoveryModule(this))
+//		modules.register(RosterModule(this))
+//		modules.register(PresenceModule(this))
+//		modules.register(MIXModule(this))
+//		modules.register(MAMModule(this))
+//		modules.register(PubSubModule(this))
+//		modules.register(MessageCarbonsModule(this, ::processReceivedXmlElement))
+//		modules.register(MessageModule(this))
+//		modules.register(StreamManagementModule(this))
+//		modules.register(SASLModule(this))
+//		modules.register(BindModule(this))
+//		modules.register(PingModule(this))
+//		modules.register(StreamErrorModule(this))
+//		modules.register(StreamFeaturesModule(this))
+//		modules.register(EntityCapabilitiesModule(this))
+//		modules.register(UserAvatarModule(this))
+//		modules.register(VCardModule(this))
+//		modules.register(DeliveryReceiptsModule(this))
+//		modules.register(ChatStateModule(this))
+//		modules.register(ChatMarkersModule(this))
+//		modules.register(UniqueStableStanzaIdModule(this))
+//		modules.register(CommandsModule(this))
+//		modules.register(BlockingCommandModule(this))
+//		modules.register(MUCModule(this))
+//		modules.register(SASL2Module(this))
+//		modules.register(InBandRegistrationModule(this))
+
+		modules.initializeModules()
 	}
 
 	protected open fun onSessionControllerEvent(event: SessionController.SessionControllerEvents) {
@@ -192,7 +194,7 @@ abstract class AbstractHalcyon(override val config: Configuration) : Context, Pa
 		processReceivedXmlElement(event.element)
 	}
 
-	private fun processReceivedXmlElement(receivedElement: Element) {
+	internal fun processReceivedXmlElement(receivedElement: Element) {
 		var element = receivedElement
 		try {
 			val handled = requestsManager.findAndExecute(element)
@@ -335,8 +337,11 @@ abstract class AbstractHalcyon(override val config: Configuration) : Context, Pa
 	protected open fun onDisconnecting() {}
 
 	fun <T : XmppModule> getModule(type: String): T = modules.getModule(type)
+	fun <T : XmppModule> getModule(provider: XmppModuleProvider<T, out Any>): T = modules.getModule(provider.TYPE)
 
 	fun <T : XmppModule> getModuleOrNull(type: String): T? = modules.getModuleOrNull(type)
+	fun <T : XmppModule> getModuleOrNull(provider: XmppModuleProvider<T, out Any>): T? =
+		modules.getModuleOrNull(provider.TYPE)
 
 	@ReflectionModuleManager
 	inline fun <reified T : XmppModule> getModule(): T = modules.getModule(T::class)

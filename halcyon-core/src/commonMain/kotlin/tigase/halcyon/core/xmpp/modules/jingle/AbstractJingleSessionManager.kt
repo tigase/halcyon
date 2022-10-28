@@ -46,12 +46,12 @@ abstract class AbstractJingleSessionManager<S : AbstractJingleSession>(
 	private val contactChangeStatusEventHandler = handler<ContactChangeStatusEvent> { event ->
 		if (event.lastReceivedPresence.type == PresenceType.Unavailable) {
 			val toClose =
-				sessions.filter { it.jid == event.presence.from && it.account == event.context.config.account?.userJID }
+				sessions.filter { it.jid == event.presence.from && it.account == event.context.boundJID?.bareJID }
 			toClose.forEach { it.terminate(TerminateReason.Success) }
 		}
 	}
 	private val jingleMessageInitiationEvent = handler<JingleMessageInitiationEvent> { event ->
-		val account = event.context.config.account!!.userJID
+		val account = event.context.boundJID!!.bareJID
 		when (event.action) {
 			is MessageInitiationAction.Propose -> {
 				if (session(account, event.jid, event.action.id) == null) {
@@ -120,7 +120,7 @@ abstract class AbstractJingleSessionManager<S : AbstractJingleSession>(
 	}
 
 	protected fun sessionInitiated(event: JingleEvent) {
-		val account = event.context.config.account!!.userJID
+		val account = event.context.boundJID!!.bareJID
 		session(account, event.jid, event.sid)?.accepted(event.contents, event.bundle) ?: run {
 			val session = open(
 				event.context.getModule(JingleModule.TYPE),
@@ -139,12 +139,12 @@ abstract class AbstractJingleSessionManager<S : AbstractJingleSession>(
 	}
 
 	protected fun sessionAccepted(event: JingleEvent) {
-		val account = event.context.config.account!!.userJID
+		val account = event.context.boundJID!!.bareJID
 		session(account, event.jid, event.sid)?.accepted(event.contents, event.bundle)
 	}
 
 	protected fun sessionTerminated(event: JingleEvent) {
-		val account = event.context.config.account!!.userJID
+		val account = event.context.boundJID!!.bareJID
 		sessionTerminated(account, event.jid, event.sid)
 	}
 
@@ -158,7 +158,7 @@ abstract class AbstractJingleSessionManager<S : AbstractJingleSession>(
 	}
 
 	protected fun transportInfo(event: JingleEvent) {
-		val account = event.context.config.account!!.userJID
+		val account = event.context.boundJID!!.bareJID
 		session(account, event.jid, event.sid)?.let { session ->
 			for (content in event.contents) {
 				content.transports.flatMap { it.candidates }

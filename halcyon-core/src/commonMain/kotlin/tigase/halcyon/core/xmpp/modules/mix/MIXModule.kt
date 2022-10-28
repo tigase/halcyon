@@ -21,6 +21,7 @@ import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import kotlinx.serialization.Serializable
 import tigase.halcyon.core.Context
+import tigase.halcyon.core.builder.XmppModuleProvider
 import tigase.halcyon.core.eventbus.Event
 import tigase.halcyon.core.exceptions.HalcyonException
 import tigase.halcyon.core.modules.Criteria
@@ -33,7 +34,6 @@ import tigase.halcyon.core.xml.element
 import tigase.halcyon.core.xml.getChildContent
 import tigase.halcyon.core.xmpp.BareJID
 import tigase.halcyon.core.xmpp.JID
-import tigase.halcyon.core.xmpp.modules.BindModule
 import tigase.halcyon.core.xmpp.modules.RSM
 import tigase.halcyon.core.xmpp.modules.mam.ForwardedStanza
 import tigase.halcyon.core.xmpp.modules.mam.MAMModule
@@ -84,19 +84,25 @@ data class CreateResponse(val jid: BareJID, val name: String)
 
 data class Participant(val id: String, val nick: String?, val jid: BareJID?)
 
-class MIXModule(override val context: Context) : XmppModule, RosterItemAnnotationProcessor {
+interface MIXModuleConfig
 
-	companion object {
+class MIXModule(override val context: Context) : XmppModule, RosterItemAnnotationProcessor, MIXModuleConfig {
+
+	companion object : XmppModuleProvider<MIXModule, MIXModuleConfig> {
 
 		const val XMLNS = "urn:xmpp:mix:core:1"
 		const val MISC_XMLNS = "urn:xmpp:mix:misc:0"
-		const val TYPE = XMLNS
+		override val TYPE = XMLNS
 
 		const val NODE_ALLOWED = "urn:xmpp:mix:nodes:allowed"
 		const val NODE_BANNED = "urn:xmpp:mix:nodes:banned"
 		const val NODE_PARTICIPANTS = "urn:xmpp:mix:nodes:participants"
 		const val NODE_PRESENCE = "urn:xmpp:mix:nodes:presence"
 		const val NODE_MESSAGES = "urn:xmpp:mix:nodes:messages"
+
+		override fun instance(context: Context): MIXModule = MIXModule(context)
+
+		override fun configure(module: MIXModule, cfg: MIXModuleConfig.() -> Unit) = module.cfg()
 	}
 
 	override val criteria: Criteria = Criterion.element(this@MIXModule::checkCriteria)
@@ -129,17 +135,16 @@ class MIXModule(override val context: Context) : XmppModule, RosterItemAnnotatio
 		context.eventBus.fire(MIXMessageEvent(message.from!!.bareJID, message, time))
 	}
 
-	private fun myJID(): JID =
-		context.boundJID ?: throw HalcyonException("Resource not bound.")
+	private fun myJID(): JID = context.boundJID ?: throw HalcyonException("Resource not bound.")
 
 	private fun invitationToElement(invitation: MIXInvitation, withXmlns: Boolean = false): Element {
 		return element("invitation") {
 			if (withXmlns) xmlns = MISC_XMLNS
-			"inviter"{ +invitation.inviter.toString() }
-			"invitee"{ +invitation.invitee.toString() }
-			"channel"{ +invitation.channel.toString() }
+			"inviter" { +invitation.inviter.toString() }
+			"invitee" { +invitation.invitee.toString() }
+			"channel" { +invitation.channel.toString() }
 			invitation.token?.let {
-				"token"{ +it }
+				"token" { +it }
 			}
 		}
 	}
@@ -148,17 +153,18 @@ class MIXModule(override val context: Context) : XmppModule, RosterItemAnnotatio
 		return context.request.iq {
 			type = IQType.Set
 			to = mixComponent.toJID()
-			"create"{
+			"create" {
 				xmlns = XMLNS
 				name?.let {
 					attributes["channel"] = it
 				}
 			}
-		}.map {
-			val cr = it.getChildrenNS("create", XMLNS)!!
-			val chname = cr.attributes["channel"]!!
-			CreateResponse(BareJID(chname, mixComponent.domain), chname)
 		}
+			.map {
+				val cr = it.getChildrenNS("create", XMLNS)!!
+				val chname = cr.attributes["channel"]!!
+				CreateResponse(BareJID(chname, mixComponent.domain), chname)
+			}
 	}
 
 	fun createAllowed(channel: BareJID): RequestBuilder<Unit, IQ> {
@@ -170,11 +176,13 @@ class MIXModule(override val context: Context) : XmppModule, RosterItemAnnotatio
 	}
 
 	fun addToAllowed(channel: BareJID, participant: BareJID): RequestBuilder<Unit, IQ> {
-		return pubsubModule.publish(channel.toJID(), NODE_ALLOWED, participant.toString()).map { }
+		return pubsubModule.publish(channel.toJID(), NODE_ALLOWED, participant.toString())
+			.map { }
 	}
 
 	fun addToBanned(channel: BareJID, participant: BareJID): RequestBuilder<Unit, IQ> {
-		return pubsubModule.publish(channel.toJID(), NODE_BANNED, participant.toString()).map { }
+		return pubsubModule.publish(channel.toJID(), NODE_BANNED, participant.toString())
+			.map { }
 	}
 
 	fun createInvitation(
@@ -200,52 +208,64 @@ class MIXModule(override val context: Context) : XmppModule, RosterItemAnnotatio
 		return context.request.iq {
 			type = IQType.Set
 			to = myJID().bareJID.toJID()
-			"client-join"{
+			"client-join" {
 				xmlns = "urn:xmpp:mix:pam:2"
 				attributes["channel"] = channel.toString()
-				"join"{
+				"join" {
 					xmlns = XMLNS
-					"nick"{
+					"nick" {
 						+nick
 					}
-					"subscribe"{ attributes["node"] = NODE_MESSAGES }
-					"subscribe"{ attributes["node"] = NODE_PRESENCE }
-					"subscribe"{ attributes["node"] = NODE_PARTICIPANTS }
-					"subscribe"{ attributes["node"] = "urn:xmpp:mix:nodes:info" }
+					"subscribe" { attributes["node"] = NODE_MESSAGES }
+					"subscribe" { attributes["node"] = NODE_PRESENCE }
+					"subscribe" { attributes["node"] = NODE_PARTICIPANTS }
+					"subscribe" { attributes["node"] = "urn:xmpp:mix:nodes:info" }
 					invitation?.let {
 						addChild(invitationToElement(it))
 					}
 				}
 			}
-		}.map { iq ->
-			val join = iq.getChildrenNS("client-join", "urn:xmpp:mix:pam:2")!!.getChildrenNS("join", XMLNS)!!
-			val nodes = join.getChildren("subscribe").map { it.attributes["node"]!! }.toTypedArray()
-			val nck = join.getChildren("subscribe").firstOrNull()?.value ?: nick
-			JoinResponse(join.attributes["jid"]!!.toJID(), nck, nodes)
 		}
+			.map { iq ->
+				val join = iq.getChildrenNS("client-join", "urn:xmpp:mix:pam:2")!!
+					.getChildrenNS("join", XMLNS)!!
+				val nodes = join.getChildren("subscribe")
+					.map { it.attributes["node"]!! }
+					.toTypedArray()
+				val nck = join.getChildren("subscribe")
+					.firstOrNull()?.value ?: nick
+				JoinResponse(join.attributes["jid"]!!.toJID(), nck, nodes)
+			}
 	}
 
 	fun leave(channel: BareJID): RequestBuilder<Unit, IQ> {
 		return context.request.iq {
 			type = IQType.Set
-			"client-leave"{
+			"client-leave" {
 				xmlns = "urn:xmpp:mix:pam:2"
 				attributes["channel"] = channel.toString()
-				"leave"{
+				"leave" {
 					xmlns = XMLNS
 				}
 			}
-		}.map { }
+		}
+			.map { }
 	}
 
 	private fun createParticipant(id: String, p: Element): Participant {
-		return Participant(id, p.getChildContent("nick"), p.getChildContent("jid")?.toBareJID())
+		return Participant(
+			id,
+			p.getChildContent("nick"),
+			p.getChildContent("jid")
+				?.toBareJID()
+		)
 	}
 
 	fun retrieveParticipants(channel: BareJID): RequestBuilder<Collection<Participant>, IQ> {
-		return pubsubModule.retrieveItem(channel.toJID(), NODE_PARTICIPANTS).map { r ->
-			r.items.map { item -> createParticipant(item.id, item.content!!) }
-		}
+		return pubsubModule.retrieveItem(channel.toJID(), NODE_PARTICIPANTS)
+			.map { r ->
+				r.items.map { item -> createParticipant(item.id, item.content!!) }
+			}
 	}
 
 	fun message(channel: BareJID, message: String): RequestBuilder<Unit, Message> {
@@ -257,15 +277,17 @@ class MIXModule(override val context: Context) : XmppModule, RosterItemAnnotatio
 	}
 
 	override fun prepareRosterGetRequest(stanza: IQ) {
-		stanza.getChildrenNS("query", RosterModule.XMLNS)?.add(element("annotate") {
-			xmlns = "urn:xmpp:mix:roster:0"
-		})
+		stanza.getChildrenNS("query", RosterModule.XMLNS)
+			?.add(element("annotate") {
+				xmlns = "urn:xmpp:mix:roster:0"
+			})
 	}
 
 	override fun processRosterItem(item: Element): RosterItemAnnotation? {
-		return item.getChildrenNS("channel", "urn:xmpp:mix:roster:0")?.let { channel ->
-			MIXRosterItemAnnotation(channel.attributes["participant-id"]!!)
-		}
+		return item.getChildrenNS("channel", "urn:xmpp:mix:roster:0")
+			?.let { channel ->
+				MIXRosterItemAnnotation(channel.attributes["participant-id"]!!)
+			}
 	}
 
 	fun retrieveHistory(
@@ -290,20 +312,22 @@ fun Element.isMixMessage(): Boolean {
 
 fun Element.getMixAnnotation(): MixAnnotation? {
 	if (this.name != Message.NAME) return null
-	return this.getChildrenNS("mix", MIXModule.XMLNS)?.let {
-		val nick = it.getFirstChild("nick")!!.value!!
-		val jid = it.getFirstChild("jid")?.value?.toBareJID()
-		MixAnnotation(nick, jid)
+	return this.getChildrenNS("mix", MIXModule.XMLNS)
+		?.let {
+			val nick = it.getFirstChild("nick")!!.value!!
+			val jid = it.getFirstChild("jid")?.value?.toBareJID()
+			MixAnnotation(nick, jid)
+		}
+}
+
+fun Element.getMixInvitation(): MIXInvitation? = this.getChildrenNS("invitation", MIXModule.MISC_XMLNS)
+	?.let {
+		val inviter = it.getChildContent("inviter") ?: return null
+		val invitee = it.getChildContent("invitee") ?: return null
+		val channel = it.getChildContent("channel") ?: return null
+		val token = it.getChildContent("token")
+
+		MIXInvitation(inviter.toBareJID(), invitee.toBareJID(), channel.toBareJID(), token)
 	}
-}
-
-fun Element.getMixInvitation(): MIXInvitation? = this.getChildrenNS("invitation", MIXModule.MISC_XMLNS)?.let {
-	val inviter = it.getChildContent("inviter") ?: return null
-	val invitee = it.getChildContent("invitee") ?: return null
-	val channel = it.getChildContent("channel") ?: return null
-	val token = it.getChildContent("token")
-
-	MIXInvitation(inviter.toBareJID(), invitee.toBareJID(), channel.toBareJID(), token)
-}
 
 

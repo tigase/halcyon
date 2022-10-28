@@ -18,35 +18,43 @@
 package tigase.halcyon.core.xmpp.modules.vcard
 
 import tigase.halcyon.core.Context
+import tigase.halcyon.core.builder.XmppModuleProvider
 import tigase.halcyon.core.eventbus.Event
 import tigase.halcyon.core.modules.Criteria
 import tigase.halcyon.core.modules.XmppModule
 import tigase.halcyon.core.requests.RequestBuilder
-
 import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xmpp.BareJID
 import tigase.halcyon.core.xmpp.ErrorCondition
 import tigase.halcyon.core.xmpp.XMPPException
-import tigase.halcyon.core.xmpp.modules.BindModule
 import tigase.halcyon.core.xmpp.modules.pubsub.PubSubItemEvent
 import tigase.halcyon.core.xmpp.stanzas.IQ
 import tigase.halcyon.core.xmpp.stanzas.IQType
 import tigase.halcyon.core.xmpp.stanzas.iq
 import tigase.halcyon.core.xmpp.toJID
 
-data class VCardUpdatedEvent(val jid: BareJID, val vcard: VCard?) : Event(TYPE) { companion object {
-
-	const val TYPE = "tigase.halcyon.core.xmpp.modules.vcard.VCardUpdatedEvent"
-}
-}
-
-class VCardModule(override val context: Context) : XmppModule {
+data class VCardUpdatedEvent(val jid: BareJID, val vcard: VCard?) : Event(TYPE) {
 
 	companion object {
 
+		const val TYPE = "tigase.halcyon.core.xmpp.modules.vcard.VCardUpdatedEvent"
+	}
+}
+
+interface VCardModuleConfig
+
+class VCardModule(override val context: Context) : XmppModule, VCardModuleConfig {
+
+	companion object : XmppModuleProvider<VCardModule, VCardModuleConfig> {
+
 		const val XMLNS = "urn:ietf:params:xml:ns:vcard-4.0"
 		const val NODE = "urn:xmpp:vcard4"
-		const val TYPE = XMLNS
+		override val TYPE = XMLNS
+
+		override fun instance(context: Context): VCardModule = VCardModule(context)
+
+		override fun configure(module: VCardModule, cfg: VCardModuleConfig.() -> Unit) = module.cfg()
+
 	}
 
 	override val criteria: Criteria? = null
@@ -73,11 +81,12 @@ class VCardModule(override val context: Context) : XmppModule {
 		val iq = iq {
 			type = IQType.Get
 			to = jid.toJID()
-			"vcard"{
+			"vcard" {
 				xmlns = XMLNS
 			}
 		}
-		return context.request.iq(iq).map(this@VCardModule::parseResponse)
+		return context.request.iq(iq)
+			.map(this@VCardModule::parseResponse)
 	}
 
 	/**
@@ -90,11 +99,13 @@ class VCardModule(override val context: Context) : XmppModule {
 		val iq = iq {
 			type = IQType.Set
 			ownJid?.let {
-				to = it.toString().toJID()
+				to = it.toString()
+					.toJID()
 			}
 			addChild(vcard.element)
 		}
-		return context.request.iq(iq).map {}
+		return context.request.iq(iq)
+			.map {}
 	}
 
 	private fun processEvent(event: PubSubItemEvent) {
@@ -106,14 +117,15 @@ class VCardModule(override val context: Context) : XmppModule {
 				if (it.isSuccess) {
 					context.eventBus.fire(VCardUpdatedEvent(jid.bareJID, it.getOrNull()))
 				}
-			}.send()
+			}
+				.send()
 		} else {
 			context.eventBus.fire(VCardUpdatedEvent(jid.bareJID, null))
 		}
 	}
 
 	private fun parseResponse(iq: Element): VCard {
-		val vCard = iq.getChildrenNS("vcard", XMLNS) ?: throw  XMPPException(ErrorCondition.BadRequest)
+		val vCard = iq.getChildrenNS("vcard", XMLNS) ?: throw XMPPException(ErrorCondition.BadRequest)
 		return VCard(vCard)
 	}
 

@@ -116,9 +116,8 @@ abstract class AbstractSocketSessionController(final override val halcyon: Abstr
 	}
 
 	private fun bindResource() {
-		val resource = halcyon.config.account?.resource
 		halcyon.modules.getModule<BindModule>(BindModule.TYPE)
-			.boundAs(resource)
+			.bind()
 			.send()
 	}
 

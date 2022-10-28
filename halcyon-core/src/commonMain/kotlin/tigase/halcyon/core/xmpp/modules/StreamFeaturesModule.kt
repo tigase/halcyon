@@ -19,6 +19,7 @@ package tigase.halcyon.core.xmpp.modules
 
 import tigase.halcyon.core.Context
 import tigase.halcyon.core.Scope
+import tigase.halcyon.core.builder.XmppModuleProvider
 import tigase.halcyon.core.eventbus.Event
 import tigase.halcyon.core.modules.XmppModule
 import tigase.halcyon.core.xml.Element
@@ -31,11 +32,16 @@ data class StreamFeaturesEvent(val features: Element) : Event(TYPE) {
 	}
 }
 
-class StreamFeaturesModule(override val context: Context) : XmppModule {
+interface StreamFeaturesModuleConfig
 
-	companion object {
+class StreamFeaturesModule(override val context: Context) : XmppModule, StreamFeaturesModuleConfig {
 
-		const val TYPE = "StreamFeaturesModule"
+	companion object : XmppModuleProvider<StreamFeaturesModule, StreamFeaturesModuleConfig> {
+
+		override val TYPE = "StreamFeaturesModule"
+		override fun instance(context: Context): StreamFeaturesModule = StreamFeaturesModule(context)
+
+		override fun configure(module: StreamFeaturesModule, cfg: StreamFeaturesModuleConfig.() -> Unit) = module.cfg()
 	}
 
 	override val type = TYPE

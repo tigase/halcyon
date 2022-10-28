@@ -19,23 +19,31 @@ package tigase.halcyon.core.xmpp.modules.discovery
 
 import kotlinx.serialization.Serializable
 import tigase.halcyon.core.Context
+import tigase.halcyon.core.builder.XmppModuleProvider
 import tigase.halcyon.core.eventbus.Event
 import tigase.halcyon.core.modules.Criteria
 import tigase.halcyon.core.modules.Criterion
 import tigase.halcyon.core.modules.XmppModule
 import tigase.halcyon.core.requests.RequestBuilder
-
 import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xml.response
 import tigase.halcyon.core.xmpp.*
-import tigase.halcyon.core.xmpp.modules.BindModule
 import tigase.halcyon.core.xmpp.modules.caps.EntityCapabilitiesModule
 import tigase.halcyon.core.xmpp.stanzas.IQ
 import tigase.halcyon.core.xmpp.stanzas.IQType
 import tigase.halcyon.core.xmpp.stanzas.iq
 import tigase.halcyon.core.xmpp.stanzas.wrap
 
-class DiscoveryModule(override val context: Context) : XmppModule {
+interface DiscoveryModuleConfiguration {
+
+	var clientName: String
+	var clientVersion: String
+	var clientCategory: String
+	var clientType: String
+
+}
+
+class DiscoveryModule(override val context: Context) : XmppModule, DiscoveryModuleConfiguration {
 
 	@Serializable
 	data class Identity(val category: String, val type: String, val name: String?)
@@ -51,24 +59,29 @@ class DiscoveryModule(override val context: Context) : XmppModule {
 	@Serializable
 	data class Items(val jid: JID, val node: String?, val items: List<Item>)
 
-	companion object {
+	companion object : XmppModuleProvider<DiscoveryModule, DiscoveryModuleConfiguration> {
 
 		const val XMLNS = "http://jabber.org/protocol/disco"
-		const val TYPE = XMLNS
+		override val TYPE = XMLNS
 		const val XMLNS_INFO = "$XMLNS#info"
 		const val XMLNS_ITEMS = "$XMLNS#items"
+		override fun instance(context: Context): DiscoveryModule = DiscoveryModule(context)
+
+		override fun configure(module: DiscoveryModule, cfg: DiscoveryModuleConfiguration.() -> Unit) = module.cfg()
+
 	}
 
 	override val type: String = TYPE
-	override val criteria: Criteria =
-		Criterion.or(Criterion.chain(Criterion.name("iq"), Criterion.nameAndXmlns("query", XMLNS_INFO)),
-					 Criterion.chain(Criterion.name("iq"), Criterion.nameAndXmlns("query", XMLNS_ITEMS)))
+	override val criteria: Criteria = Criterion.or(
+		Criterion.chain(Criterion.name("iq"), Criterion.nameAndXmlns("query", XMLNS_INFO)),
+		Criterion.chain(Criterion.name("iq"), Criterion.nameAndXmlns("query", XMLNS_ITEMS))
+	)
 	override val features: Array<String> = arrayOf(XMLNS_INFO, XMLNS_ITEMS)
 
-	var clientName = "Halcyon Based Client"
-	var clientVersion = "1.0.0"
-	var clientCategory = "client"
-	var clientType = "bot"
+	override var clientName = "Halcyon Based Client"
+	override var clientVersion = "1.0.0"
+	override var clientCategory = "client"
+	override var clientType = "bot"
 
 	private val detailsProviders = mutableListOf<NodeDetailsProvider>()
 
@@ -78,7 +91,8 @@ class DiscoveryModule(override val context: Context) : XmppModule {
 			if (node == null) listOf(getClientIdentity()) else emptyList()
 
 		override fun getFeatures(sender: BareJID?, node: String?): List<String> =
-			if (node == null) context.modules.getAvailableFeatures().toList() else emptyList()
+			if (node == null) context.modules.getAvailableFeatures()
+				.toList() else emptyList()
 
 		override fun getItems(sender: BareJID?, node: String?): List<Item> = emptyList()
 
@@ -116,13 +130,13 @@ class DiscoveryModule(override val context: Context) : XmppModule {
 		if (identities.isEmpty() || features.isEmpty()) throw XMPPException(ErrorCondition.ItemNotFound)
 
 		context.writer.writeDirectly(response(iq) {
-			"query"{
+			"query" {
 				xmlns = XMLNS_INFO
 				node?.let {
 					attribute("node", it)
 				}
 				identities.forEach { identity ->
-					"identity"{
+					"identity" {
 						attribute("category", identity.category)
 						attribute("type", identity.type)
 						identity.name?.let {
@@ -132,7 +146,7 @@ class DiscoveryModule(override val context: Context) : XmppModule {
 				}
 
 				features.forEach { feature ->
-					"feature"{
+					"feature" {
 						attribute("var", feature)
 					}
 				}
@@ -142,7 +156,8 @@ class DiscoveryModule(override val context: Context) : XmppModule {
 
 	private fun processGetItems(iq: IQ) {
 		val node = iq.getChildrenNS("query", XMLNS_ITEMS)?.attributes?.get("node")
-		val items = detailsProviders.map { it.getItems(iq.from?.bareJID, node) }.flatten()
+		val items = detailsProviders.map { it.getItems(iq.from?.bareJID, node) }
+			.flatten()
 
 //		if (node == CommandsModule.NODE) {
 //			val module = context.modules.getModuleOrNull<CommandsModule>(CommandsModule.TYPE) ?: throw XMPPException(
@@ -152,14 +167,14 @@ class DiscoveryModule(override val context: Context) : XmppModule {
 //		}
 
 		context.writer.writeDirectly(response(iq) {
-			"query"{
+			"query" {
 				xmlns = XMLNS_ITEMS
 				node?.let {
 					attribute("node", it)
 				}
 
 				items.forEach { item ->
-					"item"{
+					"item" {
 						attribute("jid", item.jid.toString())
 						item.node?.let { attribute("node", it) }
 						item.name?.let { attribute("name", it) }
@@ -179,14 +194,15 @@ class DiscoveryModule(override val context: Context) : XmppModule {
 		val stanza = iq {
 			type = IQType.Get
 			if (jid != null) to = jid
-			"query"{
+			"query" {
 				xmlns = XMLNS_INFO
 				node?.let {
 					attribute("node", it)
 				}
 			}
 		}
-		return context.request.iq(stanza).map(this@DiscoveryModule::buildInfo)
+		return context.request.iq(stanza)
+			.map(this@DiscoveryModule::buildInfo)
 	}
 
 	private fun buildInfo(response: Element): Info {
@@ -194,12 +210,16 @@ class DiscoveryModule(override val context: Context) : XmppModule {
 		val node = query.attributes["node"]
 		val jid = JID.parse(response.attributes["from"]!!)
 
-		val identities = query.getChildren("identity").map {
-			Identity(it.attributes["category"]!!, it.attributes["type"]!!, it.attributes["name"])
-		}.toList()
-		val features = query.getChildren("feature").map {
-			it.attributes["var"]!!
-		}.toList()
+		val identities = query.getChildren("identity")
+			.map {
+				Identity(it.attributes["category"]!!, it.attributes["type"]!!, it.attributes["name"])
+			}
+			.toList()
+		val features = query.getChildren("feature")
+			.map {
+				it.attributes["var"]!!
+			}
+			.toList()
 
 		return Info(jid, node, identities, features)
 	}
@@ -219,24 +239,27 @@ class DiscoveryModule(override val context: Context) : XmppModule {
 								consumer.invoke(inf)
 							}
 						}
-					}.send()
+					}
+						.send()
 				}
 			}
-		}.send()
+		}
+			.send()
 	}
 
 	fun items(jid: JID?, node: String? = null): RequestBuilder<Items, IQ> {
 		val stanza = iq {
 			type = IQType.Get
 			if (jid != null) to = jid
-			"query"{
+			"query" {
 				xmlns = XMLNS_ITEMS
 				node?.let {
 					attribute("node", it)
 				}
 			}
 		}
-		return context.request.iq(stanza).map(this@DiscoveryModule::buildItems)
+		return context.request.iq(stanza)
+			.map(this@DiscoveryModule::buildItems)
 	}
 
 	private fun buildItems(response: Element): Items {
@@ -244,9 +267,11 @@ class DiscoveryModule(override val context: Context) : XmppModule {
 		val node = query.attributes["node"]
 		val jid = JID.parse(response.attributes["from"]!!)
 
-		val items = query.getChildren("item").map {
-			Item(JID.parse(it.attributes["jid"]!!), it.attributes["name"], it.attributes["node"])
-		}.toList()
+		val items = query.getChildren("item")
+			.map {
+				Item(JID.parse(it.attributes["jid"]!!), it.attributes["name"], it.attributes["node"])
+			}
+			.toList()
 
 		return Items(jid, node, items)
 	}
@@ -257,11 +282,13 @@ class DiscoveryModule(override val context: Context) : XmppModule {
 		val ownJid = context.boundJID?.bareJID ?: return
 		info(JID.parse(ownJid.toString())).response {
 			if (it.isSuccess) {
-				it.getOrNull()?.let { info ->
-					context.eventBus.fire(AccountFeaturesReceivedEvent(info.identities, info.features))
-				}
+				it.getOrNull()
+					?.let { info ->
+						context.eventBus.fire(AccountFeaturesReceivedEvent(info.identities, info.features))
+					}
 			}
-		}.send()
+		}
+			.send()
 	}
 
 	internal fun discoverServerFeatures() {
@@ -273,11 +300,13 @@ class DiscoveryModule(override val context: Context) : XmppModule {
 			val ownJid = context.boundJID?.bareJID ?: return
 			info(JID.parse(ownJid.domain)).response {
 				if (it.isSuccess) {
-					it.getOrNull()?.let { info ->
-						context.eventBus.fire(ServerFeaturesReceivedEvent(info.identities, info.features))
-					}
+					it.getOrNull()
+						?.let { info ->
+							context.eventBus.fire(ServerFeaturesReceivedEvent(info.identities, info.features))
+						}
 				}
-			}.send()
+			}
+				.send()
 		}
 	}
 }

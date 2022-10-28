@@ -18,6 +18,7 @@
 package tigase.halcyon.core.xmpp.modules.receipts
 
 import tigase.halcyon.core.Context
+import tigase.halcyon.core.builder.XmppModuleProvider
 import tigase.halcyon.core.eventbus.Event
 import tigase.halcyon.core.modules.Criteria
 import tigase.halcyon.core.modules.HasInterceptors
@@ -35,22 +36,39 @@ import tigase.halcyon.core.xmpp.stanzas.MessageType
 import tigase.halcyon.core.xmpp.stanzas.message
 import tigase.halcyon.core.xmpp.toJID
 
-data class MessageDeliveryReceiptEvent(val jid: JID, val msgId: String) : Event(TYPE) { companion object {
-
-	const val TYPE = "tigase.halcyon.core.xmpp.modules.receipts.MessageDeliveryReceiptEvent"
-}
-}
-
-class DeliveryReceiptsModule(override val context: Context) : XmppModule, HasInterceptors, StanzaInterceptor {
-
-	enum class Mode { All,
-		Off
-	}
+data class MessageDeliveryReceiptEvent(val jid: JID, val msgId: String) : Event(TYPE) {
 
 	companion object {
 
+		const val TYPE = "tigase.halcyon.core.xmpp.modules.receipts.MessageDeliveryReceiptEvent"
+	}
+}
+
+interface DeliveryReceiptsModuleConfig {
+
+	enum class Mode {
+
+		All,
+		Off
+	}
+
+	var autoSendReceived: Boolean
+	var mode: Mode
+
+}
+
+class DeliveryReceiptsModule(override val context: Context) : XmppModule, HasInterceptors, StanzaInterceptor,
+															  DeliveryReceiptsModuleConfig {
+
+	companion object : XmppModuleProvider<DeliveryReceiptsModule, DeliveryReceiptsModuleConfig> {
+
 		const val XMLNS = "urn:xmpp:receipts"
-		const val TYPE = XMLNS
+		override val TYPE = XMLNS
+
+		override fun instance(context: Context): DeliveryReceiptsModule = DeliveryReceiptsModule(context)
+
+		override fun configure(module: DeliveryReceiptsModule, cfg: DeliveryReceiptsModuleConfig.() -> Unit) =
+			module.cfg()
 	}
 
 	override val criteria: Criteria? = null
@@ -58,8 +76,8 @@ class DeliveryReceiptsModule(override val context: Context) : XmppModule, HasInt
 	override val type = TYPE
 	override val stanzaInterceptors: Array<StanzaInterceptor> = arrayOf(this)
 
-	var autoSendReceived = false
-	var mode: Mode = Mode.All
+	override var autoSendReceived = false
+	override var mode: DeliveryReceiptsModuleConfig.Mode = DeliveryReceiptsModuleConfig.Mode.All
 
 	override fun initialize() {
 	}
@@ -71,31 +89,33 @@ class DeliveryReceiptsModule(override val context: Context) : XmppModule, HasInt
 		if (element.attributes["type"] == MessageType.Error.value) return element
 		val from = element.attributes["from"]?.toJID() ?: return element
 
-		element.getReceiptReceivedID()?.let { id -> context.eventBus.fire(MessageDeliveryReceiptEvent(from, id)) }
+		element.getReceiptReceivedID()
+			?.let { id -> context.eventBus.fire(MessageDeliveryReceiptEvent(from, id)) }
 
-		if (autoSendReceived) element.getChildrenNS("request", XMLNS)?.let {
-			element.attributes["id"]?.let { id ->
-				val resp = message {
-					element.attributes["from"]?.let {
-						attribute("to", it)
+		if (autoSendReceived) element.getChildrenNS("request", XMLNS)
+			?.let {
+				element.attributes["id"]?.let { id ->
+					val resp = message {
+						element.attributes["from"]?.let {
+							attribute("to", it)
+						}
+						element.attributes["type"]?.let {
+							attribute("type", it)
+						}
+						"received" {
+							xmlns = XMLNS
+							attribute("id", id)
+						}
 					}
-					element.attributes["type"]?.let {
-						attribute("type", it)
-					}
-					"received"{
-						xmlns = XMLNS
-						attribute("id", id)
-					}
+					context.writer.writeDirectly(resp)
 				}
-				context.writer.writeDirectly(resp)
 			}
-		}
 		return element
 	}
 
 	fun received(jid: JID, originId: String): RequestBuilder<Unit, Message> = context.request.message(message {
 		to = jid
-		"received"{
+		"received" {
 			xmlns = XMLNS
 			attribute("id", originId)
 		}
@@ -109,7 +129,7 @@ class DeliveryReceiptsModule(override val context: Context) : XmppModule, HasInt
 		if (element.getChildrenNS("received", XMLNS) != null) return element
 		if (element.getFirstChild("body") == null) return element
 
-		if (mode == Mode.All) element.add(element("request") {
+		if (mode == DeliveryReceiptsModuleConfig.Mode.All) element.add(element("request") {
 			xmlns = XMLNS
 		})
 		return element
@@ -124,5 +144,6 @@ fun Element?.isDeliveryReceiptRequested(): Boolean =
 	this != null && this.getChildrenNS("request", DeliveryReceiptsModule.XMLNS) != null
 
 fun Element.getReceiptReceivedID(): String? {
-	return this.getChildrenNS("received", DeliveryReceiptsModule.XMLNS)?.let { it.attributes["id"] }
+	return this.getChildrenNS("received", DeliveryReceiptsModule.XMLNS)
+		?.let { it.attributes["id"] }
 }

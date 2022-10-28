@@ -20,6 +20,7 @@ package tigase.halcyon.core.xmpp.modules
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import tigase.halcyon.core.Context
+import tigase.halcyon.core.builder.XmppModuleProvider
 import tigase.halcyon.core.modules.AbstractXmppIQModule
 import tigase.halcyon.core.modules.Criterion
 import tigase.halcyon.core.requests.RequestBuilder
@@ -38,10 +39,14 @@ class PingModule(context: Context) : AbstractXmppIQModule(
 	)
 ) {
 
-	companion object {
+	companion object : XmppModuleProvider<PingModule, Any> {
 
 		const val XMLNS = "urn:xmpp:ping"
-		const val TYPE = XMLNS
+		override val TYPE = XMLNS
+		override fun configure(module: PingModule, cfg: Any.() -> Unit) = module.cfg()
+
+		override fun instance(context: Context): PingModule = PingModule(context)
+
 	}
 
 	fun ping(jid: JID? = null): RequestBuilder<Pong, IQ> {
@@ -52,7 +57,7 @@ class PingModule(context: Context) : AbstractXmppIQModule(
 				xmlns = XMLNS
 			}
 		}
-		var time0:Instant = Clock.System.now()
+		var time0: Instant = Clock.System.now()
 		return context.request.iq(stanza)
 			.onSend { time0 = Clock.System.now() }
 			.map { Pong(Clock.System.now() - time0) }

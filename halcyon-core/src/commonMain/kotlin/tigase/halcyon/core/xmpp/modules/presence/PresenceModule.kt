@@ -18,6 +18,7 @@
 package tigase.halcyon.core.xmpp.modules.presence
 
 import tigase.halcyon.core.Context
+import tigase.halcyon.core.builder.XmppModuleProvider
 import tigase.halcyon.core.eventbus.Event
 import tigase.halcyon.core.logger.LoggerFactory
 import tigase.halcyon.core.modules.Criterion
@@ -47,7 +48,13 @@ data class ContactChangeStatusEvent(
 	}
 }
 
-class PresenceModule(override val context: Context) : XmppModule {
+interface PresenceModuleConfig {
+
+	var store: PresenceStore
+
+}
+
+class PresenceModule(override val context: Context) : XmppModule, PresenceModuleConfig {
 
 	private val log = LoggerFactory.logger("tigase.halcyon.core.xmpp.modules.presence.PresenceModule")
 
@@ -55,11 +62,14 @@ class PresenceModule(override val context: Context) : XmppModule {
 	override val criteria = Criterion.name(Presence.NAME)
 	override val features: Array<String>? = null
 
-	var store: PresenceStore = DefaultPresenceStore()
+	override var store: PresenceStore = DefaultPresenceStore()
 
-	companion object {
+	companion object : XmppModuleProvider<PresenceModule, PresenceModuleConfig> {
 
-		const val TYPE = "PresenceModule"
+		override val TYPE = "PresenceModule"
+		override fun instance(context: Context): PresenceModule = PresenceModule(context)
+
+		override fun configure(module: PresenceModule, cfg: PresenceModuleConfig.() -> Unit) = module.cfg()
 	}
 
 	override fun initialize() {
@@ -82,10 +92,11 @@ class PresenceModule(override val context: Context) : XmppModule {
 
 		if (presence.type == null || presence.type == PresenceType.Unavailable || presence.type == PresenceType.Error) {
 			val bestPresence = getBestPresenceOf(fromJID.bareJID) ?: presence
-			context.eventBus.fire(ContactChangeStatusEvent(fromJID.bareJID,
-														   bestPresence.status,
-														   bestPresence,
-														   presence))
+			context.eventBus.fire(
+				ContactChangeStatusEvent(
+					fromJID.bareJID, bestPresence.status, bestPresence, presence
+				)
+			)
 		}
 	}
 
@@ -122,8 +133,10 @@ class PresenceModule(override val context: Context) : XmppModule {
 			val comp: String by lazy { "${(500 - presence.priority)}:${100 + presence.typeAndShow().ordinal}" }
 		}
 
-		return store.getPresences(jid).filter { presence -> presence.type == null }
-			.map { presence -> Envelope(presence) }.minByOrNull { envelope -> envelope.comp }?.presence
+		return store.getPresences(jid)
+			.filter { presence -> presence.type == null }
+			.map { presence -> Envelope(presence) }
+			.minByOrNull { envelope -> envelope.comp }?.presence
 	}
 
 	fun getPresenceOf(jid: JID): Presence? {
@@ -131,7 +144,8 @@ class PresenceModule(override val context: Context) : XmppModule {
 	}
 
 	fun getResources(jid: BareJID): List<JID> {
-		return store.getPresences(jid).mapNotNull { p -> p.from }
+		return store.getPresences(jid)
+			.mapNotNull { p -> p.from }
 	}
 
 }

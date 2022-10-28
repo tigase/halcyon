@@ -22,6 +22,7 @@ import tigase.halcyon.core.ClearedEvent
 import tigase.halcyon.core.Context
 import tigase.halcyon.core.Scope
 import tigase.halcyon.core.TickEvent
+import tigase.halcyon.core.builder.XmppModuleProvider
 import tigase.halcyon.core.connector.ReceivedXMLElementEvent
 import tigase.halcyon.core.connector.SentXMLElementEvent
 import tigase.halcyon.core.eventbus.Event
@@ -39,7 +40,9 @@ import tigase.halcyon.core.xmpp.stanzas.IQ
 import tigase.halcyon.core.xmpp.stanzas.Message
 import tigase.halcyon.core.xmpp.stanzas.Presence
 
-class StreamManagementModule(override val context: Context) : XmppModule, InlineProtocol {
+interface StreamManagementModuleConfig
+
+class StreamManagementModule(override val context: Context) : XmppModule, InlineProtocol, StreamManagementModuleConfig {
 
 	@Serializable
 	class ResumptionContext {
@@ -80,28 +83,15 @@ class StreamManagementModule(override val context: Context) : XmppModule, Inline
 
 	}
 
-	companion object {
+	companion object : XmppModuleProvider<StreamManagementModule, StreamManagementModuleConfig> {
 
 		const val XMLNS = "urn:xmpp:sm:3"
-		const val TYPE = XMLNS
+		override val TYPE = XMLNS
+		override fun instance(context: Context): StreamManagementModule = StreamManagementModule(context)
 
-//		fun get_Context(sessionObject: SessionObject): ResumptionContext {
-//			var ctx = sessionObject.getProperty<ResumptionContext>(
-//				SessionObject.Scope.Session, STREAM_CONTEXT
-//			)
-//			if (ctx == null) {
-//				ctx = ResumptionContext()
-//				sessionObject.setProperty(SessionObject.Scope.Session, STREAM_CONTEXT, ctx)
-//			}
-//			return ctx
-//		}
+		override fun configure(module: StreamManagementModule, cfg: StreamManagementModuleConfig.() -> Unit) =
+			module.cfg()
 
-//		fun isAckEnable(sessionObject: SessionObject) = getContext(sessionObject).isAckEnabled
-//
-//		fun isResumptionAvailable(sessionObject: SessionObject) =
-//			getContext(sessionObject).let { ctx -> ctx.resID != null && ctx.isResumeEnabled }
-//
-//		fun getLocationAddress(sessionObject: SessionObject) = getContext(sessionObject).location
 	}
 
 	var resumptionContext: ResumptionContext by property(Scope.Session) { ResumptionContext() }

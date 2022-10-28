@@ -66,7 +66,7 @@ class SocketConnectorTest {
 	@Test
 	fun testConnector() {
 		val client = Halcyon(createConfiguration {
-			account {
+			auth {
 				userJID = "testuser@tigase.org".toBareJID()
 				password { "testuserpassword" }
 			}

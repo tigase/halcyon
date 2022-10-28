@@ -20,6 +20,7 @@ package tigase.halcyon.core.xmpp.modules.commands
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import tigase.halcyon.core.Context
+import tigase.halcyon.core.builder.XmppModuleProvider
 import tigase.halcyon.core.exceptions.HalcyonException
 import tigase.halcyon.core.modules.Criteria
 import tigase.halcyon.core.modules.Criterion
@@ -29,7 +30,6 @@ import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xml.response
 import tigase.halcyon.core.xmpp.*
 import tigase.halcyon.core.xmpp.forms.JabberDataForm
-import tigase.halcyon.core.xmpp.modules.BindModule
 import tigase.halcyon.core.xmpp.modules.discovery.DiscoveryModule
 import tigase.halcyon.core.xmpp.modules.discovery.NodeDetailsProvider
 import tigase.halcyon.core.xmpp.stanzas.IQ
@@ -214,13 +214,20 @@ interface AdHocResponse {
 
 }
 
-class CommandsModule(override val context: Context) : XmppModule {
+interface CommandsModuleConfig
 
-	companion object {
+class CommandsModule(override val context: Context) : XmppModule, CommandsModuleConfig {
+
+	companion object : XmppModuleProvider<CommandsModule, CommandsModuleConfig> {
 
 		const val XMLNS = "http://jabber.org/protocol/commands"
-		const val TYPE = XMLNS
+		override val TYPE = XMLNS
 		const val NODE = XMLNS
+
+		override fun instance(context: Context): CommandsModule = CommandsModule(context)
+
+		override fun configure(module: CommandsModule, cfg: CommandsModuleConfig.() -> Unit) = module.cfg()
+
 	}
 
 	override val type = TYPE
@@ -304,15 +311,18 @@ class CommandsModule(override val context: Context) : XmppModule {
 		val adHoc = registeredCommands[nodeName] ?: throw XMPPException(ErrorCondition.ItemNotFound, "Unknown command.")
 		if (!adHoc.isAllowed(sender)) throw XMPPException(ErrorCondition.Forbidden)
 
-		val action = Action.values().firstOrNull { it.xmppValue == cmdElement.attributes["action"] }
+		val action = Action.values()
+			.firstOrNull { it.xmppValue == cmdElement.attributes["action"] }
 
-		val form = cmdElement.getChildrenNS("x", JabberDataForm.XMLNS)?.let { JabberDataForm(it) }
+		val form = cmdElement.getChildrenNS("x", JabberDataForm.XMLNS)
+			?.let { JabberDataForm(it) }
 
 		val adHocRequest = AdHocRequestImpl(stanza, adHoc, form, action)
-		cmdElement.attributes["sessionid"]?.let { sessionId -> sessions[sessionId] }?.let {
-			adHocRequest.adHocSession = it
-			it.lastAccessDate = Clock.System.now()
-		}
+		cmdElement.attributes["sessionid"]?.let { sessionId -> sessions[sessionId] }
+			?.let {
+				adHocRequest.adHocSession = it
+				it.lastAccessDate = Clock.System.now()
+			}
 		val adHocResponse = AdHocResponseImpl()
 
 		adHoc.process(adHocRequest, adHocResponse)
@@ -322,15 +332,16 @@ class CommandsModule(override val context: Context) : XmppModule {
 		}
 
 		context.writer.writeDirectly(response(stanza) {
-			"command"{
+			"command" {
 				xmlns = XMLNS
 				attributes["node"] = nodeName
-				adHocRequest.getSessionOrNull()?.let {
-					attributes["sessionid"] = it.sessionId
-				}
+				adHocRequest.getSessionOrNull()
+					?.let {
+						attributes["sessionid"] = it.sessionId
+					}
 				attributes["status"] = adHocResponse.status.xmppValue
 				if (adHocResponse.actions.isNotEmpty()) {
-					"actions"{
+					"actions" {
 						adHocResponse.defaultAction?.let {
 							attributes["execute"] = it.xmppValue
 						}
@@ -343,7 +354,7 @@ class CommandsModule(override val context: Context) : XmppModule {
 					addChild(it.element)
 				}
 				adHocResponse.notes.forEach { note ->
-					"note"{
+					"note" {
 						attributes["type"] = when (note) {
 							is Note.Info -> "info"
 							is Note.Error -> "error"
@@ -355,10 +366,11 @@ class CommandsModule(override val context: Context) : XmppModule {
 			}
 		})
 
-		adHocRequest.getSessionOrNull()?.let {
-			if (adHocResponse.status == Status.Executing) sessions[it.sessionId] = it as AdHocSessionImpl
-			else sessions.remove(it.sessionId)
-		}
+		adHocRequest.getSessionOrNull()
+			?.let {
+				if (adHocResponse.status == Status.Executing) sessions[it.sessionId] = it as AdHocSessionImpl
+				else sessions.remove(it.sessionId)
+			}
 
 	}
 
@@ -378,7 +390,7 @@ class CommandsModule(override val context: Context) : XmppModule {
 		return context.request.iq {
 			to = jid
 			type = IQType.Set
-			"command"{
+			"command" {
 				xmlns = XMLNS
 				attributes["node"] = command
 				if (action != null) attributes["action"] = action.xmppValue
@@ -387,30 +399,40 @@ class CommandsModule(override val context: Context) : XmppModule {
 					addChild(form)
 				}
 			}
-		}.map(::createCommandResult)
+		}
+			.map(::createCommandResult)
 	}
 
 	private fun createCommandResult(iq: IQ): AdHocResult {
-		val cmd = iq.getChildrenNS("command", XMLNS) ?: throw XMPPException(ErrorCondition.NotAcceptable,
-																			"Missing command element.")
+		val cmd = iq.getChildrenNS("command", XMLNS) ?: throw XMPPException(
+			ErrorCondition.NotAcceptable, "Missing command element."
+		)
 		val sessionId = cmd.attributes["sessionid"]
 		val node = cmd.attributes["node"] ?: throw XMPPException(ErrorCondition.NotAcceptable, "Missing node name.")
-		val status = Status.values().first { it.xmppValue == cmd.attributes["status"] }
+		val status = Status.values()
+			.first { it.xmppValue == cmd.attributes["status"] }
 
-		val form = cmd.getChildrenNS("x", JabberDataForm.XMLNS)?.let { JabberDataForm(it) }
+		val form = cmd.getChildrenNS("x", JabberDataForm.XMLNS)
+			?.let { JabberDataForm(it) }
 
 		val acEl = cmd.getFirstChild("actions")
 
 		val (actions, defaultAction) = if (acEl != null) {
-			val d = Action.values().firstOrNull { it.xmppValue == acEl.attributes["execute"] }
-			val asz =
-				acEl.children.mapNotNull { c -> Action.values().firstOrNull { it.xmppValue == c.name } }.toTypedArray()
+			val d = Action.values()
+				.firstOrNull { it.xmppValue == acEl.attributes["execute"] }
+			val asz = acEl.children.mapNotNull { c ->
+				Action.values()
+					.firstOrNull { it.xmppValue == c.name }
+			}
+				.toTypedArray()
 			Pair(asz, d)
 		} else {
 			Pair<Array<Action>, Action?>(emptyArray(), null)
 		}
 
-		val notes = cmd.getChildren("note").map(this@CommandsModule::createNote).toTypedArray()
+		val notes = cmd.getChildren("note")
+			.map(this@CommandsModule::createNote)
+			.toTypedArray()
 
 		return AdHocResult(iq.from, node, sessionId, status, form, actions, defaultAction, notes)
 	}
@@ -430,8 +452,7 @@ class CommandsModule(override val context: Context) : XmppModule {
 	}
 
 	private fun getCommandItems(sender: BareJID): List<DiscoveryModule.Item> {
-		val jid = context.boundJID
-			?: throw XMPPException(ErrorCondition.ServiceUnavailable)
+		val jid = context.boundJID ?: throw XMPPException(ErrorCondition.ServiceUnavailable)
 		return registeredCommands.filter { it.value.isAllowed(sender) }
 			.map { DiscoveryModule.Item(jid, it.value.name, it.key) }
 	}

@@ -18,6 +18,7 @@
 package tigase.halcyon.core.xmpp.modules.spam
 
 import tigase.halcyon.core.Context
+import tigase.halcyon.core.builder.XmppModuleProvider
 import tigase.halcyon.core.eventbus.Event
 import tigase.halcyon.core.exceptions.HalcyonException
 import tigase.halcyon.core.modules.AbstractXmppIQModule
@@ -74,30 +75,38 @@ sealed class BlockingCommandEvent : Event(TYPE) {
 	class UnblockedAll : BlockingCommandEvent()
 }
 
+interface BlockingCommandModuleConfig
+
 /**
  * Blocking command module.
  *
  * Module implements [Blocking Command](https://xmpp.org/extensions/xep-0191.html) and [Spam Reporting](https://xmpp.org/extensions/xep-0377.html) extension.
  */
-class BlockingCommandModule(override val context: Context) : AbstractXmppIQModule(context,
-																				  TYPE,
-																				  arrayOf(XMLNS),
-																				  Criterion.chain(Criterion.name(IQ.NAME),
-																								  Criterion.xmlns(XMLNS))) {
+class BlockingCommandModule(override val context: Context) : BlockingCommandModuleConfig, AbstractXmppIQModule(
+	context, TYPE, arrayOf(XMLNS), Criterion.chain(Criterion.name(IQ.NAME), Criterion.xmlns(XMLNS))
+) {
 
-	companion object {
+	companion object : XmppModuleProvider<BlockingCommandModule, BlockingCommandModuleConfig> {
 
 		const val XMLNS = "urn:xmpp:blocking"
 		const val XMLNS_REPORT = "urn:xmpp:reporting:0"
-		const val TYPE = XMLNS
+		override val TYPE = XMLNS
+
+		override fun instance(context: Context): BlockingCommandModule = BlockingCommandModule(context)
+
+		override fun configure(module: BlockingCommandModule, cfg: BlockingCommandModuleConfig.() -> Unit) =
+			module.cfg()
+
 	}
 
 	override fun processGet(element: IQ) = throw XMPPException(ErrorCondition.BadRequest)
 
 	override fun processSet(element: IQ) {
 		if (element.from != null) throw XMPPException(ErrorCondition.NotAllowed)
-		element.getFirstChild("block")?.let { processBlock(it) }
-		element.getFirstChild("unblock")?.let { processUnblock(it) }
+		element.getFirstChild("block")
+			?.let { processBlock(it) }
+		element.getFirstChild("unblock")
+			?.let { processUnblock(it) }
 	}
 
 	private fun processUnblock(unblock: Element) {
@@ -105,25 +114,28 @@ class BlockingCommandModule(override val context: Context) : AbstractXmppIQModul
 		if (items.isEmpty()) {
 			context.eventBus.fire(BlockingCommandEvent.UnblockedAll())
 		} else {
-			items.filter { it.name == "item" }.forEach {
-				context.eventBus.fire(BlockingCommandEvent.Unblocked(it.attributes["jid"]!!.toBareJID()))
-			}
+			items.filter { it.name == "item" }
+				.forEach {
+					context.eventBus.fire(BlockingCommandEvent.Unblocked(it.attributes["jid"]!!.toBareJID()))
+				}
 		}
 	}
 
 	private fun processBlock(block: Element) {
-		block.children.filter { it.name == "item" }.forEach {
-			val (reason, text) = it.getChildrenNS("report", XMLNS_REPORT)?.let { report ->
-				val text = report.getFirstChild("text")?.value
-				val reason = when {
-					report.getFirstChild("abuse") != null -> Reason.Abuse
-					report.getFirstChild("spam") != null -> Reason.Spam
-					else -> Reason.NotSpecified
-				}
-				Pair(reason, text)
-			} ?: Pair<Reason, String?>(Reason.NotSpecified, null)
-			context.eventBus.fire(BlockingCommandEvent.Blocked(it.attributes["jid"]!!.toBareJID(), reason, text))
-		}
+		block.children.filter { it.name == "item" }
+			.forEach {
+				val (reason, text) = it.getChildrenNS("report", XMLNS_REPORT)
+					?.let { report ->
+						val text = report.getFirstChild("text")?.value
+						val reason = when {
+							report.getFirstChild("abuse") != null -> Reason.Abuse
+							report.getFirstChild("spam") != null -> Reason.Spam
+							else -> Reason.NotSpecified
+						}
+						Pair(reason, text)
+					} ?: Pair<Reason, String?>(Reason.NotSpecified, null)
+				context.eventBus.fire(BlockingCommandEvent.Blocked(it.attributes["jid"]!!.toBareJID(), reason, text))
+			}
 	}
 
 	/**
@@ -132,10 +144,11 @@ class BlockingCommandModule(override val context: Context) : AbstractXmppIQModul
 	 */
 	fun retrieveList(): RequestBuilder<List<BareJID>, IQ> = context.request.iq {
 		type = IQType.Get
-		"blocklist"{
+		"blocklist" {
 			xmlns = XMLNS
 		}
-	}.map { value -> createRetrieveResponse(value) }
+	}
+		.map { value -> createRetrieveResponse(value) }
 
 	private fun createRetrieveResponse(stanza: IQ): List<BareJID> {
 		return stanza.getChildrenNS("blocklist", XMLNS)?.children?.filter { it.name == "item" }
@@ -151,24 +164,25 @@ class BlockingCommandModule(override val context: Context) : AbstractXmppIQModul
 	fun block(jid: BareJID, reason: Reason = Reason.NotSpecified, text: String? = null): RequestBuilder<Unit, IQ> =
 		context.request.iq {
 			type = IQType.Set
-			"block"{
+			"block" {
 				xmlns = XMLNS
-				"item"{
+				"item" {
 					attributes["jid"] = jid.toString()
 					if (reason != Reason.NotSpecified) {
-						"report"{
+						"report" {
 							xmlns = "urn:xmpp:reporting:0"
 							when (reason) {
-								Reason.Abuse -> "abuse"{}
-								Reason.Spam -> "spam"{}
+								Reason.Abuse -> "abuse" {}
+								Reason.Spam -> "spam" {}
 								else -> throw HalcyonException("Unsupported reason $reason")
 							}
-							text?.let { "text"{ +it } }
+							text?.let { "text" { +it } }
 						}
 					}
 				}
 			}
-		}.map { }
+		}
+			.map { }
 
 	/**
 	 * Prepares request to unblock specific contacts.
@@ -176,15 +190,16 @@ class BlockingCommandModule(override val context: Context) : AbstractXmppIQModul
 	 */
 	fun unblock(vararg jids: BareJID): RequestBuilder<Unit, IQ> = context.request.iq {
 		type = IQType.Set
-		"unblock"{
+		"unblock" {
 			xmlns = XMLNS
 			jids.forEach { jid ->
-				"item"{
+				"item" {
 					attributes["jid"] = jid.toString()
 				}
 			}
 		}
-	}.map { }
+	}
+		.map { }
 
 	/**
 	 * Prepares request to unblock all blocked contacts.

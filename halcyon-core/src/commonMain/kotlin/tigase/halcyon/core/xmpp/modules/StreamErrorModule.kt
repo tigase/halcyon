@@ -18,6 +18,7 @@
 package tigase.halcyon.core.xmpp.modules
 
 import tigase.halcyon.core.Context
+import tigase.halcyon.core.builder.XmppModuleProvider
 import tigase.halcyon.core.eventbus.Event
 import tigase.halcyon.core.modules.Criterion
 import tigase.halcyon.core.modules.XmppModule
@@ -39,11 +40,16 @@ data class StreamErrorEvent(val element: Element, val condition: StreamError, va
 	}
 }
 
-class StreamErrorModule(override val context: Context) : XmppModule {
+interface StreamErrorModuleConfig
+class StreamErrorModule(override val context: Context) : XmppModule, StreamErrorModuleConfig {
 
-	companion object {
+	companion object : XmppModuleProvider<StreamErrorModule, StreamErrorModuleConfig> {
 
-		const val TYPE = "StreamErrorModule"
+		override val TYPE = "StreamErrorModule"
+		override fun instance(context: Context): StreamErrorModule = StreamErrorModule(context)
+
+		override fun configure(module: StreamErrorModule, cfg: StreamErrorModuleConfig.() -> Unit) = module.cfg()
+
 		const val XMLNS = "urn:ietf:params:xml:ns:xmpp-streams"
 	}
 
@@ -65,7 +71,8 @@ class StreamErrorModule(override val context: Context) : XmppModule {
 	}
 
 	override fun process(element: Element) {
-		val c = element.getChildrenNS(XMLNS).first()
+		val c = element.getChildrenNS(XMLNS)
+			.first()
 		val e = getByElementName(c.name)
 
 		context.eventBus.fire(StreamErrorEvent(element, e, c))

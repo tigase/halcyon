@@ -1,12 +1,10 @@
 package tigase.halcyon.core.builder
 
+import tigase.halcyon.core.Context
 import tigase.halcyon.core.Halcyon
-import tigase.halcyon.core.configuration.Account
-import tigase.halcyon.core.configuration.Configuration
-import tigase.halcyon.core.configuration.Connection
-import tigase.halcyon.core.configuration.Registration
+import tigase.halcyon.core.configuration.*
 import tigase.halcyon.core.exceptions.HalcyonException
-import tigase.halcyon.core.xmpp.BareJID
+import tigase.halcyon.core.modules.ModulesManager
 import tigase.halcyon.core.xmpp.forms.JabberDataForm
 
 @DslMarker
@@ -18,38 +16,18 @@ interface ConfigItemBuilder<T> {
 
 }
 
+interface ConnectionConfigItemBuilder<T> {
+
+	fun build(root: ConfigurationBuilder, defaultDomain: String?): T
+
+}
+
 class ConfigurationException : HalcyonException {
 
 	constructor() : super()
 	constructor(message: String?) : super(message)
 	constructor(message: String?, cause: Throwable?) : super(message, cause)
 	constructor(cause: Throwable?) : super(cause)
-}
-
-@ConfigurationDSLMarker
-class AccountBuilder : ConfigItemBuilder<Account> {
-
-	var userJID: BareJID? = null
-
-	var resource: String? = null
-
-	var authzIdJID: BareJID? = null
-
-	var passwordCallback: (() -> String)? = null
-
-	fun password(callback: (() -> String)?) {
-		this.passwordCallback = callback
-	}
-
-	override fun build(root: ConfigurationBuilder): Account {
-		return Account(
-			userJID = userJID ?: throw ConfigurationException("User JID not specified."),
-			passwordCallback = passwordCallback ?: throw ConfigurationException("Password not specified."),
-			resource = resource,
-			authzIdJID = authzIdJID
-		)
-	}
-
 }
 
 @ConfigurationDSLMarker
@@ -81,50 +59,61 @@ class RegistrationBuilder : ConfigItemBuilder<Registration> {
 }
 
 @ConfigurationDSLMarker
+class ModulesConfigBuilder(val modulesManager: ModulesManager, val context: Context)
+
+@ConfigurationDSLMarker
 class ConfigurationBuilder {
 
-	var account: AccountBuilder? = null
-		private set
+	private var modulesConfigBuilder: (ModulesConfigBuilder.() -> Unit)? = null
+	var auth: ConfigItemBuilder<out SaslConfig>? = null
+		set(value) {
+			if (field != null) throw ConfigurationException("Authentication is configured already.")
+			field = value
+		}
 
-	var connection: (ConfigItemBuilder<out Connection>)? = null
+	var connection: (ConnectionConfigItemBuilder<out Connection>)? = null
 		internal set
 
 	var registration: RegistrationBuilder? = null
 		private set
 
-	fun account(init: AccountBuilder.() -> Unit) {
-		val n = AccountBuilder()
+	fun auth(init: JIDPasswordAuthConfigBuilder.() -> Unit) {
+		val n = JIDPasswordAuthConfigBuilder()
 		n.init()
-		this.account = n
+		this.auth = n
 	}
 
-//	fun connection(init: ConnectionBuilder.() -> Unit) {
-//		val n = ConnectionBuilder()
-//		n.init()
-//		this.connection = n
-//	}
-
-	fun createAccount(init: RegistrationBuilder.() -> Unit) {
+	fun register(init: RegistrationBuilder.() -> Unit) {
 		val n = RegistrationBuilder()
 		n.init()
 		this.registration = n
 	}
 
+	fun modules(init: ModulesConfigBuilder.() -> Unit) {
+		this.modulesConfigBuilder = init
+	}
+
 	fun build(): Configuration {
-		val account = this.account?.build(this)
+		val account = this.auth?.build(this)
 		val registration = this.registration?.build(this)
 		if (account == null && registration == null) throw ConfigurationException("Account or account creation details must be provided")
 
+		val domain = if (account is DomainProvider) {
+			account.domain
+		} else registration?.domain ?: throw ConfigurationException("Cannot determine domain.")
+		val connection = connection?.build(this, domain) ?: defaultConnectionConfiguration(this, domain)
+
 		return Configuration(
-			account = account,
+			sasl = account,
 			registration = registration,
-			connection = connection?.build(this) ?: defaultConnectionConfiguration(this)
+			connection = connection,
+			modulesConfigurator = this.modulesConfigBuilder
 		)
 	}
 
 }
 
-expect fun defaultConnectionConfiguration(accountBuilder: ConfigurationBuilder): Connection
+expect fun defaultConnectionConfiguration(accountBuilder: ConfigurationBuilder, defaultDomain: String): Connection
 
 fun createConfiguration(init: ConfigurationBuilder.() -> Unit): Configuration {
 	val n = ConfigurationBuilder()

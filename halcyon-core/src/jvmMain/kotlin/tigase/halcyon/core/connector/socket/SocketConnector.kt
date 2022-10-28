@@ -20,6 +20,7 @@ package tigase.halcyon.core.connector.socket
 import org.minidns.dnssec.DnssecValidationFailedException
 import tigase.halcyon.core.Halcyon
 import tigase.halcyon.core.configuration.domain
+import tigase.halcyon.core.configuration.userJID
 import tigase.halcyon.core.connector.*
 import tigase.halcyon.core.exceptions.HalcyonException
 import tigase.halcyon.core.excutor.TickExecutor
@@ -226,7 +227,7 @@ class SocketConnector(halcyon: Halcyon) : AbstractConnector(halcyon) {
 	override fun start() {
 		state = State.Connecting
 
-		val userJid = halcyon.config.account?.userJID
+		val userJid = halcyon.config.userJID
 		try {
 			createSocket { sckt ->
 				this.socket = sckt
@@ -318,7 +319,7 @@ class SocketConnector(halcyon: Halcyon) : AbstractConnector(halcyon) {
 	}
 
 	fun restartStream() {
-		val userJid = halcyon.config.account?.userJID
+		val userJid = halcyon.config.userJID
 
 		val sb = buildString {
 			append("<stream:stream xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams' ")

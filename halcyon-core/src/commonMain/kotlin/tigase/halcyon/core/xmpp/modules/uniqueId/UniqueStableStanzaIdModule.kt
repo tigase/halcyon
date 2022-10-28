@@ -18,6 +18,7 @@
 package tigase.halcyon.core.xmpp.modules.uniqueId
 
 import tigase.halcyon.core.Context
+import tigase.halcyon.core.builder.XmppModuleProvider
 import tigase.halcyon.core.modules.Criteria
 import tigase.halcyon.core.modules.HasInterceptors
 import tigase.halcyon.core.modules.StanzaInterceptor
@@ -26,15 +27,22 @@ import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xmpp.BareJID
 import tigase.halcyon.core.xmpp.ErrorCondition
 import tigase.halcyon.core.xmpp.XMPPException
-import tigase.halcyon.core.xmpp.modules.BindModule
 import tigase.halcyon.core.xmpp.stanzas.Message
 
-class UniqueStableStanzaIdModule(override val context: Context) : XmppModule, HasInterceptors, StanzaInterceptor {
+interface UniqueStableStanzaIdModuleConfig
 
-	companion object {
+class UniqueStableStanzaIdModule(override val context: Context) : XmppModule, HasInterceptors, StanzaInterceptor,
+																  UniqueStableStanzaIdModuleConfig {
+
+	companion object : XmppModuleProvider<UniqueStableStanzaIdModule, UniqueStableStanzaIdModuleConfig> {
 
 		const val XMLNS = "urn:xmpp:sid:0"
-		const val TYPE = XMLNS
+		override val TYPE = XMLNS
+
+		override fun instance(context: Context): UniqueStableStanzaIdModule = UniqueStableStanzaIdModule(context)
+
+		override fun configure(module: UniqueStableStanzaIdModule, cfg: UniqueStableStanzaIdModuleConfig.() -> Unit) =
+			module.cfg()
 	}
 
 	override val type = TYPE
