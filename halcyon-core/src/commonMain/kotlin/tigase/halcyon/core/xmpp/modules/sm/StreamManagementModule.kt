@@ -22,7 +22,7 @@ import tigase.halcyon.core.ClearedEvent
 import tigase.halcyon.core.Context
 import tigase.halcyon.core.Scope
 import tigase.halcyon.core.TickEvent
-import tigase.halcyon.core.builder.XmppModuleProvider
+import tigase.halcyon.core.modules.XmppModuleProvider
 import tigase.halcyon.core.connector.ReceivedXMLElementEvent
 import tigase.halcyon.core.connector.SentXMLElementEvent
 import tigase.halcyon.core.eventbus.Event

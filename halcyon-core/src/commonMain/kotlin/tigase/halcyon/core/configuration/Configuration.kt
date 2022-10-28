@@ -41,8 +41,7 @@ interface Connection
 data class Configuration(
 	val sasl: SaslConfig?,
 	val connection: Connection,
-	val registration: Registration? = null,
-	internal val modulesConfigurator: (ModulesConfigBuilder.() -> Unit)? = null,
+	val registration: Registration? = null
 )
 
 val Configuration.domain: String

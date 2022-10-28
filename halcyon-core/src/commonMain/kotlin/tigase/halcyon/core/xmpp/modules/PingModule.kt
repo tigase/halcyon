@@ -20,7 +20,7 @@ package tigase.halcyon.core.xmpp.modules
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import tigase.halcyon.core.Context
-import tigase.halcyon.core.builder.XmppModuleProvider
+import tigase.halcyon.core.modules.XmppModuleProvider
 import tigase.halcyon.core.modules.AbstractXmppIQModule
 import tigase.halcyon.core.modules.Criterion
 import tigase.halcyon.core.requests.RequestBuilder

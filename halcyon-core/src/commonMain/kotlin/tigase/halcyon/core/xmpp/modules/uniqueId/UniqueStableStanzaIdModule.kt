@@ -18,7 +18,7 @@
 package tigase.halcyon.core.xmpp.modules.uniqueId
 
 import tigase.halcyon.core.Context
-import tigase.halcyon.core.builder.XmppModuleProvider
+import tigase.halcyon.core.modules.XmppModuleProvider
 import tigase.halcyon.core.modules.Criteria
 import tigase.halcyon.core.modules.HasInterceptors
 import tigase.halcyon.core.modules.StanzaInterceptor

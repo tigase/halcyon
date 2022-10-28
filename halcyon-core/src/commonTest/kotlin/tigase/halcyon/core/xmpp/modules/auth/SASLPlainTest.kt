@@ -16,7 +16,7 @@ class SASLPlainTest {
 				userJID = "user01@example.com".toBareJID()
 				password { "secret" }
 			}
-		}
+		}.build()
 		val ctx = SASLContext()
 		val sasl = SASLPlain()
 
@@ -36,7 +36,7 @@ class SASLPlainTest {
 				authenticationName = "user01"
 				password { "secret" }
 			}
-		}
+		}.build()
 		val ctx = SASLContext()
 		val sasl = SASLPlain()
 
@@ -56,7 +56,7 @@ class SASLPlainTest {
 				authenticationName = "differentusername"
 				password { "secret" }
 			}
-		}
+		}.build()
 		val ctx = SASLContext()
 		val sasl = SASLPlain()
 

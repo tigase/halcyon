@@ -18,7 +18,7 @@
 package tigase.halcyon.core.xmpp.modules.presence
 
 import tigase.halcyon.core.Context
-import tigase.halcyon.core.builder.XmppModuleProvider
+import tigase.halcyon.core.modules.XmppModuleProvider
 import tigase.halcyon.core.eventbus.Event
 import tigase.halcyon.core.logger.LoggerFactory
 import tigase.halcyon.core.modules.Criterion

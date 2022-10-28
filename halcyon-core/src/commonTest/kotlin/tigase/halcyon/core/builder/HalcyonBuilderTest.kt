@@ -59,27 +59,27 @@ class HalcyonBuilderTest {
 
 	@Test
 	fun anonymous_auth() {
-		val cvg = createConfiguration {
+		val cvg = createHalcyon {
 			authAnonymous {
 				domain = "example.com"
 			}
 		}
-		assertEquals("example.com", cvg.domain)
-		assertIs<AnonymousSaslConfig>(cvg.sasl)
+		assertEquals("example.com", cvg.config.domain)
+		assertIs<AnonymousSaslConfig>(cvg.config.sasl)
 	}
 
 	@OptIn(ReflectionModuleManager::class)
 	@Test
 	fun modules_configuration() {
-		val cvg = createHalcyon {
+		val h = createHalcyon {
 			authAnonymous {
 				domain = "example.com"
 			}
+			bind {
+				resource = "blahblah"
+			}
 			modules {
 				install(PingModule)
-				install(BindModule) {
-					resource = "blahblah"
-				}
 				install(SASLModule) {
 					enabled = false
 				}
@@ -89,20 +89,20 @@ class HalcyonBuilderTest {
 			}
 		}
 
-		assertNull(cvg.getModuleOrNull(MessageModule))
-		assertNotNull(cvg.getModuleOrNull(PingModule))
-		assertNotNull(cvg.getModuleOrNull(BindModule))
+		assertNull(h.getModuleOrNull(MessageModule))
+		assertNotNull(h.getModuleOrNull(PingModule))
+		assertEquals("blahblah", assertNotNull(h.getModuleOrNull(BindModule)).resource)
 
-		assertNotNull(cvg.getModuleOrNull(SASLModule)).let {
-			assertFalse(it.enabled)
-		}
-		assertNotNull(cvg.getModuleOrNull(SASL2Module)).let {
-			assertTrue(it.enabled)
-		}
+		assertFalse(assertNotNull(h.getModuleOrNull(SASLModule)).enabled)
+		assertTrue(assertNotNull(h.getModuleOrNull(SASL2Module)).enabled)
 
-		assertEquals("blahblah", cvg.getModule<BindModule>().resource)
-		assertFalse(cvg.getModule<SASLModule>().enabled)
-		assertTrue(cvg.getModule<SASL2Module>().enabled)
+		assertEquals("blahblah", h.getModule<BindModule>().resource)
+		assertFalse(h.getModule<SASLModule>().enabled)
+		assertTrue(h.getModule<SASL2Module>().enabled)
+
+		assertEquals("blahblah", h.getModule<BindModule>(BindModule.TYPE).resource)
+		assertFalse(h.getModule<SASLModule>(SASLModule.TYPE).enabled)
+		assertTrue(h.getModule<SASL2Module>(SASL2Module.TYPE).enabled)
 	}
 
 }

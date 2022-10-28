@@ -1,6 +1,7 @@
 package tigase
 
 import tigase.halcyon.core.AbstractHalcyon
+import tigase.halcyon.core.builder.ConfigurationBuilder
 import tigase.halcyon.core.builder.createConfiguration
 import tigase.halcyon.core.configuration.Configuration
 import tigase.halcyon.core.configuration.JIDPasswordSaslConfig
@@ -19,7 +20,7 @@ val dummyConfig = createConfiguration {
 	}
 }
 
-class DummyHalcyon(cf: Configuration = dummyConfig) : AbstractHalcyon(cf) {
+class DummyHalcyon(cf: ConfigurationBuilder = dummyConfig) : AbstractHalcyon(cf) {
 
 	val sentElements = mutableListOf<Element>()
 

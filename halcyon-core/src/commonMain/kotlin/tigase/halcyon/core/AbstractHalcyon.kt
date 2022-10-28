@@ -17,7 +17,8 @@
  */
 package tigase.halcyon.core
 
-import tigase.halcyon.core.builder.XmppModuleProvider
+import tigase.halcyon.core.builder.ConfigurationBuilder
+import tigase.halcyon.core.modules.XmppModuleProvider
 import tigase.halcyon.core.builder.initializeModules
 import tigase.halcyon.core.configuration.Configuration
 import tigase.halcyon.core.connector.*
@@ -40,28 +41,8 @@ import tigase.halcyon.core.xmpp.ErrorCondition
 import tigase.halcyon.core.xmpp.JID
 import tigase.halcyon.core.xmpp.XMPPException
 import tigase.halcyon.core.xmpp.modules.*
-import tigase.halcyon.core.xmpp.modules.auth.SASL2Module
 import tigase.halcyon.core.xmpp.modules.auth.SASLContext
-import tigase.halcyon.core.xmpp.modules.auth.SASLModule
-import tigase.halcyon.core.xmpp.modules.avatar.UserAvatarModule
-import tigase.halcyon.core.xmpp.modules.caps.EntityCapabilitiesModule
-import tigase.halcyon.core.xmpp.modules.carbons.MessageCarbonsModule
-import tigase.halcyon.core.xmpp.modules.chatmarkers.ChatMarkersModule
-import tigase.halcyon.core.xmpp.modules.chatstates.ChatStateModule
-import tigase.halcyon.core.xmpp.modules.commands.CommandsModule
-import tigase.halcyon.core.xmpp.modules.discovery.DiscoveryModule
-import tigase.halcyon.core.xmpp.modules.mam.MAMModule
-import tigase.halcyon.core.xmpp.modules.mix.MIXModule
-import tigase.halcyon.core.xmpp.modules.muc.MUCModule
-import tigase.halcyon.core.xmpp.modules.presence.PresenceModule
-import tigase.halcyon.core.xmpp.modules.pubsub.PubSubModule
-import tigase.halcyon.core.xmpp.modules.receipts.DeliveryReceiptsModule
-import tigase.halcyon.core.xmpp.modules.roster.RosterModule
-import tigase.halcyon.core.xmpp.modules.sims.ReferenceModule
 import tigase.halcyon.core.xmpp.modules.sm.StreamManagementModule
-import tigase.halcyon.core.xmpp.modules.spam.BlockingCommandModule
-import tigase.halcyon.core.xmpp.modules.uniqueId.UniqueStableStanzaIdModule
-import tigase.halcyon.core.xmpp.modules.vcard.VCardModule
 import tigase.halcyon.core.xmpp.stanzas.IQ
 import tigase.halcyon.core.xmpp.stanzas.IQType
 
@@ -83,7 +64,7 @@ data class TickEvent(val counter: Long) : Event(TYPE) {
 }
 
 @Suppress("LeakingThis")
-abstract class AbstractHalcyon(override val config: Configuration) : Context, PacketWriter {
+abstract class AbstractHalcyon(configurator: ConfigurationBuilder) : Context, PacketWriter {
 
 	var running: Boolean = false
 		private set
@@ -117,7 +98,7 @@ abstract class AbstractHalcyon(override val config: Configuration) : Context, Pa
 	val internalDataStore = InternalDataStore()
 	val requestsManager: RequestsManager = RequestsManager()
 	private val executor = tigase.halcyon.core.excutor.Executor()
-
+	override val config: Configuration
 	var state = State.Stopped
 		internal set(value) {
 			val old = field
@@ -127,6 +108,8 @@ abstract class AbstractHalcyon(override val config: Configuration) : Context, Pa
 
 	init {
 		modules.context = this
+		this.config = configurator.build()
+
 		eventBus.register(ReceivedXMLElementEvent.TYPE, ::processReceivedXmlElementEvent)
 		eventBus.register(SessionController.SessionControllerEvents.TYPE, ::onSessionControllerEvent)
 		eventBus.register<TickEvent>(TickEvent.TYPE) { requestsManager.findOutdated() }
@@ -158,7 +141,7 @@ abstract class AbstractHalcyon(override val config: Configuration) : Context, Pa
 //		modules.register(SASL2Module(this))
 //		modules.register(InBandRegistrationModule(this))
 
-		modules.initializeModules()
+		modules.initializeModules(configurator)
 	}
 
 	protected open fun onSessionControllerEvent(event: SessionController.SessionControllerEvents) {

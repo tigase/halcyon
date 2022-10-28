@@ -17,6 +17,7 @@
  */
 package tigase.halcyon.core
 
+import tigase.halcyon.core.builder.ConfigurationBuilder
 import tigase.halcyon.core.configuration.Configuration
 import tigase.halcyon.core.connector.AbstractConnector
 import tigase.halcyon.core.connector.socket.SocketConnector
@@ -29,7 +30,7 @@ import tigase.halcyon.core.logger.LoggerFactory
 import tigase.halcyon.core.xmpp.modules.auth.SASLEvent
 import java.util.*
 
-actual class Halcyon actual constructor(configuration: Configuration) : AbstractHalcyon(configuration) {
+actual class Halcyon actual constructor(configuration: ConfigurationBuilder) : AbstractHalcyon(configuration) {
 
 	private val log = LoggerFactory.logger("tigase.halcyon.core.Halcyon")
 

@@ -109,7 +109,7 @@ class SASLScramSHATest {
 				authenticationName = "differentusername"
 				password { "pencil" }
 			}
-		}
+		}.build()
 		val context = SASLContext()
 
 		// first client message
@@ -135,7 +135,7 @@ class SASLScramSHATest {
 				authenticationName = "user"
 				password { "pencil" }
 			}
-		}
+		}.build()
 		val context = SASLContext()
 
 		// first client message
@@ -160,7 +160,7 @@ class SASLScramSHATest {
 				userJID = "user@example.com".toBareJID()
 				password { "pencil" }
 			}
-		}
+		}.build()
 		val context = SASLContext()
 
 		// first client message
@@ -206,7 +206,7 @@ class SASLScramSHATest {
 				userJID = "user@example.com".toBareJID()
 				password { "pencil" }
 			}
-		}
+		}.build()
 		val context = SASLContext()
 
 		// first client message
@@ -254,7 +254,7 @@ class SASLScramSHATest {
 				userJID = "user@example.com".toBareJID()
 				password { "pencil" }
 			}
-		}
+		}.build()
 		val context = SASLContext()
 
 		// first client message

@@ -26,6 +26,16 @@ import tigase.halcyon.core.xml.Element
 import kotlin.properties.ReadWriteProperty
 import kotlin.reflect.KProperty
 
+interface XmppModuleProvider<out M : XmppModule, Configuration : Any> {
+
+	val TYPE: String
+
+	fun instance(context: Context): M
+
+	fun configure(module: @UnsafeVariance M, cfg: Configuration.() -> Unit)
+
+}
+
 interface XmppModule {
 
 	val type: String

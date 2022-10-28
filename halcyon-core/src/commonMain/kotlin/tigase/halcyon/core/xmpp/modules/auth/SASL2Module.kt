@@ -3,7 +3,7 @@ package tigase.halcyon.core.xmpp.modules.auth
 import com.soywiz.krypto.sha1
 import tigase.halcyon.core.AbstractHalcyon
 import tigase.halcyon.core.Context
-import tigase.halcyon.core.builder.XmppModuleProvider
+import tigase.halcyon.core.modules.XmppModuleProvider
 import tigase.halcyon.core.connector.SessionController
 import tigase.halcyon.core.exceptions.HalcyonException
 import tigase.halcyon.core.logger.Level
@@ -16,15 +16,17 @@ import tigase.halcyon.core.xmpp.ErrorCondition
 import tigase.halcyon.core.xmpp.XMPPException
 import tigase.halcyon.core.xmpp.modules.discovery.DiscoveryModule
 
-class SASL2Module(override val context: AbstractHalcyon) : XmppModule, SASLModuleConfig {
+interface SASL2ModuleConfig : SASLModuleConfig
+
+class SASL2Module(override val context: AbstractHalcyon) : XmppModule, SASL2ModuleConfig {
 
 	private val log = LoggerFactory.logger("tigase.halcyon.core.xmpp.modules.auth.SASL2Module")
 
-	companion object : XmppModuleProvider<SASL2Module, SASLModuleConfig> {
+	companion object : XmppModuleProvider<SASL2Module, SASL2ModuleConfig> {
 
 		const val XMLNS = "urn:xmpp:sasl:2"
 		override val TYPE = "tigase.halcyon.core.xmpp.modules.auth.SASL2Module"
-		override fun configure(module: SASL2Module, cfg: SASLModuleConfig.() -> Unit) = module.cfg()
+		override fun configure(module: SASL2Module, cfg: SASL2ModuleConfig.() -> Unit) = module.cfg()
 
 		override fun instance(context: Context): SASL2Module = SASL2Module(context as AbstractHalcyon)
 	}

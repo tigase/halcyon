@@ -3,16 +3,10 @@ package tigase.halcyon.core.builder
 import tigase.halcyon.core.Context
 import tigase.halcyon.core.modules.ModulesManager
 import tigase.halcyon.core.modules.XmppModule
+import tigase.halcyon.core.modules.XmppModuleProvider
 
-interface XmppModuleProvider<out M : XmppModule, Configuration : Any> {
-
-	val TYPE: String
-
-	fun instance(context: Context): M
-
-	fun configure(module: @UnsafeVariance M, cfg: Configuration.() -> Unit)
-
-}
+@ConfigurationDSLMarker
+class ModulesConfigBuilder(val modulesManager: ModulesManager, val context: Context)
 
 fun <M : XmppModule, B : Any> ModulesConfigBuilder.install(
 	provider: XmppModuleProvider<M, B>,
@@ -27,10 +21,10 @@ fun <M : XmppModule, B : Any> ModulesConfigBuilder.install(
 	}
 }
 
-internal fun ModulesManager.initializeModules() {
-	val cfg = this.context.config.modulesConfigurator ?: return
-
-	val builder = ModulesConfigBuilder(this, this.context)
-	builder.cfg()
+internal fun ModulesManager.initializeModules(configurator: ConfigurationBuilder) {
+	configurator.modulesConfigBuilders.forEach { cfg ->
+		val builder = ModulesConfigBuilder(this, this.context)
+		builder.cfg()
+	}
 
 }

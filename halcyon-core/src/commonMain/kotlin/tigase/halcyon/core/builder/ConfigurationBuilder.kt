@@ -58,13 +58,12 @@ class RegistrationBuilder : ConfigItemBuilder<Registration> {
 
 }
 
-@ConfigurationDSLMarker
-class ModulesConfigBuilder(val modulesManager: ModulesManager, val context: Context)
 
 @ConfigurationDSLMarker
 class ConfigurationBuilder {
 
-	private var modulesConfigBuilder: (ModulesConfigBuilder.() -> Unit)? = null
+	internal val modulesConfigBuilders = mutableListOf<(ModulesConfigBuilder.() -> Unit)>()
+
 	var auth: ConfigItemBuilder<out SaslConfig>? = null
 		set(value) {
 			if (field != null) throw ConfigurationException("Authentication is configured already.")
@@ -90,7 +89,7 @@ class ConfigurationBuilder {
 	}
 
 	fun modules(init: ModulesConfigBuilder.() -> Unit) {
-		this.modulesConfigBuilder = init
+		this.modulesConfigBuilders += init
 	}
 
 	fun build(): Configuration {
@@ -107,7 +106,6 @@ class ConfigurationBuilder {
 			sasl = account,
 			registration = registration,
 			connection = connection,
-			modulesConfigurator = this.modulesConfigBuilder
 		)
 	}
 
@@ -115,14 +113,14 @@ class ConfigurationBuilder {
 
 expect fun defaultConnectionConfiguration(accountBuilder: ConfigurationBuilder, defaultDomain: String): Connection
 
-fun createConfiguration(init: ConfigurationBuilder.() -> Unit): Configuration {
+fun createConfiguration(init: ConfigurationBuilder.() -> Unit): ConfigurationBuilder {
 	val n = ConfigurationBuilder()
 	n.init()
-	return n.build()
+	return n
 }
 
 fun createHalcyon(init: ConfigurationBuilder.() -> Unit): Halcyon {
 	val n = ConfigurationBuilder()
 	n.init()
-	return Halcyon(n.build())
+	return Halcyon(n)
 }
