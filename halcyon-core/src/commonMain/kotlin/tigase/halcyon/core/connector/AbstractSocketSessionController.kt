@@ -48,24 +48,24 @@ abstract class AbstractSocketSessionController(final override val halcyon: Abstr
 	protected open fun processStreamFeaturesEvent(event: StreamFeaturesEvent) {
 		val authState = halcyon.authContext.state
 		val isResumptionAvailable =
-			halcyon.getModule<StreamManagementModule>(StreamManagementModule.TYPE).resumptionContext.isResumptionAvailable()
+			halcyon.getModuleOrNull(StreamManagementModule)?.resumptionContext?.isResumptionAvailable() ?: false
 
 
 		log.info { "authState=$authState; isResumptionAvailable=$isResumptionAvailable" }
 
 		if (authState == tigase.halcyon.core.xmpp.modules.auth.State.Unknown) {
 			if (!isResumptionAvailable) {
-				halcyon.modules.getModuleOrNull<StreamManagementModule>(StreamManagementModule.TYPE)
+				halcyon.getModuleOrNull(StreamManagementModule)
 					?.reset()
 			}
 
-			val sasl1Module = halcyon.getModule<SASLModule>(SASLModule.TYPE)
-			val sasl2Module = halcyon.getModule<SASL2Module>(SASL2Module.TYPE)
+			val sasl1Module = halcyon.getModuleOrNull(SASLModule)
+			val sasl2Module = halcyon.getModuleOrNull(SASL2Module)
 			val registrationModule = halcyon.getModuleOrNull<InBandRegistrationModule>(InBandRegistrationModule.TYPE)
 
-			if (sasl2Module.isAllowed(event.features)) {
+			if (sasl2Module?.isAllowed(event.features) == true) {
 				sasl2Module.startAuth(event.features)
-			} else if (sasl1Module.isAllowed(event.features)) {
+			} else if (sasl1Module?.isAllowed(event.features) == true) {
 				sasl1Module.startAuth(event.features)
 			} else if (registrationModule?.isAllowed(event.features) == true && halcyon.config.registration != null) {
 				processInBandRegistration()
@@ -73,10 +73,10 @@ abstract class AbstractSocketSessionController(final override val halcyon: Abstr
 		}
 		if (authState == tigase.halcyon.core.xmpp.modules.auth.State.Success) {
 			if (isResumptionAvailable) {
-				halcyon.modules.getModule<StreamManagementModule>(StreamManagementModule.TYPE)
+				halcyon.getModule(StreamManagementModule)
 					.resume()
-			} else if (halcyon.getModule<StreamFeaturesModule>(StreamFeaturesModule.TYPE)
-					.isFeatureAvailable("bind", BindModule.XMLNS)
+			} else if (halcyon.getModuleOrNull(StreamFeaturesModule)
+					?.isFeatureAvailable("bind", BindModule.XMLNS) == true
 			) {
 				bindResource()
 			}
@@ -116,9 +116,9 @@ abstract class AbstractSocketSessionController(final override val halcyon: Abstr
 	}
 
 	private fun bindResource() {
-		halcyon.modules.getModule<BindModule>(BindModule.TYPE)
-			.bind()
-			.send()
+		halcyon.getModuleOrNull(BindModule)
+			?.bind()
+			?.send() ?: throw HalcyonException("BindModule is required.")
 	}
 
 	private fun processEvent(event: Event) {
@@ -169,15 +169,15 @@ abstract class AbstractSocketSessionController(final override val halcyon: Abstr
 
 	private fun processBindSuccess() {
 		log.info("Binded")
-		halcyon.modules.getModuleOrNull<DiscoveryModule>(DiscoveryModule.TYPE)
+		halcyon.getModuleOrNull<DiscoveryModule>(DiscoveryModule.TYPE)
 			?.let {
 				it.discoverServerFeatures()
 				it.discoverAccountFeatures()
 			}
 		halcyon.eventBus.fire(SessionController.SessionControllerEvents.Successful())
-		halcyon.modules.getModuleOrNull<PresenceModule>(PresenceModule.TYPE)
+		halcyon.getModuleOrNull<PresenceModule>(PresenceModule.TYPE)
 			?.sendInitialPresence()
-		halcyon.modules.getModuleOrNull<RosterModule>(RosterModule.TYPE)
+		halcyon.getModuleOrNull<RosterModule>(RosterModule.TYPE)
 			?.rosterGet()
 			?.send()
 //		halcyon.modules.getModuleOrNull<StreamManagementModule>(StreamManagementModule.TYPE)?.enable()

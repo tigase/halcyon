@@ -19,10 +19,13 @@ package tigase.halcyon.core.modules
 
 import tigase.halcyon.core.ReflectionModuleManager
 import tigase.halcyon.core.builder.ConfigurationException
+import tigase.halcyon.core.logger.LoggerFactory
 import tigase.halcyon.core.xml.Element
 import kotlin.reflect.KClass
 
 class ModulesManager {
+
+	private val log = LoggerFactory.logger("tigase.halcyon.core.modules.ModulesManager")
 
 	lateinit var context: tigase.halcyon.core.Context
 
@@ -36,6 +39,7 @@ class ModulesManager {
 	private val modulesToInitialize = mutableListOf<XmppModule>()
 
 	fun register(module: XmppModule) {
+		log.fine { "Registering module '${module.type}'" }
 		if (modulesByType.containsKey(module.type)) throw ConfigurationException("Module '${module.type}' is installed already.")
 		modulesOrdered.add(module)
 		modulesByType[module.type] = module

@@ -18,8 +18,6 @@
 package tigase.halcyon.core
 
 import tigase.halcyon.core.builder.ConfigurationBuilder
-import tigase.halcyon.core.modules.XmppModuleProvider
-import tigase.halcyon.core.builder.initializeModules
 import tigase.halcyon.core.configuration.Configuration
 import tigase.halcyon.core.connector.*
 import tigase.halcyon.core.eventbus.Event
@@ -28,10 +26,7 @@ import tigase.halcyon.core.eventbus.EventHandler
 import tigase.halcyon.core.exceptions.HalcyonException
 import tigase.halcyon.core.logger.Level
 import tigase.halcyon.core.logger.LoggerFactory
-import tigase.halcyon.core.modules.ModulesManager
-import tigase.halcyon.core.modules.XmppModule
-import tigase.halcyon.core.modules.property
-import tigase.halcyon.core.modules.propertySimple
+import tigase.halcyon.core.modules.*
 import tigase.halcyon.core.requests.Request
 import tigase.halcyon.core.requests.RequestBuilderFactory
 import tigase.halcyon.core.requests.RequestsManager
@@ -114,34 +109,7 @@ abstract class AbstractHalcyon(configurator: ConfigurationBuilder) : Context, Pa
 		eventBus.register(SessionController.SessionControllerEvents.TYPE, ::onSessionControllerEvent)
 		eventBus.register<TickEvent>(TickEvent.TYPE) { requestsManager.findOutdated() }
 
-//		modules.register(DiscoveryModule(this))
-//		modules.register(RosterModule(this))
-//		modules.register(PresenceModule(this))
-//		modules.register(MIXModule(this))
-//		modules.register(MAMModule(this))
-//		modules.register(PubSubModule(this))
-//		modules.register(MessageCarbonsModule(this, ::processReceivedXmlElement))
-//		modules.register(MessageModule(this))
-//		modules.register(StreamManagementModule(this))
-//		modules.register(SASLModule(this))
-//		modules.register(BindModule(this))
-//		modules.register(PingModule(this))
-//		modules.register(StreamErrorModule(this))
-//		modules.register(StreamFeaturesModule(this))
-//		modules.register(EntityCapabilitiesModule(this))
-//		modules.register(UserAvatarModule(this))
-//		modules.register(VCardModule(this))
-//		modules.register(DeliveryReceiptsModule(this))
-//		modules.register(ChatStateModule(this))
-//		modules.register(ChatMarkersModule(this))
-//		modules.register(UniqueStableStanzaIdModule(this))
-//		modules.register(CommandsModule(this))
-//		modules.register(BlockingCommandModule(this))
-//		modules.register(MUCModule(this))
-//		modules.register(SASL2Module(this))
-//		modules.register(InBandRegistrationModule(this))
-
-		modules.initializeModules(configurator)
+		configurator.modulesConfigBuilder.initializeModules(modules)
 	}
 
 	protected open fun onSessionControllerEvent(event: SessionController.SessionControllerEvents) {
@@ -309,7 +277,7 @@ abstract class AbstractHalcyon(configurator: ConfigurationBuilder) : Context, Pa
 		logSendingStanza(stanza.stanza)
 		c.send(stanza.stanza.getAsString())
 
-		if (!getModule<StreamManagementModule>(StreamManagementModule.TYPE).resumptionContext.isAckActive) {
+		if (getModuleOrNull(StreamManagementModule)?.resumptionContext?.isAckActive==false) {
 			stanza.markAsSent()
 		}
 		eventBus.fire(SentXMLElementEvent(stanza.stanza, stanza))

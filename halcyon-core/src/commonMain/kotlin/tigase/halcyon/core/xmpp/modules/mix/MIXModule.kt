@@ -103,6 +103,8 @@ class MIXModule(override val context: Context) : XmppModule, RosterItemAnnotatio
 		override fun instance(context: Context): MIXModule = MIXModule(context)
 
 		override fun configure(module: MIXModule, cfg: MIXModuleConfig.() -> Unit) = module.cfg()
+
+		override fun requiredModules()= listOf(RosterModule,PubSubModule,MAMModule)
 	}
 
 	override val criteria: Criteria = Criterion.element(this@MIXModule::checkCriteria)

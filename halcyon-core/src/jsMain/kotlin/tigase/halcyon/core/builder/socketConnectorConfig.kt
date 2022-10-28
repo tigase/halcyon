@@ -3,17 +3,13 @@ package tigase.halcyon.core.builder
 import tigase.halcyon.core.connector.WebSocketConnectorConfig
 
 @ConfigurationDSLMarker
-class WebSocketConnectionBuilder : ConfigItemBuilder<WebSocketConnectorConfig> {
-
-	var domain: String? = null
+class WebSocketConnectionBuilder : ConnectionConfigItemBuilder<WebSocketConnectorConfig> {
 
 	var webSocketUrl: String? = null
 
-	override fun build(root: ConfigurationBuilder): WebSocketConnectorConfig {
-		val d = domain ?: root.auth?.userJID?.domain ?: root.registration?.domain
-		?: throw ConfigurationException("Cannot determine domain name.")
+	override fun build(root: ConfigurationBuilder,defaultDomain: String?): WebSocketConnectorConfig {
 		return WebSocketConnectorConfig(
-			webSocketUrl = webSocketUrl ?: "ws://$d:5290/"
+			webSocketUrl = webSocketUrl ?: "ws://$defaultDomain:5290/"
 		)
 	}
 }

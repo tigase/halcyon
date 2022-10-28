@@ -1,11 +1,30 @@
 package tigase.halcyon.core.builder
 
-import tigase.halcyon.core.Context
 import tigase.halcyon.core.Halcyon
 import tigase.halcyon.core.configuration.*
 import tigase.halcyon.core.exceptions.HalcyonException
-import tigase.halcyon.core.modules.ModulesManager
 import tigase.halcyon.core.xmpp.forms.JabberDataForm
+import tigase.halcyon.core.xmpp.modules.*
+import tigase.halcyon.core.xmpp.modules.auth.SASL2Module
+import tigase.halcyon.core.xmpp.modules.auth.SASLModule
+import tigase.halcyon.core.xmpp.modules.avatar.UserAvatarModule
+import tigase.halcyon.core.xmpp.modules.caps.EntityCapabilitiesModule
+import tigase.halcyon.core.xmpp.modules.carbons.MessageCarbonsModule
+import tigase.halcyon.core.xmpp.modules.chatmarkers.ChatMarkersModule
+import tigase.halcyon.core.xmpp.modules.chatstates.ChatStateModule
+import tigase.halcyon.core.xmpp.modules.commands.CommandsModule
+import tigase.halcyon.core.xmpp.modules.discovery.DiscoveryModule
+import tigase.halcyon.core.xmpp.modules.mam.MAMModule
+import tigase.halcyon.core.xmpp.modules.mix.MIXModule
+import tigase.halcyon.core.xmpp.modules.muc.MUCModule
+import tigase.halcyon.core.xmpp.modules.presence.PresenceModule
+import tigase.halcyon.core.xmpp.modules.pubsub.PubSubModule
+import tigase.halcyon.core.xmpp.modules.receipts.DeliveryReceiptsModule
+import tigase.halcyon.core.xmpp.modules.roster.RosterModule
+import tigase.halcyon.core.xmpp.modules.sm.StreamManagementModule
+import tigase.halcyon.core.xmpp.modules.spam.BlockingCommandModule
+import tigase.halcyon.core.xmpp.modules.uniqueId.UniqueStableStanzaIdModule
+import tigase.halcyon.core.xmpp.modules.vcard.VCardModule
 
 @DslMarker
 annotation class ConfigurationDSLMarker
@@ -58,11 +77,10 @@ class RegistrationBuilder : ConfigItemBuilder<Registration> {
 
 }
 
-
 @ConfigurationDSLMarker
 class ConfigurationBuilder {
 
-	internal val modulesConfigBuilders = mutableListOf<(ModulesConfigBuilder.() -> Unit)>()
+	internal val modulesConfigBuilder = ModulesConfigBuilder()
 
 	var auth: ConfigItemBuilder<out SaslConfig>? = null
 		set(value) {
@@ -89,7 +107,7 @@ class ConfigurationBuilder {
 	}
 
 	fun modules(init: ModulesConfigBuilder.() -> Unit) {
-		this.modulesConfigBuilders += init
+		this.modulesConfigBuilder.init()
 	}
 
 	fun build(): Configuration {
@@ -113,14 +131,55 @@ class ConfigurationBuilder {
 
 expect fun defaultConnectionConfiguration(accountBuilder: ConfigurationBuilder, defaultDomain: String): Connection
 
-fun createConfiguration(init: ConfigurationBuilder.() -> Unit): ConfigurationBuilder {
+fun createConfiguration(
+	initializeModules: Boolean = true,
+	init: ConfigurationBuilder.() -> Unit,
+): ConfigurationBuilder {
 	val n = ConfigurationBuilder()
+	if (initializeModules) n.initiateAllModules()
 	n.init()
 	return n
 }
 
-fun createHalcyon(init: ConfigurationBuilder.() -> Unit): Halcyon {
+fun createHalcyon(initializeModules: Boolean = true, init: ConfigurationBuilder.() -> Unit): Halcyon {
 	val n = ConfigurationBuilder()
+	if (initializeModules) n.initiateAllModules()
 	n.init()
 	return Halcyon(n)
+}
+
+fun ConfigurationBuilder.initiateRequiredModules() {
+	this.modulesConfigBuilder.install(StreamErrorModule)
+	this.modulesConfigBuilder.install(StreamFeaturesModule)
+	this.modulesConfigBuilder.install(BindModule)
+	this.modulesConfigBuilder.install(SASLModule)
+}
+
+fun ConfigurationBuilder.initiateAllModules() {
+	this.modulesConfigBuilder.install(DiscoveryModule)
+	this.modulesConfigBuilder.install(RosterModule)
+	this.modulesConfigBuilder.install(PresenceModule)
+	this.modulesConfigBuilder.install(MIXModule)
+	this.modulesConfigBuilder.install(MAMModule)
+	this.modulesConfigBuilder.install(PubSubModule)
+	this.modulesConfigBuilder.install(MessageCarbonsModule)
+	this.modulesConfigBuilder.install(MessageModule)
+	this.modulesConfigBuilder.install(StreamManagementModule)
+	this.modulesConfigBuilder.install(SASLModule)
+	this.modulesConfigBuilder.install(BindModule)
+	this.modulesConfigBuilder.install(PingModule)
+	this.modulesConfigBuilder.install(StreamErrorModule)
+	this.modulesConfigBuilder.install(StreamFeaturesModule)
+	this.modulesConfigBuilder.install(EntityCapabilitiesModule)
+	this.modulesConfigBuilder.install(UserAvatarModule)
+	this.modulesConfigBuilder.install(VCardModule)
+	this.modulesConfigBuilder.install(DeliveryReceiptsModule)
+	this.modulesConfigBuilder.install(ChatStateModule)
+	this.modulesConfigBuilder.install(ChatMarkersModule)
+	this.modulesConfigBuilder.install(UniqueStableStanzaIdModule)
+	this.modulesConfigBuilder.install(CommandsModule)
+	this.modulesConfigBuilder.install(BlockingCommandModule)
+	this.modulesConfigBuilder.install(MUCModule)
+	this.modulesConfigBuilder.install(SASL2Module)
+	this.modulesConfigBuilder.install(InBandRegistrationModule)
 }

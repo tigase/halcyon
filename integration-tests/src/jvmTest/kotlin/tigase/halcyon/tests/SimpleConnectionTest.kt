@@ -42,21 +42,11 @@ class SimpleConnectionTest {
 		assertEquals(
 			State.Success, halcyon.modules.getModule<SASLModule>().saslContext.state, "Client should be authenticated."
 		)
-		assertNotNull(halcyon.boundJID)
+		assertEquals("admin@sailboat.local".toBareJID() ,assertNotNull(halcyon.boundJID).bareJID)
 
-		var serverFeatues: List<String> = emptyList()
-		halcyon.getModule<DiscoveryModule>()
-			.info(halcyon.boundJID!!.domain.toJID())
-			.response {
-				it.onSuccess {
-					serverFeatues = it.features
-				}
-			}
-			.send()
 
 		halcyon.waitForAllResponses()
 		assertEquals(0, halcyon.requestsManager.getWaitingRequestsSize())
-		assertTrue(serverFeatues.isNotEmpty())
 		halcyon.disconnect()
 		assertEquals(AbstractHalcyon.State.Stopped, halcyon.state, "Client should be connected to server.")
 	}

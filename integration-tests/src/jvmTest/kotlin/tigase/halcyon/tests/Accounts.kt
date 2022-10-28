@@ -1,6 +1,7 @@
 package tigase.halcyon.tests
 
 import tigase.halcyon.core.Halcyon
+import tigase.halcyon.core.builder.initiateRequiredModules
 import tigase.halcyon.core.connector.ReceivedXMLElementEvent
 import tigase.halcyon.core.connector.SentXMLElementEvent
 import tigase.halcyon.core.xmpp.toBareJID

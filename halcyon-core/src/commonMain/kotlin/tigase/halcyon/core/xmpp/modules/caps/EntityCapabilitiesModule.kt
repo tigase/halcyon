@@ -20,11 +20,7 @@ package tigase.halcyon.core.xmpp.modules.caps
 import com.soywiz.krypto.sha1
 import kotlinx.serialization.Serializable
 import tigase.halcyon.core.*
-import tigase.halcyon.core.modules.XmppModuleProvider
-import tigase.halcyon.core.modules.Criteria
-import tigase.halcyon.core.modules.HasInterceptors
-import tigase.halcyon.core.modules.StanzaInterceptor
-import tigase.halcyon.core.modules.XmppModule
+import tigase.halcyon.core.modules.*
 import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xml.element
 import tigase.halcyon.core.xmpp.BareJID
@@ -61,6 +57,9 @@ class EntityCapabilitiesModule(override val context: Context) : XmppModule, HasI
 
 		override fun configure(module: EntityCapabilitiesModule, cfg: EntityCapabilitiesModuleConfig.() -> Unit) =
 			module.cfg()
+
+		override fun requiredModules() = listOf(DiscoveryModule, StreamFeaturesModule)
+
 	}
 
 	override val type: String = TYPE

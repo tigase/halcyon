@@ -228,6 +228,8 @@ class CommandsModule(override val context: Context) : XmppModule, CommandsModule
 
 		override fun configure(module: CommandsModule, cfg: CommandsModuleConfig.() -> Unit) = module.cfg()
 
+		override fun requiredModules()= listOf(DiscoveryModule)
+
 	}
 
 	override val type = TYPE

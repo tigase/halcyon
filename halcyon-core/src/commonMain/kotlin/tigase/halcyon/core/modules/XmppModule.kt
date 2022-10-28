@@ -34,6 +34,8 @@ interface XmppModuleProvider<out M : XmppModule, Configuration : Any> {
 
 	fun configure(module: @UnsafeVariance M, cfg: Configuration.() -> Unit)
 
+	fun requiredModules(): List<XmppModuleProvider<XmppModule, out Any>> = emptyList()
+
 }
 
 interface XmppModule {

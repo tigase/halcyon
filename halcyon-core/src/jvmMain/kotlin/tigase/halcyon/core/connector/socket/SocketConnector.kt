@@ -47,6 +47,7 @@ sealed class SocketConnectionErrorEvent : ConnectionErrorEvent() {
 	class Unknown(val caught: Throwable) : SocketConnectionErrorEvent() {
 
 		override fun toString(): String {
+			caught.printStackTrace()
 			return "tigase.halcyon.core.connector.socket.SocketConnectionErrorEvent.Unknown: " + caught.message
 		}
 	}
@@ -190,7 +191,7 @@ class SocketConnector(halcyon: Halcyon) : AbstractConnector(halcyon) {
 	private fun createSocket(completionHandler: (Socket) -> Unit) {
 		val hosts = mutableListOf<HostPort>()
 
-		val location = halcyon.getModule<StreamManagementModule>(StreamManagementModule.TYPE).resumptionContext.location
+		val location = halcyon.getModuleOrNull(StreamManagementModule)?.resumptionContext?.location
 		if (location != null) {
 			hosts += HostPort(location, config.port)
 		}

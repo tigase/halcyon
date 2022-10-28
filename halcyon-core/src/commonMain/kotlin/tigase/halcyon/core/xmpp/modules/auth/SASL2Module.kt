@@ -29,6 +29,8 @@ class SASL2Module(override val context: AbstractHalcyon) : XmppModule, SASL2Modu
 		override fun configure(module: SASL2Module, cfg: SASL2ModuleConfig.() -> Unit) = module.cfg()
 
 		override fun instance(context: Context): SASL2Module = SASL2Module(context as AbstractHalcyon)
+
+		override fun requiredModules()= listOf(DiscoveryModule)
 	}
 
 	override val type = TYPE

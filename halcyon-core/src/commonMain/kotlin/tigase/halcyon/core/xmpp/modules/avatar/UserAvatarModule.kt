@@ -52,6 +52,8 @@ class UserAvatarModule(override val context: Context) : XmppModule, UserAvatarMo
 
 		override fun configure(module: UserAvatarModule, cfg: UserAvatarModuleConfig.() -> Unit) = module.cfg()
 
+		override fun requiredModules() = listOf(PubSubModule)
+
 	}
 
 	private val log = LoggerFactory.logger("tigase.halcyon.core.xmpp.modules.avatar.UserAvatarModule")
