@@ -3,47 +3,50 @@
 # This file is distributed under the same license as the TigaseDoc package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2022.
 #
-#, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: TigaseDoc \n"
+"Project-Id-Version: TigaseDoc\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2022-10-19 16:20-0700\n"
-"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
-"Language-Team: LANGUAGE <LL@li.org>\n"
+"PO-Revision-Date: 2022-10-28 19:01+0000\n"
+"Last-Translator: Qian Luo <qian.luo@tigase.net>\n"
+"Language-Team: Chinese (Simplified) <http://translate.tigase.net/projects/"
+"halcyon/halcyon-documentation/zh_Hans/>\n"
+"Language: zh_CN\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"X-Generator: Weblate 4.11.2\n"
 "Generated-By: Babel 2.10.3\n"
 
 #: ../../Architecture.rst:2
 msgid "Design and implementation"
-msgstr ""
+msgstr "设计与实施"
 
 #: ../../Architecture.rst:5
 msgid "Tigase Halcyon"
-msgstr ""
+msgstr "Tigase Halcyon"
 
 #: ../../Architecture.rst:7
 msgid "**Halcyon** is a multiplatform extensible XMPP client library"
-msgstr ""
+msgstr "**Halcyon** 是一个多平台可扩展的 XMPP 客户端库"
 
 #: ../../Architecture.rst:10
 msgid "Design"
-msgstr ""
+msgstr "设计"
 
 #: ../../Architecture.rst:12
 msgid "|architecture|"
-msgstr ""
+msgstr "|architecture|"
 
 #: ../../Architecture.rst:14
 msgid "architecture"
-msgstr ""
+msgstr "architecture"
 
 #: ../../JabberDataForm.rst:2
 msgid "Jabber Data Form"
-msgstr ""
+msgstr "Jabber 数据表"
 
 #: ../../JabberDataForm.rst:4
 msgid ""
@@ -52,40 +55,45 @@ msgid ""
 "all workflows not described in XEPs. For example service configuration or"
 " search results."
 msgstr ""
+"`XEP-0004 <https://xmpp.org/extensions/xep-0004.html>`__ 中描述了 Jabber "
+"数据表单。数据表单在 XEP "
+"中未描述的所有工作流中都很有用。例如服务配置或搜索结果。"
 
 #: ../../JabberDataForm.rst:7
 msgid "Working with forms"
-msgstr ""
+msgstr "使用表单"
 
 #: ../../JabberDataForm.rst:9
 msgid ""
 "To access fields of received form, we have to create ``JabberDataForm`` "
 "object:"
-msgstr ""
+msgstr "要访问接收表单的字段，我们必须创建 ``JabberDataForm`` 对象："
 
 #: ../../JabberDataForm.rst:15
 msgid ""
 "Where ``formElement`` is representation of ``<x xmlns='jabber:x:data'>`` "
 "XML element."
-msgstr ""
+msgstr "其中 ``formElement`` 是 ``<x xmlns='jabber:x:data'>`` XML 元素的表示。"
 
 #: ../../JabberDataForm.rst:17
 msgid "Each form may have properties like:"
-msgstr ""
+msgstr "每个表单可能具有以下属性："
 
 #: ../../JabberDataForm.rst:19
 msgid ""
 "``type`` - `form type <https://xmpp.org/extensions/xep-0004.html"
 "#protocol-formtypes>`__,"
 msgstr ""
+"``type`` - `form type <https://xmpp.org/extensions/xep-0004.html#protocol-"
+"formtypes>`__,"
 
 #: ../../JabberDataForm.rst:21
 msgid "``title`` - optional title of form,"
-msgstr ""
+msgstr "``title`` -可选的表格标题，"
 
 #: ../../JabberDataForm.rst:23
 msgid "``description`` - optional, human-readable, description of form."
-msgstr ""
+msgstr "``description`` - 可选的，人类可读的，形式的描述。"
 
 #: ../../JabberDataForm.rst:25
 msgid ""
@@ -93,24 +101,27 @@ msgid ""
 "<https://xmpp.org/extensions/xep-0004.html#protocol-fieldtypes>`__ (it is"
 " optional)."
 msgstr ""
+"字段由 ``var`` 名称标识。每个字段可能有 `字段类型 <https://xmpp.org/"
+"extensions/xep-0004.html#protocol-fieldtypes>`__ （它是可选的）。"
 
 #: ../../JabberDataForm.rst:27
 msgid "Let look, how to list all fields with values:"
-msgstr ""
+msgstr "让我们看一下，如何列出所有具有值的字段："
 
 #: ../../JabberDataForm.rst:40
 msgid "To get field by name, simple use:"
-msgstr ""
+msgstr "要按名称获取字段，只需使用："
 
 #: ../../JabberDataForm.rst:46
 msgid "Value of those fields may be modified:"
-msgstr ""
+msgstr "这些字段的值可以修改："
 
 #: ../../JabberDataForm.rst:52
 msgid ""
 "After all form modification, sometimes we need to send filled form back. "
 "There is separated method to prepare submit-ready form:"
-msgstr ""
+msgstr "完成所有表单修改后，有时我们需要将填写好的表单发回。准备提交的表单有单独的方"
+"法："
 
 #: ../../JabberDataForm.rst:58
 msgid ""
@@ -118,76 +129,85 @@ msgid ""
 "``submit`` and all fields are cleared up from unnecessary elements like "
 "descriptions or labels. It just leaves simple filed with name and value."
 msgstr ""
+"此方法准备 ``<x xmlns='jabber:x:data'>`` 类型为 ``submit`` 的 XML 元素，并且"
+"所有字段都从不必要的元素（如描述或标签）中清除。它只留下带有名称和值的简单字"
+"段。"
 
 #: ../../JabberDataForm.rst:61
 msgid "Creating forms"
-msgstr ""
+msgstr "创建表单"
 
 #: ../../JabberDataForm.rst:63
 msgid "We can create new form, set title and description, and add fields:"
-msgstr ""
+msgstr "我们可以创建新表单，设置标题和描述，并添加字段："
 
 #: ../../JabberDataForm.rst:75
 msgid "To get XML element containing form without cleaning it, just use:"
-msgstr ""
+msgstr "要在不清理表单的情况下获取包含表单的 XML 元素，只需使用："
 
 #: ../../JabberDataForm.rst:82
 msgid "Multi value response"
-msgstr ""
+msgstr "多值响应"
 
 #: ../../JabberDataForm.rst:84
 msgid ""
 "There is a variant of form containing many sets of fields. This kind of "
 "form has declared set of column with names and set of items containing "
 "field with names declared before."
-msgstr ""
+msgstr "有一个包含许多字段集的表单变体。这种形式已经声明了一组具有名称的列和一组包含"
+"具有之前声明的名称的字段的项目。"
 
 #: ../../JabberDataForm.rst:86
 msgid "This example shows how to display all fields with values:"
-msgstr ""
+msgstr "此示例显示如何显示具有值的所有字段："
 
 #: ../../JabberDataForm.rst:100
 msgid ""
 "Creating multi value form is also simple. First we have to set list of "
 "reported columns, because when new item is added, field names are checked"
 " against declared columns."
-msgstr ""
+msgstr "创建多值形式也很简单。首先，我们必须设置报告列的列表，因为当添加新项目时，会"
+"根据声明的列检查字段名称。"
 
 #: ../../Modules.rst:2
 msgid "Modules"
-msgstr ""
+msgstr "模块"
 
 #: ../../Modules.rst:4
 msgid ""
 "Halcyon contains set of modules responsible for implementation of various"
 " tasks: sending and receiving messages, authentication, pinging, "
 "uploading files, handling roster, presences, etc."
-msgstr ""
+msgstr "Halcyon 包含一组负责执行各种任务的模块：发送和接收消息、身份验证、ping、上传"
+"文件、处理名册、存在等。"
 
 #: ../../Modules.rst:8
 msgid "Modules:"
-msgstr ""
+msgstr "模块:"
 
 #: ../../modules/BindModule.inc:2
 msgid "BindModule"
-msgstr ""
+msgstr "BindModule"
 
 #: ../../modules/BindModule.inc:4
 msgid ""
 "Resource Binding module. This module is responsible for resource binding "
 "as described in `RFC <https://xmpp.org/rfcs/rfc6120.html#bind>`__."
 msgstr ""
+"资源绑定模块。该模块负责资源绑定，如 `RFC <https://xmpp.org/rfcs/rfc6120."
+"html#bind>`__ 中所述。"
 
 #: ../../modules/BindModule.inc:8 ../../modules/DiscoveryModule.inc:7
 #: ../../modules/SASLModule.inc:7 ../../modules/VCard4Module.inc:7
 msgid "Properties"
-msgstr ""
+msgstr "特性"
 
 #: ../../modules/BindModule.inc:10
 msgid ""
 "``boundJID`` - contains full JID bound during resource binding process, "
 "or null if client isn’t logged in and/or not binded."
-msgstr ""
+msgstr "``boundJID`` - 在资源绑定过程中包含完整的 JID "
+"绑定，如果客户端未登录和/或未绑定，则为 null。"
 
 #: ../../modules/BindModule.inc:14 ../../modules/BlockingCommandModule.inc:46
 #: ../../modules/CommandModule.inc:7 ../../modules/DiscoveryModule.inc:36
@@ -197,17 +217,17 @@ msgstr ""
 #: ../../modules/RosterModule.inc:25 ../../modules/SASLModule.inc:47
 #: ../../modules/SIMSModule.inc:9 ../../modules/VCard4Module.inc:20
 msgid "Methods"
-msgstr ""
+msgstr "方法"
 
 #: ../../modules/BindModule.inc:16 ../../modules/SASLModule.inc:49
 msgid ""
 "There is no reason to call methods from this module in client. This "
 "module is used internally by Halcyon library."
-msgstr ""
+msgstr "没有理由在客户端调用此模块的方法。该模块由 Halcyon 库内部使用。"
 
 #: ../../modules/BindModule.inc:20
 msgid "``bind(String)``"
-msgstr ""
+msgstr "``bind(String)``"
 
 #: ../../modules/BindModule.inc:22
 msgid ""
@@ -215,36 +235,40 @@ msgid ""
 "resource name or ``null`` if resource name should be generated by server."
 " In response it returns object ``BindResult`` contains full bound JID."
 msgstr ""
+"方法准备请求绑定资源。作为参数，它获取建议的资源名称，如果资源名称应由服务器"
+"生成，则为 ``null``。作为响应，它返回包含完整绑定 JID 的对象 ``BindResult`` "
+"。"
 
 #: ../../modules/DiscoveryModule.inc:2
 msgid "DiscoveryModule"
-msgstr ""
+msgstr "DiscoveryModule"
 
 #: ../../modules/DiscoveryModule.inc:4
 msgid ""
 "This module implements `XEP-0030: Service Discovery "
 "<https://xmpp.org/extensions/xep-0030.html>`__."
-msgstr ""
+msgstr "该模块实现了 `XEP-0030:服务发现 <https://xmpp.org/extensions/xep-0030."
+"html>`__."
 
 #: ../../modules/DiscoveryModule.inc:9
 msgid "There are few properties to set in this module:"
-msgstr ""
+msgstr "在这个模块中有几个属性需要设置："
 
 #: ../../modules/DiscoveryModule.inc:11
 msgid "``clientName`` - Client name."
-msgstr ""
+msgstr "``clientName`` - 客户名称。"
 
 #: ../../modules/DiscoveryModule.inc:13
 msgid "``clientVersion`` - Version of client."
-msgstr ""
+msgstr "``clientVersion`` - 客户端版本。"
 
 #: ../../modules/DiscoveryModule.inc:15
 msgid "``clientCategory`` - Category of client."
-msgstr ""
+msgstr "``clientCategory`` - 客户类别。"
 
 #: ../../modules/DiscoveryModule.inc:17
 msgid "``clientType`` - Type of client."
-msgstr ""
+msgstr "``clientType`` - 客户类型。"
 
 #: ../../modules/DiscoveryModule.inc:19
 msgid ""
@@ -252,6 +276,8 @@ msgid ""
 "Identities <https://xmpp.org/registrar/disco-categories.html>`__ "
 "document."
 msgstr ""
+"客户端的类别和类型在 `Service Discovery Identities <https://xmpp.org/"
+"registrar/disco-categories.html>`__ 文档中进行了描述。"
 
 #: ../../modules/BlockingCommandModule.inc:7
 #: ../../modules/DiscoveryModule.inc:23 ../../modules/MAMModule.inc:7
@@ -260,31 +286,31 @@ msgstr ""
 #: ../../modules/RosterModule.inc:7 ../../modules/SASLModule.inc:19
 #: ../../modules/VCard4Module.inc:12
 msgid "Events"
-msgstr ""
+msgstr "事件"
 
 #: ../../modules/DiscoveryModule.inc:26
 msgid "``ServerFeaturesReceivedEvent``"
-msgstr ""
+msgstr "``ServerFeaturesReceivedEvent``"
 
 #: ../../modules/DiscoveryModule.inc:28
 msgid ""
 "Fired when server features, to where client is connected, are received. "
 "Client asks for server features automatically during login process."
-msgstr ""
+msgstr "当接收到客户端连接的服务器功能时触发。客户端在登录过程中自动请求服务器功能。"
 
 #: ../../modules/DiscoveryModule.inc:31
 msgid "``AccountFeaturesReceivedEvent``"
-msgstr ""
+msgstr "``AccountFeaturesReceivedEvent``"
 
 #: ../../modules/DiscoveryModule.inc:33
 msgid ""
 "Fired when user account features are received. Client asks for those "
 "features automatically."
-msgstr ""
+msgstr "收到用户帐户功能时触发。客户自动要求这些功能。"
 
 #: ../../modules/DiscoveryModule.inc:39
 msgid "``info(JID, String)``"
-msgstr ""
+msgstr "``info(JID, String)``"
 
 #: ../../modules/DiscoveryModule.inc:41
 msgid ""
@@ -293,10 +319,13 @@ msgid ""
 "``Info`` contains JID of entity, node name, list of identities and list "
 "of features."
 msgstr ""
+"方法准备 ``disco#info`` 请求。作为参数，它采用实体的 JID "
+"和节点名称。两者都是可选的。作为响应，返回对象 ``Info`` 包含实体的 "
+"JID、节点名称、身份列表和特征列表。"
 
 #: ../../modules/DiscoveryModule.inc:44
 msgid "``items(JID, String)``"
-msgstr ""
+msgstr "``items(JID, String)``"
 
 #: ../../modules/DiscoveryModule.inc:46
 msgid ""
@@ -304,73 +333,79 @@ msgid ""
 "entity and node name. Both are optional. In response returns object "
 "``Items`` contains JID of entity, node name and list of items."
 msgstr ""
+"方法准备 ``disco#items`` 请求。作为参数，它采用实体的 JID "
+"和节点名称。两者都是可选的。作为响应，返回对象 ``Items`` 包含实体的 "
+"JID、节点名称和项目列表。"
 
 #: ../../modules/DiscoveryModule.inc:49
 msgid "``findComponent((Info) → Boolean, (Info) → Unit)``"
-msgstr ""
+msgstr "``findComponent((Info) → Boolean, (Info) → Unit)``"
 
 #: ../../modules/DiscoveryModule.inc:51
 msgid ""
 "This method may be used to find component on currently connected server "
 "with specific features or type."
-msgstr ""
+msgstr "此方法可用于在当前连接的服务器上查找具有特定功能或类型的组件。"
 
 #: ../../modules/DiscoveryModule.inc:53
 msgid ""
 "As first parameter it takes condition checker, which much check if given "
 "``Info`` is this object what we are searching for. Second parameter is "
 "consumer."
-msgstr ""
+msgstr "作为第一个参数，它需要条件检查器，如果给定 ``Info`` "
+"是我们正在搜索的对象，它会检查很多。第二个参数是消费者。"
 
 #: ../../modules/MessageCarbonsModule.inc:2
 msgid "MessageCarbonsModule"
-msgstr ""
+msgstr "MessageCarbonsModule"
 
 #: ../../modules/MessageCarbonsModule.inc:4
 msgid ""
 "This module implements `XEP-0280: Message Carbons "
 "<https://xmpp.org/extensions/xep-0280.html>`__."
 msgstr ""
+"这个模块实现了 `XEP-0280: Message Carbons <https://xmpp.org/extensions/"
+"xep-0280.html>`__。"
 
 #: ../../modules/MessageCarbonsModule.inc:10
 msgid "``Sent``"
-msgstr ""
+msgstr "``Sent``"
 
 #: ../../modules/MessageCarbonsModule.inc:12
 msgid ""
 "Fired when client receives carbon of message sent by other entity using "
 "the same account. Event contains carboned message."
-msgstr ""
+msgstr "当客户端收到其他实体使用同一帐户发送的消息的副本时触发。事件包含碳化消息。"
 
 #: ../../modules/MessageCarbonsModule.inc:16
 msgid "``Received``"
-msgstr ""
+msgstr "``Received``"
 
 #: ../../modules/MessageCarbonsModule.inc:18
 msgid ""
 "Fired when client receives carbon of message received by other entity "
 "using the same account. Event contains carboned message."
-msgstr ""
+msgstr "当客户端收到使用同一帐户的其他实体收到的消息的副本时触发。事件包含碳化消息。"
 
 #: ../../modules/MessageCarbonsModule.inc:25
 msgid "``enable()``"
-msgstr ""
+msgstr "``enable()``"
 
 #: ../../modules/MessageCarbonsModule.inc:27
 msgid "Method prepares request to enable carbon messages in current session."
-msgstr ""
+msgstr "方法准备请求以在当前会话中启用碳消息。"
 
 #: ../../modules/MessageCarbonsModule.inc:30
 msgid "``disable()``"
-msgstr ""
+msgstr "``disable()``"
 
 #: ../../modules/MessageCarbonsModule.inc:32
 msgid "Method prepares request to disable carbon messages in current session."
-msgstr ""
+msgstr "方法准备请求以在当前会话中禁用碳消息。"
 
 #: ../../modules/PingModule.inc:2
 msgid "PingModule"
-msgstr ""
+msgstr "PingModule"
 
 #: ../../modules/PingModule.inc:4
 msgid ""
@@ -378,132 +413,136 @@ msgid ""
 "<https://xmpp.org/extensions/xep-0199.html>`__. It allows to ping XMPP "
 "entities over XML stream."
 msgstr ""
+"该模块实现了 `XEP-0199: XMPP Ping <https://xmpp.org/extensions/xep-0199."
+"html>`__。它允许通过 XML 流 ping XMPP 实体。"
 
 #: ../../modules/PingModule.inc:7
 msgid "Published features"
-msgstr ""
+msgstr "已发布的功能"
 
 #: ../../modules/PingModule.inc:9
 msgid "``urn:xmpp:ping``"
-msgstr ""
+msgstr "``urn:xmpp:ping``"
 
 #: ../../modules/PingModule.inc:15
 msgid "``ping(JID)``"
-msgstr ""
+msgstr "``ping(JID)``"
 
 #: ../../modules/PingModule.inc:17
 msgid ""
 "This method prepares ping request. Response object ``Pong`` contains "
 "measured round-trip time in miliseconds."
-msgstr ""
+msgstr "此方法准备 ping 请求。响应对象 ``Pong`` 包含以毫秒为单位的测量往返时间。"
 
 #: ../../modules/PresenceModule.inc:2
 msgid "PresenceModule"
-msgstr ""
+msgstr "PresenceModule"
 
 #: ../../modules/PresenceModule.inc:4
 msgid "Module for handling received presence information."
-msgstr ""
+msgstr "用于处理接收到的存在信息的模块。"
 
 #: ../../modules/PresenceModule.inc:10
 msgid "``PresenceReceivedEvent``"
-msgstr ""
+msgstr "``PresenceReceivedEvent``"
 
 #: ../../modules/PresenceModule.inc:12
 msgid "Fired when any Presence stanza is received by client."
-msgstr ""
+msgstr "当客户端收到任何 Presence 节时触发。"
 
 #: ../../modules/PresenceModule.inc:14 ../../modules/SASLModule.inc:26
 #: ../../modules/SASLModule.inc:40
 msgid "Fields:"
-msgstr ""
+msgstr "字段："
 
 #: ../../modules/PresenceModule.inc:16
 msgid "``jid`` - Stanza sender JID."
-msgstr ""
+msgstr "``jid`` -节发件人 JID。"
 
 #: ../../modules/PresenceModule.inc:18
 msgid "``stanzaType`` - Presence stanza type."
-msgstr ""
+msgstr "``stanzaType`` - 存在节类型。"
 
 #: ../../modules/PresenceModule.inc:20
 msgid "``stanza`` - Whole received presence stanza."
-msgstr ""
+msgstr "``stanza`` - 整个收到的存在节。"
 
 #: ../../modules/PresenceModule.inc:23
 msgid "``ContactChangeStatusEvent``"
-msgstr ""
+msgstr "``ContactChangeStatusEvent``"
 
 #: ../../modules/PresenceModule.inc:25
 msgid ""
 "Fired when Presence stanza is received but it contains different set of "
 "fields:"
-msgstr ""
+msgstr "收到存在节但它包含不同的字段集时触发："
 
 #: ../../modules/PresenceModule.inc:27
 msgid "``jid`` - Bare JID of contact."
-msgstr ""
+msgstr "``jid`` - 联系人的裸 JID。"
 
 #: ../../modules/PresenceModule.inc:29
 msgid "``status`` - Human readable status set by contact."
-msgstr ""
+msgstr "``status`` - 联系人设置的人工可读状态。"
 
 #: ../../modules/PresenceModule.inc:31
 msgid ""
 "``presence`` - Current \"best\" presence stanza, based on presence "
 "priority."
-msgstr ""
+msgstr "``presence`` -当前\"最佳\"存在节，基于存在优先级。"
 
 #: ../../modules/PresenceModule.inc:33
 msgid "``lastReceivedPresence`` - Just received presence stanza."
-msgstr ""
+msgstr "``lastReceivedPresence`` - 刚收到存在节。"
 
 #: ../../modules/PresenceModule.inc:35
 msgid ""
 "Note that ``presence`` in this event may contain stanza received long "
 "time ago. Current event is caused by receiving presence from entity with "
 "lower priority."
-msgstr ""
+msgstr "请注意，此事件中的 ``presence`` 可能包含很久以前收到的节。当前事件是由于接收"
+"到来自具有较低优先级的实体的存在而引起的。"
 
 #: ../../modules/PresenceModule.inc:41
 msgid "``getPresenceOf(jid: JID)``"
-msgstr ""
+msgstr "``getPresenceOf(jid: JID)``"
 
 #: ../../modules/PresenceModule.inc:43
 msgid ""
 "Returns presence of given entity or null if never received presence from "
 "this entity."
-msgstr ""
+msgstr "如果从未从该实体接收到存在，则返回给定实体的存在或 null。"
 
 #: ../../modules/PresenceModule.inc:46
 msgid "``getBestPresenceOf(jid: BareJID)``"
-msgstr ""
+msgstr "``getBestPresenceOf(jid: BareJID)``"
 
 #: ../../modules/PresenceModule.inc:48
 msgid "Returns best known presence of given bare JID."
-msgstr ""
+msgstr "返回给定裸 JID 的最知名存在。"
 
 #: ../../modules/PresenceModule.inc:51
 msgid ""
 "``sendPresence(jid: JID?, type: PresenceType?, show: Show?, status: "
 "String)``"
 msgstr ""
+"``sendPresence(jid: JID?, type: PresenceType?, show: Show?, status: String)``"
 
 #: ../../modules/PresenceModule.inc:53
 msgid "Sends presence stanza to specific jid."
-msgstr ""
+msgstr "将存在节发送到特定的 jid。"
 
 #: ../../modules/PresenceModule.inc:57
 msgid "``sendSubscriptionSet(jid: JID, presenceType: PresenceType)``"
-msgstr ""
+msgstr "``sendSubscriptionSet(jid: JID, presenceType: PresenceType)``"
 
 #: ../../modules/PresenceModule.inc:59
 msgid "Method for quick send response for subscription request."
-msgstr ""
+msgstr "订阅请求快速发送响应的方法。"
 
 #: ../../modules/PubSubModule.inc:2 ../../modules/RosterModule.inc:2
 msgid "RosterModule"
-msgstr ""
+msgstr "RosterModule"
 
 #: ../../modules/PubSubModule.inc:4
 msgid ""
@@ -511,110 +550,118 @@ msgid ""
 "<https://xmpp.org/extensions/xep-0060.html>`__. It adds publish-subscribe"
 " functionality."
 msgstr ""
+"该模块实现了 `XEP-0060: Publish-Subscribe <https://xmpp.org/extensions/"
+"xep-0060.html>`__。它添加了发布-订阅功能。"
 
 #: ../../modules/PubSubModule.inc:9
 msgid "PubSubEventReceivedEvent"
-msgstr ""
+msgstr "PubSubEventReceivedEvent"
 
 #: ../../modules/PubSubModule.inc:14
 msgid "create(pubSubJID: JID, node: String, configForm: JabberDataForm? = null)"
-msgstr ""
+msgstr "创建(pubSubJID: JID, node: String, configForm: JabberDataForm? = null)"
 
 #: ../../modules/PubSubModule.inc:16
 msgid "fun subscribe(pubSubJID: JID, node: String, jid: JID)"
-msgstr ""
+msgstr "有趣的订阅(pubSubJID: JID, node: String, jid: JID)"
 
 #: ../../modules/PubSubModule.inc:18
 msgid "fun purgeItems(pubSubJID: JID, node: String)"
-msgstr ""
+msgstr "有趣的purgeItems(pubSubJID: JID, node: String)"
 
 #: ../../modules/PubSubModule.inc:20
 msgid "fun retrieveSubscriptions(pubSubJID: JID, node: String)"
-msgstr ""
+msgstr "有趣的retrieveSubscriptions(pubSubJID: JID, node: String)"
 
 #: ../../modules/PubSubModule.inc:22
 msgid ""
 "fun modifySubscriptions(pubSubJID: JID, node: String, subscriptions: "
 "List<Subscription>)"
 msgstr ""
+"有趣的modifySubscriptions(pubSubJID: JID, node: String, subscriptions: "
+"List<Subscription>)"
 
 #: ../../modules/PubSubModule.inc:24
 msgid "fun deleteItem(jid: JID, node: String, itemId: String)"
-msgstr ""
+msgstr "有趣的deleteItem(jid: JID, node: String, itemId: String)"
 
 #: ../../modules/PubSubModule.inc:26
 msgid "fun retrieveItem(jid: JID, node: String, itemId: String? = null)"
-msgstr ""
+msgstr "有趣的retrieveItem(jid: JID, node: String, itemId: String? = null)"
 
 #: ../../modules/PubSubModule.inc:28
 msgid ""
 "fun publish(jid: JID?, node: String, itemId: String?, payload: Element? ="
 " null)"
 msgstr ""
+"有趣的发布(jid: JID?, node: String, itemId: String?, payload: Element? = "
+"null)"
 
 #: ../../modules/PubSubModule.inc:30
 msgid "fun retrieveAffiliations(jid: JID?, node: String? = null)"
-msgstr ""
+msgstr "有趣的retrieveAffiliations(jid: JID?, node: String? = null)"
 
 #: ../../modules/RosterModule.inc:4
 msgid "Module is reponsible for keeping and managing roster items."
-msgstr ""
+msgstr "模块负责保存和管理名册项目。"
 
 #: ../../modules/RosterModule.inc:10
 msgid "``ItemAdded``"
-msgstr ""
+msgstr "``ItemAdded``"
 
 #: ../../modules/RosterModule.inc:12
 msgid "Fired when new item is added to roster."
-msgstr ""
+msgstr "当新项目添加到花名册时触发。"
 
 #: ../../modules/RosterModule.inc:15
 msgid "``ItemUpdated``"
-msgstr ""
+msgstr "``ItemUpdated``"
 
 #: ../../modules/RosterModule.inc:17
 msgid "Fired when item is modified."
-msgstr ""
+msgstr "修改项目时触发。"
 
 #: ../../modules/RosterModule.inc:20
 msgid "``ItemRemoved``"
-msgstr ""
+msgstr "``ItemRemoved``"
 
 #: ../../modules/RosterModule.inc:22
 msgid "Fired when item is removed from roster."
-msgstr ""
+msgstr "当项目从名册中移除时触发。"
 
 #: ../../modules/RosterModule.inc:28
 msgid "``addItem(vararg items: RosterItem)``"
-msgstr ""
+msgstr "``addItem(vararg items: RosterItem)``"
 
 #: ../../modules/RosterModule.inc:30
 msgid ""
 "Method prepares request which add or update item to roster. When server "
 "confirms action, event ``ItemAdded`` or ``ItemUpdated`` will be fired."
-msgstr ""
+msgstr "方法准备向名册添加或更新项目的请求。当服务器确认操作时，将触发事件 "
+"``ItemAdded`` 或者 ``ItemUpdated``"
 
 #: ../../modules/RosterModule.inc:34
 msgid "``deleteItem(vararg jids: BareJID)``"
-msgstr ""
+msgstr "``deleteItem(vararg jids: BareJID)``"
 
 #: ../../modules/RosterModule.inc:36
 msgid ""
 "Method prepares request to remove item from roster. When server confirms "
 "operation, event ``ItemRemoved`` will be fired."
-msgstr ""
+msgstr "方法准备从名册中删除项目的请求。当服务器确认操作时，将触发 ``ItemRemoved`` "
+"事件。"
 
 #: ../../modules/RosterModule.inc:39
 msgid "``getAllItems()``"
-msgstr ""
+msgstr "``getAllItems()``"
 
 #: ../../modules/RosterModule.inc:41
 msgid "Method returns add known roster items."
-msgstr ""
+msgstr "方法返回添加已知名册项目。"
 
 #: ../../modules/RosterModule.inc:44
 msgid "Implementing own storage"
-msgstr ""
+msgstr "实现自己的存储"
 
 #: ../../modules/RosterModule.inc:46
 msgid ""
@@ -626,104 +673,116 @@ msgid ""
 " put it to property ``store`` in ``RosterModule``. Note, that it have to "
 "be done before login."
 msgstr ""
+"RosterModule 支持名册版本控制，但它需要自定义实现 ``RosterStore`` "
+"以允许在本地存储名册。默认情况下，Halcyon 有内存名册存储。为此，需要扩展接口 "
+"``tigase.halcyon.core.xmpp.modules.roster.RosterStore`` 。要使用 "
+"``RosterStore`` 的自定义实现，只需将其放入 ``RosterModule`` 中的 ``store`` "
+"属性即可。请注意，必须在登录前完成。"
 
 #: ../../modules/SASLModule.inc:2
 msgid "SASLModule"
-msgstr ""
+msgstr "SASLModule"
 
 #: ../../modules/SASLModule.inc:4
 msgid "Module is responsible for whole client authentication process."
-msgstr ""
+msgstr "模块负责整个客户端认证过程。"
 
 #: ../../modules/SASLModule.inc:9
 msgid ""
 "``saslContext`` contains context of module. Context is cleared when "
 "connection is started. It has several fields to read:"
-msgstr ""
+msgstr "``saslContext`` "
+"包含模块的上下文。开始连接时清除上下文。它有几个字段可供阅读："
 
 #: ../../modules/SASLModule.inc:11
 msgid "``mechanism`` - used SASL mechanism,"
-msgstr ""
+msgstr "``mechanism`` - 使用SASL机制，"
 
 #: ../../modules/SASLModule.inc:13
 msgid "``state`` - current state of authentication process,"
-msgstr ""
+msgstr "``state`` - 身份验证过程的当前状态，"
 
 #: ../../modules/SASLModule.inc:15
 msgid ""
 "``complete`` - ``true`` if authentication process is finished (it doesn’t"
 " matter with success or with error)."
-msgstr ""
+msgstr "``complete`` - ``true`` 如果身份验证过程完成（成功或错误都没有关系）。"
 
 #: ../../modules/SASLModule.inc:22
 msgid "``SASLStarted``"
-msgstr ""
+msgstr "``SASLStarted``"
 
 #: ../../modules/SASLModule.inc:24
 msgid "Fired when authentication process begins."
-msgstr ""
+msgstr "身份验证过程开始时触发。"
 
 #: ../../modules/SASLModule.inc:28
 msgid "``mechanism`` - name of used SASL mechanism."
-msgstr ""
+msgstr "``mechanism`` - 使用的 SASL 机制的名称。"
 
 #: ../../modules/SASLModule.inc:31
 msgid "``SASLSuccess``"
-msgstr ""
+msgstr "``SASLSuccess``"
 
 #: ../../modules/SASLModule.inc:33
 msgid "Fired when authentication is successful."
-msgstr ""
+msgstr "身份验证成功时触发。"
 
 #: ../../modules/SASLModule.inc:36
 msgid "``SASLError``"
-msgstr ""
+msgstr "``SASLError``"
 
 #: ../../modules/SASLModule.inc:38
 msgid "Fired when authentication finished with error."
-msgstr ""
+msgstr "身份验证完成但出现错误时触发。"
 
 #: ../../modules/SASLModule.inc:42
 msgid ""
 "``error`` - enum with type of error. SASL errors are described if `RFC "
 "<https://xmpp.org/rfcs/rfc6120.html#sasl-errors>`__."
 msgstr ""
+"``error`` - 错误类型的枚举。如果 `RFC <https://xmpp.org/rfcs/rfc6120.html"
+"#sasl-errors>`__ 会描述 SASL 错误。"
 
 #: ../../modules/SASLModule.inc:44
 msgid ""
 "``description`` - human readable description of error (if provided by "
 "server)."
-msgstr ""
+msgstr "``description`` - 人类可读的错误描述（如果由服务器提供）。"
 
 #: ../../modules/SASLModule.inc:52
 msgid "``startAuth()``"
-msgstr ""
+msgstr "``startAuth()``"
 
 #: ../../modules/SASLModule.inc:54
 msgid ""
 "This method begins authentication process. It doesn’t return Request "
 "object."
-msgstr ""
+msgstr "此方法开始身份验证过程。它不返回 Request 对象。"
 
 #: ../../modules/VCard4Module.inc:2
 msgid "VCardModule"
-msgstr ""
+msgstr "VCardModule"
 
 #: ../../modules/VCard4Module.inc:4
 msgid ""
 "This module allows to publishing and retrieving VCard4 as described in "
 "`XEP-0292 <https://xmpp.org/extensions/xep-0292.html>`__."
 msgstr ""
+"此模块允许发布和检索 VCard4，如 `XEP-0292 <https://xmpp.org/extensions/"
+"xep-0292.html>`__ 中所述。"
 
 #: ../../modules/VCard4Module.inc:9
 msgid ""
 "``autoRetrieve`` - If ``true`` then module automatically retrieve VCard "
 "before firing ``VCardUpdatedEvent``. It is ``false`` by default."
 msgstr ""
+"``autoRetrieve`` - 如果 ``true`` 则模块在触发 ``VCardUpdatedEvent`` "
+"之前自动检索 VCard。默认为 ``false``。"
 
 #: ../../modules/VCard4Module.inc:15
 msgid "``VCardUpdatedEvent``"
-msgstr ""
+msgstr "``VCardUpdatedEvent``"
 
 #: ../../modules/VCard4Module.inc:17
 msgid ""
@@ -731,50 +790,53 @@ msgid ""
 "update applies to. If ``autoRetrieve`` is set to ``true`` then event will"
 " contains current VCard."
 msgstr ""
+"当收到来自 PEP 的 VCard 更新时触发。包含更新适用的 JID。如果 ``autoRetrieve``"
+" 设置为 ``true`` 那么事件将包含当前的 VCard。"
 
 #: ../../modules/VCard4Module.inc:23
 msgid "``retrieveVCard(jid: BareJID)``"
-msgstr ""
+msgstr "``retrieveVCard(jid: BareJID)``"
 
 #: ../../modules/VCard4Module.inc:25
 msgid ""
 "This method prepare request for retrieving VCard of given JID. As result "
 "returns ``VCard`` object."
-msgstr ""
+msgstr "此方法准备检索给定 JID 的 VCard 的请求。结果返回 ``VCard`` 对象。"
 
 #: ../../modules/VCard4Module.inc:29
 msgid "``fun publish(vcard: VCard)``"
-msgstr ""
+msgstr "``fun publish(vcard: VCard)``"
 
 #: ../../modules/VCard4Module.inc:31
 msgid "This method prepare request for publishing own vcard."
-msgstr ""
+msgstr "此方法准备发布自己的 vcard 的请求。"
 
 #: ../../modules/VCard4Module.inc:35
 msgid "Usage example"
-msgstr ""
+msgstr "使用示例"
 
 #: ../../modules/VCard4Module.inc:38
 msgid "Retrieving VCard"
-msgstr ""
+msgstr "检索 VCard"
 
 #: ../../modules/VCard4Module.inc:72
 msgid "Publishing VCard"
-msgstr ""
+msgstr "发布 VCard"
 
 #: ../../modules/VCard4Module.inc:74
 msgid "Publishing own vcard is very simple:"
-msgstr ""
+msgstr "发布自己的 vcard 非常简单："
 
 #: ../../modules/VCard4Module.inc:84
 msgid ""
 "VCard object is mutable and can be edited. To create new VCard instance "
 "you can use VCard builder:"
-msgstr ""
+msgstr "VCard 对象是可变的，可以编辑。要创建新的 VCard 实例，您可以使用 VCard "
+"builder："
 
 #: ../../modules/BlockingCommandModule.inc:2
 msgid "BlockingCommandModule"
-msgstr ""
+msgstr "BlockingCommandModule"
 
 #: ../../modules/BlockingCommandModule.inc:4
 msgid ""
@@ -782,125 +844,129 @@ msgid ""
 "<https://xmpp.org/extensions/xep-0191.html>`__ and `XEP-0377: Spam "
 "Reporting <https://xmpp.org/extensions/xep-0377.html>`__"
 msgstr ""
+"该模块实现了 `XEP-0191：阻止命令 <https://xmpp.org/extensions/xep-0191.html>`"
+"__ 和 `XEP-0377：垃圾邮件报告 <https://xmpp.org/extensions/xep- 0377.html>`__"
 
 #: ../../modules/BlockingCommandModule.inc:10
 msgid "``Blocked``"
-msgstr ""
+msgstr "``Blocked``"
 
 #: ../../modules/BlockingCommandModule.inc:12
 msgid "Event fired when new contact was blocked. It contains few properties:"
-msgstr ""
+msgstr "新联系人被阻止时触发的事件。它包含几个属性："
 
 #: ../../modules/BlockingCommandModule.inc:14
 msgid "``jid`` - blocked JabberID"
-msgstr ""
+msgstr "``jid`` - 阻止的 JabberID"
 
 #: ../../modules/BlockingCommandModule.inc:16
 msgid "``reason`` - reason of blocking."
-msgstr ""
+msgstr "``reason`` - 阻塞的原因。"
 
 #: ../../modules/BlockingCommandModule.inc:18
 msgid "``text`` - optional human-readable description of blocking reason."
-msgstr ""
+msgstr "``text`` - 可选的人类可读的阻塞原因描述。"
 
 #: ../../modules/BlockingCommandModule.inc:22
 msgid "``Unblocked``"
-msgstr ""
+msgstr "``Unblocked``"
 
 #: ../../modules/BlockingCommandModule.inc:24
 msgid "Event fired, when contact was unblocked. It contains one property:"
-msgstr ""
+msgstr "当联系人被解除阻止时触发事件。它包含一个属性："
 
 #: ../../modules/BlockingCommandModule.inc:26
 msgid "``jid`` - unblocked JabberID"
-msgstr ""
+msgstr "``jid`` - 畅通无阻的 JabberID"
 
 #: ../../modules/BlockingCommandModule.inc:30
 msgid "``UnblockedAll``"
-msgstr ""
+msgstr "``UnblockedAll``"
 
 #: ../../modules/BlockingCommandModule.inc:32
 msgid "Event fired when all contacts are unblocked."
-msgstr ""
+msgstr "解锁所有联系人时触发的事件。"
 
 #: ../../modules/BlockingCommandModule.inc:48
 msgid "Samples:"
-msgstr ""
+msgstr "样品："
 
 #: ../../modules/BlockingCommandModule.inc:51
 msgid "``retrieveList(JID, String)``"
-msgstr ""
+msgstr "``retrieveList(JID, String)``"
 
 #: ../../modules/BlockingCommandModule.inc:53
 msgid ""
 "Retrieves list of blocked contacts. It allows to get list of blocked "
 "list, without information about reason."
-msgstr ""
+msgstr "检索被阻止的联系人列表。它允许获取阻止列表的列表，而无需有关原因的信息。"
 
 #: ../../modules/BlockingCommandModule.inc:66
 msgid "``block``"
-msgstr ""
+msgstr "``block``"
 
 #: ../../modules/BlockingCommandModule.inc:68
 msgid "Blocks given contact."
-msgstr ""
+msgstr "屏蔽给定的联系人。"
 
 #: ../../modules/BlockingCommandModule.inc:70
 #: ../../modules/BlockingCommandModule.inc:92
 msgid "Params:"
-msgstr ""
+msgstr "参数："
 
 #: ../../modules/BlockingCommandModule.inc:72
 msgid "``jid`` - BareJID of contact to block"
-msgstr ""
+msgstr "``jid`` - 要阻止的联系人的 BareJID"
 
 #: ../../modules/BlockingCommandModule.inc:74
 msgid ""
 "``reason`` - reason of blocking (optional, default value is "
 "``NotSpecified``)"
-msgstr ""
+msgstr "``reason`` - 屏蔽的原因（可选，默认值为 ``NotSpecified``）"
 
 #: ../../modules/BlockingCommandModule.inc:76
 msgid "``text`` - optional, human-readable description of blocking"
-msgstr ""
+msgstr "``text`` - 可选的，人类可读的屏蔽描述"
 
 #: ../../modules/BlockingCommandModule.inc:88
 msgid "``unblock``"
-msgstr ""
+msgstr "``unblock``"
 
 #: ../../modules/BlockingCommandModule.inc:90
 msgid "Unblocks given contact."
-msgstr ""
+msgstr "取消屏蔽给定的联系人。"
 
 #: ../../modules/BlockingCommandModule.inc:94
 msgid "``jids`` - BareJIDs of contacts to unblock"
-msgstr ""
+msgstr "``jids`` - 要取消屏蔽的联系人的 BareJID"
 
 #: ../../modules/BlockingCommandModule.inc:98
 msgid "If ``jids`` will be empty, all blocked contacts will be unblocked!"
-msgstr ""
+msgstr "如果 ``jids`` 为空，则所有被阻止的联系人都将被解除屏蔽！"
 
 #: ../../modules/BlockingCommandModule.inc:110
 msgid "``unblockAll``"
-msgstr ""
+msgstr "``unblockAll``"
 
 #: ../../modules/BlockingCommandModule.inc:112
 msgid "Unblocks all blocked contacts."
-msgstr ""
+msgstr "取消屏蔽所有被屏蔽的联系人。"
 
 #: ../../modules/CommandModule.inc:2
 msgid "CommandModule"
-msgstr ""
+msgstr "CommandModule"
 
 #: ../../modules/CommandModule.inc:4
 msgid ""
 "This module implements `XEP-0050: Ad-Hoc Commands "
 "<https://xmpp.org/extensions/xep-0050.html>`__."
 msgstr ""
+"这个模块实现了 `XEP-0050: Ad-Hoc Commands <https://xmpp.org/extensions/"
+"xep-0050.html>`__."
 
 #: ../../modules/CommandModule.inc:10
 msgid "``retrieveCommandList``"
-msgstr ""
+msgstr "``retrieveCommandList``"
 
 #: ../../modules/CommandModule.inc:12
 msgid ""
@@ -908,10 +974,12 @@ msgid ""
 "Because this command is just wrapper to ``DiscoveryModule.items()`` "
 "method, in response it returns ``DiscoveryModule.Items`` class."
 msgstr ""
+"检索允许在给定 XMPP 实体上执行的命令列表。因为这个命令只是 ``DiscoveryModule."
+"items()`` 方法的包装，作为响应它返回 ``DiscoveryModule.Items`` 类。"
 
 #: ../../modules/CommandModule.inc:16
 msgid "``retrieveCommandInfo``"
-msgstr ""
+msgstr "``retrieveCommandInfo``"
 
 #: ../../modules/CommandModule.inc:18
 msgid ""
@@ -919,82 +987,88 @@ msgid ""
 "command is just wrapper to ``DiscoveryModule.info()`` method, in response"
 " it returns ``DiscoveryModule.Info`` class."
 msgstr ""
+"检索有关指定命令的详细信息。因为这个命令只是 ``DiscoveryModule.info()`` "
+"方法的包装，作为响应它返回 ``DiscoveryModule.Info`` 类。"
 
 #: ../../modules/CommandModule.inc:22
 msgid "``executeCommand``"
-msgstr ""
+msgstr "``executeCommand``"
 
 #: ../../modules/CommandModule.inc:24
 msgid "This method executes Ad-hoc Command on XMPP entity specified by JabberID."
-msgstr ""
+msgstr "此方法对 JabberID 指定的 XMPP 实体执行 Ad-hoc 命令。"
 
 #: ../../modules/CommandModule.inc:26 ../../modules/MAMModule.inc:32
 msgid "Arguments:"
-msgstr ""
+msgstr "参数："
 
 #: ../../modules/CommandModule.inc:28
 msgid "``jid`` - Jabber ID of command executor,"
-msgstr ""
+msgstr "`jid`` - 命令执行者的 Jabber ID，"
 
 #: ../../modules/CommandModule.inc:30
 msgid "``command`` - command name,"
-msgstr ""
+msgstr "``command`` -命令名称，"
 
 #: ../../modules/CommandModule.inc:32
 msgid "``form`` - optional element containing data form,"
-msgstr ""
+msgstr "``form`` - 包含数据表单的可选元素，"
 
 #: ../../modules/CommandModule.inc:34
 msgid "``action`` - command action,"
-msgstr ""
+msgstr "``action`` - 命令动作，"
 
 #: ../../modules/CommandModule.inc:36
 msgid ""
 "``sessionId`` - session identifier, if command is executed in session "
 "(identifier is generated by executor)."
-msgstr ""
+msgstr "``sessionId`` - 会话标识符，如果命令在会话中执行（标识符由执行器生成）。"
 
 #: ../../modules/CommandModule.inc:38
 msgid ""
 "As response method returns object of ``AdHocResult`` class. It contains "
 "result form (optional) and status of command execution."
-msgstr ""
+msgstr "作为响应方法返回 ``AdHocResult`` "
+"类的对象。它包含结果表单（可选）和命令执行状态。"
 
 #: ../../modules/CommandModule.inc:50
 msgid ""
 "If this command creates session, we can simply use data from ``result`` "
 "to execute next command in it:"
-msgstr ""
+msgstr "如果此命令创建会话，我们可以简单地使用 ``result`` "
+"中的数据来执行其中的下一个命令："
 
 #: ../../modules/CommandModule.inc:65
 msgid ""
 "Above example uses default action in second step (``null`` on arguments "
 "list)."
-msgstr ""
+msgstr "上面的示例在第二步中使用默认操作（参数列表中的 ``null`` ）。"
 
 #: ../../modules/CommandModule.inc:68
 msgid "``registerAdHocCommand(command: AdHocCommand)``"
-msgstr ""
+msgstr "``registerAdHocCommand(command: AdHocCommand)``"
 
 #: ../../modules/CommandModule.inc:70
 msgid ""
 "In addition to executing commands on other XMPP entities, module allows "
 "to register ad-hoc commands, to be executed in client by others."
-msgstr ""
+msgstr "除了在其他 XMPP "
+"实体上执行命令外，模块还允许注册临时命令，以由其他人在客户端执行。"
 
 #: ../../modules/CommandModule.inc:72
 msgid "Command must implement ``AdHocCommand`` interface."
-msgstr ""
+msgstr "命令必须实现 ``AdHocCommand`` 接口。"
 
 #: ../../modules/CommandModule.inc:90
 msgid ""
 "Above sample command may be executed only by ``owner@example.com``. It "
 "even be hidden on commands list for others."
-msgstr ""
+msgstr "以上示例命令只能由 ``owner@example.com`` "
+"执行。它甚至隐藏在其他人的命令列表中。"
 
 #: ../../modules/CommandModule.inc:92
 msgid "Created command must be registered in ``CommandModule``:"
-msgstr ""
+msgstr "创建的命令必须在 ``CommandModule`` 中注册："
 
 #: ../../modules/CommandModule.inc:98
 msgid ""
@@ -1004,272 +1078,283 @@ msgid ""
 "method ``request.getSession()``. This method returns current session "
 "context or creates new one if it is necessary."
 msgstr ""
+"Ad-hoc 命令支持会话。会话允许在会话上下文中存储一些数据并创建多个阶段命令。默"
+"认情况下，会话不会自动启动。要在命令中访问会话，请使用方法 ``request."
+"getSession()``。此方法返回当前会话上下文或在必要时创建新的会话上下文。"
 
 #: ../../modules/CommandModule.inc:125
 msgid ""
 "If response status is ``Completed`` or ``Canceled``, then session context"
 " is destroyed after command execution."
-msgstr ""
+msgstr "如果响应状态为 ``Completed`` 或 "
+"``Canceled``，则会话上下文在命令执行后被销毁。"
 
 #: ../../modules/CommandModule.inc:129
 msgid ""
 "Remember, that single instance of Ad-Hoc Command may process calls from "
 "many callers."
-msgstr ""
+msgstr "请记住，Ad-Hoc Command 的单个实例可能会处理来自许多调用者的调用。"
 
 #: ../../modules/MUCModule.inc:2
 msgid "MUCModule"
-msgstr ""
+msgstr "MUCModule"
 
 #: ../../modules/MUCModule.inc:4
 msgid ""
 "This module implements `XEP-0045: Multi-User Chat "
 "<https://xmpp.org/extensions/xep-0045.html>`__."
-msgstr ""
+msgstr "该模块实现了 `XEP-0045：多用户聊天 <https://xmpp.org/extensions/xep-0045."
+"html>`__。"
 
 #: ../../modules/MUCModule.inc:9
 msgid "There are two kinds of events in ``MUCModule``:"
-msgstr ""
+msgstr "``MUCModule`` 中有两种事件："
 
 #: ../../modules/MUCModule.inc:11
 msgid "Room related events."
-msgstr ""
+msgstr "房间相关事件。"
 
 #: ../../modules/MUCModule.inc:13
 msgid "Other events"
-msgstr ""
+msgstr "其他事件"
 
 #: ../../modules/MUCModule.inc:15
 msgid "Currently the only event from second category is ``InvitationReceived``:"
-msgstr ""
+msgstr "目前第二类的唯一事件是 ``InvitationReceived``:"
 
 #: ../../modules/MUCModule.inc:23
 msgid ""
 "All room related events contains ``Room`` object, and all have common "
 "parent:"
-msgstr ""
+msgstr "所有与房间相关的事件都包含 ``Room`` 对象，并且都有共同的父对象："
 
 #: ../../modules/MUCModule.inc:38
 msgid "``InvitationReceived``"
-msgstr ""
+msgstr "``InvitationReceived``"
 
 #: ../../modules/MUCModule.inc:40
 msgid ""
 "Event fired when an invitation is received. Contains ``Invitation`` "
 "object."
-msgstr ""
+msgstr "收到邀请时触发的事件。包含 ``Invitation`` 对象。"
 
 #: ../../modules/MUCModule.inc:44
 msgid "``YouJoined``"
-msgstr ""
+msgstr "``YouJoined``"
 
 #: ../../modules/MUCModule.inc:46
 msgid "Event fired when server responses for join request with success."
-msgstr ""
+msgstr "当服务器成功响应加入请求时触发的事件。"
 
 #: ../../modules/MUCModule.inc:50
 msgid "``YouLeaved``"
-msgstr ""
+msgstr "``YouLeaved``"
 
 #: ../../modules/MUCModule.inc:52
 msgid ""
 "Event fired, when you leave room. It may be confirmation of you leave "
 "request, or you are kicked out from room."
-msgstr ""
+msgstr "当您离开房间时触发事件。这可能是您离开请求的确认，或者您被踢出房间。"
 
 #: ../../modules/MUCModule.inc:55
 msgid "``JoinError``"
-msgstr ""
+msgstr "``JoinError``"
 
 #: ../../modules/MUCModule.inc:57
 msgid "Event fired when server not accepted join request."
-msgstr ""
+msgstr "当服务器不接受加入请求时触发事件。"
 
 #: ../../modules/MUCModule.inc:61
 msgid "``Created``"
-msgstr ""
+msgstr "``Created``"
 
 #: ../../modules/MUCModule.inc:63
 msgid "Event informs that room you joined is just created (by join request)."
-msgstr ""
+msgstr "事件通知您加入的房间刚刚创建（通过加入请求）。"
 
 #: ../../modules/MUCModule.inc:66
 msgid "``OccupantCame``"
-msgstr ""
+msgstr "``OccupantCame``"
 
 #: ../../modules/MUCModule.inc:68
 msgid "Informs that new occupant joined to room."
-msgstr ""
+msgstr "通知新住户加入房间。"
 
 #: ../../modules/MUCModule.inc:72
 msgid "``OccupantLeave``"
-msgstr ""
+msgstr "``OccupantLeave``"
 
 #: ../../modules/MUCModule.inc:74
 msgid "Informs that occupant leaves the room."
-msgstr ""
+msgstr "通知住户离开房间。"
 
 #: ../../modules/MUCModule.inc:77
 msgid "``OccupantChangedPresence``"
-msgstr ""
+msgstr "``OccupantChangedPresence``"
 
 #: ../../modules/MUCModule.inc:79
 msgid "Informs that occupant updated his presence."
-msgstr ""
+msgstr "通知居住者更新了他的存在。"
 
 #: ../../modules/MUCModule.inc:82
 msgid "``ReceivedMessage``"
-msgstr ""
+msgstr "``ReceivedMessage``"
 
 #: ../../modules/MUCModule.inc:84
 msgid "Event fired when group chat message from room is received."
-msgstr ""
+msgstr "收到来自房间的群聊消息时触发的事件。"
 
 #: ../../modules/MUCModule.inc:90
 msgid "``join(roomJID, nickname, password)``"
-msgstr ""
+msgstr "``join(roomJID, nickname, password)``"
 
 #: ../../modules/MUCModule.inc:92
 msgid "Builds join request to MUC Room."
-msgstr ""
+msgstr "建立对 MUC Room 的加入请求。"
 
 #: ../../modules/MUCModule.inc:94
 msgid "Here is simple example to show how to join to room."
-msgstr ""
+msgstr "这是一个简单的例子来展示如何加入房间。"
 
 #: ../../modules/MUCModule.inc:104
 msgid ""
 "Note, that because of MUC protocol specificity, confirmation of join will"
 " be delivered as separated event."
-msgstr ""
+msgstr "请注意，由于 MUC 协议的特殊性，加入的确认将作为单独的事件传递。"
 
 #: ../../modules/MUCModule.inc:108
 msgid "``leave(room: Room)``"
-msgstr ""
+msgstr "``leave(room: Room)``"
 
 #: ../../modules/MUCModule.inc:110
 msgid "Builds request to leaves MUC Room."
-msgstr ""
+msgstr "建立离开 MUC Room 的请求。"
 
 #: ../../modules/MUCModule.inc:114
 msgid "``destroy(room: Room)``"
-msgstr ""
+msgstr "``destroy(room: Room)``"
 
 #: ../../modules/MUCModule.inc:116
 msgid "Builds room destroy request."
-msgstr ""
+msgstr "建立房间销毁请求。"
 
 #: ../../modules/MUCModule.inc:120
 msgid "``invite(room: Room, invitedJid: BareJID, reason: String? = null)``"
-msgstr ""
+msgstr "``invite(room: Room, invitedJid: BareJID, reason: String? = null)``"
 
 #: ../../modules/MUCModule.inc:122
 msgid "Builds mediated invitation request."
-msgstr ""
+msgstr "构建中介媒介请求。"
 
 #: ../../modules/MUCModule.inc:126
 msgid ""
 "``inviteDirectly(room: Room, invitedJid: BareJID, reason: String? = "
 "null)``"
 msgstr ""
+"``inviteDirectly(room: Room, invitedJid: BareJID, reason: String? = null)``"
 
 #: ../../modules/MUCModule.inc:128
 msgid "Builds direct invitation request."
-msgstr ""
+msgstr "构建直接邀请请求。"
 
 #: ../../modules/MUCModule.inc:131
 msgid "``retrieveRoomConfig(room: Room)``"
-msgstr ""
+msgstr "``retrieveRoomConfig(room: Room)``"
 
 #: ../../modules/MUCModule.inc:133
 msgid ""
 "Builds retrieve room configuration request. In response it returns data "
 "form with configuration."
-msgstr ""
+msgstr "构建检索房间配置请求。作为响应，它返回带有配置的数据表单。"
 
 #: ../../modules/MUCModule.inc:136
 msgid "``updateRoomConfig(room: Room, form: JabberDataForm)``"
-msgstr ""
+msgstr "``updateRoomConfig(room: Room, form: JabberDataForm)``"
 
 #: ../../modules/MUCModule.inc:138
 msgid "Builds update room configuration request."
-msgstr ""
+msgstr "构建更新房间配置请求。"
 
 #: ../../modules/MUCModule.inc:141
 msgid "``message(room: Room, msg: String)``"
-msgstr ""
+msgstr "``message(room: Room, msg: String)``"
 
 #: ../../modules/MUCModule.inc:143
 msgid "Builds group chat message request."
-msgstr ""
+msgstr "构建群聊消息请求。"
 
 #: ../../modules/MUCModule.inc:146
 msgid "``decline(invitation: Invitation, reason: String? = null)``"
-msgstr ""
+msgstr "``decline(invitation: Invitation, reason: String? = null)``"
 
 #: ../../modules/MUCModule.inc:148
 msgid "Builds decline request for received invitation"
-msgstr ""
+msgstr "为收到的邀请构建拒绝请求"
 
 #: ../../modules/MUCModule.inc:151
 msgid "``accept(invitation: Invitation, nickname: String)``"
-msgstr ""
+msgstr "``accept(invitation: Invitation, nickname: String)``"
 
 #: ../../modules/MUCModule.inc:153
 msgid "Builds join request to MUC Room based on received invitation."
-msgstr ""
+msgstr "根据收到的邀请建立对 MUC Room 的加入请求。"
 
 #: ../../modules/MUCModule.inc:156
 msgid "``retrieveAffiliations(room: Room, filter: Affiliation? = null)``"
-msgstr ""
+msgstr "``retrieveAffiliations(room: Room, filter: Affiliation? = null)``"
 
 #: ../../modules/MUCModule.inc:158
 msgid ""
 "Builds request for retrieve affiliations list from MUC room. In response "
 "it returns collection of RoomAffiliation."
-msgstr ""
+msgstr "建立从 MUC 房间检索隶属关系列表的请求。作为响应，它返回 RoomAffiliation "
+"的集合。"
 
 #: ../../modules/MUCModule.inc:161
 msgid ""
 "``updateAffiliations(room: Room, affiliations: "
 "Collection<RoomAffiliation>)``"
 msgstr ""
+"``updateAffiliations(room: Room, affiliations: Collection<RoomAffiliation>)``"
 
 #: ../../modules/MUCModule.inc:163
 msgid "Builds request for update affiliations list."
-msgstr ""
+msgstr "构建更新从属关系列表的请求。"
 
 #: ../../modules/MUCModule.inc:166
 msgid "``updateRoomSubject(room: Room, subject: String?)``"
-msgstr ""
+msgstr "``updateRoomSubject(room: Room, subject: String?)``"
 
 #: ../../modules/MUCModule.inc:168
 msgid "Builds request for set room subject."
-msgstr ""
+msgstr "构建设置房间主题的请求。"
 
 #: ../../modules/MUCModule.inc:171
 msgid "``ping(room: Room)``"
-msgstr ""
+msgstr "``ping(room: Room)``"
 
 #: ../../modules/MUCModule.inc:173
 msgid ""
 "Build request for self ping, as described in `XEP-0410: MUC Self-Ping "
 "(Schrödinger’s Chat) <https://xmpp.org/extensions/xep-0410.html>`__."
 msgstr ""
+"构建自 ping 请求，如 `XEP-0410: MUC Self-Ping (Schrödinger’s Chat) "
+"<https://xmpp.org/extensions/xep-0410.html>`__ 中所述。"
 
 #: ../../modules/MUCModule.inc:176
 msgid "Store"
-msgstr ""
+msgstr "储存"
 
 #: ../../modules/MUCModule.inc:178
 msgid ""
 "MUCModule requires Room Storage to store rooms data. By default, Halcyon "
 "comes with in-memory store."
-msgstr ""
+msgstr "MUCModule 需要 Room Storage 来存储房间数据。默认情况下，Halcyon "
+"带有内存存储。"
 
 #: ../../modules/MUCModule.inc:180
 msgid "To build own Store you have to implement this interface:"
-msgstr ""
+msgstr "要构建自己的存储，您必须实现此接口："
 
 #: ../../modules/MUCModule.inc:191
 msgid ""
@@ -1280,10 +1365,14 @@ msgid ""
 " room. To check if rejoin is required, please use ``ping(room)`` "
 "function."
 msgstr ""
+"请记住，MUC 协议不适用于移动客户端，因此房间加入的 ``state`` （在 ``Room`` "
+"对象中）可能不代表真实状态。例如，在重新连接后，客户端可能会保持 ``Joined`` "
+"状态，但服务器会收到有关断开连接的信息并将住户从房间中移除。要检查是否需要重"
+"新加入，请使用 ``ping(room)`` 函数。"
 
 #: ../../modules/SIMSModule.inc:2
 msgid "SIMSModule"
-msgstr ""
+msgstr "SIMSModule"
 
 #: ../../modules/SIMSModule.inc:4
 msgid ""
@@ -1291,168 +1380,175 @@ msgid ""
 "Sharing (SIMS) <https://xmpp.org/extensions/xep-0385.html>`__. It "
 "describes file sharing metadata."
 msgstr ""
+"该模块部分实现了 `XEP-0385: Stateless Inline Media Sharing (SIMS) "
+"<https://xmpp.org/extensions/xep-0385.html>`__。它描述了文件共享元数据。"
 
 #: ../../modules/SIMSModule.inc:6
 msgid ""
 "``SIMSModule`` isn’t module in Halcyon architecture sense. This is rather"
 " collection of extensions to help retrieve and generate SIMS structures."
-msgstr ""
+msgstr "``SIMSModule`` 不是 Halcyon 架构意义上的模块。这是帮助检索和生成 SIMS "
+"结构的扩展集合。"
 
 #: ../../modules/SIMSModule.inc:12
 msgid "``getReferenceOrNull()``"
-msgstr ""
+msgstr "``getReferenceOrNull()``"
 
 #: ../../modules/SIMSModule.inc:14
 msgid "Method returns ``Reference`` object if exists."
-msgstr ""
+msgstr "如果存在，方法返回 ``Reference`` 对象。"
 
 #: ../../modules/SIMSModule.inc:17
 msgid "``getMediaSharingFileOrNull()``"
-msgstr ""
+msgstr "``getMediaSharingFileOrNull()``"
 
 #: ../../modules/SIMSModule.inc:19
 msgid "This method (extends ``Reference``) returns shared file details."
-msgstr ""
+msgstr "此方法（扩展 ``Reference``）返回共享文件的详细信息。"
 
 #: ../../modules/SIMSModule.inc:22
 msgid "``createFileSharingReference()``"
-msgstr ""
+msgstr "``createFileSharingReference()``"
 
 #: ../../modules/SIMSModule.inc:24
 msgid ""
 "This method creates complete ``Reference`` object with shared file "
 "details."
-msgstr ""
+msgstr "此方法使用共享文件详细信息创建完整的 ``Reference`` 对象。"
 
 #: ../../modules/MAMModule.inc:2
 msgid "MAMModule"
-msgstr ""
+msgstr "MAMModule"
 
 #: ../../modules/MAMModule.inc:4
 msgid ""
 "This module implements `XEP-0313: Message Archive Management "
 "<https://xmpp.org/extensions/xep-0313.html>`__."
-msgstr ""
+msgstr "该模块实现了 `XEP-0313：消息存档管理 <https://xmpp.org/extensions/xep-0313."
+"html>`__。"
 
 #: ../../modules/MAMModule.inc:10
 msgid "``MAMMessageEvent``"
-msgstr ""
+msgstr "``MAMMessageEvent``"
 
 #: ../../modules/MAMModule.inc:12
 msgid "This event is fired, when each result for ``query()`` method is received."
-msgstr ""
+msgstr "当接收到 ``query()`` 方法的每个结果时，将触发此事件。"
 
 #: ../../modules/MAMModule.inc:14
 msgid "This event contains fields:"
-msgstr ""
+msgstr "此事件包含以下字段："
 
 #: ../../modules/MAMModule.inc:16
 msgid "``resultStanza`` - whole received Message stanza (response for query),"
-msgstr ""
+msgstr "``resultStanza`` - 收到的整个消息节（对查询的响应），"
 
 #: ../../modules/MAMModule.inc:18
 msgid "``queryId`` - query identifier,"
-msgstr ""
+msgstr "``queryId`` - 查询标识符，"
 
 #: ../../modules/MAMModule.inc:20
 msgid "``id`` - result identifier,"
-msgstr ""
+msgstr "``id`` - 结果标识符，"
 
 #: ../../modules/MAMModule.inc:22
 msgid ""
 "``forwardedStanza`` - result for query containing stanza from archive and"
 " original receiving timestamp"
-msgstr ""
+msgstr "``forwardedStanza`` - 包含来自存档和原始接收时间戳的节的查询结果"
 
 #: ../../modules/MAMModule.inc:28
 msgid ""
 "``query(to: BareJID? = null, node: String? = null, rsm: RSM.Query? = "
 "null, with: String? = null, start: Long? = null, end: Long? = null)``"
 msgstr ""
+"``query(to: BareJID? = null, node: String? = null, rsm: RSM.Query? = null, "
+"with: String? = null, start: Long? = null, end: Long? = null)``"
 
 #: ../../modules/MAMModule.inc:30
 msgid "Main method to retrieve chat history from archive."
-msgstr ""
+msgstr "从存档中检索聊天记录的主要方法。"
 
 #: ../../modules/MAMModule.inc:34
 msgid ""
 "``to`` - JID of MAM component. If null, then default MAM component of "
 "user server is used,"
-msgstr ""
+msgstr "``to`` - MAM 组件的 JID。如果为 null，则使用用户服务器的默认 MAM 组件，"
 
 #: ../../modules/MAMModule.inc:36
 msgid "``node`` - name of node,"
-msgstr ""
+msgstr "``node`` - 节点的名称，"
 
 #: ../../modules/MAMModule.inc:38
 msgid "``rsm`` - Result Set Management object,"
-msgstr ""
+msgstr "``rsm`` - 结果集管理对象，"
 
 #: ../../modules/MAMModule.inc:40
 msgid "``with`` - name (JID) of interlocutor"
-msgstr ""
+msgstr "``with`` - 对话者的名字（JID）"
 
 #: ../../modules/MAMModule.inc:42
 msgid "``start``, ``end`` - timestamps to filter messages by receive date"
-msgstr ""
+msgstr "``start``, ``end`` - 按接收日期过滤消息的时间戳"
 
 #: ../../modules/MAMModule.inc:44
 msgid "All of above argoments may be ``null``."
-msgstr ""
+msgstr "以上所有参数都可能是 ``null``。"
 
 #: ../../modules/MAMModule.inc:47
 msgid "``retrievePreferences()``"
-msgstr ""
+msgstr "``retrievePreferences()``"
 
 #: ../../modules/MAMModule.inc:49
 msgid "Retrieves MAM preferences."
-msgstr ""
+msgstr "检索 MAM 首选项。"
 
 #: ../../modules/MAMModule.inc:51
 msgid "In response, you will get ``Preferences`` object containing:"
-msgstr ""
+msgstr "作为回应，您将获得 ``Preferences`` 对象，其中包含："
 
 #: ../../modules/MAMModule.inc:53
 msgid ""
 "``default`` - default behaviour of message archiving: ``Always``, "
 "``Never``, ``Roster``."
-msgstr ""
+msgstr "``default`` - 消息归档的默认行为：``Always``, ``Never``, ``Roster``。"
 
 #: ../../modules/MAMModule.inc:55
 msgid ""
 "``always`` - collection of BareJIDs with whom conversations will always "
 "be archived."
-msgstr ""
+msgstr "``always`` - BareJID 的集合，与他们的对话将始终被存档。"
 
 #: ../../modules/MAMModule.inc:57
 msgid ""
 "``never`` - collection of BareJIDs with whom conversations will never be "
 "archived."
-msgstr ""
+msgstr "``never`` - 永远不会存档与之对话的 BareJID 集合。"
 
 #: ../../modules/MAMModule.inc:60
 msgid "``updatePreferences(preferences: Preferences)``"
-msgstr ""
+msgstr "``updatePreferences(preferences: Preferences)``"
 
 #: ../../modules/MAMModule.inc:62
 msgid "Updates MAM preferences."
-msgstr ""
+msgstr "更新 MAM 首选项。"
 
 #: ../../modules/MAMModule.inc:65
 msgid "Usage"
-msgstr ""
+msgstr "用法"
 
 #: ../../modules/MAMModule.inc:67
 msgid ""
 "When client establish connection to server, it should ask server for all "
 "messages exchanged with other clients connected to the same account."
-msgstr ""
+msgstr "当客户端与服务器建立连接时，它应该向服务器询问与连接到同一帐户的其他客户端交"
+"换的所有消息。"
 
 #: ../../modules/MAMModule.inc:69
 msgid ""
 "It can be done by asking server for all messages since, last received "
 "message:"
-msgstr ""
+msgstr "可以通过向服务器询问自上次收到消息以来的所有消息来完成："
 
 #: ../../modules/MAMModule.inc:95
 msgid ""
@@ -1463,6 +1559,11 @@ msgid ""
 "be included only messages located after last message identifier from "
 "currently received package of messages."
 msgstr ""
+"因为 MAM "
+"服务器已经定义了返回消息的最大数量，所以我们必须询问直到查询完成。在示例中，"
+"它是通过使用填充的结果集管理对象反复执行方法 ``ask()`` 来完成的。 ``RSM."
+"Query(after = it.rsm!!.last)`` "
+"意味着结果中必须只包含位于当前接收到的消息包中最后一个消息标识符之后的消息。"
 
 #: ../../modules/MAMModule.inc:97
 msgid ""
@@ -1470,107 +1571,117 @@ msgid ""
 "can ask for all messages since specific time exchanged with specific JID,"
 " or you can ask for all messages stored in archive."
 msgstr ""
+"请注意，方法 ``query()`` 的参数``with`` 是可选的，"
+"因此您可以询问自特定时间以来与特定 JID "
+"交换的所有消息，或者您可以询问存储在存档中的所有消息。"
 
 #: ../../modules/MAMModule.inc:99
 msgid ""
 "The second way to retrieve messages from archive is asking for messages "
 "located before or after specific message identifier."
-msgstr ""
+msgstr "从存档中检索消息的第二种方法是询问位于特定消息标识符之前或之后的消息。"
 
 #: ../../modules/MAMModule.inc:124
 msgid ""
 "To get MAM related message ID, you have to use ``getStanzaIDBy()`` "
 "function (As parameter, you have to put name of own account):"
-msgstr ""
+msgstr "要获取 MAM 相关的消息 ID，您必须使用 ``getStanzaIDBy()`` "
+"函数（作为参数，您必须输入自己的帐户名称）："
 
 #: ../../modules/MAMModule.inc:130
 msgid ""
 "It is useful when message is received \"in normal way\", so when it is "
 "pushed to client by server."
-msgstr ""
+msgstr "当其被服务器推送到客户端时，当''以正常方式''接收消息时很有用。"
 
 #: ../../modules/MAMModule.inc:132
 msgid ""
 "When message is received as result of using method ``query()`` (in "
 "consumer), identifier is given in ``ForwardedStanza``:"
-msgstr ""
+msgstr "当使用方法 ``query()`` （在消费者中）接收到消息时，标识符在 "
+"``ForwardedStanza`` 中给出："
 
 #: ../../modules/MAMModule.inc:138
 msgid ""
 "The same mechanism you can use to load older messages in history (not "
 "loaded yet by client):"
-msgstr ""
+msgstr "您可以使用相同的机制来加载历史记录中的旧消息（客户端尚未加载）："
 
 #: ../../modules/MAMModule.inc:159
 msgid ""
 "In above example, client is asking for 20 messages located in history "
 "before message ``2753e4a8-9150-4e34-8757-4cd5e8419159``."
 msgstr ""
+"在上面的示例中，客户端要求位于在消息 ``2753e4a8-9150-4e34-8757-4cd5e8419159``"
+" 之前历史记录中的 20 条消息。"
 
 #: ../../modules/MAMModule.inc:163
 msgid ""
 "Message Archive returns requested amount of messages. Not every message "
 "may contain body to show. Some of those messages may contain only "
 "confirmation of message read or other controlling commands."
-msgstr ""
+msgstr "消息存档返回请求的消息量。并非每条消息都可能包含要显示的正文。其中一些消息可"
+"能仅包含对消息读取或其他控制命令的确认。"
 
 #: ../../Quickstart.rst:2
 msgid "Quickstart"
-msgstr ""
+msgstr "快速入门"
 
 #: ../../Quickstart.rst:5
 msgid "Simplest client"
-msgstr ""
+msgstr "最简单的客户端"
 
 #: ../../Quickstart.rst:7
 msgid "Here is example of simplest client sending one message."
-msgstr ""
+msgstr "这是最简单的客户端发送一条消息的示例。"
 
 #: ../../Quickstart.rst:9
 msgid "**SimplestClient.kt.**"
-msgstr ""
+msgstr "**SimplestClient.kt.**"
 
 #: ../../Quickstart.rst:30
 msgid "Handling changes of connection status"
-msgstr ""
+msgstr "处理连接状态的变化"
 
 #: ../../Quickstart.rst:32
 msgid "We can listen for changing status of connection:"
-msgstr ""
+msgstr "我们可以监听连接状态的变化："
 
 #: ../../Quickstart.rst:40
 msgid "Available states:"
-msgstr ""
+msgstr "可用状态："
 
 #: ../../Quickstart.rst:42
 msgid ""
 "``Connecting`` - this state means, that method ``connect()`` was called, "
 "and connection to server is in progress."
-msgstr ""
+msgstr "``Connecting`` - 这个状态意味着，``connect()`` "
+"方法被调用，并且与服务器的连接正在进行中。"
 
 #: ../../Quickstart.rst:44
 msgid "``Connected`` - connection is fully established."
-msgstr ""
+msgstr "``Connected`` -连接已完全建立。"
 
 #: ../../Quickstart.rst:46
 msgid ""
 "``Disconnecting`` - connection is closing because of error or manual "
 "disconnecting."
-msgstr ""
+msgstr "``Disconnecting`` - 由于错误或手动断开连接而关闭。"
 
 #: ../../Quickstart.rst:48
 msgid ""
 "``Disconnected`` - Halcyon is disconnected from XMPP server, but it is "
 "still active. It may start reconnecting to server automatically."
-msgstr ""
+msgstr "``Disconnected`` - Halcyon 与 XMPP "
+"服务器断开连接，但它仍然处于活动状态。它可能会开始自动重新连接到服务器。"
 
 #: ../../Quickstart.rst:50
 msgid "``Stopped`` - Halcyon is turned off (not active)."
-msgstr ""
+msgstr "``Stopped`` - Halcyon 已关闭（未激活）。"
 
 #: ../../WorkingWithEvents.rst:3
 msgid "Working with events"
-msgstr ""
+msgstr "处理事件"
 
 #: ../../WorkingWithEvents.rst:5
 msgid ""
@@ -1579,20 +1690,23 @@ msgid ""
 " bus inside, to which you can register listeners. Each part of library "
 "(like modules, connectors, etc.) may have set of own events to fire."
 msgstr ""
+"Halcyon 是事件驱动的库。这意味着您必须侦听事件以接收消息，对断开连接等做出反"
+"应。内部有单个事件总线，您可以向其注册侦听器。库的每个部分（如模块、连接器等"
+"）都可能有一组自己的要触发的事件。"
 
 #: ../../WorkingWithEvents.rst:11
 msgid "General code to registering events:"
-msgstr ""
+msgstr "注册事件的通用代码："
 
 #: ../../WorkingWithEvents.rst:19
 msgid ""
 "In Halcyon, name of event is defined as constant variable named ``TYPE`` "
 "in each event."
-msgstr ""
+msgstr "在 Halcyon 中，事件的名称被定义为每个事件中名为 ``TYPE`` 的常数变数。"
 
 #: ../../WorkingWithEvents.rst:22
 msgid "For example:"
-msgstr ""
+msgstr "例如："
 
 #: ../../WorkingWithEvents.rst:30
 msgid ""
@@ -1601,10 +1715,12 @@ msgid ""
 "``tigase.halcyon.core.eventbus.Event`` and call method "
 "``eventbus.fire()``:"
 msgstr ""
+"您可以将 EventBus 用于您自己的应用程序。无需注册事件类型。只需创建从 ``tigase"
+".halcyon.core.eventbus.Event`` 继承的对象并调用方法 ``eventbus.fire()`` ："
 
 #: ../../WorkingWithRequests.rst:2
 msgid "Working with requests"
-msgstr ""
+msgstr "处理请求"
 
 #: ../../WorkingWithRequests.rst:4
 msgid ""
@@ -1612,24 +1728,28 @@ msgid ""
 "yes) must return ``RequestBuilder`` object to allow check status of "
 "request and receive response."
 msgstr ""
+"每个模块可以对其他 XMPP 实体执行一些请求，并且（如果是）必须返回 "
+"``RequestBuilder`` 对象以允许检查请求状态并接收响应。"
 
 #: ../../WorkingWithRequests.rst:6
 msgid ""
 "For example, suppose we want to ping XMPP server (as described in "
 "`XEP-0199 <https://xmpp.org/extensions/xep-0199.html>`__):"
 msgstr ""
+"例如，假设我们要 ping XMPP 服务器（如 `XEP-0199 <https://xmpp.org/extensions/"
+"xep-0199.html>`__ 中所述）："
 
 #: ../../WorkingWithRequests.rst:8
 msgid "**Sample ping request and response.**"
-msgstr ""
+msgstr "**示例 ping 请求和响应。**"
 
 #: ../../WorkingWithRequests.rst:20
 msgid "There is module ``PingModule`` in Halcyon to do it:"
-msgstr ""
+msgstr "Halcyon 中有一个模块 ``PingModule`` 可以做到这一点："
 
 #: ../../WorkingWithRequests.rst:22
 msgid "**Kotlin sample.**"
-msgstr ""
+msgstr "**Kotlin 示例。**"
 
 #: ../../WorkingWithRequests.rst:29
 msgid ""
@@ -1638,18 +1758,20 @@ msgid ""
 "stanza you have to call method 'send()'. There is also available method "
 "``build()`` what also creates request object, but doesn’t sends it."
 msgstr ""
+"在这种情况下，方法 ``ping()`` 返回 ``RequestBuilder`` "
+"以允许添加结果处理程序、更改默认超时和其他操作。要发送节，您必须调用方法 "
+"'send()'。还有可用的方法 ``build()`` 也创建请求对象，但不发送它。"
 
 #: ../../WorkingWithRequests.rst:33
 msgid "On JVM, methods of handler will be called from separate thread."
-msgstr ""
+msgstr "在 JVM 上，处理程序的方法将从单独的线程中调用。"
 
 #: ../../WorkingWithRequests.rst:35
 msgid ""
 "Most universal way to receive result in asynchronous way is add response "
 "handler to request builder:"
-msgstr ""
+msgstr "以异步方式接收结果的最通用方法是将响应处理程序添加到请求构建器："
 
 #: ../../index.rst:4
 msgid "Tigase Halcyon XMPP Library"
-msgstr ""
-
+msgstr "Tigase Halcyon XMPP 库"
