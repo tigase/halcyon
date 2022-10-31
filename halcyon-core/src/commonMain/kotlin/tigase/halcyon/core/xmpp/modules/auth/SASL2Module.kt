@@ -3,13 +3,13 @@ package tigase.halcyon.core.xmpp.modules.auth
 import com.soywiz.krypto.sha1
 import tigase.halcyon.core.AbstractHalcyon
 import tigase.halcyon.core.Context
-import tigase.halcyon.core.modules.XmppModuleProvider
 import tigase.halcyon.core.connector.SessionController
 import tigase.halcyon.core.exceptions.HalcyonException
 import tigase.halcyon.core.logger.Level
 import tigase.halcyon.core.logger.LoggerFactory
 import tigase.halcyon.core.modules.Criterion
 import tigase.halcyon.core.modules.XmppModule
+import tigase.halcyon.core.modules.XmppModuleProvider
 import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xml.element
 import tigase.halcyon.core.xmpp.ErrorCondition
@@ -30,7 +30,7 @@ class SASL2Module(override val context: AbstractHalcyon) : XmppModule, SASL2Modu
 
 		override fun instance(context: Context): SASL2Module = SASL2Module(context as AbstractHalcyon)
 
-		override fun requiredModules()= listOf(DiscoveryModule)
+		override fun requiredModules() = listOf(DiscoveryModule)
 	}
 
 	override val type = TYPE

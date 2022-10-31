@@ -56,7 +56,10 @@ class JIDTest {
 		assertEquals(JID.parse("a@b/c"), JID.parse("a@b/c"))
 		assertEquals(JID("a", "b", "c"), JID.parse("a@b/c"))
 
-		assertFalse(JID.parse("a@b").equals(JID.parse("a@b/c")))
+		assertFalse(
+			JID.parse("a@b")
+				.equals(JID.parse("a@b/c"))
+		)
 	}
 
 	@Test

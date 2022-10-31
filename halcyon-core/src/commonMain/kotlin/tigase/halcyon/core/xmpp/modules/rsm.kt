@@ -36,12 +36,15 @@ class RSM private constructor() {
 			var last: String? = null
 			var count: Int? = null
 
-			element.getFirstChild("first")?.let {
-				first = it.value
-				index = it.attributes["index"]?.toInt()
-			}
-			element.getFirstChild("last")?.let { last = it.value }
-			element.getFirstChild("count")?.let { count = it.value?.toInt() }
+			element.getFirstChild("first")
+				?.let {
+					first = it.value
+					index = it.attributes["index"]?.toInt()
+				}
+			element.getFirstChild("last")
+				?.let { last = it.value }
+			element.getFirstChild("count")
+				?.let { count = it.value?.toInt() }
 
 			return Result(first, last, index, count)
 		}
@@ -81,11 +84,11 @@ class RSM private constructor() {
 	}
 
 	data class Result(
-		val first: String? = null, val last: String? = null, val index: Int? = null, val count: Int? = null
+		val first: String? = null, val last: String? = null, val index: Int? = null, val count: Int? = null,
 	)
 
 	data class Query(
-		val after: String? = null, val before: String? = null, val index: Int? = null, val max: Int? = null
+		val after: String? = null, val before: String? = null, val index: Int? = null, val max: Int? = null,
 	) {
 
 		fun toElement(): Element {
@@ -93,26 +96,26 @@ class RSM private constructor() {
 				xmlns = XMLNS
 
 				after?.let { v ->
-					"after"{
+					"after" {
 						if (v.isNotBlank()) {
 							+v
 						}
 					}
 				}
 				before?.let { v ->
-					"before"{
+					"before" {
 						if (v.isNotBlank()) {
 							+v
 						}
 					}
 				}
 				max?.let {
-					"max"{
+					"max" {
 						+"$it"
 					}
 				}
 				index?.let {
-					"index"{
+					"index" {
 						+"$it"
 					}
 				}

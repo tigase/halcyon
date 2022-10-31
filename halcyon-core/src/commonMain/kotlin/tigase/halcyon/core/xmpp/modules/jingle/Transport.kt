@@ -48,8 +48,10 @@ class Transport(val ufrag: String?, val pwd: String?, val candidates: List<Candi
 			if (!("transport".equals(el.name) && XMLNS.equals(el.xmlns))) {
 				return null
 			}
-			val candidates: List<Candidate> = el.children.map { Candidate.parse(it) }.filterNotNull()
-			val fingerprint = el.children.map { Fingerprint.parse(it) }.firstOrNull()
+			val candidates: List<Candidate> = el.children.map { Candidate.parse(it) }
+				.filterNotNull()
+			val fingerprint = el.children.map { Fingerprint.parse(it) }
+				.firstOrNull()
 			return Transport(el.attributes["ufrag"], el.attributes["pwd"], candidates, fingerprint)
 		}
 	}

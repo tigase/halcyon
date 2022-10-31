@@ -41,7 +41,7 @@ kotlin {
 	}
 	ios()
 	sourceSets {
-		named("commonMain")  {
+		named("commonMain") {
 			dependencies {
 				implementation(kotlin("stdlib-common"))
 				implementation(project(":halcyon-core"))

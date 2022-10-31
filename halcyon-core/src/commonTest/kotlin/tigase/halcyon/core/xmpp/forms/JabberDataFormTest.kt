@@ -47,8 +47,8 @@ class JabberDataFormTest {
 		val field = Field(element("field") {
 			attribute("type", "text-single")
 			attribute("val", "test")
-			"required"{}
-			"value"{ +"123" }
+			"required" {}
+			"value" { +"123" }
 		})
 		assertEquals("123", field.fieldValue)
 		assertEquals(listOf("123"), field.fieldValues)
@@ -68,7 +68,11 @@ class JabberDataFormTest {
 		field.fieldValue = null
 		assertEquals(listOf(), field.fieldValues)
 		assertEquals(null, field.fieldValue)
-		assertEquals(0, field.element.children.filter { element -> element.name == "value" }.count())
+		assertEquals(
+			0,
+			field.element.children.filter { element -> element.name == "value" }
+				.count()
+		)
 	}
 
 	@Test
@@ -76,7 +80,7 @@ class JabberDataFormTest {
 		val field = Field(element("field") {
 			attribute("type", "text-single")
 			attribute("val", "test")
-			"required"{}
+			"required" {}
 		})
 		assertTrue(field.fieldRequired)
 		assertEquals(1, field.element.children.count { it.name == "required" })
@@ -126,127 +130,144 @@ class JabberDataFormTest {
 		val submitingForm = form.createSubmitForm()
 		assertNotNull(submitingForm)
 
-		assertEquals(8, submitingForm.children.filter { it.name == "field" }.count())
+		assertEquals(
+			8,
+			submitingForm.children.filter { it.name == "field" }
+				.count()
+		)
 		val featuresField = submitingForm.children.first { it.attributes["var"] == "features" }
 		assertNotNull(featuresField)
 		assertNull(featuresField.attributes["label"])
-		assertEquals(2, featuresField.getChildren("value").count())
-		assertEquals(0, featuresField.getChildren("option").count())
+		assertEquals(
+			2,
+			featuresField.getChildren("value")
+				.count()
+		)
+		assertEquals(
+			0,
+			featuresField.getChildren("option")
+				.count()
+		)
 
 		val passwordField = submitingForm.children.first { it.attributes["var"] == "password" }
 		assertNotNull(passwordField)
-		assertEquals(1, passwordField.getChildren("value").count(), "Empty element value is expected")
+		assertEquals(
+			1,
+			passwordField.getChildren("value")
+				.count(),
+			"Empty element value is expected"
+		)
 	}
 
 	private fun createSampleForm(): JabberDataForm = JabberDataForm(element("x") {
 		xmlns = "jabber:x:data"
 		attribute("type", "form")
-		"title"{ +"Bot Configuration" }
-		"instructions"{ +"Fill out this form to configure your new bot!" }
-		"field"{
+		"title" { +"Bot Configuration" }
+		"instructions" { +"Fill out this form to configure your new bot!" }
+		"field" {
 			attribute("type", "hidden")
 			attribute("var", "FORM_TYPE")
-			"value"{ +"jabber:bot" }
+			"value" { +"jabber:bot" }
 		}
-		"field"{
+		"field" {
 			attribute("type", "fixed")
-			"value"{ +"Section 1: Bot Info" }
+			"value" { +"Section 1: Bot Info" }
 		}
-		"field"{
+		"field" {
 			attribute("type", "text-single")
 			attribute("var", "botname")
 			attribute("label", "The name of your bot")
 		}
-		"field"{
+		"field" {
 			attribute("type", "text-multi")
 			attribute("var", "description")
 			attribute("label", "Helpful description of your bot")
 		}
-		"field"{
+		"field" {
 			attribute("type", "boolean")
 			attribute("var", "public")
 			attribute("label", "Public bot?")
-			"required"{}
+			"required" {}
 		}
-		"field"{
+		"field" {
 			attribute("type", "text-private")
 			attribute("var", "password")
 			attribute("label", "Password for special access")
 		}
-		"field"{
+		"field" {
 			attribute("type", "fixed")
-			"value"{ +"Section 2: Features" }
+			"value" { +"Section 2: Features" }
 		}
-		"field"{
+		"field" {
 			attribute("type", "list-multi")
 			attribute("var", "features")
 			attribute("label", "What features will the bot support?")
-			"option"{
+			"option" {
 				attribute("label", "Contests")
-				"value"{ +"contests" }
+				"value" { +"contests" }
 			}
-			"option"{
+			"option" {
 				attribute("label", "News")
-				"value"{ +"news" }
+				"value" { +"news" }
 			}
-			"option"{
+			"option" {
 				attribute("label", "Polls")
-				"value"{ +"polls" }
+				"value" { +"polls" }
 			}
-			"option"{
+			"option" {
 				attribute("label", "Reminders")
-				"value"{ +"reminders" }
+				"value" { +"reminders" }
 			}
-			"option"{
+			"option" {
 				attribute("label", "Search")
-				"value"{ +"search" }
+				"value" { +"search" }
 			}
-			"value"{ +"news" }
-			"value"{ +"search" }
+			"value" { +"news" }
+			"value" { +"search" }
 		}
-		"field"{
+		"field" {
 			attribute("type", "fixed")
-			"value"{ +"Section 3: Subscriber List" }
+			"value" { +"Section 3: Subscriber List" }
 		}
-		"field"{
+		"field" {
 			attribute("type", "list-single")
 			attribute("var", "maxsubs")
 			attribute("label", "Maximum number of subscribers")
-			"value"{ +"20" }
-			"option"{
+			"value" { +"20" }
+			"option" {
 				attribute("label", "10")
-				"value"{ +"10" }
+				"value" { +"10" }
 			}
-			"option"{
+			"option" {
 				attribute("label", "20")
-				"value"{ +"20" }
+				"value" { +"20" }
 			}
-			"option"{
+			"option" {
 				attribute("label", "30")
-				"value"{ +"30" }
+				"value" { +"30" }
 			}
-			"option"{
+			"option" {
 				attribute("label", "50")
-				"value"{ +"50" }
+				"value" { +"50" }
 			}
-			"option"{
+			"option" {
 				attribute("label", "100")
-				"value"{ +"100" }
+				"value" { +"100" }
 			}
-			"option"{
+			"option" {
 				attribute("label", "None")
-				"value"{ +"none" }
+				"value" { +"none" }
 			}
 		}
-		"field"{
+		"field" {
 			attribute("type", "fixed")
-			"value"{ +"Section 4: Invitations" }
+			"value" { +"Section 4: Invitations" }
 		}
-		"field"{
+		"field" {
 			attribute("type", "jid-multi")
 			attribute("var", "invitelist")
 			attribute("label", "People to invite")
-			"desc"{ +"Tell all your friends about your new bot!" }
+			"desc" { +"Tell all your friends about your new bot!" }
 		}
 	})
 
@@ -256,11 +277,12 @@ class JabberDataFormTest {
 		form.title = "TeSt"
 		form.addField("a", FieldType.Hidden).fieldValue = "abc"
 		form.addField(null, FieldType.Fixed).fieldValue = "TEST"
-		form.addField("password", FieldType.TextPrivate).apply {
-			fieldValue = "123"
-			fieldDesc = "Password here"
-			fieldRequired = true
-		}
+		form.addField("password", FieldType.TextPrivate)
+			.apply {
+				fieldValue = "123"
+				fieldDesc = "Password here"
+				fieldRequired = true
+			}
 
 		assertEquals("TeSt", form.element.getFirstChild("title")?.value)
 		assertEquals("123", form.getFieldByVar("password")?.fieldValue)
@@ -281,7 +303,9 @@ class JabberDataFormTest {
 						 .mapNotNull { it.value })
 
 		assertEquals(
-			"1234567890", submit.children.first { it.attributes["var"] == "password" }.getFirstChild("value")?.value
+			"1234567890",
+			submit.children.first { it.attributes["var"] == "password" }
+				.getFirstChild("value")?.value
 		)
 	}
 
@@ -290,49 +314,49 @@ class JabberDataFormTest {
 		val form = JabberDataForm(element("x") {
 			xmlns = "jabber:x:data"
 			attribute("type", "result")
-			"title"{ +"Bot Configuration" }
-			"reported"{
-				"field"{ attributes["var"] = "name" }
-				"field"{ attributes["var"] = "url" }
+			"title" { +"Bot Configuration" }
+			"reported" {
+				"field" { attributes["var"] = "name" }
+				"field" { attributes["var"] = "url" }
 			}
-			"item"{
-				"field"{
+			"item" {
+				"field" {
 					attributes["var"] = "name"
-					"value"{ +"Comune di Verona - Benvenuti nel sito ufficiale" }
+					"value" { +"Comune di Verona - Benvenuti nel sito ufficiale" }
 				}
-				"field"{
+				"field" {
 					attributes["var"] = "url"
-					"value"{ +"http://www.comune.verona.it/" }
-				}
-			}
-			"item"{
-				"field"{
-					attributes["var"] = "name"
-					"value"{ +"Universita degli Studi di Verona - Home Page" }
-				}
-				"field"{
-					attributes["var"] = "url"
-					"value"{ +"http://www.univr.it/" }
+					"value" { +"http://www.comune.verona.it/" }
 				}
 			}
-			"item"{
-				"field"{
+			"item" {
+				"field" {
 					attributes["var"] = "name"
-					"value"{ +"Aeroporti del Garda" }
+					"value" { +"Universita degli Studi di Verona - Home Page" }
 				}
-				"field"{
+				"field" {
 					attributes["var"] = "url"
-					"value"{ +"http://www.aeroportoverona.it/" }
+					"value" { +"http://www.univr.it/" }
 				}
 			}
-			"item"{
-				"field"{
+			"item" {
+				"field" {
 					attributes["var"] = "name"
-					"value"{ +"Veronafiere - fiera di Verona" }
+					"value" { +"Aeroporti del Garda" }
 				}
-				"field"{
+				"field" {
 					attributes["var"] = "url"
-					"value"{ +"http://www.veronafiere.it/" }
+					"value" { +"http://www.aeroportoverona.it/" }
+				}
+			}
+			"item" {
+				"field" {
+					attributes["var"] = "name"
+					"value" { +"Veronafiere - fiera di Verona" }
+				}
+				"field" {
+					attributes["var"] = "url"
+					"value" { +"http://www.veronafiere.it/" }
 				}
 			}
 		})
@@ -363,36 +387,54 @@ class JabberDataFormTest {
 		assertEquals(2, form.getReportedColumns().size)
 
 		form.addItem(
-			listOf(Field.create("name").apply { fieldValue = "Comune di Verona - Benvenuti nel sito ufficiale" },
-				   Field.create("url").apply { fieldValue = "http://www.comune.verona.it/" })
+			listOf(Field.create("name")
+					   .apply { fieldValue = "Comune di Verona - Benvenuti nel sito ufficiale" },
+				   Field.create("url")
+					   .apply { fieldValue = "http://www.comune.verona.it/" })
 		)
 		form.addItem(
-			listOf(Field.create("name").apply { fieldValue = "Universita degli Studi di Verona - Home Page" },
-				   Field.create("url").apply { fieldValue = "http://www.univr.it/" })
+			listOf(Field.create("name")
+					   .apply { fieldValue = "Universita degli Studi di Verona - Home Page" },
+				   Field.create("url")
+					   .apply { fieldValue = "http://www.univr.it/" })
 		)
 		form.addItem(
-			listOf(Field.create("name").apply { fieldValue = "Aeroporti del Garda" },
-				   Field.create("url").apply { fieldValue = "http://www.aeroportoverona.it/" })
+			listOf(Field.create("name")
+					   .apply { fieldValue = "Aeroporti del Garda" },
+				   Field.create("url")
+					   .apply { fieldValue = "http://www.aeroportoverona.it/" })
 		)
 		form.addItem(
-			listOf(Field.create("name").apply { fieldValue = "Veronafiere - fiera di Verona" },
-				   Field.create("url").apply { fieldValue = "http://www.veronafiere.it/" })
+			listOf(Field.create("name")
+					   .apply { fieldValue = "Veronafiere - fiera di Verona" },
+				   Field.create("url")
+					   .apply { fieldValue = "http://www.veronafiere.it/" })
 		)
 
 		assertFailsWith<IllegalArgumentException> {
-			form.addItem(listOf(Field.create("name").apply { fieldValue = "1" },
-								Field.create("oops").apply { fieldValue = "2" })
+			form.addItem(
+				listOf(Field.create("name")
+						   .apply { fieldValue = "1" },
+					   Field.create("oops")
+						   .apply { fieldValue = "2" })
 			)
 		}
 		assertFailsWith<IllegalArgumentException> {
 			form.addItem(
-				listOf(Field.create("name").apply { fieldValue = "1" },
-					   Field.create("url").apply { fieldValue = "2" },
-					   Field.create("oops").apply { fieldValue = "3" })
+				listOf(Field.create("name")
+						   .apply { fieldValue = "1" },
+					   Field.create("url")
+						   .apply { fieldValue = "2" },
+					   Field.create("oops")
+						   .apply { fieldValue = "3" })
 			)
 		}
 		assertFailsWith<IllegalArgumentException> {
-			form.addItem(listOf(Field.create("name").apply { fieldValue = "1" }))
+			form.addItem(
+				listOf(
+					Field.create("name")
+						.apply { fieldValue = "1" })
+			)
 		}
 
 		assertEquals(4, form.getItems().size)
@@ -400,49 +442,49 @@ class JabberDataFormTest {
 		assertContains(element("x") {
 			xmlns = "jabber:x:data"
 			attribute("type", "result")
-			"title"{ +"Bot Configuration" }
-			"reported"{
-				"field"{ attributes["var"] = "name" }
-				"field"{ attributes["var"] = "url" }
+			"title" { +"Bot Configuration" }
+			"reported" {
+				"field" { attributes["var"] = "name" }
+				"field" { attributes["var"] = "url" }
 			}
-			"item"{
-				"field"{
+			"item" {
+				"field" {
 					attributes["var"] = "name"
-					"value"{ +"Comune di Verona - Benvenuti nel sito ufficiale" }
+					"value" { +"Comune di Verona - Benvenuti nel sito ufficiale" }
 				}
-				"field"{
+				"field" {
 					attributes["var"] = "url"
-					"value"{ +"http://www.comune.verona.it/" }
-				}
-			}
-			"item"{
-				"field"{
-					attributes["var"] = "name"
-					"value"{ +"Universita degli Studi di Verona - Home Page" }
-				}
-				"field"{
-					attributes["var"] = "url"
-					"value"{ +"http://www.univr.it/" }
+					"value" { +"http://www.comune.verona.it/" }
 				}
 			}
-			"item"{
-				"field"{
+			"item" {
+				"field" {
 					attributes["var"] = "name"
-					"value"{ +"Aeroporti del Garda" }
+					"value" { +"Universita degli Studi di Verona - Home Page" }
 				}
-				"field"{
+				"field" {
 					attributes["var"] = "url"
-					"value"{ +"http://www.aeroportoverona.it/" }
+					"value" { +"http://www.univr.it/" }
 				}
 			}
-			"item"{
-				"field"{
+			"item" {
+				"field" {
 					attributes["var"] = "name"
-					"value"{ +"Veronafiere - fiera di Verona" }
+					"value" { +"Aeroporti del Garda" }
 				}
-				"field"{
+				"field" {
 					attributes["var"] = "url"
-					"value"{ +"http://www.veronafiere.it/" }
+					"value" { +"http://www.aeroportoverona.it/" }
+				}
+			}
+			"item" {
+				"field" {
+					attributes["var"] = "name"
+					"value" { +"Veronafiere - fiera di Verona" }
+				}
+				"field" {
+					attributes["var"] = "url"
+					"value" { +"http://www.veronafiere.it/" }
 				}
 			}
 		}, form.element)

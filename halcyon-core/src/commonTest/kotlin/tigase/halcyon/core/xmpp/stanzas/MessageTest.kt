@@ -46,7 +46,7 @@ class MessageTest {
 	@Test
 	fun testBodySet() {
 		val e = message {
-			"body"{ +"192562" }
+			"body" { +"192562" }
 		}
 		assertEquals("192562", e.body)
 		e.body = "9876"

@@ -35,10 +35,14 @@ class Base64Test {
 
 	@Test
 	fun encodeDecodeToByteArray() {
-		val byteArray = IntRange(0, 10240).map { it.toByte() }.shuffled().toByteArray()
+		val byteArray = IntRange(0, 10240).map { it.toByte() }
+			.shuffled()
+			.toByteArray()
 		val enc = Base64.encode(byteArray)
 		val dec = Base64.decodeToByteArray(enc)
-		val dec2 = Base64.decode(enc).map { c -> c.code.toByte() }.toByteArray()
+		val dec2 = Base64.decode(enc)
+			.map { c -> c.code.toByte() }
+			.toByteArray()
 
 		assertEquals(byteArray.size, dec.size)
 		assertEquals(byteArray.size, dec2.size)

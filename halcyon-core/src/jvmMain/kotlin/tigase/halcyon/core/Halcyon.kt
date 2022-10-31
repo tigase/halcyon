@@ -18,7 +18,6 @@
 package tigase.halcyon.core
 
 import tigase.halcyon.core.builder.ConfigurationBuilder
-import tigase.halcyon.core.configuration.Configuration
 import tigase.halcyon.core.connector.AbstractConnector
 import tigase.halcyon.core.connector.socket.SocketConnector
 import tigase.halcyon.core.eventbus.Event

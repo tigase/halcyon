@@ -1,9 +1,9 @@
 package tigase.halcyon.core.xmpp.modules
 
 import tigase.halcyon.core.Context
-import tigase.halcyon.core.modules.XmppModuleProvider
 import tigase.halcyon.core.modules.AbstractXmppModule
 import tigase.halcyon.core.modules.Criterion
+import tigase.halcyon.core.modules.XmppModuleProvider
 import tigase.halcyon.core.requests.RequestBuilder
 import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xmpp.BareJID

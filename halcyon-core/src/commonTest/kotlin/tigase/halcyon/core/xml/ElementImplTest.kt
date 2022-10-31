@@ -24,96 +24,96 @@ class ElementImplTest {
 	val ea11 = element("a") {
 		attribute("id", "000")
 		attribute("ok", "010")
-		"a"{
+		"a" {
 			xmlns = "xxx"
 			+"value"
 		}
-		"1"{
+		"1" {
 			attribute("type", "x")
 			xmlns = "xxx"
 			+"something else"
 		}
-		"b"{
+		"b" {
 			attribute("type", "y")
-			"ba"{
-				"bb"{
+			"ba" {
+				"bb" {
 					+"99898"
 				}
 			}
 		}
-		"a"{
+		"a" {
 			+"value2"
 		}
 	} as ElementImpl
 	val ea12 = element("a") {
 		attribute("id", "000")
 		attribute("ok", "010")
-		"a"{
+		"a" {
 			xmlns = "xxx"
 			+"value"
 		}
-		"1"{
+		"1" {
 			attribute("type", "x")
 			xmlns = "xxx"
 			+"something else"
 		}
-		"b"{
+		"b" {
 			attribute("type", "y")
-			"ba"{
-				"bb"{
+			"ba" {
+				"bb" {
 					+"99898"
 				}
 			}
 		}
-		"a"{
+		"a" {
 			+"value2"
 		}
 	} as ElementImpl
 	val eb11 = element("a") {
 		attribute("id", "000")
 		attribute("ok", "101")
-		"a"{
+		"a" {
 			xmlns = "xxx"
 			+"value"
 		}
-		"1"{
+		"1" {
 			attribute("type", "x")
 			xmlns = "xxx"
 			+"something else"
 		}
-		"b"{
+		"b" {
 			attribute("type", "y")
-			"ba"{
-				"bb"{
+			"ba" {
+				"bb" {
 					+"99898"
 				}
 			}
 		}
-		"a"{
+		"a" {
 			+"value2"
 		}
 	} as ElementImpl
 	val ec11 = element("a") {
 		attribute("id", "000")
 		attribute("ok", "010")
-		"a"{
+		"a" {
 			xmlns = "xxx"
 			+"value"
 		}
-		"1"{
+		"1" {
 			attribute("type", "x")
 			xmlns = "xxx"
 			+"something else"
 		}
-		"b"{
+		"b" {
 			attribute("type", "y")
-			"ba"{
-				"bb"{
+			"ba" {
+				"bb" {
 					+"99890"
 				}
 			}
 		}
-		"a"{
+		"a" {
 			+"value2"
 		}
 	} as ElementImpl
@@ -192,10 +192,22 @@ class ElementImplTest {
 	}
 
 	private fun createElement(): Element {
-		val b = ElementBuilder.create("message").attribute("to", "romeo@example.net")
-			.attribute("from", "juliet@example.com/balcony").attribute("type", "chat").child("subject")
-			.value("I implore you!").up().child("body").value("Wherefore art thou, Romeo?").up().child("thread")
-			.value("e0ffe42b28561960c6b12b944a092794b9683a38").up().child("x").value("tigase:offline").xmlns("tigase")
+		val b = ElementBuilder.create("message")
+			.attribute("to", "romeo@example.net")
+			.attribute("from", "juliet@example.com/balcony")
+			.attribute("type", "chat")
+			.child("subject")
+			.value("I implore you!")
+			.up()
+			.child("body")
+			.value("Wherefore art thou, Romeo?")
+			.up()
+			.child("thread")
+			.value("e0ffe42b28561960c6b12b944a092794b9683a38")
+			.up()
+			.child("x")
+			.value("tigase:offline")
+			.xmlns("tigase")
 		return b.build()
 	}
 
@@ -228,9 +240,9 @@ class ElementImplTest {
 	fun testGetAsString() {
 		val e1 = element("a") {
 			attributes["id"] = "123"
-			"b"{
-				"c"{
-					"d"{
+			"b" {
+				"c" {
+					"d" {
 						+"test123"
 					}
 				}
@@ -249,22 +261,24 @@ class ElementImplTest {
 
 		val e3 = element("a") {
 			attributes["id"] = "123"
-			"b"{
-				"c"{
-					"d"{
+			"b" {
+				"c" {
+					"d" {
 						+"test123"
 					}
-					"e"{
+					"e" {
 						+"test123"
 					}
-					"f"{
+					"f" {
 						+"test123"
 					}
 				}
 			}
 		}
-		assertEquals("<a id=\"123\"><b><c><d>...</d><e>...</e><f>...</f></c></b></a>",
-					 e3.getAsString(deep = 3, showValue = false))
+		assertEquals(
+			"<a id=\"123\"><b><c><d>...</d><e>...</e><f>...</f></c></b></a>",
+			e3.getAsString(deep = 3, showValue = false)
+		)
 
 	}
 

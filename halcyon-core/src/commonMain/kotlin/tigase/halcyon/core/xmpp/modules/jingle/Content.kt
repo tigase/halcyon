@@ -47,8 +47,10 @@ class Content(
 			if ("content" == el.name) {
 				val name = el.attributes["name"] ?: return null
 				val creator = el.attributes["creator"]?.let { Creator.valueOf(it) } ?: return null
-				val description = el.getFirstChild("description")?.let { Description.parse(it) }
-				val transports = el.children.map { Transport.parse(it) }.filterNotNull()
+				val description = el.getFirstChild("description")
+					?.let { Description.parse(it) }
+				val transports = el.children.map { Transport.parse(it) }
+					.filterNotNull()
 				return Content(creator, name, description, transports)
 			}
 			return null

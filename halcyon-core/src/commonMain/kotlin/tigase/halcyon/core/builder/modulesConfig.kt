@@ -4,7 +4,10 @@ import tigase.halcyon.core.modules.ModulesManager
 import tigase.halcyon.core.modules.XmppModule
 import tigase.halcyon.core.modules.XmppModuleProvider
 
-data class Item<M : XmppModule, B : Any>(val provider: XmppModuleProvider<M, B>, val configuration: (B.() -> Unit)?=null)
+data class Item<M : XmppModule, B : Any>(
+	val provider: XmppModuleProvider<M, B>,
+	val configuration: (B.() -> Unit)? = null,
+)
 
 @ConfigurationDSLMarker
 class ModulesConfigBuilder {
@@ -24,7 +27,7 @@ class ModulesConfigBuilder {
 				val originalModule = modulesManager.getModuleOrNull<XmppModule>(provider.TYPE)
 
 				val currentModule = originalModule ?: provider.instance(modulesManager.context)
-				provider.configure(currentModule, configuration?:{})
+				provider.configure(currentModule, configuration ?: {})
 				if (originalModule == null) {
 					modulesManager.register(currentModule)
 				}

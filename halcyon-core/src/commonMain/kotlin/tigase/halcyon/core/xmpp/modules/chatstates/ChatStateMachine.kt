@@ -26,7 +26,7 @@ import tigase.halcyon.core.xmpp.BareJID
 import kotlin.time.Duration.Companion.seconds
 
 data class OwnChatStateChangeEvent(
-	val jid: BareJID, val oldState: ChatState, val state: ChatState, val sendUpdate: Boolean
+	val jid: BareJID, val oldState: ChatState, val state: ChatState, val sendUpdate: Boolean,
 ) : Event(TYPE) {
 
 	companion object {

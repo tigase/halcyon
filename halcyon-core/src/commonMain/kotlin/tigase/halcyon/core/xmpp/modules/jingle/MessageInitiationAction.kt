@@ -38,13 +38,15 @@ sealed class MessageInitiationAction(open val id: String, val actionName: String
 				"accept" -> return Accept(id)
 				"proceed" -> return Proceed(id)
 				"propose" -> {
-					val descriptions = actionEl.children.map { MessageInitiationDescription.parse(it) }.filterNotNull()
+					val descriptions = actionEl.children.map { MessageInitiationDescription.parse(it) }
+						.filterNotNull()
 					if (descriptions.isNotEmpty()) {
 						return Propose(id, descriptions)
 					} else {
 						return null
 					}
 				}
+
 				"retract" -> return Retract(id)
 				"reject" -> return Reject(id)
 				else -> return null

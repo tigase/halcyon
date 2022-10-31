@@ -38,15 +38,20 @@ class SDP(val id: String, val contents: List<Content>, private val bundle: List<
 
 		@JvmStatic
 		fun parse(sdp: String, creator: Content.Creator): Pair<SDP, String>? {
-			val parts = sdp.dropLast(2).split("\r\nm=")
-			val media = parts.drop(1).map { "m=$it" }
-			val sessionLines = parts.get(0).split("\r\n")
-			val sessionLine = sessionLines.first { it.startsWith("o=") }.split(" ")
+			val parts = sdp.dropLast(2)
+				.split("\r\nm=")
+			val media = parts.drop(1)
+				.map { "m=$it" }
+			val sessionLines = parts.get(0)
+				.split("\r\n")
+			val sessionLine = sessionLines.first { it.startsWith("o=") }
+				.split(" ")
 			if (sessionLine.size > 3) {
 				val sid = sessionLine[1]
 				val id = sessionLine[2]
 
-				val groupParts = sessionLines.firstOrNull { it.startsWith("a=group:BUNDLE ") }?.split(" ") ?: listOf("")
+				val groupParts = sessionLines.firstOrNull { it.startsWith("a=group:BUNDLE ") }
+					?.split(" ") ?: listOf("")
 				val bundle = if (groupParts.get(0) == "a=group:BUNDLE ") {
 					groupParts.drop(1)
 				} else {
@@ -70,67 +75,104 @@ fun Content.Companion.parse(sdp: String, creator: Content.Creator): Content {
 	println("parsing sdp: $sdp")
 
 	val lines = sdp.split("\r\n")
-	val line = lines.get(0).split(" ")
-	val mediaName = line.get(0).drop(2)
+	val line = lines.get(0)
+		.split(" ")
+	val mediaName = line.get(0)
+		.drop(2)
 	var name = mediaName
 
-	lines.firstOrNull { it.startsWith("a=mid:") }?.drop(6)?.let {
-		name = it
-	}
-
-	val pwd = lines.firstOrNull { it.startsWith("a=ice-pwd:") }?.drop("a=ice-pwd:".length)
-	val ufrag = lines.firstOrNull { it.startsWith("a=ice-ufrag:") }?.drop("a=ice-ufrag:".length)
-
-	val payloads = line.subList(3, line.size - 1).map { id ->
-		Payload
-		var prefix = "a=rtpmap:$id "
-		val l = lines.firstOrNull { it.startsWith(prefix) }?.drop(prefix.length)?.split("/")
-		prefix = "a=fmtp:$id "
-		val params =
-			lines.firstOrNull { it.startsWith(prefix) }?.drop(prefix.length)?.split(";")?.map { it.split("=") }?.map {
-				Payload.Parameter(it.get(0), if (it.size > 1) {
-					it.get(1)
-				} else {
-					""
-				})
-			} ?: emptyList()
-		prefix = "a=rtcp-fb:$id "
-		val rtcpFb = lines.filter { it.startsWith(prefix) }.map { it.drop(prefix.length).split(" ") }.map {
-			Payload.RtcpFeedback(it[0], if (it.size > 1) {
-				it[1]
-			} else {
-				null
-			})
+	lines.firstOrNull { it.startsWith("a=mid:") }
+		?.drop(6)
+		?.let {
+			name = it
 		}
-		val clockrate = l?.get(1)?.toInt()
-		val channels = (if ((l?.size ?: 0) > 2) {
-			l?.get(2)?.toInt()
-		} else {
-			1
-		}) ?: 1
-		Payload(id.toInt(), channels, clockrate, name = l?.get(0), parameters = params, rtcpFeedbacks = rtcpFb)
-	}
 
-	val encryptions = lines.filter { it.startsWith("a=crypto:") }.map { it.split(" ") }.filter { it.size > 3 }.map {
-		Encryption(it[0], it[1], if (it.size > 3) {
-			it[3]
-		} else {
-			null
-		}, it[2])
-	}
+	val pwd = lines.firstOrNull { it.startsWith("a=ice-pwd:") }
+		?.drop("a=ice-pwd:".length)
+	val ufrag = lines.firstOrNull { it.startsWith("a=ice-ufrag:") }
+		?.drop("a=ice-ufrag:".length)
+
+	val payloads = line.subList(3, line.size - 1)
+		.map { id ->
+			Payload
+			var prefix = "a=rtpmap:$id "
+			val l = lines.firstOrNull { it.startsWith(prefix) }
+				?.drop(prefix.length)
+				?.split("/")
+			prefix = "a=fmtp:$id "
+			val params = lines.firstOrNull { it.startsWith(prefix) }
+				?.drop(prefix.length)
+				?.split(";")
+				?.map { it.split("=") }
+				?.map {
+					Payload.Parameter(
+						it.get(0), if (it.size > 1) {
+							it.get(1)
+						} else {
+							""
+						}
+					)
+				} ?: emptyList()
+			prefix = "a=rtcp-fb:$id "
+			val rtcpFb = lines.filter { it.startsWith(prefix) }
+				.map {
+					it.drop(prefix.length)
+						.split(" ")
+				}
+				.map {
+					Payload.RtcpFeedback(
+						it[0], if (it.size > 1) {
+							it[1]
+						} else {
+							null
+						}
+					)
+				}
+			val clockrate = l?.get(1)
+				?.toInt()
+			val channels = (if ((l?.size ?: 0) > 2) {
+				l?.get(2)
+					?.toInt()
+			} else {
+				1
+			}) ?: 1
+			Payload(id.toInt(), channels, clockrate, name = l?.get(0), parameters = params, rtcpFeedbacks = rtcpFb)
+		}
+
+	val encryptions = lines.filter { it.startsWith("a=crypto:") }
+		.map { it.split(" ") }
+		.filter { it.size > 3 }
+		.map {
+			Encryption(
+				it[0], it[1], if (it.size > 3) {
+					it[3]
+				} else {
+					null
+				}, it[2]
+			)
+		}
 	val hdrExts = HdrExt.parse(lines)
 	val ssrcs = SSRC.parse(lines)
 	val ssrcGroups = SSRCGroup.parse(lines)
 	val rtcpMux = lines.indexOf("a=rtcp-mux") >= 0
 	val description = Description(mediaName, null, payloads, null, encryptions, rtcpMux, ssrcs, ssrcGroups, hdrExts)
 
-	val candidates = lines.filter { it.startsWith("a=candidate:") }.map { Candidate.parse(it) }.filterNotNull()
-	val setupStr =
-		lines.firstOrNull { it.startsWith("a=setup:") }?.drop("a=setup:".length)?.let { Fingerprint.Setup.valueOf(it) }
+	val candidates = lines.filter { it.startsWith("a=candidate:") }
+		.map { Candidate.parse(it) }
+		.filterNotNull()
+	val setupStr = lines.firstOrNull { it.startsWith("a=setup:") }
+		?.drop("a=setup:".length)
+		?.let { Fingerprint.Setup.valueOf(it) }
 	val fingerprint = setupStr?.let { setup ->
-		lines.filter { it.startsWith("a=fingerprint:") }.map { it.drop("a=fingerprint:".length).split(" ") }
-			.filter { it.size >= 2 }.map { Fingerprint(it[0], it[1], setup) }
-	}?.firstOrNull()
+		lines.filter { it.startsWith("a=fingerprint:") }
+			.map {
+				it.drop("a=fingerprint:".length)
+					.split(" ")
+			}
+			.filter { it.size >= 2 }
+			.map { Fingerprint(it[0], it[1], setup) }
+	}
+		?.firstOrNull()
 	val transport = Transport(ufrag, pwd, candidates, fingerprint)
 
 	return Content(creator, name, description, listOf(transport))
@@ -140,12 +182,16 @@ fun Content.toSDP(): String {
 	val lines = mutableListOf<String>()
 	description?.let {
 		lines += "m=${it.media} 1 ${
-			if (it.encryption.isEmpty() || transports.filter { it.fingerprint == null }.isNotEmpty()) {
+			if (it.encryption.isEmpty() || transports.filter { it.fingerprint == null }
+					.isNotEmpty()) {
 				"RTP/AVPF"
 			} else {
 				"RTP/SAVPF"
 			}
-		} ${it.payloads.map { it.id.toString() }.joinToString(" ")}"
+		} ${
+			it.payloads.map { it.id.toString() }
+				.joinToString(" ")
+		}"
 	}
 	lines += "c=IN IP4 0.0.0.0"
 
@@ -153,13 +199,14 @@ fun Content.toSDP(): String {
 		lines += "a=rtcp:1 IN IP4 0.0.0.0"
 	}
 
-	transports.firstOrNull()?.let {
-		it.ufrag?.let { lines += "a=ice-ufrag:$it" }
-		it.pwd?.let { lines += "a=ice-pwd:$it" }
-		it.fingerprint?.let {
-			lines += listOf("a=fingerprint:${it.hash} ${it.value}", "a=setup:${it.setup.name}")
+	transports.firstOrNull()
+		?.let {
+			it.ufrag?.let { lines += "a=ice-ufrag:$it" }
+			it.pwd?.let { lines += "a=ice-pwd:$it" }
+			it.fingerprint?.let {
+				lines += listOf("a=fingerprint:${it.hash} ${it.value}", "a=setup:${it.setup.name}")
+			}
 		}
-	}
 
 	lines += "a=sendrecv"
 	lines += "a=mid:$name"
@@ -179,9 +226,10 @@ fun Content.toSDP(): String {
 		lines += it.ssrcs.flatMap { it.toSDP() }
 	}
 
-	transports.firstOrNull()?.let {
-		lines += it.candidates.map { it.toSDP() }
-	}
+	transports.firstOrNull()
+		?.let {
+			lines += it.candidates.map { it.toSDP() }
+		}
 
 	return lines.joinToString("\r\n")
 }
@@ -207,7 +255,8 @@ fun Candidate.toSDP(): String {
 }
 
 fun Candidate.Companion.parse(line: String): Candidate? {
-	val parts = line.drop("a=candidate:".length).split(" ")
+	val parts = line.drop("a=candidate:".length)
+		.split(" ")
 	if (parts.size >= 10) {
 		val foundation = parts[0]
 		val component = parts[1]
@@ -241,19 +290,21 @@ fun Candidate.Companion.parse(line: String): Candidate? {
 			}
 		}
 		return generation?.let {
-			Candidate(component,
-					  foundation,
-					  it,
-					  nextUIDLongs(),
-					  ip,
-					  0,
-					  port,
-					  priority,
-					  protocolType,
-					  relAddr,
-					  relPort,
-					  type,
-					  tcptype)
+			Candidate(
+				component,
+				foundation,
+				it,
+				nextUIDLongs(),
+				ip,
+				0,
+				port,
+				priority,
+				protocolType,
+				relAddr,
+				relPort,
+				type,
+				tcptype
+			)
 		}
 	}
 	return null
@@ -269,7 +320,10 @@ fun Payload.toSDP(): List<String> {
 	}
 	val lines = mutableListOf(line)
 	if (parameters.isNotEmpty()) {
-		lines += "a=fmtp:$id ${parameters.map { "${it.name}=${it.value}" }.joinToString(";")}"
+		lines += "a=fmtp:$id ${
+			parameters.map { "${it.name}=${it.value}" }
+				.joinToString(";")
+		}"
 	}
 	lines += rtcpFeedbacks.map {
 		val type = it.type
@@ -281,32 +335,50 @@ fun Payload.toSDP(): List<String> {
 fun HdrExt.toSDP(): String = "a=extmap:$id $uri"
 
 fun HdrExt.Companion.parse(lines: List<String>): List<HdrExt> {
-	val hdrExtLines = lines.filter { it.startsWith("a=extmap:") }.map { it.drop("a=extmap:".length) }
-	return hdrExtLines.map { it.split(" ") }.filter { it.size > 1 && !it[0].contains("/") }
+	val hdrExtLines = lines.filter { it.startsWith("a=extmap:") }
+		.map { it.drop("a=extmap:".length) }
+	return hdrExtLines.map { it.split(" ") }
+		.filter { it.size > 1 && !it[0].contains("/") }
 		.map { HdrExt(it[0], it[1], Description.Senders.Both) }
 }
 
 fun SSRCGroup.toSDP(): String = "a=ssrc-group:$semantics ${sources.joinToString(" ")})"
 
 fun SSRCGroup.Companion.parse(lines: List<String>): List<SSRCGroup> {
-	val ssrcGroupLines = lines.filter { it.startsWith("a=ssrc-group:") }.map { it.drop("a=ssrc-group:".length) }
-	return ssrcGroupLines.map { it.split(" ") }.filter { it.size >= 2 }.map { SSRCGroup(it[0], it.drop(1)) }
+	val ssrcGroupLines = lines.filter { it.startsWith("a=ssrc-group:") }
+		.map { it.drop("a=ssrc-group:".length) }
+	return ssrcGroupLines.map { it.split(" ") }
+		.filter { it.size >= 2 }
+		.map { SSRCGroup(it[0], it.drop(1)) }
 }
 
 fun SSRC.toSDP(): List<String> = parameters.map { "a=ssrc:$ssrc ${it.toSDP()}" }
 
 fun SSRC.Companion.parse(lines: List<String>): List<SSRC> {
 	val ssrcLines = lines.filter { it.startsWith("a=ssrc:") }
-	val ssrcs = ssrcLines.map { it.drop("a=ssrc:".length) }.map { it.split(" ").first() }.distinct()
+	val ssrcs = ssrcLines.map { it.drop("a=ssrc:".length) }
+		.map {
+			it.split(" ")
+				.first()
+		}
+		.distinct()
 	return ssrcs.map {
 		val prefix = "a=ssrc:$it "
-		val params = ssrcLines.filter { it.startsWith(prefix) }.map { it.drop(prefix.length).split(":") }
-			.filter { it[0].isNotEmpty() }.map {
-				SSRC.Parameter(it[0], if (it.size == 1) {
-					null
-				} else {
-					it.drop(1).joinToString(":")
-				})
+		val params = ssrcLines.filter { it.startsWith(prefix) }
+			.map {
+				it.drop(prefix.length)
+					.split(":")
+			}
+			.filter { it[0].isNotEmpty() }
+			.map {
+				SSRC.Parameter(
+					it[0], if (it.size == 1) {
+						null
+					} else {
+						it.drop(1)
+							.joinToString(":")
+					}
+				)
 			}
 		SSRC(it, params)
 	}

@@ -20,10 +20,10 @@ package tigase.halcyon.core.xmpp.modules
 import tigase.halcyon.core.AbstractHalcyon
 import tigase.halcyon.core.Context
 import tigase.halcyon.core.Scope
-import tigase.halcyon.core.modules.XmppModuleProvider
 import tigase.halcyon.core.eventbus.Event
 import tigase.halcyon.core.modules.Criteria
 import tigase.halcyon.core.modules.XmppModule
+import tigase.halcyon.core.modules.XmppModuleProvider
 import tigase.halcyon.core.requests.RequestBuilder
 import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xml.element
@@ -73,8 +73,7 @@ class BindModule(override val context: AbstractHalcyon) : XmppModule, InlineProt
 			module.cfg()
 		}
 
-		override fun instance(context: Context): BindModule =
-			BindModule(context as AbstractHalcyon)
+		override fun instance(context: Context): BindModule = BindModule(context as AbstractHalcyon)
 	}
 
 	override val type = TYPE
@@ -140,7 +139,7 @@ class BindModule(override val context: AbstractHalcyon) : XmppModule, InlineProt
 	override fun featureFor(features: InlineFeatures, stage: InlineProtocolStage): Element? {
 		return if (stage == InlineProtocolStage.AfterSasl) {
 			val isResumptionAvailable =
-				context.getModuleOrNull(StreamManagementModule)?.resumptionContext?.isResumptionAvailable()?:false
+				context.getModuleOrNull(StreamManagementModule)?.resumptionContext?.isResumptionAvailable() ?: false
 
 			if (!isResumptionAvailable) {
 				val bindInlineFeatures = features.subInline("bind", BIND2_XMLNS)

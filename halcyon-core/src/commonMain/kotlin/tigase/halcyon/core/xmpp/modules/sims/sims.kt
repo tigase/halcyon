@@ -42,23 +42,24 @@ fun Stanza<*>.getReferenceOrNull(): Reference? =
 	getChildrenNS("reference", ReferenceModule.XMLNS)?.let { Reference(it) }
 
 fun Reference.getMediaSharingFileOrNull(): File? = this.getChildrenNS("media-sharing", "urn:xmpp:sims:1")
-	?.getChildrenNS("file", "urn:xmpp:jingle:apps:file-transfer:5")?.let { File(it) }
+	?.getChildrenNS("file", "urn:xmpp:jingle:apps:file-transfer:5")
+	?.let { File(it) }
 
 fun createFileSharingReference(
-	uri: String, fileName: String?, mediaType: String, fileSize: Int?, fileDescription: String?
+	uri: String, fileName: String?, mediaType: String, fileSize: Int?, fileDescription: String?,
 ): Reference {
 	return Reference(element("reference") {
 		xmlns = "urn:xmpp:reference:0"
 		attributes["type"] = "data"
 		attributes["uri"] = uri
-		"media-sharing"{
+		"media-sharing" {
 			xmlns = "urn:xmpp:sims:1"
-			"file"{
+			"file" {
 				xmlns = "urn:xmpp:jingle:apps:file-transfer:5"
-				"media-type"{ +mediaType }
-				fileName?.let { "name"{ +it } }
-				fileDescription?.let { "desc"{ +it } }
-				fileSize?.let { "size"{ +"$it" } }
+				"media-type" { +mediaType }
+				fileName?.let { "name" { +it } }
+				fileDescription?.let { "desc" { +it } }
+				fileSize?.let { "size" { +"$it" } }
 			}
 		}
 	})

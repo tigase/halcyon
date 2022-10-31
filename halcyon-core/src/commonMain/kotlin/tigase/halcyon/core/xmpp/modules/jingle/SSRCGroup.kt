@@ -41,8 +41,9 @@ class SSRCGroup(val semantics: String, val sources: List<String>) {
 		fun parse(el: Element): SSRCGroup? {
 			if ("ssrc-group".equals(el.name) && "urn:xmpp:jingle:apps:rtp:ssma:0".equals(el.xmlns)) {
 				val semantics = el.attributes["semantics"] ?: return null
-				val sources =
-					el.children.filter { "source".equals(it.name) }.map { it.attributes["ssrc"] }.filterNotNull()
+				val sources = el.children.filter { "source".equals(it.name) }
+					.map { it.attributes["ssrc"] }
+					.filterNotNull()
 				return SSRCGroup(semantics, sources)
 			}
 			return null

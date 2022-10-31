@@ -26,15 +26,15 @@ abstract class VCardStruct(val element: Element)
 
 class Parameters(element: Element) : VCardStruct(element) {
 
-	var pref: Int? by VCardElement(constPath = arrayOf("parameters", "pref"),
-								   path = arrayOf("integer"),
-								   factory = { it.value?.toInt() })
-	var types: List<String> by VCardElementsList(
-		constPath = arrayOf("parameters", "type"),
-		path = arrayOf("text"),
-		factory = {
-			it.value!!
-		})
+	var pref: Int? by VCardElement(
+		constPath = arrayOf("parameters", "pref"),
+		path = arrayOf("integer"),
+		factory = { it.value?.toInt() })
+	var types: List<String> by VCardElementsList(constPath = arrayOf("parameters", "type"),
+												 path = arrayOf("text"),
+												 factory = {
+													 it.value!!
+												 })
 
 }
 
@@ -143,7 +143,7 @@ class VCard(element: Element) : VCardStruct(element) {
 }
 
 class VCardElementsList<T>(
-	val constPath: Array<String> = emptyArray(), val path: Array<String>, val factory: (Element) -> T
+	val constPath: Array<String> = emptyArray(), val path: Array<String>, val factory: (Element) -> T,
 ) : ReadWriteProperty<VCardStruct, List<T>> {
 
 	override fun getValue(thisRef: VCardStruct, property: KProperty<*>): List<T> {
@@ -153,10 +153,11 @@ class VCardElementsList<T>(
 
 		val cl = root.getChildren(path[0])
 		cl.forEach { rt ->
-			rt.find(path.copyOfRange(1, path.size))?.let { fnd ->
-				val x = factory.invoke(fnd)
-				result.add(x)
-			}
+			rt.find(path.copyOfRange(1, path.size))
+				?.let { fnd ->
+					val x = factory.invoke(fnd)
+					result.add(x)
+				}
 		}
 		return result
 	}
@@ -164,9 +165,11 @@ class VCardElementsList<T>(
 	override fun setValue(thisRef: VCardStruct, property: KProperty<*>, value: List<T>) {
 		val root = if (constPath.isEmpty()) thisRef.element else thisRef.element.find(constPath, true)!!
 
-		root.children.filter { it.name == path[0] }.toList().forEach {
-			root.remove(it)
-		}
+		root.children.filter { it.name == path[0] }
+			.toList()
+			.forEach {
+				root.remove(it)
+			}
 
 		value.forEach { v -> insertValue(v, path, root) }
 	}
@@ -178,21 +181,27 @@ private fun <T> insertValue(v: T, path: Array<String>, element: Element) {
 		v is VCardStruct && (v.element.children.isEmpty() && v.element.value.isNullOrEmpty()) -> {
 			return
 		}
-		v !is VCardStruct && (v == null || v.toString().isBlank()) -> {
+
+		v !is VCardStruct && (v == null || v.toString()
+			.isBlank()) -> {
 			return
 		}
+
 		v is Int -> {
 			val c = element.crt(path)
 			c.value = v.toString()
 		}
+
 		v is String -> {
 			val c = element.crt(path)
 			c.value = v
 		}
+
 		v is VCardStruct -> {
 			val c = element.crt(path.copyOfRange(0, path.size - 1))
 			c.add(v.element)
 		}
+
 		else -> throw RuntimeException("Unsupported type")
 	}
 
@@ -222,21 +231,24 @@ private fun Element.find(path: Array<String>, create: Boolean = false): Element?
 }
 
 open class VCardElement<T>(
-	val constPath: Array<String> = emptyArray(), val path: Array<String>, val factory: (Element) -> T
+	val constPath: Array<String> = emptyArray(), val path: Array<String>, val factory: (Element) -> T,
 ) : ReadWriteProperty<VCardStruct, T?> {
 
 	override fun getValue(thisRef: VCardStruct, property: KProperty<*>): T? {
 //		return thisRef.element.find(arrayOf(thisRef.element.name)+constPath + path)?.let {
-		return thisRef.element.find(constPath + path)?.let {
-			factory.invoke(it)
-		}
+		return thisRef.element.find(constPath + path)
+			?.let {
+				factory.invoke(it)
+			}
 	}
 
 	override fun setValue(thisRef: VCardStruct, property: KProperty<*>, value: T?) {
 		val root = if (constPath.isEmpty()) thisRef.element else thisRef.element.find(constPath, true)!!
-		root.children.filter { it.name == path[0] }.toList().forEach {
-			root.remove(it)
-		}
+		root.children.filter { it.name == path[0] }
+			.toList()
+			.forEach {
+				root.remove(it)
+			}
 
 		insertValue(value, path, root)
 //		if (value is VCardStruct &&( value.element.children.isNotEmpty() || !value.element.value.isNullOrEmpty()  )) {

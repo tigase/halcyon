@@ -98,19 +98,21 @@ class Candidate(
 			val cancidateType = el.attributes["type"]?.let { CandidateType.valueOf(it) }
 			val tcpType = el.attributes["tcptype"]
 
-			return Candidate(component,
-							 foundation,
-							 generation,
-							 id,
-							 ip,
-							 network,
-							 port,
-							 priority,
-							 protocolType,
-							 relAddr,
-							 relPort,
-							 cancidateType,
-							 tcpType)
+			return Candidate(
+				component,
+				foundation,
+				generation,
+				id,
+				ip,
+				network,
+				port,
+				priority,
+				protocolType,
+				relAddr,
+				relPort,
+				cancidateType,
+				tcpType
+			)
 		}
 	}
 }

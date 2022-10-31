@@ -40,7 +40,8 @@ class SSRC(val ssrc: String, val parameters: List<Parameter>) {
 		fun parse(el: Element): SSRC? {
 			if ("source".equals(el.name) && "urn:xmpp:jingle:apps:rtp:ssma:0".equals(el.xmlns)) {
 				val ssrc = el.attributes["ssrc"] ?: el.attributes["id"] ?: return null
-				val parameters = el.children.map { Parameter.parse(it) }.filterNotNull()
+				val parameters = el.children.map { Parameter.parse(it) }
+					.filterNotNull()
 				return SSRC(ssrc, parameters)
 			}
 			return null

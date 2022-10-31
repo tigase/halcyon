@@ -37,7 +37,8 @@ class IQ(wrappedElement: Element) : Stanza<IQType>(wrappedElement) {
 
 	override var type: IQType by attributeProp(stringToValue = { v ->
 		v?.let {
-			IQType.values().firstOrNull { te -> te.value == it }
+			IQType.values()
+				.firstOrNull { te -> te.value == it }
 		} ?: throw XMPPException(ErrorCondition.BadRequest, "Unknown stanza type '$v'")
 	}, valueToString = { v -> v.value })
 

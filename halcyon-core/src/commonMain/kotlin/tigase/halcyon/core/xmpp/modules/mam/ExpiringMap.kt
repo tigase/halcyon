@@ -54,7 +54,9 @@ class ExpiringMap<K, V>(
 
 	@Suppress("unused")
 	fun clearOutdated() {
-		map.filter { (_, value) -> expirationChecker?.invoke(value) ?: false }.map { (key, _) -> key }.forEach { map.remove(it) }
+		map.filter { (_, value) -> expirationChecker?.invoke(value) ?: false }
+			.map { (key, _) -> key }
+			.forEach { map.remove(it) }
 	}
 
 	override fun get(key: K): V? {

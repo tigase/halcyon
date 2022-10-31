@@ -17,7 +17,6 @@
  */
 package tigase.halcyon.core.configuration
 
-import tigase.halcyon.core.builder.ModulesConfigBuilder
 import tigase.halcyon.core.exceptions.HalcyonException
 import tigase.halcyon.core.xmpp.BareJID
 import tigase.halcyon.core.xmpp.forms.JabberDataForm
@@ -41,7 +40,7 @@ interface Connection
 data class Configuration(
 	val sasl: SaslConfig?,
 	val connection: Connection,
-	val registration: Registration? = null
+	val registration: Registration? = null,
 )
 
 val Configuration.domain: String

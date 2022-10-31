@@ -20,12 +20,12 @@ package tigase.halcyon.core.xmpp.modules.mam
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import tigase.halcyon.core.Context
-import tigase.halcyon.core.modules.XmppModuleProvider
 import tigase.halcyon.core.eventbus.Event
 import tigase.halcyon.core.logger.LoggerFactory
 import tigase.halcyon.core.modules.Criteria
 import tigase.halcyon.core.modules.Criterion
 import tigase.halcyon.core.modules.XmppModule
+import tigase.halcyon.core.modules.XmppModuleProvider
 import tigase.halcyon.core.parseISO8601
 import tigase.halcyon.core.requests.ConsumerPublisher
 import tigase.halcyon.core.requests.RequestBuilder

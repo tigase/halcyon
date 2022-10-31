@@ -19,7 +19,6 @@ package tigase.halcyon.core
 
 import kotlinx.browser.window
 import tigase.halcyon.core.builder.ConfigurationBuilder
-import tigase.halcyon.core.configuration.Configuration
 import tigase.halcyon.core.connector.WebSocketConnector
 
 actual class Halcyon actual constructor(configuration: ConfigurationBuilder) : AbstractHalcyon(configuration) {

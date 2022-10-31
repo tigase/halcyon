@@ -28,14 +28,14 @@ class StanzaTest {
 	fun equalsTestAndHashCode() {
 		val s1 = iq {
 			to = "a@b.c/d".toJID()
-			"x"{
+			"x" {
 				xmlns = "1:2:3"
 			}
 		}
 		val e1 = element("iq") {
 			attribute("id", s1.attributes["id"]!!)
 			attribute("to", "a@b.c/d")
-			"x"{
+			"x" {
 				xmlns = "1:2:3"
 			}
 		}
@@ -43,7 +43,7 @@ class StanzaTest {
 		val e2 = element("iq") {
 			attribute("id", s1.attributes["id"]!!)
 			attribute("to", "a@b.c/d")
-			"x"{
+			"x" {
 				xmlns = "1:2:3"
 				+"x"
 			}

@@ -19,12 +19,12 @@ package tigase.halcyon.core.xmpp.modules.muc
 
 import kotlinx.datetime.Instant
 import tigase.halcyon.core.Context
-import tigase.halcyon.core.modules.XmppModuleProvider
 import tigase.halcyon.core.eventbus.Event
 import tigase.halcyon.core.exceptions.HalcyonException
 import tigase.halcyon.core.modules.Criteria
 import tigase.halcyon.core.modules.Criterion
 import tigase.halcyon.core.modules.XmppModule
+import tigase.halcyon.core.modules.XmppModuleProvider
 import tigase.halcyon.core.requests.RequestBuilder
 import tigase.halcyon.core.timestampToISO8601
 import tigase.halcyon.core.xml.Element

@@ -82,6 +82,7 @@ fun Presence?.typeAndShow(): TypeAndShow {
 			Show.Away -> TypeAndShow.Away
 			Show.Chat -> TypeAndShow.Chat
 		}
+
 		else -> TypeAndShow.Unknown
 	}
 }

@@ -30,21 +30,21 @@ class SimsTest {
 		from = "alice@example.com/1".toJID()
 		to = "bob@example.com/2".toJID()
 		type = MessageType.Chat
-		"body"{
+		"body" {
 			+"https://example.com/uploaded/b2718a48-ed88-4afe-99c2-ee99219d896f/first.jpg"
 		}
-		"reference"{
+		"reference" {
 			xmlns = "urn:xmpp:reference:0"
 			attributes["type"] = "data"
 			attributes["uri"] = "https://example.com/uploaded/b2718a48-ed88-4afe-99c2-ee99219d896f/first.jpg"
-			"media-sharing"{
+			"media-sharing" {
 				xmlns = "urn:xmpp:sims:1"
-				"file"{
+				"file" {
 					xmlns = "urn:xmpp:jingle:apps:file-transfer:5"
-					"media-type"{ +"image/jpeg" }
-					"name"{ +"first.jpg" }
-					"desc"{ +"My photo" }
-					"size"{ +"3032449" }
+					"media-type" { +"image/jpeg" }
+					"name" { +"first.jpg" }
+					"desc" { +"My photo" }
+					"size" { +"3032449" }
 				}
 			}
 		}

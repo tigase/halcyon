@@ -20,11 +20,11 @@ package tigase.halcyon.core.xmpp.modules.commands
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import tigase.halcyon.core.Context
-import tigase.halcyon.core.modules.XmppModuleProvider
 import tigase.halcyon.core.exceptions.HalcyonException
 import tigase.halcyon.core.modules.Criteria
 import tigase.halcyon.core.modules.Criterion
 import tigase.halcyon.core.modules.XmppModule
+import tigase.halcyon.core.modules.XmppModuleProvider
 import tigase.halcyon.core.requests.RequestBuilder
 import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xml.response
@@ -228,7 +228,7 @@ class CommandsModule(override val context: Context) : XmppModule, CommandsModule
 
 		override fun configure(module: CommandsModule, cfg: CommandsModuleConfig.() -> Unit) = module.cfg()
 
-		override fun requiredModules()= listOf(DiscoveryModule)
+		override fun requiredModules() = listOf(DiscoveryModule)
 
 	}
 

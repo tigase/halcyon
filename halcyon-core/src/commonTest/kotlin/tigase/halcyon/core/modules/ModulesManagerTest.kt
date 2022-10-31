@@ -79,12 +79,19 @@ class ModulesManagerTest {
 		mm.register(Module01(mm.context))
 		mm.register(Module02(mm.context))
 
-		assertTrue(arrayOf("1", "2", "a", "b").sortedArray() contentDeepEquals mm.getAvailableFeatures().sortedArray())
+		assertTrue(
+			arrayOf("1", "2", "a", "b").sortedArray() contentDeepEquals mm.getAvailableFeatures()
+				.sortedArray()
+		)
 
 		assertEquals(0, mm.getModulesFor(element("presence") {}).size)
 		assertEquals(1, mm.getModulesFor(element("iq") {}).size)
 		assertEquals(1, mm.getModulesFor(element("msg") {}).size)
-		assertEquals("Module01", mm.getModulesFor(element("iq") {}).first().type)
+		assertEquals(
+			"Module01",
+			mm.getModulesFor(element("iq") {})
+				.first().type
+		)
 
 	}
 

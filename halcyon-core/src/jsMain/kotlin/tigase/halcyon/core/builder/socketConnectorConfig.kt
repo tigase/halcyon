@@ -7,7 +7,7 @@ class WebSocketConnectionBuilder : ConnectionConfigItemBuilder<WebSocketConnecto
 
 	var webSocketUrl: String? = null
 
-	override fun build(root: ConfigurationBuilder,defaultDomain: String?): WebSocketConnectorConfig {
+	override fun build(root: ConfigurationBuilder, defaultDomain: String?): WebSocketConnectorConfig {
 		return WebSocketConnectorConfig(
 			webSocketUrl = webSocketUrl ?: "ws://$defaultDomain:5290/"
 		)

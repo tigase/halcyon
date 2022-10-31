@@ -84,13 +84,16 @@ class XMPPDomHandler(
 					break
 				}
 
-				if (attrNames[i].toString().startsWith("xmlns:")) {
+				if (attrNames[i].toString()
+						.startsWith("xmlns:")
+				) {
 
 					// TODO should use a StringCache instead of intern() to
 					// avoid potential
 					// DOS by exhausting permgen
-					namespaces.put(attrNames[i]!!.substring("xmlns:".length, attrNames[i]!!.length),
-								   attrValues!![i].toString())
+					namespaces.put(
+						attrNames[i]!!.substring("xmlns:".length, attrNames[i]!!.length), attrValues!![i].toString()
+					)
 
 					log.finest { "Namespace found: ${attrValues[i].toString()}" }
 				} // end of if (att_name.startsWith("xmlns:"))

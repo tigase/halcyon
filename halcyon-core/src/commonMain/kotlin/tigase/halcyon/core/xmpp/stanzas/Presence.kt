@@ -69,7 +69,8 @@ class Presence(wrappedElement: Element) : Stanza<PresenceType?>(wrappedElement) 
 
 	override var type: PresenceType? by attributeProp(valueToString = { v -> v?.value }, stringToValue = { s ->
 		s?.let {
-			PresenceType.values().firstOrNull { te -> te.value == it } ?: throw XMPPException(
+			PresenceType.values()
+				.firstOrNull { te -> te.value == it } ?: throw XMPPException(
 				ErrorCondition.BadRequest, "Unknown stanza type '$it'"
 			)
 		}
@@ -77,7 +78,8 @@ class Presence(wrappedElement: Element) : Stanza<PresenceType?>(wrappedElement) 
 
 	var show: Show? by elementProperty(stringToValue = { s ->
 		s?.let {
-			Show.values().firstOrNull { s -> s.value == it } ?: throw XMPPException(
+			Show.values()
+				.firstOrNull { s -> s.value == it } ?: throw XMPPException(
 				ErrorCondition.BadRequest, "Unknown show value: '$it'"
 			)
 		}

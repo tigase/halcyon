@@ -55,6 +55,7 @@ class SocketSessionController(halcyon: AbstractHalcyon, private val connector: S
 				log.info { "Cannot find server in DNS" }
 				halcyon.eventBus.fire(SessionController.SessionControllerEvents.ErrorStop("Cannot find server in DNS"))
 			}
+
 			else -> {
 				halcyon.eventBus.fire(SessionController.SessionControllerEvents.ErrorReconnect("Connection error"))
 			}
@@ -81,9 +82,11 @@ class SocketSessionController(halcyon: AbstractHalcyon, private val connector: S
 		val url = event.errorElement.value
 		halcyon.internalDataStore.setData(Scope.Session, SEE_OTHER_HOST_KEY, url)
 
-		halcyon.eventBus.fire(SessionController.SessionControllerEvents.ErrorReconnect("see-other-host: $url",
-																					   immediately = true,
-																					   force = true))
+		halcyon.eventBus.fire(
+			SessionController.SessionControllerEvents.ErrorReconnect(
+				"see-other-host: $url", immediately = true, force = true
+			)
+		)
 	}
 
 }

@@ -83,7 +83,7 @@ class HalcyonBuilderTest {
 			bind {
 				resource = "blahblah"
 			}
-			bind {  }
+			bind { }
 			modules {
 				install(PingModule)
 				install(SASLModule) {

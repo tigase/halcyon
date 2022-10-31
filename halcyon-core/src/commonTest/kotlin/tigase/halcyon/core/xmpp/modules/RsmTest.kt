@@ -73,14 +73,14 @@ class RsmTest {
 	fun testParseRSM() {
 		val e = element("set") {
 			xmlns = "http://jabber.org/protocol/rsm"
-			"first"{
+			"first" {
 				attributes["index"] = "1"
 				+"stpeter@jabber.org"
 			}
-			"last"{
+			"last" {
 				+"peterpan@neverland.lit"
 			}
-			"count"{
+			"count" {
 				+"800"
 			}
 		}

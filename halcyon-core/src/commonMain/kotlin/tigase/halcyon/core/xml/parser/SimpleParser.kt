@@ -261,9 +261,11 @@ class SimpleParser {
 
 					if (chr == CLOSE_BRACKET) {
 						parserState.state = State.ELEMENT_CDATA
-						handler.startElement(parserState.element_name!!.toString(),
-											 toStringArray(parserState.attrib_names),
-											 toStringArray(parserState.attrib_values))
+						handler.startElement(
+							parserState.element_name!!.toString(),
+							toStringArray(parserState.attrib_names),
+							toStringArray(parserState.attrib_values)
+						)
 						parserState.attrib_names = null
 						parserState.attrib_values = null
 						parserState.current_attr = -1
@@ -358,11 +360,13 @@ class SimpleParser {
 							parserState.state = State.ENTITY
 							parserState.entityType = EntityType.UNKNOWN
 						}
+
 						'<' -> {
 							parserState.state = State.ERROR
 							parserState.errorMessage =
 								"Not allowed character in element attribute value: " + chr + "\nExisting characters in element attribute value: " + parserState.attrib_values!![parserState.current_attr].toString()
 						}
+
 						else -> {
 						}
 					}
@@ -389,11 +393,13 @@ class SimpleParser {
 							parserState.state = State.ENTITY
 							parserState.entityType = EntityType.UNKNOWN
 						}
+
 						'<' -> {
 							parserState.state = State.ERROR
 							parserState.errorMessage =
 								"Not allowed character in element attribute value: " + chr + "\nExisting characters in element attribute value: " + parserState.attrib_values!![parserState.current_attr].toString()
 						}
+
 						else -> {
 						}
 					}
@@ -454,6 +460,7 @@ class SimpleParser {
 						} else {
 							valid = false
 						}
+
 						EntityType.NAMED -> if (!(alpha || numeric)) {
 							if (chr != SEMICOLON) {
 								valid = false
@@ -461,6 +468,7 @@ class SimpleParser {
 								parserState.state = parserState.parentState
 							}
 						}
+
 						EntityType.CODEPOINT -> {
 							if (chr == 'x') {
 								parserState.entityType = EntityType.CODEPOINT_HEX
@@ -471,6 +479,7 @@ class SimpleParser {
 								valid = false
 							}
 						}
+
 						EntityType.CODEPOINT_DEC -> if (!numeric) {
 							if (chr != SEMICOLON) {
 								valid = false
@@ -478,6 +487,7 @@ class SimpleParser {
 								parserState.state = parserState.parentState
 							}
 						}
+
 						EntityType.CODEPOINT_HEX -> if (!(chr >= 'a' && chr <= 'f' || chr >= 'A' || chr <= 'F' || numeric)) {
 							if (chr != SEMICOLON) {
 								valid = false
@@ -489,7 +499,8 @@ class SimpleParser {
 
 					if (valid) {
 						if (parserState.parentState == State.ATTRIB_VALUE_D || parserState.parentState == State.ATTRIB_VALUE_S) parserState.attrib_values!![parserState.current_attr]!!.append(
-							chr)
+							chr
+						)
 						else if (parserState.parentState == State.ELEMENT_CDATA) parserState.element_cdata!!.append(chr)
 					} else {
 						parserState.state = State.ERROR

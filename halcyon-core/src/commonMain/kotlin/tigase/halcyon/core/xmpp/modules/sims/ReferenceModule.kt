@@ -18,8 +18,8 @@
 package tigase.halcyon.core.xmpp.modules.sims
 
 import tigase.halcyon.core.Context
-import tigase.halcyon.core.modules.XmppModuleProvider
 import tigase.halcyon.core.modules.AbstractXmppModule
+import tigase.halcyon.core.modules.XmppModuleProvider
 import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xmpp.ErrorCondition
 import tigase.halcyon.core.xmpp.XMPPException

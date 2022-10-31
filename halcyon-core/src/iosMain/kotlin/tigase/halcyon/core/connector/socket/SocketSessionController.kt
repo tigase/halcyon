@@ -29,62 +29,64 @@ import tigase.halcyon.core.xmpp.modules.StreamFeaturesEvent
 import tigase.halcyon.core.xmpp.modules.auth.SASLEvent
 
 class SocketSessionController(halcyon: AbstractHalcyon, private val connector: SocketConnector) :
-    AbstractSocketSessionController(halcyon, "tigase.halcyon.core.connector.socket.SocketSessionController") {
+	AbstractSocketSessionController(halcyon, "tigase.halcyon.core.connector.socket.SocketSessionController") {
 
-    var seeOtherHostUrl: String? = null
-        private set
+	var seeOtherHostUrl: String? = null
+		private set
 
-    override fun processAuthSuccessfull(event: SASLEvent.SASLSuccess) {
-        connector.restartStream()
-    }
+	override fun processAuthSuccessfull(event: SASLEvent.SASLSuccess) {
+		connector.restartStream()
+	}
 
-    private fun isTLSAvailable(features: Element): Boolean = features.getChildrenNS("starttls",
-        SocketConnector.XMLNS_START_TLS
-    ) != null
+	private fun isTLSAvailable(features: Element): Boolean = features.getChildrenNS(
+		"starttls", SocketConnector.XMLNS_START_TLS
+	) != null
 
-    override fun processConnectionError(event: ConnectionErrorEvent) {
-        log.fine { "Received connector exception: $event" }
+	override fun processConnectionError(event: ConnectionErrorEvent) {
+		log.fine { "Received connector exception: $event" }
 
-        halcyon.clear(Scope.Connection)
+		halcyon.clear(Scope.Connection)
 
 //		context.modules.getModuleOrNull<StreamManagementModule>(StreamManagementModule.TYPE)?.reset()
 //		context.modules.getModuleOrNull<SASLModule>(SASLModule.TYPE)?.clear()
 
-        when (event) {
-            is SocketConnectionErrorEvent.HostNotFount -> {
-                log.info { "Cannot find server in DNS" }
-                halcyon.eventBus.fire(SessionController.SessionControllerEvents.ErrorStop("Cannot find server in DNS"))
-            }
-            else -> {
-                halcyon.eventBus.fire(SessionController.SessionControllerEvents.ErrorReconnect("Connection error"))
-            }
-        }
-    }
+		when (event) {
+			is SocketConnectionErrorEvent.HostNotFount -> {
+				log.info { "Cannot find server in DNS" }
+				halcyon.eventBus.fire(SessionController.SessionControllerEvents.ErrorStop("Cannot find server in DNS"))
+			}
 
-    override fun processStreamFeaturesEvent(event: StreamFeaturesEvent) {
-        val connectionSecured = connector.secured
-        val tlsAvailable: Boolean = isTLSAvailable(event.features)
+			else -> {
+				halcyon.eventBus.fire(SessionController.SessionControllerEvents.ErrorReconnect("Connection error"))
+			}
+		}
+	}
 
-        if (!connectionSecured && tlsAvailable) {
-            connector.startTLS()
-        } else super.processStreamFeaturesEvent(event)
-    }
+	override fun processStreamFeaturesEvent(event: StreamFeaturesEvent) {
+		val connectionSecured = connector.secured
+		val tlsAvailable: Boolean = isTLSAvailable(event.features)
 
-    override fun processStreamError(event: StreamErrorEvent) {
-        when (event.condition) {
-            StreamError.SEE_OTHER_HOST -> processSeeOtherHost(event)
-            else -> super.processStreamError(event)
-        }
-    }
+		if (!connectionSecured && tlsAvailable) {
+			connector.startTLS()
+		} else super.processStreamFeaturesEvent(event)
+	}
 
-    private fun processSeeOtherHost(event: StreamErrorEvent) {
-        val url = event.errorElement.value
-        halcyon.internalDataStore.setData(Scope.Session, SocketConnector.SEE_OTHER_HOST_KEY, url)
+	override fun processStreamError(event: StreamErrorEvent) {
+		when (event.condition) {
+			StreamError.SEE_OTHER_HOST -> processSeeOtherHost(event)
+			else -> super.processStreamError(event)
+		}
+	}
 
-        halcyon.eventBus.fire(
-            SessionController.SessionControllerEvents.ErrorReconnect("see-other-host: $url",
-            immediately = true,
-            force = true))
-    }
+	private fun processSeeOtherHost(event: StreamErrorEvent) {
+		val url = event.errorElement.value
+		halcyon.internalDataStore.setData(Scope.Session, SocketConnector.SEE_OTHER_HOST_KEY, url)
+
+		halcyon.eventBus.fire(
+			SessionController.SessionControllerEvents.ErrorReconnect(
+				"see-other-host: $url", immediately = true, force = true
+			)
+		)
+	}
 
 }

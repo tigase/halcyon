@@ -51,7 +51,7 @@ class PresenceTest {
 	@Test
 	fun testShowSet() {
 		val p = presence {
-			"show"{ +"dnd" }
+			"show" { +"dnd" }
 		}
 		assertEquals(Show.DnD, p.show)
 		p.show = Show.Away

@@ -41,10 +41,22 @@ sealed class Stanza<STANZA_TYPE>(protected val element: Element) : Element by el
 	override fun toString(): String {
 		return buildString {
 			append(name.uppercase()).append("[")
-			attributes["type"]?.let { append("type=").append(it).append(" ") }
-			attributes["id"]?.let { append("id=").append(it).append(" ") }
-			attributes["to"]?.let { append("to=").append(it).append(" ") }
-			attributes["from"]?.let { append("from=").append(it).append(" ") }
+			attributes["type"]?.let {
+				append("type=").append(it)
+					.append(" ")
+			}
+			attributes["id"]?.let {
+				append("id=").append(it)
+					.append(" ")
+			}
+			attributes["to"]?.let {
+				append("to=").append(it)
+					.append(" ")
+			}
+			attributes["from"]?.let {
+				append("from=").append(it)
+					.append(" ")
+			}
 			append("]")
 		}
 	}

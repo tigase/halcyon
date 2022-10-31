@@ -146,28 +146,31 @@ class VCardBuilderTest {
 		assertEquals("132", c.element.findChild("vcard", "adr", "parameters", "pref", "integer")?.value)
 		assertEquals("home", c.element.findChild("vcard", "adr", "parameters", "type", "text")?.value)
 		assertEquals(1, c.addresses.size)
-		c.addresses.first().let { adr ->
-			assertEquals("Room 2", adr.ext)
-			assertEquals("Sunny", adr.street)
-			assertEquals("Fresh Air", adr.locality)
-			assertEquals("Good Looking", adr.region)
-			assertEquals("1234", adr.code)
-			assertEquals(132, adr.parameters.pref)
-			assertTrue(adr.parameters.types.contains("home"))
-		}
+		c.addresses.first()
+			.let { adr ->
+				assertEquals("Room 2", adr.ext)
+				assertEquals("Sunny", adr.street)
+				assertEquals("Fresh Air", adr.locality)
+				assertEquals("Good Looking", adr.region)
+				assertEquals("1234", adr.code)
+				assertEquals(132, adr.parameters.pref)
+				assertTrue(adr.parameters.types.contains("home"))
+			}
 		assertEquals(1, c.emails.size)
-		c.emails.first().let { e ->
-			assertEquals("a1231@b.c", e.text)
-			assertEquals(42, e.parameters.pref)
-			assertTrue(e.parameters.types.contains("wrk"))
-		}
+		c.emails.first()
+			.let { e ->
+				assertEquals("a1231@b.c", e.text)
+				assertEquals(42, e.parameters.pref)
+				assertTrue(e.parameters.types.contains("wrk"))
+			}
 		assertEquals("ACME", c.element.findChild("vcard", "org", "text")?.value)
 		assertEquals("work", c.element.findChild("vcard", "org", "parameters", "type", "text")?.value)
 		assertEquals(1, c.organizations.size)
-		c.organizations.first().let {
-			assertTrue(it.parameters.types.contains("work"))
-			assertEquals("ACME", it.name)
-		}
+		c.organizations.first()
+			.let {
+				assertTrue(it.parameters.types.contains("work"))
+				assertEquals("ACME", it.name)
+			}
 		assertEquals("Alice", c.element.findChild("vcard", "n", "given")?.value)
 		assertEquals("Carl", c.element.findChild("vcard", "n", "surname")?.value)
 		assertEquals("Von", c.element.findChild("vcard", "n", "additional")?.value)
@@ -179,10 +182,11 @@ class VCardBuilderTest {
 		assertEquals("tel:123", c.element.findChild("vcard", "tel", "uri")?.value)
 		assertEquals("work", c.element.findChild("vcard", "org", "parameters", "type", "text")?.value)
 		assertEquals(2, c.telephones.size)
-		c.telephones.first().let {
-			assertTrue(it.parameters.types.contains("work"))
-			assertEquals("tel:123", it.uri)
-		}
+		c.telephones.first()
+			.let {
+				assertTrue(it.parameters.types.contains("work"))
+				assertEquals("tel:123", it.uri)
+			}
 		val photos = c.element.getChildren("photo")
 		assertEquals(2, photos.size)
 

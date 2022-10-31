@@ -56,8 +56,15 @@ interface Logger {
 
 	fun log(level: Level, caught: Throwable? = null, msg: () -> Any?) {
 		if (isLoggable(level)) {
-			if (caught == null) log(level, msg.invoke().toString())
-			else log(level, msg.invoke().toString(), caught)
+			if (caught == null) log(level,
+									msg.invoke()
+										.toString()
+			)
+			else log(level,
+					 msg.invoke()
+						 .toString(),
+					 caught
+			)
 		}
 	}
 

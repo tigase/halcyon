@@ -29,7 +29,7 @@ class Payload(
 	val name: String?,
 	val ptime: Int? = null,
 	val parameters: List<Parameter>,
-	val rtcpFeedbacks: List<RtcpFeedback>
+	val rtcpFeedbacks: List<RtcpFeedback>,
 ) {
 
 	fun toElement(): Element {
@@ -62,8 +62,10 @@ class Payload(
 				val ptime = el.attributes["ptime"]?.toInt()
 				val maxptime = el.attributes["maxptime"]?.toInt()
 				val name = el.attributes["name"]
-				val parameters = el.children.map { Parameter.parse(it) }.filterNotNull()
-				val rtcpFeedbacks = el.children.map { RtcpFeedback.parse(it) }.filterNotNull()
+				val parameters = el.children.map { Parameter.parse(it) }
+					.filterNotNull()
+				val rtcpFeedbacks = el.children.map { RtcpFeedback.parse(it) }
+					.filterNotNull()
 
 				return Payload(id, channels, clockrate, maxptime, name, ptime, parameters, rtcpFeedbacks)
 			}

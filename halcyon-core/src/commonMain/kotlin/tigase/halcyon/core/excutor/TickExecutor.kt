@@ -24,7 +24,7 @@ import tigase.halcyon.core.eventbus.EventHandler
 import kotlin.time.Duration
 
 class TickExecutor(
-	private val eventBus: AbstractEventBus, val minimalTime: Duration, private val runnable: () -> Unit
+	private val eventBus: AbstractEventBus, val minimalTime: Duration, private val runnable: () -> Unit,
 ) {
 
 	private val handler: EventHandler<TickEvent> = object : EventHandler<TickEvent> {

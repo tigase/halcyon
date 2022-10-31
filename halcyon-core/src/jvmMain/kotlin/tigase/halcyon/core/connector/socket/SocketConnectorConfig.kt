@@ -25,5 +25,5 @@ data class SocketConnectorConfig(
 	val hostname: String,
 	val port: Int,
 	val trustManager: TrustManager,
-	val dnsResolver: DnsResolver
+	val dnsResolver: DnsResolver,
 ) : Connection

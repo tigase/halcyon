@@ -57,7 +57,8 @@ class PresenceNode(private val presence: Presence) : StanzaNode<PresenceType?>(p
 
 	override var type: PresenceType?
 		set(value) = setAtt("type", value?.value)
-		get() = PresenceType.values().firstOrNull { te -> te.value == value }
+		get() = PresenceType.values()
+			.firstOrNull { te -> te.value == value }
 
 	private fun intSetShow(show: Show?) {
 		presence.show = show
@@ -89,7 +90,8 @@ class IQNode(element: IQ) : StanzaNode<IQType>(element) {
 
 	override var type: IQType
 		set(value) = setAtt("type", value.value)
-		get() = IQType.values().first { te -> te.value == value }
+		get() = IQType.values()
+			.first { te -> te.value == value }
 
 	fun query(xmlns: String, init: (ElementNode.() -> Unit)): Element {
 		val e = element("query", init)
@@ -110,7 +112,8 @@ class MessageNode(element: Message) : StanzaNode<MessageType?>(element) {
 
 	override var type: MessageType?
 		set(value) = setAtt("type", value?.value)
-		get() = MessageType.values().firstOrNull { te -> te.value == value }
+		get() = MessageType.values()
+			.firstOrNull { te -> te.value == value }
 
 	var body: String?
 		set(value) = element.setChildContent("body", value)

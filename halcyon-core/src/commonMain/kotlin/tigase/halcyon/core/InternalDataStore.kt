@@ -34,7 +34,9 @@ class InternalDataStore {
 	}
 
 	private fun clear(ordinal: Int) {
-		val scopes = Scope.values().filter { s -> s.ordinal <= ordinal }.toTypedArray()
+		val scopes = Scope.values()
+			.filter { s -> s.ordinal <= ordinal }
+			.toTypedArray()
 		val iterator = this.properties.entries.iterator()
 		log.fine { "Clearing ${scopes.asList()}" }
 		while (iterator.hasNext()) {

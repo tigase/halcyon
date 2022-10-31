@@ -30,7 +30,9 @@ actual class DefaultLoggerSPI actual constructor(val name: String, val enabled: 
 	actual override fun isLoggable(level: Level): Boolean = e
 
 	actual override fun log(level: Level, msg: String, caught: Throwable?) {
-		val ts = Clock.System.now().toLocalDateTime(TimeZone.UTC).toString();
+		val ts = Clock.System.now()
+			.toLocalDateTime(TimeZone.UTC)
+			.toString();
 		println("${ts}: ${msg}")
 	}
 }

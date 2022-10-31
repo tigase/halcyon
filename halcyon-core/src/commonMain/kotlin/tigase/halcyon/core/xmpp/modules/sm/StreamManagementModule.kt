@@ -22,7 +22,6 @@ import tigase.halcyon.core.ClearedEvent
 import tigase.halcyon.core.Context
 import tigase.halcyon.core.Scope
 import tigase.halcyon.core.TickEvent
-import tigase.halcyon.core.modules.XmppModuleProvider
 import tigase.halcyon.core.connector.ReceivedXMLElementEvent
 import tigase.halcyon.core.connector.SentXMLElementEvent
 import tigase.halcyon.core.eventbus.Event
@@ -30,6 +29,7 @@ import tigase.halcyon.core.exceptions.HalcyonException
 import tigase.halcyon.core.logger.LoggerFactory
 import tigase.halcyon.core.modules.Criterion
 import tigase.halcyon.core.modules.XmppModule
+import tigase.halcyon.core.modules.XmppModuleProvider
 import tigase.halcyon.core.requests.Request
 import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xml.element

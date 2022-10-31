@@ -21,22 +21,44 @@ import kotlinx.datetime.*
 import tigase.halcyon.core.exceptions.HalcyonException
 
 fun timestampToISO8601(timestamp: Instant): String = buildString {
-	timestamp.toLocalDateTime(TimeZone.UTC).let {
-		append(it.year.toString().padStart(4, '0'))
-		append("-")
-		append(it.monthNumber.toString().padStart(2, '0'))
-		append("-")
-		append(it.dayOfMonth.toString().padStart(2, '0'))
-		append("T")
-		append(it.hour.toString().padStart(2, '0'))
-		append(":")
-		append(it.minute.toString().padStart(2, '0'))
-		append(":")
-		append(it.second.toString().padStart(2, '0'))
-		append(".")
-		append((it.nanosecond / 1000000).toString().padStart(3, '0'))
-		append("Z")
-	}
+	timestamp.toLocalDateTime(TimeZone.UTC)
+		.let {
+			append(
+				it.year.toString()
+					.padStart(4, '0')
+			)
+			append("-")
+			append(
+				it.monthNumber.toString()
+					.padStart(2, '0')
+			)
+			append("-")
+			append(
+				it.dayOfMonth.toString()
+					.padStart(2, '0')
+			)
+			append("T")
+			append(
+				it.hour.toString()
+					.padStart(2, '0')
+			)
+			append(":")
+			append(
+				it.minute.toString()
+					.padStart(2, '0')
+			)
+			append(":")
+			append(
+				it.second.toString()
+					.padStart(2, '0')
+			)
+			append(".")
+			append(
+				(it.nanosecond / 1000000).toString()
+					.padStart(3, '0')
+			)
+			append("Z")
+		}
 }
 
 fun parseISO8601(date: String): Instant {
@@ -56,7 +78,10 @@ fun parseISO8601(date: String): Instant {
 	val hour = x.groupValues[5].toInt()
 	val minute = x.groupValues[6].toInt()
 	val second = x.groupValues[7].toInt()
-	val ms = x.groupValues[8].let { if (it.isNotEmpty()) "${it}000".substring(1, 4).toInt() else 0 }
+	val ms = x.groupValues[8].let {
+		if (it.isNotEmpty()) "${it}000".substring(1, 4)
+			.toInt() else 0
+	}
 
 	if (x.groupValues[9].isBlank()) {
 		return LocalDateTime(year, Month.values()[month], day, hour, minute, second, ms).toInstant(TimeZone.UTC)

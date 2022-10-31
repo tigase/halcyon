@@ -8,9 +8,7 @@ import tigase.halcyon.core.eventbus.Event
 import tigase.halcyon.core.exceptions.AuthenticationException
 import tigase.halcyon.core.xmpp.modules.auth.SASLModule
 import tigase.halcyon.core.xmpp.modules.auth.State
-import tigase.halcyon.core.xmpp.modules.discovery.DiscoveryModule
 import tigase.halcyon.core.xmpp.toBareJID
-import tigase.halcyon.core.xmpp.toJID
 import java.util.logging.ConsoleHandler
 import java.util.logging.Handler
 import java.util.logging.Level
@@ -27,6 +25,7 @@ class SimpleConnectionTest {
 		logger.level = Level.ALL
 
 	}
+
 	@OptIn(ReflectionModuleManager::class)
 	@Test
 	fun simpleConnectionAndDisconnection() {
@@ -42,7 +41,7 @@ class SimpleConnectionTest {
 		assertEquals(
 			State.Success, halcyon.modules.getModule<SASLModule>().saslContext.state, "Client should be authenticated."
 		)
-		assertEquals("admin@sailboat.local".toBareJID() ,assertNotNull(halcyon.boundJID).bareJID)
+		assertEquals("admin@sailboat.local".toBareJID(), assertNotNull(halcyon.boundJID).bareJID)
 
 
 		halcyon.waitForAllResponses()

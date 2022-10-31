@@ -44,18 +44,18 @@ kotlin {
 	ios()
 
 	sourceSets {
-	named("commonMain") {
-		dependencies {
-			implementation(kotlin("stdlib-common"))
-			implementation(project(":halcyon-core"))
-			implementation(deps.reactive.reaktive)
+		named("commonMain") {
+			dependencies {
+				implementation(kotlin("stdlib-common"))
+				implementation(project(":halcyon-core"))
+				implementation(deps.reactive.reaktive)
+			}
+		}
+		named("commonTest") {
+			dependencies {
+				implementation(kotlin("test"))
+				implementation(deps.reactive.testing)
+			}
 		}
 	}
-	named("commonTest") {
-		dependencies {
-			implementation(kotlin("test"))
-			implementation(deps.reactive.testing)
-		}
-	}
-}
 }

@@ -26,7 +26,7 @@ import tigase.halcyon.core.xmpp.stanzas.IQType
 import tigase.halcyon.core.xmpp.stanzas.wrap
 
 abstract class AbstractXmppIQModule(
-	context: Context, type: String, features: Array<String>, criteria: Criteria
+	context: Context, type: String, features: Array<String>, criteria: Criteria,
 ) : AbstractXmppModule(context, type, features, criteria) {
 
 	final override fun process(element: Element) {

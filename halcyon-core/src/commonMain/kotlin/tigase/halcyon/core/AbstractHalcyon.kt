@@ -277,7 +277,7 @@ abstract class AbstractHalcyon(configurator: ConfigurationBuilder) : Context, Pa
 		logSendingStanza(stanza.stanza)
 		c.send(stanza.stanza.getAsString())
 
-		if (getModuleOrNull(StreamManagementModule)?.resumptionContext?.isAckActive==false) {
+		if (getModuleOrNull(StreamManagementModule)?.resumptionContext?.isAckActive == false) {
 			stanza.markAsSent()
 		}
 		eventBus.fire(SentXMLElementEvent(stanza.stanza, stanza))

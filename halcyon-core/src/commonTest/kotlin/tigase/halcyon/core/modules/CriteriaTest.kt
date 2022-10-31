@@ -38,7 +38,7 @@ class CriteriaTest {
 					attribute("id", "345")
 					value = "x"
 				}
-				"item"{
+				"item" {
 					attribute("id", "456")
 				}
 				"item" {
@@ -50,19 +50,49 @@ class CriteriaTest {
 
 	@Test
 	fun testCriterion() {
-		assertFalse(Criterion.or(Criterion.name("X"), Criterion.name("Y")).match(element))
-		assertFalse(Criterion.or(Criterion.name("X"), Criterion.name("Y")).match(element))
-		assertTrue(Criterion.or(Criterion.name("X"), Criterion.name("iq")).match(element))
+		assertFalse(
+			Criterion.or(Criterion.name("X"), Criterion.name("Y"))
+				.match(element)
+		)
+		assertFalse(
+			Criterion.or(Criterion.name("X"), Criterion.name("Y"))
+				.match(element)
+		)
+		assertTrue(
+			Criterion.or(Criterion.name("X"), Criterion.name("iq"))
+				.match(element)
+		)
 
-		assertFalse(Criterion.and(Criterion.xmlns("jabber:client"), Criterion.name("X")).match(element))
-		assertTrue(Criterion.and(Criterion.xmlns("jabber:client"), Criterion.name("iq")).match(element))
+		assertFalse(
+			Criterion.and(Criterion.xmlns("jabber:client"), Criterion.name("X"))
+				.match(element)
+		)
+		assertTrue(
+			Criterion.and(Criterion.xmlns("jabber:client"), Criterion.name("iq"))
+				.match(element)
+		)
 
-		assertTrue(Criterion.not(Criterion.and(Criterion.xmlns("jabber:client"), Criterion.name("X"))).match(element))
-		assertFalse(Criterion.not(Criterion.and(Criterion.xmlns("jabber:client"), Criterion.name("iq"))).match(element))
+		assertTrue(
+			Criterion.not(Criterion.and(Criterion.xmlns("jabber:client"), Criterion.name("X")))
+				.match(element)
+		)
+		assertFalse(
+			Criterion.not(Criterion.and(Criterion.xmlns("jabber:client"), Criterion.name("iq")))
+				.match(element)
+		)
 
-		assertTrue(Criterion.chain(Criterion.name("iq"), Criterion.xmlns("a:b")).match(element))
-		assertFalse(Criterion.chain(Criterion.name("iq"), Criterion.xmlns("a:c")).match(element))
-		assertFalse(Criterion.chain(Criterion.name("presence"), Criterion.xmlns("a:b")).match(element))
+		assertTrue(
+			Criterion.chain(Criterion.name("iq"), Criterion.xmlns("a:b"))
+				.match(element)
+		)
+		assertFalse(
+			Criterion.chain(Criterion.name("iq"), Criterion.xmlns("a:c"))
+				.match(element)
+		)
+		assertFalse(
+			Criterion.chain(Criterion.name("presence"), Criterion.xmlns("a:b"))
+				.match(element)
+		)
 	}
 
 }

@@ -31,6 +31,7 @@ class HdrExt(val id: String, val uri: String, val senders: Description.Senders) 
 			when (senders) {
 				Description.Senders.Both -> {
 				}
+
 				else -> attribute("senders", senders.name)
 			}
 		}

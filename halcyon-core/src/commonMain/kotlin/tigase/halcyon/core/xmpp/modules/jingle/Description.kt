@@ -71,15 +71,20 @@ class Description(
 		fun parse(el: Element): Description? {
 			if ("description".equals(el.name) && XMLNS.equals(el.xmlns)) {
 				val media = el.attributes["media"] ?: return null
-				val payloads = el.children.map { Payload.parse(it) }.filterNotNull()
+				val payloads = el.children.map { Payload.parse(it) }
+					.filterNotNull()
 				val ssrc = el.attributes["ssrc"]
-				val bandwidth = el.getFirstChild("bandwidth")?.let { it.attributes["type"] }
+				val bandwidth = el.getFirstChild("bandwidth")
+					?.let { it.attributes["type"] }
 				val rtcpMux = el.getFirstChild("rtcp-mux") != null
-				val encryption = el.getFirstChild("encryption")?.children?.map { Encryption.parse(it) }?.filterNotNull()
-					?: emptyList()
-				val ssrcs = el.children.map { SSRC.parse(it) }.filterNotNull()
-				val ssrcGroups = el.children.map { SSRCGroup.parse(it) }.filterNotNull()
-				val hdrExts = el.children.map { HdrExt.parse(it) }.filterNotNull()
+				val encryption = el.getFirstChild("encryption")?.children?.map { Encryption.parse(it) }
+					?.filterNotNull() ?: emptyList()
+				val ssrcs = el.children.map { SSRC.parse(it) }
+					.filterNotNull()
+				val ssrcGroups = el.children.map { SSRCGroup.parse(it) }
+					.filterNotNull()
+				val hdrExts = el.children.map { HdrExt.parse(it) }
+					.filterNotNull()
 				return Description(media, ssrc, payloads, bandwidth, encryption, rtcpMux, ssrcs, ssrcGroups, hdrExts)
 			}
 			return null

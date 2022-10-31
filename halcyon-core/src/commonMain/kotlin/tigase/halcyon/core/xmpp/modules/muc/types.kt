@@ -31,7 +31,7 @@ enum class Affiliation(
 	val isEditOwnerList: Boolean,
 	val isChangeRoomDefinition: Boolean,
 	val isDestroyRoom: Boolean,
-	val isViewOccupantsJid: Boolean
+	val isViewOccupantsJid: Boolean,
 ) {
 
 	Outcast("outcast", 0, false, false, false, false, false, false, false, false, false, false, false, false),
@@ -57,7 +57,7 @@ enum class Role(
 	val isModifySubject: Boolean,
 	val isKickParticipantsAndVisitors: Boolean,
 	val isGrantVoice: Boolean,
-	val isRevokeVoice: Boolean
+	val isRevokeVoice: Boolean,
 ) {
 
 	None("none", 0, false, false, false, false, false, false, false, false, false, false, false, false, false),

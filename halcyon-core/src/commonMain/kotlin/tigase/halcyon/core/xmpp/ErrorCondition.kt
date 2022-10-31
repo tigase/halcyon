@@ -199,7 +199,9 @@ BadRequest("bad-request", "modify", 400),
 }
 
 fun Stanza<*>.getErrorConditionOrNull(): ErrorCondition? {
-	val er = this.getChildren("error").firstOrNull() ?: return null
-	val c = er.getChildrenNS(XMPPException.XMLNS).firstOrNull() ?: return null
+	val er = this.getChildren("error")
+		.firstOrNull() ?: return null
+	val c = er.getChildrenNS(XMPPException.XMLNS)
+		.firstOrNull() ?: return null
 	return ErrorCondition.getByElementName(c.name)
 }

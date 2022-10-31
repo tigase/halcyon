@@ -48,21 +48,25 @@ abstract class AbstractJingleSession(
 	abstract fun addCandidate(candidate: Candidate, contentName: String)
 
 	fun initiate(contents: List<Content>, bundle: List<String>?, completionHandler: AsyncResult<Unit>) {
-		jingleModule.initiateSession(jid, sid, contents, bundle).response { r ->
-			if (r.isFailure) {
-				this.terminate()
+		jingleModule.initiateSession(jid, sid, contents, bundle)
+			.response { r ->
+				if (r.isFailure) {
+					this.terminate()
+				}
+				completionHandler(r)
 			}
-			completionHandler(r)
-		}.send()
+			.send()
 	}
 
 	fun initiate(descriptions: List<MessageInitiationDescription>, completionHandler: AsyncResult<Unit>) {
-		jingleModule.sendMessageInitiation(MessageInitiationAction.Propose(sid, descriptions), jid).response { r ->
-			if (r.isFailure) {
-				this.terminate()
+		jingleModule.sendMessageInitiation(MessageInitiationAction.Propose(sid, descriptions), jid)
+			.response { r ->
+				if (r.isFailure) {
+					this.terminate()
+				}
+				completionHandler(r)
 			}
-			completionHandler(r)
-		}.send()
+			.send()
 	}
 
 	fun initiated(contents: List<Content>, bundle: List<String>?) {
@@ -79,13 +83,15 @@ abstract class AbstractJingleSession(
 	}
 
 	fun accept(contents: List<Content>, bundle: List<String>?, completionHandler: AsyncResult<Unit>) {
-		jingleModule.acceptSession(jid, sid, contents, bundle).response { result ->
-			when {
-				result.isSuccess -> state = State.Accepted
-				result.isFailure -> terminate()
+		jingleModule.acceptSession(jid, sid, contents, bundle)
+			.response { result ->
+				when {
+					result.isSuccess -> state = State.Accepted
+					result.isFailure -> terminate()
+				}
+				completionHandler(result)
 			}
-			completionHandler(result)
-		}.send()
+			.send()
 	}
 
 	fun accepted(by: JID) {
@@ -112,9 +118,11 @@ abstract class AbstractJingleSession(
 		}
 		state = State.Terminated
 		if (initiationType == InitiationType.Iq || oldState == State.Accepted) {
-			jingleModule.terminateSession(jid, sid, reason).send()
+			jingleModule.terminateSession(jid, sid, reason)
+				.send()
 		} else {
-			jingleModule.sendMessageInitiation(MessageInitiationAction.Reject(sid), jid).send()
+			jingleModule.sendMessageInitiation(MessageInitiationAction.Reject(sid), jid)
+				.send()
 		}
 		terminateSession()
 	}
@@ -134,6 +142,7 @@ abstract class AbstractJingleSession(
 
 	@Suppress("unused")
 	fun sendCandidate(contentName: String, creator: Content.Creator, transport: Transport) {
-		jingleModule.transportInfo(jid, sid, listOf(Content(creator, contentName, null, listOf(transport)))).send()
+		jingleModule.transportInfo(jid, sid, listOf(Content(creator, contentName, null, listOf(transport))))
+			.send()
 	}
 }

@@ -29,7 +29,8 @@ class IdGenerator {
 	private val seed = createSeed()
 
 	private fun createSeed(): IntArray {
-		var t = Clock.System.now().toEpochMilliseconds()
+		var t = Clock.System.now()
+			.toEpochMilliseconds()
 		var result = IntArray(0)
 		while (t > 0) {
 			val c = t % ALPHABET.length

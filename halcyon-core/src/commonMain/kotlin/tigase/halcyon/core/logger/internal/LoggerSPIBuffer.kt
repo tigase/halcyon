@@ -25,7 +25,7 @@ import tigase.halcyon.core.logger.LoggerSPI
 class LoggerSPIBuffer(val bufferSize: Int = 100) {
 
 	data class Entry(
-		val timestamp: Instant, val level: Level, val loggerName: String, val msg: String, val caught: Throwable?
+		val timestamp: Instant, val level: Level, val loggerName: String, val msg: String, val caught: Throwable?,
 	)
 
 	var spiFactory: ((String, Boolean) -> LoggerSPI) = { name, enabled -> DefaultLoggerSPI(name, enabled) }

@@ -69,7 +69,9 @@ class Criterion private constructor() {
 				override fun match(element: Element): Boolean {
 					var current: Element? = element
 					val it = children.iterator()
-					if (!it.hasNext() || !it.next().match(current!!)) return false
+					if (!it.hasNext() || !it.next()
+							.match(current!!)
+					) return false
 
 					while (it.hasNext()) {
 						val cr = it.next()

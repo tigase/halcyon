@@ -59,12 +59,13 @@ actual class DefaultLoggerSPI actual constructor(name: String, val enabled: Bool
 			!stackTraceElement.className.startsWith(
 				"tigase.halcyon.core.logger."
 			)
-		}.let { stackTraceElement ->
-			if (stackTraceElement != null) {
-				lr.sourceClassName = stackTraceElement.className
-				lr.sourceMethodName = stackTraceElement.methodName
-			}
 		}
+			.let { stackTraceElement ->
+				if (stackTraceElement != null) {
+					lr.sourceClassName = stackTraceElement.className
+					lr.sourceMethodName = stackTraceElement.methodName
+				}
+			}
 	}
 
 	actual override fun log(level: Level, msg: String, caught: Throwable?) {
