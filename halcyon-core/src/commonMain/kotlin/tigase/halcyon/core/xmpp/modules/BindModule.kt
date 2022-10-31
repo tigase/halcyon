@@ -20,6 +20,7 @@ package tigase.halcyon.core.xmpp.modules
 import tigase.halcyon.core.AbstractHalcyon
 import tigase.halcyon.core.Context
 import tigase.halcyon.core.Scope
+import tigase.halcyon.core.builder.ConfigurationDSLMarker
 import tigase.halcyon.core.eventbus.Event
 import tigase.halcyon.core.modules.Criteria
 import tigase.halcyon.core.modules.XmppModule
@@ -49,6 +50,7 @@ sealed class BindEvent : Event(TYPE) {
 
 }
 
+@ConfigurationDSLMarker
 interface BindModuleConfig {
 
 	var resource: String?

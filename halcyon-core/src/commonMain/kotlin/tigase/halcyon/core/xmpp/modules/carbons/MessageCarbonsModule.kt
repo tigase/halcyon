@@ -19,6 +19,7 @@ package tigase.halcyon.core.xmpp.modules.carbons
 
 import tigase.halcyon.core.AbstractHalcyon
 import tigase.halcyon.core.Context
+import tigase.halcyon.core.builder.ConfigurationDSLMarker
 import tigase.halcyon.core.builder.ConfigurationException
 import tigase.halcyon.core.eventbus.Event
 import tigase.halcyon.core.modules.Criterion
@@ -49,6 +50,7 @@ sealed class CarbonEvent(@Suppress("unused") val fromJID: JID?, val stanza: Mess
 	class Received(fromJID: JID?, stanza: Message) : CarbonEvent(fromJID, stanza)
 }
 
+@ConfigurationDSLMarker
 interface MessageCarbonsModuleConfig
 
 class MessageCarbonsModule(override val context: Context, private val forwardHandler: (Message) -> Unit) : XmppModule,

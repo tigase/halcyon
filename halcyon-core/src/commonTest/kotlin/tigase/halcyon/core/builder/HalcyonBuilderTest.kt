@@ -10,6 +10,7 @@ import tigase.halcyon.core.xmpp.modules.auth.AnonymousSaslConfig
 import tigase.halcyon.core.xmpp.modules.auth.SASL2Module
 import tigase.halcyon.core.xmpp.modules.auth.SASLModule
 import tigase.halcyon.core.xmpp.modules.auth.authAnonymous
+import tigase.halcyon.core.xmpp.modules.caps.EntityCapabilitiesModule
 import tigase.halcyon.core.xmpp.modules.discovery.DiscoveryModule
 import tigase.halcyon.core.xmpp.modules.mam.MAMModule
 import tigase.halcyon.core.xmpp.modules.mix.MIXModule
@@ -28,12 +29,21 @@ class HalcyonBuilderTest {
 				userJID = "a@localhost".toBareJID()
 				password { "a" }
 			}
+			bind {
+				resource = "-"
+			}
+			bind {
+				resource = "test00909090"
+			}
+			capabilities { }
 		}
 		assertIs<JIDPasswordSaslConfig>(halyon.config.sasl).let {
 			assertEquals("a@localhost".toBareJID(), it.userJID)
 			assertEquals("a", it.passwordCallback.invoke())
 		}
 		assertEquals("localhost", assertNotNull(halyon.config).domain)
+		assertEquals("test00909090", assertNotNull(halyon.getModule(BindModule)).resource)
+		assertEquals("http://tigase.org/TigaseHalcyon", assertNotNull(halyon.getModule(EntityCapabilitiesModule)).node)
 	}
 
 	@Test
@@ -83,7 +93,6 @@ class HalcyonBuilderTest {
 			bind {
 				resource = "blahblah"
 			}
-			bind { }
 			modules {
 				install(PingModule)
 				install(SASLModule) {

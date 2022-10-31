@@ -19,6 +19,7 @@ package tigase.halcyon.core.xmpp.modules.roster
 
 import kotlinx.serialization.Serializable
 import tigase.halcyon.core.Context
+import tigase.halcyon.core.builder.ConfigurationDSLMarker
 import tigase.halcyon.core.eventbus.Event
 import tigase.halcyon.core.exceptions.HalcyonException
 import tigase.halcyon.core.logger.LoggerFactory
@@ -128,6 +129,7 @@ data class RosterItem(
 
 data class RosterResponse(val version: String?)
 
+@ConfigurationDSLMarker
 interface RosterModuleConfiguration {
 
 	var store: RosterStore

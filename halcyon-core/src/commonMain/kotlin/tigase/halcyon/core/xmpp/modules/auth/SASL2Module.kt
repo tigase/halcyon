@@ -1,8 +1,8 @@
 package tigase.halcyon.core.xmpp.modules.auth
 
 import com.soywiz.krypto.sha1
-import tigase.halcyon.core.AbstractHalcyon
 import tigase.halcyon.core.Context
+import tigase.halcyon.core.builder.ConfigurationDSLMarker
 import tigase.halcyon.core.connector.SessionController
 import tigase.halcyon.core.exceptions.HalcyonException
 import tigase.halcyon.core.logger.Level
@@ -16,9 +16,11 @@ import tigase.halcyon.core.xmpp.ErrorCondition
 import tigase.halcyon.core.xmpp.XMPPException
 import tigase.halcyon.core.xmpp.modules.discovery.DiscoveryModule
 
+@ConfigurationDSLMarker
 interface SASL2ModuleConfig : SASLModuleConfig
 
-class SASL2Module(override val context: AbstractHalcyon) : XmppModule, SASL2ModuleConfig {
+class SASL2Module(override val context: Context, private val discoveryModule: DiscoveryModule) : XmppModule,
+																								 SASL2ModuleConfig {
 
 	private val log = LoggerFactory.logger("tigase.halcyon.core.xmpp.modules.auth.SASL2Module")
 
@@ -28,7 +30,8 @@ class SASL2Module(override val context: AbstractHalcyon) : XmppModule, SASL2Modu
 		override val TYPE = "tigase.halcyon.core.xmpp.modules.auth.SASL2Module"
 		override fun configure(module: SASL2Module, cfg: SASL2ModuleConfig.() -> Unit) = module.cfg()
 
-		override fun instance(context: Context): SASL2Module = SASL2Module(context as AbstractHalcyon)
+		override fun instance(context: Context): SASL2Module =
+			SASL2Module(context, discoveryModule = context.modules.getModule(DiscoveryModule))
 
 		override fun requiredModules() = listOf(DiscoveryModule)
 	}
@@ -64,7 +67,6 @@ class SASL2Module(override val context: AbstractHalcyon) : XmppModule, SASL2Modu
 				if (authData.data != null) +authData.data
 			}
 			"user-agent" {
-				val discoveryModule = context.getModule<DiscoveryModule>(DiscoveryModule.TYPE)
 				val softwareName = discoveryModule.clientName
 				val deviceName = getDeviceName()
 				attributes["id"] = "$softwareName:$deviceName".encodeToByteArray()

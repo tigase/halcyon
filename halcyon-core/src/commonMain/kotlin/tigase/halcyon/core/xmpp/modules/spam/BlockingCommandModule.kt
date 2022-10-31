@@ -18,6 +18,7 @@
 package tigase.halcyon.core.xmpp.modules.spam
 
 import tigase.halcyon.core.Context
+import tigase.halcyon.core.builder.ConfigurationDSLMarker
 import tigase.halcyon.core.eventbus.Event
 import tigase.halcyon.core.exceptions.HalcyonException
 import tigase.halcyon.core.modules.AbstractXmppIQModule
@@ -75,6 +76,7 @@ sealed class BlockingCommandEvent : Event(TYPE) {
 	class UnblockedAll : BlockingCommandEvent()
 }
 
+@ConfigurationDSLMarker
 interface BlockingCommandModuleConfig
 
 /**

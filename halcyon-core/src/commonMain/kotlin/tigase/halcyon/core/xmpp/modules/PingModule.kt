@@ -20,6 +20,7 @@ package tigase.halcyon.core.xmpp.modules
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import tigase.halcyon.core.Context
+import tigase.halcyon.core.builder.ConfigurationDSLMarker
 import tigase.halcyon.core.modules.AbstractXmppIQModule
 import tigase.halcyon.core.modules.Criterion
 import tigase.halcyon.core.modules.XmppModuleProvider
@@ -33,17 +34,20 @@ import tigase.halcyon.core.xmpp.stanzas.IQType
 import tigase.halcyon.core.xmpp.stanzas.iq
 import kotlin.time.Duration
 
-class PingModule(context: Context) : AbstractXmppIQModule(
+@ConfigurationDSLMarker
+interface PingModuleConfig
+
+class PingModule(context: Context) : PingModuleConfig,AbstractXmppIQModule(
 	context, TYPE, arrayOf(XMLNS), Criterion.chain(
 		Criterion.name(IQ.NAME), Criterion.xmlns(XMLNS)
 	)
 ) {
 
-	companion object : XmppModuleProvider<PingModule, Any> {
+	companion object : XmppModuleProvider<PingModule, PingModuleConfig> {
 
 		const val XMLNS = "urn:xmpp:ping"
 		override val TYPE = XMLNS
-		override fun configure(module: PingModule, cfg: Any.() -> Unit) = module.cfg()
+		override fun configure(module: PingModule, cfg: PingModuleConfig.() -> Unit) = module.cfg()
 
 		override fun instance(context: Context): PingModule = PingModule(context)
 

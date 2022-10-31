@@ -18,6 +18,7 @@
 package tigase.halcyon.core.xmpp.modules.chatmarkers
 
 import tigase.halcyon.core.Context
+import tigase.halcyon.core.builder.ConfigurationDSLMarker
 import tigase.halcyon.core.eventbus.Event
 import tigase.halcyon.core.modules.*
 import tigase.halcyon.core.requests.RequestBuilder
@@ -49,6 +50,7 @@ data class ChatMarkerEvent(val jid: JID, val msgId: String, val stanza: Message,
  *
  */
 
+@ConfigurationDSLMarker
 interface ChatMarkersModuleConfig {
 
 	enum class Mode {

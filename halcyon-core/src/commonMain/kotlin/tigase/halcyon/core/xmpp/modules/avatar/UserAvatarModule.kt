@@ -39,16 +39,22 @@ data class UserAvatarUpdatedEvent(val jid: BareJID, val avatarId: String) : Even
 }
 }
 
-interface UserAvatarModuleConfig
+interface UserAvatarModuleConfig {
 
-class UserAvatarModule(override val context: Context) : XmppModule, UserAvatarModuleConfig {
+	var store: UserAvatarStore
+
+}
+
+class UserAvatarModule(override val context: Context, private val pubSubModule: PubSubModule) : XmppModule,
+																								UserAvatarModuleConfig {
 
 	companion object : XmppModuleProvider<UserAvatarModule, UserAvatarModuleConfig> {
 
 		override val TYPE = "urn:xmpp:avatar"
 		const val XMLNS_DATA = "urn:xmpp:avatar:data"
 		const val XMLNS_METADATA = "urn:xmpp:avatar:metadata"
-		override fun instance(context: Context): UserAvatarModule = UserAvatarModule(context)
+		override fun instance(context: Context): UserAvatarModule =
+			UserAvatarModule(context, pubSubModule = context.modules.getModule(PubSubModule))
 
 		override fun configure(module: UserAvatarModule, cfg: UserAvatarModuleConfig.() -> Unit) = module.cfg()
 
@@ -62,7 +68,7 @@ class UserAvatarModule(override val context: Context) : XmppModule, UserAvatarMo
 	override val features: Array<String> = arrayOf("$XMLNS_METADATA+notify")
 	override val type: String = TYPE
 
-	var store: UserAvatarStore = object : UserAvatarStore {
+	override var store: UserAvatarStore = object : UserAvatarStore {
 
 		private val items = mutableMapOf<String, Avatar>()
 
@@ -80,10 +86,7 @@ class UserAvatarModule(override val context: Context) : XmppModule, UserAvatarMo
 		override fun isStored(userJID: BareJID, avatarID: String): Boolean = items.containsKey(avatarID)
 	}
 
-	private lateinit var pubSubModule: PubSubModule
-
 	override fun initialize() {
-		this.pubSubModule = context.modules.getModule(PubSubModule.TYPE)
 		context.eventBus.register<PubSubItemEvent>(PubSubItemEvent.TYPE) { event ->
 			if (event.nodeName == XMLNS_METADATA && event is PubSubItemEvent.Published) {
 				val metadata =

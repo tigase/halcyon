@@ -20,6 +20,7 @@ package tigase.halcyon.core.xmpp.modules.caps
 import com.soywiz.krypto.sha1
 import kotlinx.serialization.Serializable
 import tigase.halcyon.core.*
+import tigase.halcyon.core.builder.ConfigurationDSLMarker
 import tigase.halcyon.core.modules.*
 import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xml.element
@@ -33,6 +34,7 @@ import tigase.halcyon.core.xmpp.modules.discovery.NodeDetailsProvider
 import tigase.halcyon.core.xmpp.stanzas.Presence
 import tigase.halcyon.core.xmpp.stanzas.wrap
 
+@ConfigurationDSLMarker
 interface EntityCapabilitiesModuleConfig {
 
 	var node: String
@@ -41,8 +43,11 @@ interface EntityCapabilitiesModuleConfig {
 
 }
 
-class EntityCapabilitiesModule(override val context: Context) : XmppModule, HasInterceptors, StanzaInterceptor,
-																EntityCapabilitiesModuleConfig {
+class EntityCapabilitiesModule(
+	override val context: Context,
+	private val discoModule: DiscoveryModule,
+	private val streamFeaturesModule: StreamFeaturesModule,
+) : XmppModule, HasInterceptors, StanzaInterceptor, EntityCapabilitiesModuleConfig {
 
 	@Serializable
 	data class Caps(
@@ -53,7 +58,11 @@ class EntityCapabilitiesModule(override val context: Context) : XmppModule, HasI
 
 		const val XMLNS = "http://jabber.org/protocol/caps"
 		override val TYPE = XMLNS
-		override fun instance(context: Context): EntityCapabilitiesModule = EntityCapabilitiesModule(context)
+		override fun instance(context: Context): EntityCapabilitiesModule = EntityCapabilitiesModule(
+			context,
+			discoModule = context.modules.getModule(DiscoveryModule),
+			streamFeaturesModule = context.modules.getModule(StreamFeaturesModule)
+		)
 
 		override fun configure(module: EntityCapabilitiesModule, cfg: EntityCapabilitiesModuleConfig.() -> Unit) =
 			module.cfg()
@@ -66,9 +75,6 @@ class EntityCapabilitiesModule(override val context: Context) : XmppModule, HasI
 	override val criteria: Criteria? = null
 	override val stanzaInterceptors: Array<StanzaInterceptor> = arrayOf(this)
 	override val features: Array<String> = arrayOf(XMLNS)
-
-	private lateinit var discoModule: DiscoveryModule
-	private lateinit var streamFeaturesModule: StreamFeaturesModule
 
 	override var node: String = "http://tigase.org/TigaseHalcyon"
 	override var cache: EntityCapabilitiesCache = DefaultEntityCapabilitiesCache()
@@ -97,10 +103,7 @@ class EntityCapabilitiesModule(override val context: Context) : XmppModule, HasI
 	}
 
 	override fun initialize() {
-		this.discoModule = context.modules.getModule(DiscoveryModule.TYPE)
 		this.discoModule.addNodeDetailsProvider(CapsNodeDetailsProvider())
-		this.streamFeaturesModule = context.modules.getModule(StreamFeaturesModule.TYPE)
-
 		context.eventBus.register<HalcyonStateChangeEvent>(HalcyonStateChangeEvent.TYPE) {
 			if (it.newState == AbstractHalcyon.State.Connected) {
 				checkServerFeatures()

@@ -12,15 +12,21 @@ data class Item<M : XmppModule, B : Any>(
 @ConfigurationDSLMarker
 class ModulesConfigBuilder {
 
-	private val providers = mutableListOf<Any>()
+	private val providers = mutableMapOf<String, Any>()
 
 	fun <M : XmppModule, B : Any> install(
 		provider: XmppModuleProvider<M, B>,
 		configuration: B.() -> Unit = {},
-	) = this.providers.add(Item(provider, configuration))
+	) {
+		this.providers.remove(provider.TYPE)
+		this.providers[provider.TYPE] = Item(provider, configuration)
+	}
+//
+//
+//	}
 
 	internal fun initializeModules(modulesManager: ModulesManager) {
-		providers.filterIsInstance<Item<*, Any>>()
+		providers.values.filterIsInstance<Item<*, Any>>()
 			.extendForDependencies()
 			.filterIsInstance<Item<*, Any>>()
 			.forEach { (provider, configuration) ->

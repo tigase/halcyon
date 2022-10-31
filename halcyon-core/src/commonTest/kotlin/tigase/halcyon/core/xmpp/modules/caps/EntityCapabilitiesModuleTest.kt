@@ -18,6 +18,7 @@
 package tigase.halcyon.core.xmpp.modules.caps
 
 import tigase.DummyHalcyon
+import tigase.halcyon.core.xmpp.modules.StreamFeaturesModule
 import tigase.halcyon.core.xmpp.modules.discovery.DiscoveryModule
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -31,7 +32,7 @@ class EntityCapabilitiesModuleTest {
 	@ExperimentalStdlibApi
 	@Test
 	fun testCalculateVerificationString() {
-		val module = EntityCapabilitiesModule(halcyon)
+		val module = EntityCapabilitiesModule(halcyon, DiscoveryModule(halcyon), StreamFeaturesModule(halcyon))
 
 		val identities = listOf(DiscoveryModule.Identity("client", "pc", "Exodus 0.9.1"))
 		val features = listOf(

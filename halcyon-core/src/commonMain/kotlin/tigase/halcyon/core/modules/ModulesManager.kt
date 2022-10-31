@@ -132,6 +132,11 @@ class ModulesManager {
 
 	operator fun <T : XmppModule> get(type: String): T = getModule(type)
 
+	fun <T : XmppModule> getModule(provider: XmppModuleProvider<T, out Any>): T = getModule(provider.TYPE)
+
 	@ReflectionModuleManager
 	operator fun <T : XmppModule> get(cls: KClass<T>): T = getModule(cls)
+
+	fun <T : XmppModule> getModuleOrNull(provider: XmppModuleProvider<T, out Any>): T? = getModuleOrNull(provider.TYPE)
+
 }

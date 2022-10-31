@@ -216,7 +216,8 @@ interface AdHocResponse {
 
 interface CommandsModuleConfig
 
-class CommandsModule(override val context: Context) : XmppModule, CommandsModuleConfig {
+class CommandsModule(override val context: Context, private val discoveryModule: DiscoveryModule) : XmppModule,
+																									CommandsModuleConfig {
 
 	companion object : XmppModuleProvider<CommandsModule, CommandsModuleConfig> {
 
@@ -224,7 +225,8 @@ class CommandsModule(override val context: Context) : XmppModule, CommandsModule
 		override val TYPE = XMLNS
 		const val NODE = XMLNS
 
-		override fun instance(context: Context): CommandsModule = CommandsModule(context)
+		override fun instance(context: Context): CommandsModule =
+			CommandsModule(context, context.modules.getModule(DiscoveryModule))
 
 		override fun configure(module: CommandsModule, cfg: CommandsModuleConfig.() -> Unit) = module.cfg()
 
@@ -295,8 +297,7 @@ class CommandsModule(override val context: Context) : XmppModule, CommandsModule
 	private val sessions: MutableMap<String, AdHocSessionImpl> = mutableMapOf()
 
 	override fun initialize() {
-		context.modules.getModule<DiscoveryModule>(DiscoveryModule.TYPE)
-			.addNodeDetailsProvider(AdHocCommandsNodeDetailsProvider())
+		discoveryModule.addNodeDetailsProvider(AdHocCommandsNodeDetailsProvider())
 	}
 
 	fun registerAdHocCommand(command: AdHocCommand) {
@@ -377,13 +378,11 @@ class CommandsModule(override val context: Context) : XmppModule, CommandsModule
 	}
 
 	fun retrieveCommandList(jid: JID?): RequestBuilder<DiscoveryModule.Items, IQ> {
-		val disco = context.modules.get<DiscoveryModule>(DiscoveryModule.TYPE)
-		return disco.items(jid, NODE)
+		return discoveryModule.items(jid, NODE)
 	}
 
 	fun retrieveCommandInfo(jid: JID?, command: String): RequestBuilder<DiscoveryModule.Info, IQ> {
-		val disco = context.modules.get<DiscoveryModule>(DiscoveryModule.TYPE)
-		return disco.info(jid, command)
+		return discoveryModule.info(jid, command)
 	}
 
 	fun executeCommand(

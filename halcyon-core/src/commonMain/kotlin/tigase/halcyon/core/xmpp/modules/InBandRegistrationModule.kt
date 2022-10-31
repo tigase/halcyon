@@ -1,6 +1,7 @@
 package tigase.halcyon.core.xmpp.modules
 
 import tigase.halcyon.core.Context
+import tigase.halcyon.core.builder.ConfigurationDSLMarker
 import tigase.halcyon.core.modules.AbstractXmppModule
 import tigase.halcyon.core.modules.Criterion
 import tigase.halcyon.core.modules.XmppModuleProvider
@@ -16,6 +17,7 @@ import tigase.halcyon.core.xmpp.forms.JabberDataForm
 import tigase.halcyon.core.xmpp.stanzas.IQ
 import tigase.halcyon.core.xmpp.stanzas.IQType
 
+@ConfigurationDSLMarker
 interface InBandRegistrationModuleConfig
 
 class InBandRegistrationModule(context: Context) : InBandRegistrationModuleConfig, AbstractXmppModule(

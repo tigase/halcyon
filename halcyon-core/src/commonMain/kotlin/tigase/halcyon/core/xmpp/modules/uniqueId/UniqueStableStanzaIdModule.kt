@@ -18,6 +18,7 @@
 package tigase.halcyon.core.xmpp.modules.uniqueId
 
 import tigase.halcyon.core.Context
+import tigase.halcyon.core.builder.ConfigurationDSLMarker
 import tigase.halcyon.core.modules.*
 import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xmpp.BareJID
@@ -25,6 +26,7 @@ import tigase.halcyon.core.xmpp.ErrorCondition
 import tigase.halcyon.core.xmpp.XMPPException
 import tigase.halcyon.core.xmpp.stanzas.Message
 
+@ConfigurationDSLMarker
 interface UniqueStableStanzaIdModuleConfig
 
 class UniqueStableStanzaIdModule(override val context: Context) : XmppModule, HasInterceptors, StanzaInterceptor,

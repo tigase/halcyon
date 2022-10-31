@@ -21,6 +21,7 @@ import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import kotlinx.serialization.Serializable
 import tigase.halcyon.core.Context
+import tigase.halcyon.core.builder.ConfigurationDSLMarker
 import tigase.halcyon.core.eventbus.Event
 import tigase.halcyon.core.exceptions.HalcyonException
 import tigase.halcyon.core.modules.Criteria
@@ -84,9 +85,15 @@ data class CreateResponse(val jid: BareJID, val name: String)
 
 data class Participant(val id: String, val nick: String?, val jid: BareJID?)
 
+@ConfigurationDSLMarker
 interface MIXModuleConfig
 
-class MIXModule(override val context: Context) : XmppModule, RosterItemAnnotationProcessor, MIXModuleConfig {
+class MIXModule(
+	override val context: Context,
+	private val rosterModule: RosterModule,
+	private val pubsubModule: PubSubModule,
+	private val mamModule: MAMModule,
+) : XmppModule, RosterItemAnnotationProcessor, MIXModuleConfig {
 
 	companion object : XmppModuleProvider<MIXModule, MIXModuleConfig> {
 
@@ -100,7 +107,12 @@ class MIXModule(override val context: Context) : XmppModule, RosterItemAnnotatio
 		const val NODE_PRESENCE = "urn:xmpp:mix:nodes:presence"
 		const val NODE_MESSAGES = "urn:xmpp:mix:nodes:messages"
 
-		override fun instance(context: Context): MIXModule = MIXModule(context)
+		override fun instance(context: Context): MIXModule = MIXModule(
+			context,
+			rosterModule = context.modules.getModule(RosterModule.TYPE),
+			pubsubModule = context.modules.getModule(PubSubModule.TYPE),
+			mamModule = context.modules.getModule(MAMModule.TYPE)
+		)
 
 		override fun configure(module: MIXModule, cfg: MIXModuleConfig.() -> Unit) = module.cfg()
 
@@ -111,14 +123,7 @@ class MIXModule(override val context: Context) : XmppModule, RosterItemAnnotatio
 	override val type = TYPE
 	override val features = arrayOf(XMLNS)
 
-	private lateinit var rosterModule: RosterModule
-	private lateinit var pubsubModule: PubSubModule
-	private lateinit var mamModule: MAMModule
-
 	override fun initialize() {
-		rosterModule = context.modules.getModule(RosterModule.TYPE)
-		pubsubModule = context.modules.getModule(PubSubModule.TYPE)
-		mamModule = context.modules.getModule(MAMModule.TYPE)
 	}
 
 	private fun checkCriteria(message: Element): Boolean {
