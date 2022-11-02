@@ -8,7 +8,7 @@ import javax.net.ssl.X509TrustManager
 
 actual fun defaultConnectionConfiguration(accountBuilder: ConfigurationBuilder, defaultDomain: String): Connection =
 	SocketConnectorConfig(
-		hostname = defaultDomain ?: throw ConfigurationException("Cannot determine domain name."),
+		hostname = defaultDomain,
 		port = 5222,
 		trustManager = object : X509TrustManager {
 			override fun checkClientTrusted(p0: Array<out X509Certificate>?, p1: String?) {

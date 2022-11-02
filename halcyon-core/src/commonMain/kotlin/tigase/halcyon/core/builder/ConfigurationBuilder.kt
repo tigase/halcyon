@@ -3,6 +3,8 @@ package tigase.halcyon.core.builder
 import tigase.halcyon.core.Halcyon
 import tigase.halcyon.core.configuration.*
 import tigase.halcyon.core.exceptions.HalcyonException
+import tigase.halcyon.core.modules.XmppModule
+import tigase.halcyon.core.modules.XmppModuleProvider
 import tigase.halcyon.core.xmpp.forms.JabberDataForm
 import tigase.halcyon.core.xmpp.modules.*
 import tigase.halcyon.core.xmpp.modules.auth.SASL2Module
@@ -106,9 +108,15 @@ class ConfigurationBuilder {
 		this.registration = n
 	}
 
+	@Deprecated("Will be removed soon.")
 	fun modules(init: ModulesConfigBuilder.() -> Unit) {
 		this.modulesConfigBuilder.init()
 	}
+
+	fun <M : XmppModule, B : Any> install(
+		provider: XmppModuleProvider<M, B>,
+		configuration: B.() -> Unit = {},
+	) = this.modulesConfigBuilder.install(provider, configuration)
 
 	fun build(): Configuration {
 		val account = this.auth?.build(this)
@@ -149,37 +157,37 @@ fun createHalcyon(initializeModules: Boolean = true, init: ConfigurationBuilder.
 }
 
 fun ConfigurationBuilder.initiateRequiredModules() {
-	this.modulesConfigBuilder.install(StreamErrorModule)
-	this.modulesConfigBuilder.install(StreamFeaturesModule)
-	this.modulesConfigBuilder.install(BindModule)
-	this.modulesConfigBuilder.install(SASLModule)
+	this.install(StreamErrorModule)
+	this.install(StreamFeaturesModule)
+	this.install(BindModule)
+	this.install(SASLModule)
 }
 
 fun ConfigurationBuilder.initiateAllModules() {
-	this.modulesConfigBuilder.install(DiscoveryModule)
-	this.modulesConfigBuilder.install(RosterModule)
-	this.modulesConfigBuilder.install(PresenceModule)
-	this.modulesConfigBuilder.install(MIXModule)
-	this.modulesConfigBuilder.install(MAMModule)
-	this.modulesConfigBuilder.install(PubSubModule)
-	this.modulesConfigBuilder.install(MessageCarbonsModule)
-	this.modulesConfigBuilder.install(MessageModule)
-	this.modulesConfigBuilder.install(StreamManagementModule)
-	this.modulesConfigBuilder.install(SASLModule)
-	this.modulesConfigBuilder.install(BindModule)
-	this.modulesConfigBuilder.install(PingModule)
-	this.modulesConfigBuilder.install(StreamErrorModule)
-	this.modulesConfigBuilder.install(StreamFeaturesModule)
-	this.modulesConfigBuilder.install(EntityCapabilitiesModule)
-	this.modulesConfigBuilder.install(UserAvatarModule)
-	this.modulesConfigBuilder.install(VCardModule)
-	this.modulesConfigBuilder.install(DeliveryReceiptsModule)
-	this.modulesConfigBuilder.install(ChatStateModule)
-	this.modulesConfigBuilder.install(ChatMarkersModule)
-	this.modulesConfigBuilder.install(UniqueStableStanzaIdModule)
-	this.modulesConfigBuilder.install(CommandsModule)
-	this.modulesConfigBuilder.install(BlockingCommandModule)
-	this.modulesConfigBuilder.install(MUCModule)
-	this.modulesConfigBuilder.install(SASL2Module)
-	this.modulesConfigBuilder.install(InBandRegistrationModule)
+	this.install(DiscoveryModule)
+	this.install(RosterModule)
+	this.install(PresenceModule)
+	this.install(MIXModule)
+	this.install(MAMModule)
+	this.install(PubSubModule)
+	this.install(MessageCarbonsModule)
+	this.install(MessageModule)
+	this.install(StreamManagementModule)
+	this.install(SASLModule)
+	this.install(BindModule)
+	this.install(PingModule)
+	this.install(StreamErrorModule)
+	this.install(StreamFeaturesModule)
+	this.install(EntityCapabilitiesModule)
+	this.install(UserAvatarModule)
+	this.install(VCardModule)
+	this.install(DeliveryReceiptsModule)
+	this.install(ChatStateModule)
+	this.install(ChatMarkersModule)
+	this.install(UniqueStableStanzaIdModule)
+	this.install(CommandsModule)
+	this.install(BlockingCommandModule)
+	this.install(MUCModule)
+	this.install(SASL2Module)
+	this.install(InBandRegistrationModule)
 }

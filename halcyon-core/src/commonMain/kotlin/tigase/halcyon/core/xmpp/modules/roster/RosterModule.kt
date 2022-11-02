@@ -153,7 +153,7 @@ class RosterModule(context: Context) : RosterModuleConfiguration, AbstractXmppIQ
 
 	}
 
-	override var store: RosterStore = DefaultRosterStore()
+	override var store: RosterStore = InMemoryRosterStore()
 
 	fun rosterGet(): RequestBuilder<RosterResponse, IQ> {
 		val iq = iq {

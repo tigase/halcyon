@@ -11,10 +11,14 @@ import tigase.halcyon.core.xmpp.modules.auth.SASL2Module
 import tigase.halcyon.core.xmpp.modules.auth.SASLModule
 import tigase.halcyon.core.xmpp.modules.auth.authAnonymous
 import tigase.halcyon.core.xmpp.modules.caps.EntityCapabilitiesModule
+import tigase.halcyon.core.xmpp.modules.chatmarkers.ChatMarkersModule
+import tigase.halcyon.core.xmpp.modules.chatmarkers.ChatMarkersModuleConfig
 import tigase.halcyon.core.xmpp.modules.discovery.DiscoveryModule
 import tigase.halcyon.core.xmpp.modules.mam.MAMModule
 import tigase.halcyon.core.xmpp.modules.mix.MIXModule
+import tigase.halcyon.core.xmpp.modules.presence.InMemoryPresenceStore
 import tigase.halcyon.core.xmpp.modules.pubsub.PubSubModule
+import tigase.halcyon.core.xmpp.modules.roster.InMemoryRosterStore
 import tigase.halcyon.core.xmpp.modules.roster.RosterModule
 import tigase.halcyon.core.xmpp.toBareJID
 import kotlin.test.*
@@ -24,26 +28,32 @@ class HalcyonBuilderTest {
 	@Test
 	fun simple_factory() {
 
-		val halyon = createHalcyon {
+		val halcyon = createHalcyon {
 			auth {
 				userJID = "a@localhost".toBareJID()
 				password { "a" }
 			}
 			bind {
-				resource = "-"
-			}
-			bind {
 				resource = "test00909090"
 			}
-			capabilities { }
+			presence {
+				store = InMemoryPresenceStore()
+			}
+			roster {
+				store = InMemoryRosterStore()
+			}
+			install(PingModule)
+			install(ChatMarkersModule) {
+				mode = ChatMarkersModuleConfig.Mode.All
+			}
 		}
-		assertIs<JIDPasswordSaslConfig>(halyon.config.sasl).let {
+		assertIs<JIDPasswordSaslConfig>(halcyon.config.sasl).let {
 			assertEquals("a@localhost".toBareJID(), it.userJID)
 			assertEquals("a", it.passwordCallback.invoke())
 		}
-		assertEquals("localhost", assertNotNull(halyon.config).domain)
-		assertEquals("test00909090", assertNotNull(halyon.getModule(BindModule)).resource)
-		assertEquals("http://tigase.org/TigaseHalcyon", assertNotNull(halyon.getModule(EntityCapabilitiesModule)).node)
+		assertEquals("localhost", assertNotNull(halcyon.config).domain)
+		assertEquals("test00909090", assertNotNull(halcyon.getModule(BindModule)).resource)
+		assertEquals("http://tigase.org/TigaseHalcyon", assertNotNull(halcyon.getModule(EntityCapabilitiesModule)).node)
 	}
 
 	@Test
@@ -93,16 +103,12 @@ class HalcyonBuilderTest {
 			bind {
 				resource = "blahblah"
 			}
-			modules {
-				install(PingModule)
-				install(SASLModule) {
-					enabled = false
-				}
+			install(PingModule)
+			install(SASLModule) {
+				enabled = false
 			}
-			modules {
-				install(SASL2Module)
-				install(MIXModule)
-			}
+			install(SASL2Module)
+			install(MIXModule)
 		}
 
 

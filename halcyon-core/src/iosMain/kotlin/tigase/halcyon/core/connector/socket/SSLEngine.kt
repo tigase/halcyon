@@ -36,13 +36,13 @@ class SSLEngine(connector: SocketConnector, domain: String) {
 
 			fun from(code: Int, engine: SSLEngine): HandshakeResult {
 				if (code == 1) {
-					return complete;
+					return complete
 				}
 
-				val status = SSLStatus.from(code = code, engine = engine);
+				val status = SSLStatus.from(code = code, engine = engine)
 				return when (status) {
-					SSLStatus.want_read, SSLStatus.want_write -> incomplete;
-					else -> failed;
+					SSLStatus.want_read, SSLStatus.want_write -> incomplete
+					else -> failed
 				}
 			}
 		}
@@ -62,230 +62,230 @@ class SSLEngine(connector: SocketConnector, domain: String) {
 
 			fun from(code: Int, engine: SSLEngine): SSLStatus {
 				if (code == 0) {
-					return ok;
+					return ok
 				}
 
-				val status = SSL_get_error(engine.ssl, code);
+				val status = SSL_get_error(engine.ssl, code)
 				return when (status) {
-					SSL_ERROR_NONE -> ok;
-					SSL_ERROR_WANT_READ -> want_read;
-					SSL_ERROR_WANT_WRITE -> want_write;
-					else -> fail;
+					SSL_ERROR_NONE -> ok
+					SSL_ERROR_WANT_READ -> want_read
+					SSL_ERROR_WANT_WRITE -> want_write
+					else -> fail
 				}
 			}
 		}
 	}
 
-	private val connector: SocketConnector = connector;
-	private val domain = domain;
+	private val connector: SocketConnector = connector
+	private val domain = domain
 	private var writeBio: CPointer<BIO>?
 	private var readBio: CPointer<BIO>?
-	private var ctx: CPointer<SSL_CTX>?;
-	private var ssl: CPointer<SSL>?;
-	private var state: State = State.handshaking;
+	private var ctx: CPointer<SSL_CTX>?
+	private var ssl: CPointer<SSL>?
+	private var state: State = State.handshaking
 
 	init {
-		ctx = SSL_CTX_new(TLS_client_method());
+		ctx = SSL_CTX_new(TLS_client_method())
 		SSL_CTX_ctrl(
 			ctx,
 			SSL_CTRL_SET_SESS_CACHE_MODE,
 			(SSL_SESS_CACHE_CLIENT or SSL_SESS_CACHE_NO_INTERNAL_STORE).toLong(),
 			null
-		);
-		ssl = SSL_new(ctx);
-		readBio = BIO_new(BIO_s_mem());
+		)
+		ssl = SSL_new(ctx)
+		readBio = BIO_new(BIO_s_mem())
 		writeBio = BIO_new(BIO_s_mem())
-		SSL_set_bio(ssl, readBio, writeBio);
-		SSL_set_connect_state(ssl);
+		SSL_set_bio(ssl, readBio, writeBio)
+		SSL_set_connect_state(ssl)
 	}
 
 	fun decrypt(data: ByteArray) {
 		if (BIO_write(readBio, data.toCValues(), data.size) != data.size) {
 			// FIXME: throw error!!
-			log.finest("could not write data to BIO buffer");
+			log.finest("could not write data to BIO buffer")
 		}
 
 		when (state) {
-			State.handshaking -> doHandshaking();
-			State.active -> readDataFromNetwork();
+			State.handshaking -> doHandshaking()
+			State.active -> readDataFromNetwork()
 			else -> {}
 		}
 	}
 
 	fun encrypt(data: ByteArray) {
 		if (!data.isEmpty()) {
-			awaitingEncryption += data;
+			awaitingEncryption += data
 		}
 
 		when (state) {
-			State.handshaking -> doHandshaking();
-			State.active -> encryptWaiting();
+			State.handshaking -> doHandshaking()
+			State.active -> encryptWaiting()
 			State.closed -> {}
 		}
 	}
 
 	private fun doHandshaking() {
-		val result = HandshakeResult.from(code = SSL_do_handshake(ssl), engine = this);
+		val result = HandshakeResult.from(code = SSL_do_handshake(ssl), engine = this)
 		when (result) {
 			HandshakeResult.incomplete -> {
-				state = State.handshaking;
-				writeDataToNetwork();
+				state = State.handshaking
+				writeDataToNetwork()
 			}
 
 			HandshakeResult.complete -> {
 				if (!isPeerCertificateValid()) {
 					// FIXME: throw error!!
-					log.warning("peer certificate is invalid!");
+					log.warning("peer certificate is invalid!")
 				}
-				state = State.active;
-				readDataFromNetwork();
-				writeDataToNetwork();
-				encryptWaiting();
+				state = State.active
+				readDataFromNetwork()
+				writeDataToNetwork()
+				encryptWaiting()
 			}
 
 			HandshakeResult.failed -> {
-				state = State.closed;
-				writeDataToNetwork();
+				state = State.closed
+				writeDataToNetwork()
 			}
 		}
 	}
 
 	private fun readDataFromNetwork() {
-		var n = 0;
+		var n = 0
 		do {
 			memScoped {
-				val buffer = allocArray<ByteVar>(2048);
-				n = SSL_read(ssl, buffer, 2048);
+				val buffer = allocArray<ByteVar>(2048)
+				n = SSL_read(ssl, buffer, 2048)
 				if (n > 0) {
-					connector.process(buffer.readBytes(n));
+					connector.process(buffer.readBytes(n))
 				}
 			}
-		} while (n > 0);
+		} while (n > 0)
 
 		when (SSLStatus.from(code = n, engine = this)) {
-			SSLStatus.want_write -> writeDataToNetwork();
+			SSLStatus.want_write -> writeDataToNetwork()
 			SSLStatus.want_read, SSLStatus.ok -> {}
 			SSLStatus.fail -> {
-				state = State.closed;
-				writeDataToNetwork();
+				state = State.closed
+				writeDataToNetwork()
 			}
 		}
 	}
 
 	private fun writeDataToNetwork() {
-		var n = 0;
+		var n = 0
 		do {
-			val waiting = BIO_ctrl_pending(writeBio).toInt();
+			val waiting = BIO_ctrl_pending(writeBio).toInt()
 			log.finest("sending ${waiting} bytes..")
 			memScoped {
-				val buffer = allocArray<ByteVar>(2048);
-				n = BIO_read(writeBio, buffer, waiting);
+				val buffer = allocArray<ByteVar>(2048)
+				n = BIO_read(writeBio, buffer, waiting)
 				if (n > 0) {
-					connector.writeDataToSocket(buffer.readBytes(n));
+					connector.writeDataToSocket(buffer.readBytes(n))
 				}
 			}
-		} while (n > 0);
+		} while (n > 0)
 	}
 
-	private var awaitingEncryption: MutableList<ByteArray> = mutableListOf();
+	private var awaitingEncryption: MutableList<ByteArray> = mutableListOf()
 
 	private fun encryptWaiting() {
 		if (awaitingEncryption.isEmpty()) {
-			writeDataToNetwork();
-			return;
+			writeDataToNetwork()
+			return
 		}
 
 		log.finest("encrypting waiting data..")
-		var shouldContinue = true;
+		var shouldContinue = true
 		while (shouldContinue) {
-			shouldContinue = false;
-			val data = awaitingEncryption.firstOrNull();
+			shouldContinue = false
+			val data = awaitingEncryption.firstOrNull()
 			log.finest("encrypting ${data?.toKString()}")
 			data?.let {
-				val n = SSL_write(ssl, it.toCValues(), it.size);
+				val n = SSL_write(ssl, it.toCValues(), it.size)
 				when (SSLStatus.from(code = n, engine = this)) {
 					SSLStatus.want_write, SSLStatus.ok -> {
-						writeDataToNetwork();
-						shouldContinue = true;
+						writeDataToNetwork()
+						shouldContinue = true
 					}
 
 					SSLStatus.want_read -> {
-						shouldContinue = false;
+						shouldContinue = false
 					}
 
 					SSLStatus.fail -> {
-						shouldContinue = false;
-						state = State.closed;
-						writeDataToNetwork();
+						shouldContinue = false
+						state = State.closed
+						writeDataToNetwork()
 					}
 				}
-				awaitingEncryption.removeAt(0);
+				awaitingEncryption.removeAt(0)
 			}
 		}
-		log.finest("encryption of waiting data finished");
+		log.finest("encryption of waiting data finished")
 	}
 
 	private fun peerCertificateChain(): CFArrayRef? {
-		val chain = SSL_get_peer_cert_chain(ssl) ?: return null;
-		var list: List<SecCertificateRef> = emptyList();
+		val chain = SSL_get_peer_cert_chain(ssl) ?: return null
+		var list: List<SecCertificateRef> = emptyList()
 
-		var cert: CPointer<X509>?;
+		var cert: CPointer<X509>?
 		do {
-			cert = sk_X509_shift(chain);
+			cert = sk_X509_shift(chain)
 			if (cert != null) {
-				var buffer = cValue<CPointerVar<UByteVar>>();
-				val len = i2d_X509(cert, buffer);
+				var buffer = cValue<CPointerVar<UByteVar>>()
+				val len = i2d_X509(cert, buffer)
 				if (len > 0) {
 					val bytes = buffer.getBytes()
-						.toUByteArray();
-					val data = CFDataCreate(null, bytes.toCValues(), buffer.size.toLong());
+						.toUByteArray()
+					val data = CFDataCreate(null, bytes.toCValues(), buffer.size.toLong())
 					SecCertificateCreateWithData(null, data)?.let { secCert ->
-						list += secCert;
+						list += secCert
 					}
-					CFRelease(data);
+					CFRelease(data)
 				}
 			}
 		} while (cert != null)
 
-		val array = CFArrayCreateMutable(kCFAllocatorDefault, list.size.toLong(), null);
+		val array = CFArrayCreateMutable(kCFAllocatorDefault, list.size.toLong(), null)
 		for (i in 1..list.size) {
-			CFArraySetValueAtIndex(array, (i - 1).toLong(), list.get(i - 1));
+			CFArraySetValueAtIndex(array, (i - 1).toLong(), list.get(i - 1))
 		}
-		return array;
+		return array
 	}
 
 	private fun isPeerCertificateValid(): Boolean {
-		var isValid = false;
+		var isValid = false
 		peerCertificateChain()?.let { array ->
-			var trustRef = cValue<SecTrustRefVar>();
+			var trustRef = cValue<SecTrustRefVar>()
 			if (SecTrustCreateWithCertificates(array, SecPolicyCreateBasicX509(), trustRef) != errSecSuccess) {
-				return false;
+				return false
 			}
 
 			val domainArr = domain.encodeToByteArray()
-				.toUByteArray();
+				.toUByteArray()
 			val cfdomain = CFStringCreateWithBytes(
 				null,
 				domainArr.toCValues(),
 				domainArr.size.toLong(),
 				kCFStringEncodingUTF8,
 				isExternalRepresentation = false
-			);
-			val policy = SecPolicyCreateSSL(false, cfdomain);
+			)
+			val policy = SecPolicyCreateSSL(false, cfdomain)
 
 			memScoped {
-				val trust = trustRef.getPointer(MemScope()).pointed.value!!;
-				SecTrustSetPolicies(trust, policy);
+				val trust = trustRef.getPointer(MemScope()).pointed.value!!
+				SecTrustSetPolicies(trust, policy)
 				var resultRef = cValue<SecTrustResultTypeVar>()
 				//var result: SecTrustResultType = kSecTrustResultUnspecified;
-				SecTrustEvaluateWithError(trust, null);
-				SecTrustGetTrustResult(trust, resultRef);
-				val result = resultRef.getPointer(MemScope()).pointed.value;
-				isValid = (result == kSecTrustResultProceed || result == kSecTrustResultUnspecified);
+				SecTrustEvaluateWithError(trust, null)
+				SecTrustGetTrustResult(trust, resultRef)
+				val result = resultRef.getPointer(MemScope()).pointed.value
+				isValid = (result == kSecTrustResultProceed || result == kSecTrustResultUnspecified)
 			}
-			CFRelease(cfdomain);
+			CFRelease(cfdomain)
 		}
-		return isValid;
+		return isValid
 	}
 
 }

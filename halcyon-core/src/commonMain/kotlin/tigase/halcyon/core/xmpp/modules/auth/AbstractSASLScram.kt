@@ -148,12 +148,12 @@ abstract class AbstractSASLScram(
 
 			data.saltedPassword = when (hashAlgorithm) {
 				ScramHashAlgorithm.SHA1 -> PBKDF2.pbkdf2WithHmacSHA1(
-					password = config.sasl!!.passwordCallback.invoke()
+					password = config.sasl.passwordCallback.invoke()
 						.encodeToByteArray(), salt = salt, iterationCount = iterations, 160
 				)
 
 				ScramHashAlgorithm.SHA256 -> PBKDF2.pbkdf2WithHmacSHA256(
-					password = config.sasl!!.passwordCallback.invoke()
+					password = config.sasl.passwordCallback.invoke()
 						.encodeToByteArray(), salt = salt, iterationCount = iterations, 256
 				)
 			}

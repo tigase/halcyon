@@ -73,7 +73,7 @@ class ModulesManagerTest {
 				get() = TODO("not implemented") //To change initializer of created properties use File | Settings | File Templates.
 			override val authContext: SASLContext
 				get() = TODO("Not yet implemented")
-			override val boundJID: JID?
+			override val boundJID: JID
 				get() = TODO("Not yet implemented")
 		}
 		mm.register(Module01(mm.context))

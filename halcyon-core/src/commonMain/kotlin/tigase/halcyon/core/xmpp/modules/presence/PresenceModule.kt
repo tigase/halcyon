@@ -64,7 +64,7 @@ class PresenceModule(override val context: Context) : XmppModule, PresenceModule
 	override val criteria = Criterion.name(Presence.NAME)
 	override val features: Array<String>? = null
 
-	override var store: PresenceStore = DefaultPresenceStore()
+	override var store: PresenceStore = InMemoryPresenceStore()
 
 	companion object : XmppModuleProvider<PresenceModule, PresenceModuleConfig> {
 

@@ -5,5 +5,5 @@ import tigase.halcyon.core.connector.socket.SocketConnectorConfig
 
 actual fun defaultConnectionConfiguration(accountBuilder: ConfigurationBuilder, defaultDomain: String): Connection =
 	SocketConnectorConfig(
-		hostname = defaultDomain ?: throw ConfigurationException("Cannot determine domain name."), port = 5222
+		hostname = defaultDomain, port = 5222
 	)

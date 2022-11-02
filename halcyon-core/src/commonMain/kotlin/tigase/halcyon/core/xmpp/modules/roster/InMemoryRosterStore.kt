@@ -15,31 +15,35 @@
  * along with this program. Look for COPYING file in the top folder.
  * If not, see http://www.gnu.org/licenses/.
  */
-package tigase.halcyon.core.xmpp.modules.presence
+package tigase.halcyon.core.xmpp.modules.roster
 
 import tigase.halcyon.core.xmpp.BareJID
-import tigase.halcyon.core.xmpp.JID
-import tigase.halcyon.core.xmpp.stanzas.Presence
 
-class DefaultPresenceStore : PresenceStore {
+class InMemoryRosterStore : RosterStore {
 
-	private val presences = mutableMapOf<JID, Presence>()
+	private var version: String? = null
 
-	override fun setPresence(stanza: Presence) {
-		val jid = stanza.from ?: return
-		presences[jid] = stanza
+	private val items = mutableMapOf<BareJID, RosterItem>()
+
+	override fun getVersion(): String? = this.version
+
+	override fun setVersion(version: String) {
+		this.version = version
 	}
 
-	override fun getPresence(jid: JID): Presence? {
-		return presences[jid]
+	override fun getItem(jid: BareJID): RosterItem? = this.items[jid]
+
+	override fun removeItem(jid: BareJID) {
+		this.items.remove(jid)
 	}
 
-	override fun removePresence(jid: JID): Presence? {
-		return presences.remove(jid)
+	override fun addItem(jid: BareJID, value: RosterItem) {
+		this.items[jid] = value
 	}
 
-	override fun getPresences(jid: BareJID): List<Presence> {
-		return presences.values.filter { presence -> presence.from?.bareJID == jid }
+	override fun updateItem(jid: BareJID, value: RosterItem) {
+		this.items[jid] = value
 	}
 
+	override fun getAllItems(): List<RosterItem> = items.values.toList()
 }

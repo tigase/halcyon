@@ -17,7 +17,7 @@
  */
 package tigase.halcyon.core.logger.internal
 
-import kotlinx.datetime.Clock;
+import kotlinx.datetime.Clock
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import tigase.halcyon.core.logger.Level
@@ -32,7 +32,7 @@ actual class DefaultLoggerSPI actual constructor(val name: String, val enabled: 
 	actual override fun log(level: Level, msg: String, caught: Throwable?) {
 		val ts = Clock.System.now()
 			.toLocalDateTime(TimeZone.UTC)
-			.toString();
+			.toString()
 		println("${ts}: ${msg}")
 	}
 }
