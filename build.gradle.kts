@@ -1,3 +1,5 @@
+import java.util.*
+
 /*
  * halcyon-core
  * Copyright (C) 2018 Tigase, Inc. (office@tigase.com)
@@ -42,10 +44,14 @@ allprojects {
 	group = "tigase.halcyon"
 	version = findProperty("halcyonVersion").toString()
 
-
 }
 
 publishing {
+	val props = Properties().also { props ->
+		val file = File("local.properties")
+		if (file.exists()) file.reader()
+			.use { props.load(it) }
+	}
 	repositories {
 		maven {
 			url = if (project.version.toString()
@@ -56,8 +62,8 @@ publishing {
 				uri(findProperty("tigaseMavenRepoRelease").toString())
 			}
 			credentials {
-				username = findProperty("mavenUsername").toString()
-				password = findProperty("mavenPassword").toString()
+				username = props["mavenUsername"]?.toString() ?: findProperty("mavenUsername").toString()
+				password = props["mavenPassword"]?.toString() ?: findProperty("mavenPassword").toString()
 			}
 		}
 	}
