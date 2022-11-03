@@ -17,9 +17,37 @@ import java.util.*
  * along with this program. Look for COPYING file in the top folder.
  * If not, see http://www.gnu.org/licenses/.
  */
+import net.researchgate.release.ReleaseExtension
+
 plugins {
 	`maven-publish`
+	id("net.researchgate.release") version "3.0.2"
 }
+
+configure<ReleaseExtension> {
+	ignoredSnapshotDependencies.set(listOf("net.researchgate:gradle-release"))
+
+	versionPropertyFile.set("gradle.properties")
+	versionProperties.set(listOf("version", "halcyonVersion"))
+
+	preTagCommitMessage.set("Release version: ")
+	tagCommitMessage.set("Tag version: ")
+	newVersionCommitMessage.set("Bump version: ")
+
+
+	failOnCommitNeeded.set(false)
+	failOnPublishNeeded.set(false)
+	failOnSnapshotDependencies.set(false)
+	failOnUnversionedFiles.set(false)
+	failOnUpdateNeeded.set(false)
+
+
+	with(git) {
+		requireBranch.set("master")
+	}
+}
+
+tasks["afterReleaseBuild"].dependsOn("publish")
 
 buildscript {
 	repositories {
@@ -42,7 +70,7 @@ repositories {
 
 allprojects {
 	group = "tigase.halcyon"
-	version = findProperty("halcyonVersion").toString()
+	version = findProperty("version").toString()
 
 }
 
