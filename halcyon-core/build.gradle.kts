@@ -1,5 +1,3 @@
-import java.util.*
-
 /*
  * halcyon-core
  * Copyright (C) 2018 Tigase, Inc. (office@tigase.com)
@@ -29,28 +27,6 @@ kotlin {
 		withJava()
 		testRuns["test"].executionTask.configure {
 			useJUnit()
-		}
-		publishing {
-			val props = Properties().also { props ->
-				val file = File("local.properties")
-				if (file.exists()) file.reader()
-					.use { props.load(it) }
-			}
-			repositories {
-				maven {
-					url = if (project.version.toString()
-							.endsWith("-SNAPSHOT", ignoreCase = true)
-					) {
-						uri(findProperty("tigaseMavenRepoSnapshot").toString())
-					} else {
-						uri(findProperty("tigaseMavenRepoRelease").toString())
-					}
-					credentials {
-						username = props["mavenUsername"]?.toString() ?: findProperty("mavenUsername").toString()
-						password = props["mavenPassword"]?.toString() ?: findProperty("mavenPassword").toString()
-					}
-				}
-			}
 		}
 	}
 	js(BOTH) {

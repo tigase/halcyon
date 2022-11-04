@@ -74,29 +74,6 @@ allprojects {
 
 }
 
-publishing {
-	val props = Properties().also { props ->
-		val file = File("local.properties")
-		if (file.exists()) file.reader()
-			.use { props.load(it) }
-	}
-	repositories {
-		maven {
-			url = if (project.version.toString()
-					.endsWith("-SNAPSHOT", ignoreCase = true)
-			) {
-				uri(findProperty("tigaseMavenRepoSnapshot").toString())
-			} else {
-				uri(findProperty("tigaseMavenRepoRelease").toString())
-			}
-			credentials {
-				username = props["mavenUsername"]?.toString() ?: findProperty("mavenUsername").toString()
-				password = props["mavenPassword"]?.toString() ?: findProperty("mavenPassword").toString()
-			}
-		}
-	}
-}
-
 subprojects {
 	repositories {
 		mavenCentral()
@@ -105,5 +82,29 @@ subprojects {
 		maven(url = findProperty("tigaseMavenRepoSnapshot").toString())
 		jcenter()
 	}
+	pluginManager.withPlugin("maven-publish") {
 
+		publishing {
+			val props = Properties().also { props ->
+					val file = File("local.properties")
+					if (file.exists()) file.reader()
+						.use { props.load(it) }
+				}
+			repositories {
+				maven {
+					url = if (project.version.toString()
+							.endsWith("-SNAPSHOT", ignoreCase = true)
+					) {
+						uri(findProperty("tigaseMavenRepoSnapshot").toString())
+					} else {
+						uri(findProperty("tigaseMavenRepoRelease").toString())
+					}
+					credentials {
+						username = props["mavenUsername"]?.toString() ?: findProperty("mavenUsername").toString()
+						password = props["mavenPassword"]?.toString() ?: findProperty("mavenPassword").toString()
+					}
+				}
+			}
+		}
+	}
 }
