@@ -35,11 +35,12 @@ configure<ReleaseExtension> {
 	newVersionCommitMessage.set("Bump version: ")
 
 
-	failOnCommitNeeded.set(false)
+	// Fail the release process when there are un-committed changes. Will commit files automatically if set to false.
+	failOnCommitNeeded.set(true)
+	failOnUnversionedFiles.set(true)
 	failOnPublishNeeded.set(false)
 	failOnSnapshotDependencies.set(false)
-	failOnUnversionedFiles.set(false)
-	failOnUpdateNeeded.set(false)
+	failOnUpdateNeeded.set(true)
 
 
 	with(git) {
