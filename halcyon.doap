@@ -1,0 +1,213 @@
+<?xml version="1.0"?>
+<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+    <Project xmlns="http://usefulinc.com/ns/doap#"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             xmlns:foaf="http://xmlns.com/foaf/0.1/"
+             xmlns:schema="https://schema.org/"
+             xmlns:xmpp="https://linkmauve.fr/ns/xmpp-doap#">
+        <name>Halcyon</name>
+        <created>2018-01-05</created>
+        <shortdesc xml:lang="en">XMPP Client Library</shortdesc>
+        <description xml:lang="en">Multiplatform XMPP Client library written in Kotlin</description>
+        <schema:logo
+                rdf:resource="https://raw.githubusercontent.com/tigase/halcyon/master/docs/src/asciidoc/images/logo_320.png"/>
+
+        <homepage rdf:resource="https://github.com/tigase/halcyon"/>
+        <download-page rdf:resource='https://github.com/tigase/halcyon/releases/latest'/>
+        <bug-database rdf:resource='https://github.com/tigase/halcyon/issues'/>
+
+        <!--<developer-forum rdf:resource='xmpp:'/>
+        <support-forum rdf:resource='xmpp:'/>-->
+
+        <license rdf:resource='https://raw.githubusercontent.com/tigase/halcyon/master/COPYING'/>
+
+        <language>en</language>
+
+        <programming-language>Kotlin</programming-language>
+        <os>JVM</os>
+        <os>Android</os>
+        <os>iOS</os>
+        <os>JS</os>
+
+        <category rdf:resource="https://linkmauve.fr/ns/xmpp-doap#category-xmpp"/>
+        <category rdf:resource="https://linkmauve.fr/ns/xmpp-doap#category-jabber"/>
+        <category rdf:resource='https://linkmauve.fr/ns/xmpp-doap#category-library'/>
+
+        <repository>
+            <GitRepository>
+                <location rdf:resource="https://github.com/tigase/halcyon.git"/>
+                <browse rdf:resource="https://github.com/tigase/halcyon"/>
+            </GitRepository>
+        </repository>
+
+        <implements rdf:resource='https://xmpp.org/rfcs/rfc6120.html'/>
+        <implements rdf:resource='https://xmpp.org/rfcs/rfc6121.html'/>
+        <implements rdf:resource='https://xmpp.org/rfcs/rfc7590.html'/>
+        <implements rdf:resource='https://xmpp.org/rfcs/rfc7622.html'/>
+
+        <implements>
+            <xmpp:SupportedXep>
+                <xmpp:xep rdf:resource='https://xmpp.org/extensions/xep-0004.html'/>
+                <xmpp:status>partial</xmpp:status>
+                <xmpp:version>2.13.0</xmpp:version>
+                <xmpp:note>Multiple Items in Form Results is not implemented.</xmpp:note>
+            </xmpp:SupportedXep>
+        </implements>
+        <implements>
+            <xmpp:SupportedXep>
+                <xmpp:xep rdf:resource='https://xmpp.org/extensions/xep-0030.html'/>
+                <xmpp:status>complete</xmpp:status>
+                <xmpp:version>2.5rc3</xmpp:version>
+            </xmpp:SupportedXep>
+        </implements>
+        <implements>
+            <xmpp:SupportedXep>
+                <xmpp:xep rdf:resource='https://xmpp.org/extensions/xep-0045.html'/>
+                <xmpp:status>complete</xmpp:status>
+                <xmpp:version>1.34.3</xmpp:version>
+            </xmpp:SupportedXep>
+        </implements>
+        <implements>
+            <xmpp:SupportedXep>
+                <xmpp:xep rdf:resource='https://xmpp.org/extensions/xep-0059.html'/>
+                <xmpp:status>complete</xmpp:status>
+                <xmpp:version>1.0</xmpp:version>
+            </xmpp:SupportedXep>
+        </implements>
+        <implements>
+            <xmpp:SupportedXep>
+                <xmpp:xep rdf:resource='https://xmpp.org/extensions/xep-0060.html'/>
+                <xmpp:status>partial</xmpp:status>
+                <xmpp:version>1.24.1</xmpp:version>
+            </xmpp:SupportedXep>
+        </implements>
+        <implements>
+            <xmpp:SupportedXep>
+                <xmpp:xep rdf:resource='https://xmpp.org/extensions/xep-0077.html'/>
+                <xmpp:status>complete</xmpp:status>
+                <xmpp:version>2.4</xmpp:version>
+            </xmpp:SupportedXep>
+        </implements>
+        <implements>
+            <xmpp:SupportedXep>
+                <xmpp:xep rdf:resource='https://xmpp.org/extensions/xep-0082.html'/>
+                <xmpp:status>complete</xmpp:status>
+                <xmpp:version>1.1.1</xmpp:version>
+            </xmpp:SupportedXep>
+        </implements>
+        <implements>
+            <xmpp:SupportedXep>
+                <xmpp:xep rdf:resource='https://xmpp.org/extensions/xep-0085.html'/>
+                <xmpp:status>complete</xmpp:status>
+                <xmpp:version>2.1</xmpp:version>
+            </xmpp:SupportedXep>
+        </implements>
+        <implements>
+            <xmpp:SupportedXep>
+                <xmpp:xep rdf:resource='https://xmpp.org/extensions/xep-0115.html'/>
+                <xmpp:status>complete</xmpp:status>
+                <xmpp:version>1.6.0</xmpp:version>
+            </xmpp:SupportedXep>
+        </implements>
+        <implements>
+            <xmpp:SupportedXep>
+                <xmpp:xep rdf:resource='https://xmpp.org/extensions/xep-0184.html'/>
+                <xmpp:status>complete</xmpp:status>
+                <xmpp:version>1.4.0</xmpp:version>
+            </xmpp:SupportedXep>
+        </implements>
+        <implements>
+            <xmpp:SupportedXep>
+                <xmpp:xep rdf:resource='https://xmpp.org/extensions/xep-0198.html'/>
+                <xmpp:status>complete</xmpp:status>
+                <xmpp:version>1.6</xmpp:version>
+            </xmpp:SupportedXep>
+        </implements>
+        <implements>
+            <xmpp:SupportedXep>
+                <xmpp:xep rdf:resource='https://xmpp.org/extensions/xep-0199.html'/>
+                <xmpp:status>complete</xmpp:status>
+                <xmpp:version>2.0.1</xmpp:version>
+            </xmpp:SupportedXep>
+        </implements>
+        <implements>
+            <xmpp:SupportedXep>
+                <xmpp:xep rdf:resource='https://xmpp.org/extensions/xep-0203.html'/>
+                <xmpp:status>complete</xmpp:status>
+                <xmpp:version>2.0</xmpp:version>
+            </xmpp:SupportedXep>
+        </implements>
+        <implements>
+            <xmpp:SupportedXep>
+                <xmpp:xep rdf:resource='https://xmpp.org/extensions/xep-0237.html'/>
+                <xmpp:status>partial</xmpp:status>
+                <xmpp:version>1.3</xmpp:version>
+            </xmpp:SupportedXep>
+        </implements>
+        <implements>
+            <xmpp:SupportedXep>
+                <xmpp:xep rdf:resource='https://xmpp.org/extensions/xep-0249.html'/>
+                <xmpp:status>complete</xmpp:status>
+                <xmpp:version>1.2</xmpp:version>
+            </xmpp:SupportedXep>
+        </implements>
+        <implements>
+            <xmpp:SupportedXep>
+                <xmpp:xep rdf:resource='https://xmpp.org/extensions/xep-0280.html'/>
+                <xmpp:status>partial</xmpp:status>
+                <xmpp:version>1.0.1</xmpp:version>
+            </xmpp:SupportedXep>
+        </implements>
+        <implements>
+            <xmpp:SupportedXep>
+                <xmpp:xep rdf:resource='https://xmpp.org/extensions/xep-0313.html'/>
+                <xmpp:status>complete</xmpp:status>
+                <xmpp:version>1.0.1</xmpp:version>
+            </xmpp:SupportedXep>
+        </implements>
+        <implements>
+            <xmpp:SupportedXep>
+                <xmpp:xep rdf:resource='https://xmpp.org/extensions/xep-0333.html'/>
+                <xmpp:status>complete</xmpp:status>
+                <xmpp:version>0.4</xmpp:version>
+            </xmpp:SupportedXep>
+        </implements>
+        <implements>
+            <xmpp:SupportedXep>
+                <xmpp:xep rdf:resource='https://xmpp.org/extensions/xep-0334.html'/>
+                <xmpp:status>partial</xmpp:status>
+                <xmpp:version>0.3.0</xmpp:version>
+            </xmpp:SupportedXep>
+        </implements>
+        <implements>
+            <xmpp:SupportedXep>
+                <xmpp:xep rdf:resource='https://xmpp.org/extensions/xep-0357.html'/>
+                <xmpp:status>planned</xmpp:status>
+            </xmpp:SupportedXep>
+        </implements>
+        <implements>
+            <xmpp:SupportedXep>
+                <xmpp:xep rdf:resource='https://xmpp.org/extensions/xep-0359.html'/>
+                <xmpp:status>complete</xmpp:status>
+                <xmpp:version>0.6.1</xmpp:version>
+            </xmpp:SupportedXep>
+        </implements>
+        <implements>
+            <xmpp:SupportedXep>
+                <xmpp:xep rdf:resource='https://xmpp.org/extensions/xep-0369.html'/>
+                <xmpp:status>partial</xmpp:status>
+                <xmpp:version>0.14.6</xmpp:version>
+            </xmpp:SupportedXep>
+        </implements>
+
+   <!--
+      <release>
+            <Version>
+                <revision>-</revision>
+                <created>-</created>
+                <file-release rdf:resource='-'/>
+            </Version>
+        </release>
+-->
+    </Project>
+</rdf:RDF>
