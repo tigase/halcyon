@@ -21,8 +21,8 @@ import org.w3c.dom.MessageEvent
 import org.w3c.dom.WebSocket
 import org.w3c.dom.events.Event
 import tigase.halcyon.core.Halcyon
-import tigase.halcyon.core.configuration.domain
-import tigase.halcyon.core.configuration.userJID
+import tigase.halcyon.core.configuration.declaredDomain
+import tigase.halcyon.core.configuration.declaredUserJID
 import tigase.halcyon.core.excutor.TickExecutor
 import tigase.halcyon.core.logger.Level
 import tigase.halcyon.core.logger.LoggerFactory
@@ -165,7 +165,7 @@ class WebSocketConnector(halcyon: Halcyon) : AbstractConnector(halcyon) {
 
 	fun restartStream() {
 		log.finest { "Send new stream" }
-		val userJid = halcyon.config.userJID
+		val userJid = halcyon.config.declaredUserJID
 
 		val sb = buildString {
 			append("<stream:stream ")
@@ -173,7 +173,7 @@ class WebSocketConnector(halcyon: Halcyon) : AbstractConnector(halcyon) {
 			append("xmlns:stream='http://etherx.jabber.org/streams' ")
 			append("version='1.0' ")
 			if (userJid != null) append("from='${userJid}' ")
-			append("to='${halcyon.config.domain}' ")
+			append("to='${halcyon.config.declaredDomain}' ")
 			append(">")
 		}
 

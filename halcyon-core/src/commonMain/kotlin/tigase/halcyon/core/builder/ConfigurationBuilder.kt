@@ -90,7 +90,7 @@ class ConfigurationBuilder {
 			field = value
 		}
 
-	var connection: (ConnectionConfigItemBuilder<out Connection>)? = null
+	var connection: (ConnectionConfigItemBuilder<out ConnectionConfig>)? = null
 		internal set
 
 	var registration: RegistrationBuilder? = null
@@ -137,7 +137,7 @@ class ConfigurationBuilder {
 
 }
 
-expect fun defaultConnectionConfiguration(accountBuilder: ConfigurationBuilder, defaultDomain: String): Connection
+expect fun defaultConnectionConfiguration(accountBuilder: ConfigurationBuilder, defaultDomain: String): ConnectionConfig
 
 fun createConfiguration(
 	initializeModules: Boolean = true,

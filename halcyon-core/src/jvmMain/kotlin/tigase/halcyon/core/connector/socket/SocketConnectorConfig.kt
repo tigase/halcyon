@@ -17,7 +17,7 @@
  */
 package tigase.halcyon.core.connector.socket
 
-import tigase.halcyon.core.configuration.Connection
+import tigase.halcyon.core.configuration.ConnectionConfig
 import tigase.halcyon.core.connector.DnsResolver
 import javax.net.ssl.TrustManager
 
@@ -26,4 +26,4 @@ data class SocketConnectorConfig(
 	val port: Int,
 	val trustManager: TrustManager,
 	val dnsResolver: DnsResolver,
-) : Connection
+) : ConnectionConfig

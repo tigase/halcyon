@@ -35,20 +35,22 @@ data class Registration(
 	val formHandlerWithResponse: ((JabberDataForm) -> JabberDataForm)?,
 )
 
-interface Connection
+interface ConnectionConfig
 
 data class Configuration(
 	val sasl: SaslConfig?,
-	val connection: Connection,
+	val connection: ConnectionConfig,
 	val registration: Registration? = null,
 )
 
-val Configuration.domain: String
+val Configuration.declaredDomain: String
 	get() = if (this.sasl is DomainProvider) {
 		this.sasl.domain
 	} else if (this.registration != null) {
 		this.registration.domain
 	} else throw HalcyonException("Cannot determine domain.")
 
-val Configuration.userJID: BareJID?
-	get() = null
+val Configuration.declaredUserJID: BareJID?
+	get() = if (this.sasl is JIDPasswordSaslConfig) {
+		this.sasl.userJID
+	} else null

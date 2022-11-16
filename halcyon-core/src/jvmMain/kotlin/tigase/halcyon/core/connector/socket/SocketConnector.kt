@@ -19,8 +19,8 @@ package tigase.halcyon.core.connector.socket
 
 import org.minidns.dnssec.DnssecValidationFailedException
 import tigase.halcyon.core.Halcyon
-import tigase.halcyon.core.configuration.domain
-import tigase.halcyon.core.configuration.userJID
+import tigase.halcyon.core.configuration.declaredDomain
+import tigase.halcyon.core.configuration.declaredUserJID
 import tigase.halcyon.core.connector.*
 import tigase.halcyon.core.exceptions.HalcyonException
 import tigase.halcyon.core.excutor.TickExecutor
@@ -228,7 +228,7 @@ class SocketConnector(halcyon: Halcyon) : AbstractConnector(halcyon) {
 	override fun start() {
 		state = State.Connecting
 
-		val userJid = halcyon.config.userJID
+		val userJid = halcyon.config.declaredUserJID
 		try {
 			createSocket { sckt ->
 				this.socket = sckt
@@ -243,7 +243,7 @@ class SocketConnector(halcyon: Halcyon) : AbstractConnector(halcyon) {
 					append("<stream:stream xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams' ")
 					append("version='1.0' ")
 					if (userJid != null) append("from='$userJid' ")
-					append("to='${halcyon.config.domain}'")
+					append("to='${halcyon.config.declaredDomain}'")
 					append(">")
 
 				}
@@ -320,13 +320,13 @@ class SocketConnector(halcyon: Halcyon) : AbstractConnector(halcyon) {
 	}
 
 	fun restartStream() {
-		val userJid = halcyon.config.userJID
+		val userJid = halcyon.config.declaredUserJID
 
 		val sb = buildString {
 			append("<stream:stream xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams' ")
 			append("version='1.0' ")
 			if (userJid != null) append("from='$userJid' ")
-			append("to='${halcyon.config.domain}'")
+			append("to='${halcyon.config.declaredDomain}'")
 			append(">")
 		}
 		send(sb)

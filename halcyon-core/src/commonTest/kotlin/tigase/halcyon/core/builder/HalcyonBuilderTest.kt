@@ -2,7 +2,7 @@ package tigase.halcyon.core.builder
 
 import tigase.halcyon.core.ReflectionModuleManager
 import tigase.halcyon.core.configuration.JIDPasswordSaslConfig
-import tigase.halcyon.core.configuration.domain
+import tigase.halcyon.core.configuration.declaredDomain
 import tigase.halcyon.core.xmpp.modules.BindModule
 import tigase.halcyon.core.xmpp.modules.MessageModule
 import tigase.halcyon.core.xmpp.modules.PingModule
@@ -51,7 +51,7 @@ class HalcyonBuilderTest {
 			assertEquals("a@localhost".toBareJID(), it.userJID)
 			assertEquals("a", it.passwordCallback.invoke())
 		}
-		assertEquals("localhost", assertNotNull(halcyon.config).domain)
+		assertEquals("localhost", assertNotNull(halcyon.config).declaredDomain)
 		assertEquals("test00909090", assertNotNull(halcyon.getModule(BindModule)).resource)
 		assertEquals("http://tigase.org/TigaseHalcyon", assertNotNull(halcyon.getModule(EntityCapabilitiesModule)).node)
 	}
@@ -74,7 +74,7 @@ class HalcyonBuilderTest {
 
 
 		assertNull(halyon.config.sasl)
-		assertEquals("localhost", halyon.config.domain)
+		assertEquals("localhost", halyon.config.declaredDomain)
 		assertNotNull(halyon.config.registration).let {
 			assertEquals("localhost", it.domain)
 			assertNotNull(it.formHandler)
@@ -89,7 +89,7 @@ class HalcyonBuilderTest {
 				domain = "example.com"
 			}
 		}
-		assertEquals("example.com", cvg.config.domain)
+		assertEquals("example.com", cvg.config.declaredDomain)
 		assertIs<AnonymousSaslConfig>(cvg.config.sasl)
 	}
 

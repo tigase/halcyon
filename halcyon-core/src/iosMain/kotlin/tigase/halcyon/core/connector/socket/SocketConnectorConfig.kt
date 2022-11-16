@@ -17,9 +17,9 @@
  */
 package tigase.halcyon.core.connector.socket
 
-import tigase.halcyon.core.configuration.Connection
+import tigase.halcyon.core.configuration.ConnectionConfig
 
 data class SocketConnectorConfig(
 	val hostname: String,
 	val port: Int = 5222,
-) : Connection
+) : ConnectionConfig
