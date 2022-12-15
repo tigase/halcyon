@@ -9,6 +9,7 @@ class WebSocketConnectionBuilder : ConnectionConfigItemBuilder<WebSocketConnecto
 
 	override fun build(root: ConfigurationBuilder, defaultDomain: String?): WebSocketConnectorConfig {
 		return WebSocketConnectorConfig(
+			domain = defaultDomain ?: throw ConfigurationException("Cannot determine domain name."),
 			webSocketUrl = webSocketUrl ?: "ws://$defaultDomain:5290/"
 		)
 	}
