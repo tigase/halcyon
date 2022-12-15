@@ -188,35 +188,54 @@ class SocketConnector(halcyon: Halcyon) : AbstractConnector(halcyon) {
 
 	override fun createSessionController(): SessionController = SocketSessionController(halcyon, this)
 
-	private fun createSocket(completionHandler: (Socket) -> Unit) {
+	private fun resolveTarget(completionHandler: (List<HostPort>) -> Unit) {
 		val hosts = mutableListOf<HostPort>()
 
 		val location = halcyon.getModuleOrNull(StreamManagementModule)?.resumptionContext?.location
 		if (location != null) {
 			hosts += HostPort(location, config.port)
+			log.fine { "Using host ${location}:${config.port}" }
+			completionHandler(hosts)
+			return
 		}
 
 		val seeOther = halcyon.internalDataStore.getData<String>(SEE_OTHER_HOST_KEY)
 		if (seeOther != null) {
 			hosts += HostPort(seeOther, config.port)
+			log.fine { "Using host ${seeOther}:${config.port}" }
+			completionHandler(hosts)
+			return
 		}
 
-		log.fine { "Resolving DNS of ${config.hostname}" }
-		config.dnsResolver.resolve(config.hostname) { result ->
+		if (config.hostname != null) {
+			hosts += HostPort(config.hostname!!, config.port)
+			log.fine { "Using host ${config.hostname}:${config.port}" }
+			completionHandler(hosts)
+			return
+		}
+
+		log.fine { "Resolving DNS of ${config.domain}" }
+		config.dnsResolver.resolve(config.domain) { result ->
 			result.onFailure {
-				hosts += HostPort(config.hostname, config.port)
+				hosts += HostPort(config.domain, config.port)
 			}
 			result.onSuccess {
 				hosts.addAll(it.shuffled()
 								 .map { HostPort(it.target, it.port.toInt()) })
 			}
 
+			completionHandler(hosts)
+		}
+	}
+
+	private fun createSocket(completionHandler: (Socket) -> Unit) {
+		resolveTarget { hosts ->
 			hosts.forEach { hp ->
 				try {
-					log.fine { "Checking ${hp.first}:${hp.second}" }
+					log.fine { "Opening connection to ${hp.first}:${hp.second}" }
 					val s = Socket(hp.first, hp.second)
 					completionHandler(s)
-					return@resolve
+					return@resolveTarget
 				} catch (e: Throwable) {
 					log.fine { "Host ${hp.first}:${hp.second} is unreachable." }
 				}

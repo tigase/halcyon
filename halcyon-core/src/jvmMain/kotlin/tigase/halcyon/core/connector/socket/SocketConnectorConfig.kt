@@ -22,7 +22,8 @@ import tigase.halcyon.core.connector.DnsResolver
 import javax.net.ssl.TrustManager
 
 data class SocketConnectorConfig(
-	val hostname: String,
+	val domain: String,
+	val hostname: String?,
 	val port: Int,
 	val trustManager: TrustManager,
 	val dnsResolver: DnsResolver,

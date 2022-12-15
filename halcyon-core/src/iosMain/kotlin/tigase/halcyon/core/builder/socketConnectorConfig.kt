@@ -10,8 +10,11 @@ class SocketConnectionBuilder : ConnectionConfigItemBuilder<SocketConnectorConfi
 	var port: Int = 5222
 
 	override fun build(root: ConfigurationBuilder, defaultDomain: String?): SocketConnectorConfig {
-		val d = hostname ?: defaultDomain ?: throw ConfigurationException("Cannot determine domain name.")
-		return SocketConnectorConfig(hostname = d, port = port)
+		return SocketConnectorConfig(
+			hostname = hostname,
+			domain = defaultDomain ?: throw ConfigurationException("Cannot determine domain name."),
+			port = port
+		)
 	}
 }
 

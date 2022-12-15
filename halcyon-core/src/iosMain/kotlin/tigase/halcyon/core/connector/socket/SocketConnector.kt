@@ -254,8 +254,8 @@ class SocketConnector(halcyon: Halcyon) : AbstractConnector(halcyon) {
 
 	private fun proceedTLS() {
 		log.info { "Proceeding TLS" }
-		val hostname = (halcyon.config.connection as SocketConnectorConfig).hostname
-		sslEngine = SSLEngine(this, hostname)
+		val domain = (halcyon.config.connection as SocketConnectorConfig).domain
+		sslEngine = SSLEngine(this, domain)
 		restartStream()
 	}
 
@@ -270,18 +270,22 @@ class SocketConnector(halcyon: Halcyon) : AbstractConnector(halcyon) {
 			return completionHandler(seeOther, config.port)
 		}
 
+		(halcyon.config.connection as SocketConnectorConfig).hostname?.let {
+			return completionHandler(it, config.port)
+		}
+
 //		val forcedHost = halcyon.sessionObject.getProperty<String>(SERVER_HOST)
 //		if (forcedHost != null) {
 //			return Socket(InetAddress.getByName(forcedHost), config.port)
 //		}
-		val hostname = (halcyon.config.connection as SocketConnectorConfig).hostname
+		val domain = (halcyon.config.connection as SocketConnectorConfig).domain
 		resolver = DnsResolver()
-		resolver.resolve(hostname) { result ->
+		resolver.resolve(domain) { result ->
 			result.onSuccess { records ->
 				completionHandler(records.first().target, records.first().port.toInt())
 			}
 				.onFailure {
-					completionHandler(hostname, config.port)
+					completionHandler(domain, config.port)
 				}
 		}
 	}

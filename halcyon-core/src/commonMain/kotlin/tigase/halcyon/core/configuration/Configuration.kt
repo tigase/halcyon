@@ -30,10 +30,10 @@ interface DomainProvider {
 }
 
 data class Registration(
-	val domain: String,
+	override val domain: String,
 	val formHandler: ((JabberDataForm) -> Unit)?,
 	val formHandlerWithResponse: ((JabberDataForm) -> JabberDataForm)?,
-)
+) : DomainProvider
 
 interface ConnectionConfig
 

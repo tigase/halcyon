@@ -19,7 +19,8 @@ class SocketConnectionBuilder : ConnectionConfigItemBuilder<SocketConnectorConfi
 
 	override fun build(root: ConfigurationBuilder, defaultDomain: String?): SocketConnectorConfig {
 		return SocketConnectorConfig(
-			hostname = hostname ?: defaultDomain ?: throw ConfigurationException("Cannot determine domain name."),
+			hostname = hostname,
+			domain = defaultDomain ?: throw ConfigurationException("Cannot determine domain name."),
 			port = port,
 			trustManager = trustManager ?: object : X509TrustManager {
 				override fun checkClientTrusted(p0: Array<out X509Certificate>?, p1: String?) {
