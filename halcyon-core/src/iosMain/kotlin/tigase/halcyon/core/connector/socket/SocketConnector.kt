@@ -131,11 +131,10 @@ class SocketConnector(halcyon: Halcyon) : AbstractConnector(halcyon) {
 		}
 	}
 
-	@Suppress("CAST_NEVER_SUCCEEDS")
 	fun restartStream() {
 		log.finest("restarting stream..")
 		val userJid = halcyon.config.declaredUserJID
-		val domain = (halcyon.config as SocketConnectorConfig).domain
+		val domain = (halcyon.config.connection as SocketConnectorConfig).domain
 
 		val sb = buildString {
 			append("<stream:stream xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams' ")

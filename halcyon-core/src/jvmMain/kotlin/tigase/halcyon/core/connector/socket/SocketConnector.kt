@@ -243,12 +243,11 @@ class SocketConnector(halcyon: Halcyon) : AbstractConnector(halcyon) {
 		}
 	}
 
-	@Suppress("CAST_NEVER_SUCCEEDS")
 	override fun start() {
 		state = State.Connecting
 
 		val userJid = halcyon.config.declaredUserJID
-		val domain = (halcyon.config as SocketConnectorConfig).domain
+		val domain = (halcyon.config.connection as SocketConnectorConfig).domain
 		try {
 			createSocket { sckt ->
 				this.socket = sckt
@@ -339,10 +338,9 @@ class SocketConnector(halcyon: Halcyon) : AbstractConnector(halcyon) {
 		}
 	}
 
-	@Suppress("CAST_NEVER_SUCCEEDS")
 	fun restartStream() {
 		val userJid = halcyon.config.declaredUserJID
-		val domain = (halcyon.config as SocketConnectorConfig).domain
+		val domain = (halcyon.config.connection as SocketConnectorConfig).domain
 
 		val sb = buildString {
 			append("<stream:stream xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams' ")
