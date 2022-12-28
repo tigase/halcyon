@@ -64,7 +64,7 @@ abstract class NoContextEventBus : EventBusInterface {
 			try {
 				(eventHandler as EventHandler<Event>).onEvent(event)
 			} catch (e: Exception) {
-				log.warning(e) { "Problem on handling event" }
+				log.warning(e) { "Problem on handling event ${event.eventType}" }
 			}
 		}
 	}

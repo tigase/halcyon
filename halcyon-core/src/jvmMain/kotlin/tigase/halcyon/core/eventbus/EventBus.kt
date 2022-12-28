@@ -49,7 +49,7 @@ actual class EventBus actual constructor(context: AbstractHalcyon) : AbstractEve
 			try {
 				(eventHandler as EventHandler<Event>).onEvent(event)
 			} catch (e: Exception) {
-				log.warning(e) { "Problem on handling event" }
+				log.warning(e) { "Problem on handling event ${event.eventType}" }
 			}
 		}
 	}
@@ -61,7 +61,7 @@ actual class EventBus actual constructor(context: AbstractHalcyon) : AbstractEve
 				try {
 					(eventHandler as EventHandler<Event>).onEvent(event)
 				} catch (e: Exception) {
-					log.warning(e) { "Problem on handling event" }
+					log.warning(e) { "Problem on handling event ${event.eventType}" }
 				}
 			}
 		}
@@ -74,7 +74,7 @@ actual class EventBus actual constructor(context: AbstractHalcyon) : AbstractEve
 				try {
 					(eventHandler as EventHandler<Event>).onEvent(event)
 				} catch (e: Exception) {
-					log.warning(e) { "Problem on handling event" }
+					log.warning(e) { "Problem on handling event ${event.eventType}" }
 				}
 			}
 		}

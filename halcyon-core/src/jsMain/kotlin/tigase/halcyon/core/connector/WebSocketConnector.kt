@@ -165,7 +165,7 @@ class WebSocketConnector(halcyon: Halcyon) : AbstractConnector(halcyon) {
 	fun restartStream() {
 		log.finest { "Send new stream" }
 		val userJid = halcyon.config.declaredUserJID
-		val domain = (halcyon.config as WebSocketConnectorConfig).domain
+		val domain = (halcyon.config.connection as WebSocketConnectorConfig).domain
 
 		val sb = buildString {
 			append("<stream:stream ")
