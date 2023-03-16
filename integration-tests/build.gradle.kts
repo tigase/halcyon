@@ -40,6 +40,7 @@ kotlin {
 				implementation(kotlin("test"))
 				implementation(kotlin("test-junit"))
 				implementation(project(":halcyon-core"))
+				implementation(deps.kotlinx.datetime)
 			}
 		}
 	}

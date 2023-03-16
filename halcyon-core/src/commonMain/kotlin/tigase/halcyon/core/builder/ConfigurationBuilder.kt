@@ -144,26 +144,26 @@ fun createConfiguration(
 	init: ConfigurationBuilder.() -> Unit,
 ): ConfigurationBuilder {
 	val n = ConfigurationBuilder()
-	if (initializeModules) n.initiateAllModules()
+	if (initializeModules) n.installAllModules() else n.installRequiredModules()
 	n.init()
 	return n
 }
 
-fun createHalcyon(initializeModules: Boolean = true, init: ConfigurationBuilder.() -> Unit): Halcyon {
+fun createHalcyon(installAllModules: Boolean = true, init: ConfigurationBuilder.() -> Unit): Halcyon {
 	val n = ConfigurationBuilder()
-	if (initializeModules) n.initiateAllModules()
+	if (installAllModules) n.installAllModules() else n.installRequiredModules()
 	n.init()
 	return Halcyon(n)
 }
 
-fun ConfigurationBuilder.initiateRequiredModules() {
+fun ConfigurationBuilder.installRequiredModules() {
 	this.install(StreamErrorModule)
 	this.install(StreamFeaturesModule)
 	this.install(BindModule)
 	this.install(SASLModule)
 }
 
-fun ConfigurationBuilder.initiateAllModules() {
+fun ConfigurationBuilder.installAllModules() {
 	this.install(DiscoveryModule)
 	this.install(RosterModule)
 	this.install(PresenceModule)

@@ -3,16 +3,14 @@
 Tigase Halcyon XMPP Library
 ==========================================
 
+
 .. toctree::
    :numbered: 3
    :maxdepth: 3
 
-   Architecture
-   Quickstart
-   WorkingWithRequests
-   WorkingWithEvents
-   Modules
-   JabberDataForm
-
+   topics/Welcome
+   topics/Getting_Started
+   topics/Developing_Application
+   topics/Halcyon_Releases
 
 
