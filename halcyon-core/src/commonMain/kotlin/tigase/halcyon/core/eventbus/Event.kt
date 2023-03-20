@@ -20,11 +20,23 @@ package tigase.halcyon.core.eventbus
 import kotlinx.datetime.Instant
 import tigase.halcyon.core.AbstractHalcyon
 
-abstract class Event(val eventType: String) {
+/**
+ * Base class for events.
+ */
+abstract class Event(
+	/** Identifier of event type. */
+	val eventType: String,
+) {
 
+	/**
+	 * Halcyon context.
+	 */
 	lateinit var context: AbstractHalcyon
 		internal set
 
+	/**
+	 * Event fire time.
+	 */
 	var eventTime: Instant = Instant.DISTANT_PAST
 		internal set
 

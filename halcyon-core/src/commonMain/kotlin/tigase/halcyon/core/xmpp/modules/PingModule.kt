@@ -34,10 +34,17 @@ import tigase.halcyon.core.xmpp.stanzas.IQType
 import tigase.halcyon.core.xmpp.stanzas.iq
 import kotlin.time.Duration
 
+/**
+ * Configuration of [PingModule].
+ */
 @ConfigurationDSLMarker
 interface PingModuleConfig
 
-class PingModule(context: Context) : PingModuleConfig,AbstractXmppIQModule(
+/**
+ * Module is implementing XMPP Ping ([XEP-0199](https://xmpp.org/extensions/xep-0199.html)).
+ *
+ */
+class PingModule(context: Context) : PingModuleConfig, AbstractXmppIQModule(
 	context, TYPE, arrayOf(XMLNS), Criterion.chain(
 		Criterion.name(IQ.NAME), Criterion.xmlns(XMLNS)
 	)
@@ -53,6 +60,10 @@ class PingModule(context: Context) : PingModuleConfig,AbstractXmppIQModule(
 
 	}
 
+	/**
+	 * Prepares ping request.
+	 * @param jid JabberID of entity to ping. If `null` then own account on server will be pinged.
+	 */
 	fun ping(jid: JID? = null): RequestBuilder<Pong, IQ> {
 		val stanza = iq {
 			type = IQType.Get
@@ -75,6 +86,12 @@ class PingModule(context: Context) : PingModuleConfig,AbstractXmppIQModule(
 		throw XMPPException(ErrorCondition.NotAcceptable)
 	}
 
-	data class Pong(val time: Duration)
+	/**
+	 * Ping response.
+	 */
+	data class Pong(
+		/** Measured response time. */
+		val time: Duration,
+	)
 
 }

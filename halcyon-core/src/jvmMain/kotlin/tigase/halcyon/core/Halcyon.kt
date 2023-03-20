@@ -72,8 +72,6 @@ actual class Halcyon actual constructor(configuration: ConfigurationBuilder) : A
 
 	fun waitForAllResponses() {
 		while (requestsManager.getWaitingRequestsSize() > 0) {
-			println(requestsManager.getRequestsIDs())
-
 			synchronized(lock) {
 				lock.wait(100)
 			}

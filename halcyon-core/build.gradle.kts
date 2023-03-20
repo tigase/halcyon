@@ -19,8 +19,8 @@ plugins {
 	kotlin("multiplatform")
 	`maven-publish`
 	kotlin("plugin.serialization")
+	id("org.jetbrains.dokka")
 }
-
 
 kotlin {
 	jvm {
@@ -161,3 +161,13 @@ tasks.register("prepareOpenSSL") {
 		}
 	}
 }
+
+tasks.withType<org.jetbrains.dokka.gradle.DokkaTask>()
+	.configureEach {
+		moduleName.set("Tigase Halcyon")
+		moduleVersion.set(project.version.toString())
+		failOnWarning.set(false)
+		suppressObviousFunctions.set(true)
+		suppressInheritedMembers.set(false)
+		offlineMode.set(false)
+	}

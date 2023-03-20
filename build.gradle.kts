@@ -60,6 +60,7 @@ buildscript {
 	dependencies {
 		classpath(deps.kotlin.kotlinGradlePlug)
 		classpath(deps.kotlinx.serialization.gradlePlug)
+		classpath(deps.kotlin.dokkaPlug)
 	}
 }
 

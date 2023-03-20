@@ -1,8 +1,10 @@
-package simpleclient
+package ping
 
 import tigase.halcyon.core.builder.createHalcyon
 import tigase.halcyon.core.xmpp.BareJID
+import tigase.halcyon.core.xmpp.modules.PingModule
 import tigase.halcyon.core.xmpp.toBareJID
+import tigase.halcyon.core.xmpp.toJID
 import java.io.FileReader
 import java.util.*
 
@@ -21,5 +23,15 @@ fun main() {
 		}
 	}
 	halcyon.connectAndWait()
+
+	halcyon.getModule(PingModule)
+		.ping("tigase.org".toJID())
+		.response { result ->
+			result.onSuccess { pong -> println("Pong: ${pong.time}ms") }
+			result.onFailure { error -> println("Error $error") }
+		}
+		.send()
+
+	halcyon.waitForAllResponses()
 	halcyon.disconnect()
 }

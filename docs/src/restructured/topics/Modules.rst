@@ -1,5 +1,7 @@
+.. _header-modules:
+
 Modules
-^^^^^^^
+=======
 
 Architecture of Halcyon library is based on plugins (called modules). Every feature like authentication, sending and receiving messages or contact list management is implemented as module.
 Halcyon contains all modules in single package (at least for now), so no need to add more dependencies.
@@ -83,3 +85,6 @@ List of aliases:
 +-----------------------+-----------------------------+
 | ``roster()``          | ``RosterModule``            |
 +-----------------------+-----------------------------+
+
+.. include:: modules/DiscoveryModule.rst
+.. include:: modules/PingModule.rst

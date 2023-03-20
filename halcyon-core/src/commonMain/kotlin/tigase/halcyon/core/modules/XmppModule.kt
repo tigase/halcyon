@@ -26,30 +26,66 @@ import tigase.halcyon.core.xml.Element
 import kotlin.properties.ReadWriteProperty
 import kotlin.reflect.KProperty
 
+/**
+ * Main Module Provider interface.
+ */
 interface XmppModuleProvider<out M : XmppModule, Configuration : Any> {
 
+	/**
+	 * Module identifier.
+	 */
 	val TYPE: String
 
+	/**
+	 * Crreates instance of module.
+	 */
 	fun instance(context: Context): M
 
+	/**
+	 * Applies configuration to module.
+	 */
 	fun configure(module: @UnsafeVariance M, cfg: Configuration.() -> Unit)
 
+	/**
+	 * Return list of dependent modules.
+	 */
 	fun requiredModules(): List<XmppModuleProvider<XmppModule, out Any>> = emptyList()
 
 }
 
+/**
+ * Main Module interface.
+ */
 interface XmppModule {
 
+	/**
+	 * Module identifier.
+	 */
 	val type: String
 
+	/**
+	 * Halcyon context.
+	 */
 	val context: Context
 
+	/**
+	 * Module selection criteria for incoming stanza.
+	 */
 	val criteria: Criteria?
 
+	/**
+	 * List of features provided by module.
+	 */
 	val features: Array<String>?
 
+	/**
+	 * Initializes module. Is called once.
+	 */
 	fun initialize()
 
+	/**
+	 * Process incoming stanza.
+	 */
 	fun process(element: Element)
 
 	fun <T> propertySimple(scope: Scope, initialValue: T): ReadWriteProperty<Any?, T> =

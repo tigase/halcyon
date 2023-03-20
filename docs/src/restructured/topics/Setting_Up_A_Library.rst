@@ -1,8 +1,8 @@
 Setting up a client
--------------------
+===================
 
 Supported platforms
-^^^^^^^^^^^^^^^^^^^
+-------------------
 
 Halcyon library can be used on different platforms:
 
@@ -11,7 +11,7 @@ Halcyon library can be used on different platforms:
 * JavaScript
 
 Adding client dependencies
-^^^^^^^^^^^^^^^^^^^^^^^^^^
+--------------------------
 
 To use Halcyon library in your project you have to configure repositories and add library dependency.
 All versions of library are available in Tigase Maven repository:
@@ -38,6 +38,4 @@ At the end, you have to add dependency to ``tigase.halcyon:halcyon-core`` artifa
 
 Where ``$halcyon_version`` is required Halcyon version.
 
-.. include:: creating_and_configuring_client.rst
-.. include:: modules.rst
 

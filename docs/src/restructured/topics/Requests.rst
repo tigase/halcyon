@@ -1,5 +1,5 @@
-Working with requests
-=====================
+Requests
+========
 
 Each module may perform some requests on other XMPP entities, and (if yes) must return ``RequestBuilder`` object to allow check status of request and receive response.
 
@@ -19,11 +19,11 @@ For example, suppose we want to ping XMPP server (as described in `XEP-0199 <htt
 
 There is module ``PingModule`` in Halcyon to do it:
 
-**Kotlin sample.**
-
 .. code:: kotlin
 
-   val pingModule: PingModule = client.modules[PingModule.TYPE]
+   import tigase.halcyon.core.xmpp.modules.PingModule
+
+   val pingModule: PingModule = client.getModule(PingModule)
    val request = pingModule.ping("tigase.net".toJID()).send()
 
 In this case, method ``ping()`` returns ``RequestBuilder`` to allow add result handler, change default timeout and other operations. To send stanza you have to call method 'send()'. There is also available method ``build()`` what also creates request object, but doesn’t sends it.
@@ -37,7 +37,7 @@ Most universal way to receive result in asynchronous way is add response handler
 .. code:: kotlin
 
    val client = Halcyon()
-   val pingModule: PingModule = client.modules[PingModule.TYPE]
+   val pingModule: PingModule = client.getModule(PingModule)
    pingModule.ping("tigase.net".toJID()).response { result ->
        result.onSuccess { pong ->
            println("Pong: ${pong.time}ms")

@@ -1,4 +1,4 @@
 rootProject.name = "halcyon-codesnippets"
 
-include("simple-client", "account-registration")
+include("simple-client", "account-registration", "ping", "discovery")
 

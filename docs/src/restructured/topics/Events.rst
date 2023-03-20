@@ -1,6 +1,5 @@
-
-Working with events
-===================
+Events
+======
 
 Halcyon is events driven library. It means you have to listen for events
 to receive message, react for disconnection or so. There is single
@@ -10,7 +9,7 @@ fire.
 
 General code to registering events:
 
-.. code:: text
+.. code:: kotlin
 
    halcyon.eventBus.register<EVENT_TYPE>(EVENT_NAME) { event ->
    …
@@ -32,7 +31,7 @@ events types. Just create object inherited from
 ``tigase.halcyon.core.eventbus.Event`` and call method
 ``eventbus.fire()``:
 
-.. code:: text
+.. code:: kotlin
 
    data class SampleEvent(val sampleData: String) : Event(TYPE){
 

@@ -35,31 +35,96 @@ import tigase.halcyon.core.xmpp.stanzas.IQType
 import tigase.halcyon.core.xmpp.stanzas.iq
 import tigase.halcyon.core.xmpp.stanzas.wrap
 
+/**
+ * Configuration of [DiscoveryModule].
+ */
 @ConfigurationDSLMarker
 interface DiscoveryModuleConfiguration {
 
+	/**
+	 * Human-readable client name.
+	 */
 	var clientName: String
+
+	/**
+	 * Human-readable client version.
+	 */
 	var clientVersion: String
+
+	/**
+	 * Client category.
+	 *
+	 * @see [Service Discovery Identities](https://xmpp.org/registrar/disco-categories.html)
+	 */
 	var clientCategory: String
+
+	/**
+	 * Client type.
+	 *
+	 * @see [Service Discovery Identities](https://xmpp.org/registrar/disco-categories.html)
+	 */
 	var clientType: String
 
 }
 
+/**
+ * Module is implementing Service Discovery ([XEP-0030](https://xmpp.org/extensions/xep-0030.html)).
+ */
 class DiscoveryModule(override val context: Context) : XmppModule, DiscoveryModuleConfiguration {
 
+	/**
+	 * Single entity identity.
+	 */
 	@Serializable
-	data class Identity(val category: String, val type: String, val name: String?)
-
-	@Serializable
-	data class Info(
-		val jid: JID, val node: String?, val identities: List<Identity>, val features: List<String>,
+	data class Identity(
+		/** Entity category. */
+		val category: String,
+		/** Entity type. */
+		val type: String,
+		/** Entity name. */
+		val name: String?,
 	)
 
+	/**
+	 * Entity info response.
+	 */
 	@Serializable
-	data class Item(val jid: JID, val name: String?, val node: String?)
+	data class Info(
+		/**  JID of requested entity. */
+		val jid: JID,
+		/** Name of requested node. */
+		val node: String?,
+		/** List of received entity identities. */
+		val identities: List<Identity>,
+		/** List of received entity features. */
+		val features: List<String>,
+	)
 
+	/**
+	 * Single list item.
+	 */
 	@Serializable
-	data class Items(val jid: JID, val node: String?, val items: List<Item>)
+	data class Item(
+		/** JID of entity. */
+		val jid: JID,
+		/** Entity name. */
+		val name: String?,
+		/** Entity node name. */
+		val node: String?,
+	)
+
+	/**
+	 * Entity items response.
+	 */
+	@Serializable
+	data class Items(
+		/**  JID of requested entity. */
+		val jid: JID,
+		/** Name of requested node. */
+		val node: String?,
+		/** List of items provided by requested entity. */
+		val items: List<Item>,
+	)
 
 	companion object : XmppModuleProvider<DiscoveryModule, DiscoveryModuleConfiguration> {
 
@@ -226,6 +291,10 @@ class DiscoveryModule(override val context: Context) : XmppModule, DiscoveryModu
 		return Info(jid, node, identities, features)
 	}
 
+	/**
+	 * Helps find specific component on the server.
+	 * @param predicate function to check properties of node. Return `true` if `findComponent` should stop further search.
+	 */
 	fun findComponent(predicate: (Info) -> Boolean, consumer: (Info) -> Unit) {
 		val domain = context.boundJID?.bareJID?.domain!!
 		var found = false
@@ -249,6 +318,12 @@ class DiscoveryModule(override val context: Context) : XmppModule, DiscoveryModu
 			.send()
 	}
 
+	/**
+	 * Prepares request for disco#items.
+	 * @param jid JID of entity to ask for info (optional).
+	 * @param node name of node to ask for (optional).
+	 * @return request returns [Items] in case of success.
+	 */
 	fun items(jid: JID?, node: String? = null): RequestBuilder<Items, IQ> {
 		val stanza = iq {
 			type = IQType.Get
@@ -278,6 +353,9 @@ class DiscoveryModule(override val context: Context) : XmppModule, DiscoveryModu
 		return Items(jid, node, items)
 	}
 
+	/**
+	 * Returns [Identity] of client.
+	 */
 	fun getClientIdentity(): Identity = Identity(clientCategory, clientType, "$clientName $clientVersion")
 
 	internal fun discoverAccountFeatures() {
@@ -313,6 +391,9 @@ class DiscoveryModule(override val context: Context) : XmppModule, DiscoveryModu
 	}
 }
 
+/**
+ * Event released when list of account features will be received.
+ */
 data class AccountFeaturesReceivedEvent(val identities: List<DiscoveryModule.Identity>, val features: List<String>) :
 	Event(TYPE) {
 
@@ -322,6 +403,9 @@ data class AccountFeaturesReceivedEvent(val identities: List<DiscoveryModule.Ide
 	}
 }
 
+/**
+ * Event released when list of server features will be received.
+ */
 data class ServerFeaturesReceivedEvent(val identities: List<DiscoveryModule.Identity>, val features: List<String>) :
 	Event(TYPE) {
 
