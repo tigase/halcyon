@@ -33,12 +33,12 @@ Module provides function ``ping`` to prepare request for ping given entity:
     import tigase.halcyon.core.xmpp.modules.PingModule
     import tigase.halcyon.core.xmpp.toJID
 
-	halcyon.getModule(PingModule)
-		.ping("tigase.org".toJID())
-		.response { result ->
-			result.onSuccess { pong -> println("Pong: ${pong.time}ms") }
-			result.onFailure { error -> println("Error $error") }
-		}
-		.send()
+    halcyon.getModule(PingModule)
+        .ping("tigase.org".toJID())
+        .response { result ->
+            result.onSuccess { pong -> println("Pong: ${pong.time}ms") }
+            result.onFailure { error -> println("Error $error") }
+        }
+        .send()
 
 In the case of success, module returns `PingModule.Pong` class containing information about measured response time.

@@ -2,6 +2,7 @@ package discovery
 
 import tigase.halcyon.core.builder.createHalcyon
 import tigase.halcyon.core.xmpp.BareJID
+import tigase.halcyon.core.xmpp.modules.caps.EntityCapabilitiesModule
 import tigase.halcyon.core.xmpp.modules.discovery.DiscoveryModule
 import tigase.halcyon.core.xmpp.toBareJID
 import tigase.halcyon.core.xmpp.toJID
@@ -10,7 +11,7 @@ import java.util.*
 
 fun main() {
 	val (jid, password) = Properties().let { prop ->
-		FileReader("./local.properties").use { prop.load(it) }
+		FileReader("../local.properties").use { prop.load(it) }
 		Pair<BareJID, String>(
 			prop.getProperty("userJID")
 				.toBareJID(), prop.getProperty("password")

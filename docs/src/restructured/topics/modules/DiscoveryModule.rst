@@ -29,6 +29,10 @@ List of allowed values you can use is published in `Service Discovery Identities
 
 * The ``clientName`` and ``clientVersion`` properties contains human readable software name and version.
 
+.. note::
+
+   If you change client name and version, it is good to update ``node`` name in :ref:`header-EntityCapabilitiesModule`.
+
 Discovering information
 ^^^^^^^^^^^^^^^^^^^^^^^
 

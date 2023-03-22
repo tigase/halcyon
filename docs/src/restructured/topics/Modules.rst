@@ -86,5 +86,7 @@ List of aliases:
 | ``roster()``          | ``RosterModule``            |
 +-----------------------+-----------------------------+
 
+.. include:: modules/PresenceModule.rst
 .. include:: modules/DiscoveryModule.rst
+.. include:: modules/EntityCapabilitiesModule.rst
 .. include:: modules/PingModule.rst

@@ -17,6 +17,9 @@
  */
 package tigase.halcyon.core.xmpp.modules.caps
 
+/**
+ * Default, in-memory capabilities cache.
+ */
 class DefaultEntityCapabilitiesCache : EntityCapabilitiesCache {
 
 	private val entities = mutableMapOf<String, EntityCapabilitiesModule.Caps>()

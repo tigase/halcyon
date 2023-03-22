@@ -8,7 +8,7 @@ Working with forms
 
 To access fields of received form, we have to create ``JabberDataForm`` object:
 
-::
+.. code:: kotlin
 
    val form = JabberDataForm(formElement)
 
@@ -26,7 +26,7 @@ Fields are identified by ``var`` name. Each field may have `field type <https://
 
 Let look, how to list all fields with values:
 
-::
+.. code:: kotlin
 
    val form = JabberDataForm(element)
    println("Title: ${form.title}")
@@ -39,19 +39,19 @@ Let look, how to list all fields with values:
 
 To get field by name, simple use:
 
-::
+.. code:: kotlin
 
    val passwordField = form.getFieldByVar("password")
 
 Value of those fields may be modified:
 
-::
+.. code:: kotlin
 
    passwordField.fieldValue = "******"
 
 After all form modification, sometimes we need to send filled form back. There is separated method to prepare submit-ready form:
 
-::
+.. code:: kotlin
 
    val formElement = form.createSubmitForm()
 
@@ -62,7 +62,7 @@ Creating forms
 
 We can create new form, set title and description, and add fields:
 
-::
+.. code:: kotlin
 
    val form = JabberDataForm.create(FormType.Form)
    form.addField("username", FieldType.TextSingle)
@@ -74,7 +74,7 @@ We can create new form, set title and description, and add fields:
 
 To get XML element containing form without cleaning it, just use:
 
-::
+.. code:: kotlin
 
    val formElement = form.element
 
@@ -85,7 +85,7 @@ There is a variant of form containing many sets of fields. This kind of form has
 
 This example shows how to display all fields with values:
 
-::
+.. code:: kotlin
 
    val form = JabberDataForm(element)
    val columns = form.getReportedColumns().mapNotNull { it.fieldName }
@@ -99,7 +99,7 @@ This example shows how to display all fields with values:
 
 Creating multi value form is also simple. First we have to set list of reported columns, because when new item is added, field names are checked against declared columns.
 
-::
+.. code:: kotlin
 
    val form = JabberDataForm.create(FormType.Result)
    form.title = "Bot Configuration"

@@ -34,24 +34,44 @@ import tigase.halcyon.core.xmpp.modules.discovery.NodeDetailsProvider
 import tigase.halcyon.core.xmpp.stanzas.Presence
 import tigase.halcyon.core.xmpp.stanzas.wrap
 
+/**
+ * Configuration of [EntityCapabilitiesModule].
+ */
 @ConfigurationDSLMarker
 interface EntityCapabilitiesModuleConfig {
 
+	/**
+	 * Client node name.
+	 */
 	var node: String
 
+	/**
+	 * Specify a cache to keep discovered entity capabilities.
+	 */
 	var cache: EntityCapabilitiesCache
 
 }
 
+/**
+ * This module implements [XEP-0115: XMPP Ping](https://xmpp.org/extensions/xep-0115.html).
+ */
 class EntityCapabilitiesModule(
 	override val context: Context,
 	private val discoModule: DiscoveryModule,
 	private val streamFeaturesModule: StreamFeaturesModule,
 ) : XmppModule, HasInterceptors, StanzaInterceptor, EntityCapabilitiesModuleConfig {
 
+	/**
+	 * Represents entity capabilities for specific node.
+	 */
 	@Serializable
 	data class Caps(
-		val node: String, val identities: List<DiscoveryModule.Identity>, val features: List<String>,
+		/** Node name. */
+		val node: String,
+		/** List of node identities. */
+		val identities: List<DiscoveryModule.Identity>,
+		/** List of featues provided by node. */
+		val features: List<String>,
 	)
 
 	companion object : XmppModuleProvider<EntityCapabilitiesModule, EntityCapabilitiesModuleConfig> {
@@ -76,7 +96,7 @@ class EntityCapabilitiesModule(
 	override val stanzaInterceptors: Array<StanzaInterceptor> = arrayOf(this)
 	override val features: Array<String> = arrayOf(XMLNS)
 
-	override var node: String = "http://tigase.org/TigaseHalcyon"
+	override var node: String = "https://tigase.org/halcyon"
 	override var cache: EntityCapabilitiesCache = DefaultEntityCapabilitiesCache()
 
 	private var verificationStringCache: String? by propertySimple(Scope.Session, null)
@@ -203,12 +223,20 @@ class EntityCapabilitiesModule(
 		return element
 	}
 
-	fun getServerCapabilities(): Caps? {
+	/**
+	 * Return server capabilities.
+	 * @return [Caps] or `null` is capabilities are not received from server.
+	 */
+		fun getServerCapabilities(): Caps? {
 		return getServerNode()?.let { serverNode ->
 			cache.load(serverNode)
 		}
 	}
 
+	/**
+	 * Return entity capabilities based on [Presence] received from entity.
+	 * @return [Caps] or `null` if capabilities are not provided in [Presence] or not discovered from entity yet.
+	 */
 	fun getCapabilities(presence: Presence): Caps? {
 		val c: Element = presence.getChildrenNS("c", XMLNS) ?: return null
 		val node = c.attributes["node"] ?: return null

@@ -31,7 +31,17 @@ import tigase.halcyon.core.xmpp.JID
 import tigase.halcyon.core.xmpp.getFromAttr
 import tigase.halcyon.core.xmpp.stanzas.*
 
-data class PresenceReceivedEvent(val jid: JID, val stanzaType: PresenceType?, val stanza: Presence) : Event(TYPE) {
+/**
+ * Event released when **any** presence stanza will be received.
+ */
+data class PresenceReceivedEvent(
+	/** JID of sender. */
+	val jid: JID,
+	/** Type of received presence stanza. */
+	val stanzaType: PresenceType?,
+	/** Received stanza. */
+	val stanza: Presence,
+) : Event(TYPE) {
 
 	companion object {
 
@@ -39,8 +49,18 @@ data class PresenceReceivedEvent(val jid: JID, val stanzaType: PresenceType?, va
 	}
 }
 
+/**
+ * Event released when received stanza is related to change presence status by contact.
+ */
 data class ContactChangeStatusEvent(
-	val jid: BareJID, val status: String?, val presence: Presence, val lastReceivedPresence: Presence,
+	/** JID of sender. */
+	val jid: BareJID,
+	/** Human-readable status set by contact. */
+	val status: String?,
+	/** "best" presence stanza, based on presence priority. */
+	val presence: Presence,
+	/** Just received presence stanza. */
+	val lastReceivedPresence: Presence,
 ) : Event(TYPE) {
 
 	companion object {
@@ -50,12 +70,22 @@ data class ContactChangeStatusEvent(
 }
 
 @ConfigurationDSLMarker
+/**
+ * Configuration of [PresenceModule].
+ */
 interface PresenceModuleConfig {
 
+	/**
+	 * Specify a store to keep received presence stanza.
+	 *
+	 */
 	var store: PresenceStore
 
 }
 
+/**
+ * Module for handling received presence information.
+ */
 class PresenceModule(override val context: Context) : XmppModule, PresenceModuleConfig {
 
 	private val log = LoggerFactory.logger("tigase.halcyon.core.xmpp.modules.presence.PresenceModule")
@@ -102,15 +132,25 @@ class PresenceModule(override val context: Context) : XmppModule, PresenceModule
 		}
 	}
 
+	/**
+	 * Sends initial presence.
+	 */
 	fun sendInitialPresence() {
 		val presence = presence { }
 		context.writer.writeDirectly(presence)
 	}
 
+	/**
+	 * Send user defined presence.
+	 * @param jid presence receiver.If `null`, the presence will be sent to all participants (default).
+	 * @param type presence type.
+	 * @param show availability state.
+	 * @param status human-readable status description.
+	 */
 	fun sendPresence(
 		jid: JID? = null, type: PresenceType? = null, show: Show? = null, status: String? = null,
 	): RequestBuilder<Unit, Presence> {
-		val presence = presence {
+		return context.request.presence {
 			if (jid != null) this.to = jid
 			this.type = type
 			if (show != null) this.show = show
@@ -118,17 +158,29 @@ class PresenceModule(override val context: Context) : XmppModule, PresenceModule
 				this.status = status
 			}
 		}
-
-		return context.request.presence(presence)
 	}
 
+	/**
+	 * Prepares request for presence subscription manipulation. Check XMPP documentation for details.
+	 * @param jid JabberID of entity
+	 * @param presenceType one of [PresenceType.Subscribe], [PresenceType.Subscribed], [PresenceType.Unsubscribe], [PresenceType.Unsubscribed]
+	 */
 	fun sendSubscriptionSet(jid: JID, presenceType: PresenceType): RequestBuilder<Unit, Presence> {
+		require(
+			presenceType in listOf(
+				PresenceType.Subscribe, PresenceType.Subscribed, PresenceType.Unsubscribe, PresenceType.Unsubscribed
+			)
+		) { "presenceType must one of: Subscribe, Subscribed, Unsubscribe, Unsubscribed" }
 		return context.request.presence {
 			to = jid
 			type = presenceType
 		}
 	}
 
+	/**
+	 * Return presence with the highest priority of given JabberID.
+	 * @param jid JabberID
+	 */
 	fun getBestPresenceOf(jid: BareJID): Presence? {
 		data class Envelope(val presence: Presence) {
 
@@ -141,10 +193,18 @@ class PresenceModule(override val context: Context) : XmppModule, PresenceModule
 			.minByOrNull { envelope -> envelope.comp }?.presence
 	}
 
+	/**
+	 * Return latest presence of given JabberID.
+	 * @param jid JabberID
+	 */
 	fun getPresenceOf(jid: JID): Presence? {
 		return store.getPresence(jid)
 	}
 
+	/**
+	 * Returns all known resources of given JabberID.
+	 * @param jid JabberID
+	 */
 	fun getResources(jid: BareJID): List<JID> {
 		return store.getPresences(jid)
 			.mapNotNull { p -> p.from }

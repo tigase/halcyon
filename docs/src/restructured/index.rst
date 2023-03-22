@@ -16,7 +16,6 @@ Tigase Halcyon XMPP Library
    topics/Modules
    topics/Requests
    topics/JabberDataForm
-
-    topics/Halcyon_Releases
+   topics/Halcyon_Releases
 
 
