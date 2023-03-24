@@ -30,6 +30,7 @@ class ElementBuilderTest {
 			.attribute("to", "romeo@example.net")
 			.attribute("from", "juliet@example.com/balcony")
 			.attribute("type", "chat")
+			.attribute("xml:lang", "en")
 			.child("subject")
 			.value("I implore you!")
 			.up()
@@ -51,6 +52,7 @@ class ElementBuilderTest {
 		attribute("to", "romeo@example.net")
 		attribute("from", "juliet@example.com/balcony")
 		attribute("type", "chat")
+		attribute("xml:lang", "en")
 		"body" {
 			+"Wherefore art thou, Romeo?"
 		}
@@ -70,6 +72,7 @@ class ElementBuilderTest {
 		assertEquals("romeo@example.net", element.attributes["to"])
 		assertEquals("juliet@example.com/balcony", element.attributes["from"])
 		assertEquals("chat", element.attributes["type"])
+		assertEquals("en", element.attributes["xml:lang"])
 
 		var nullElement = element.findChild("message", "missing")
 		assertNull(nullElement)
@@ -87,7 +90,7 @@ class ElementBuilderTest {
 
 	@Test
 	fun testStreamParser() {
-		val xml = """<message from="juliet@example.com/balcony" to="romeo@example.net" type="chat">
+		val xml = """<message from="juliet@example.com/balcony" to="romeo@example.net" type="chat" xml:lang="en">
 <subject>I implore you!</subject><body>Wherefore art thou, Romeo?</body>
 <thread>e0ffe42b28561960c6b12b944a092794b9683a38</thread>
 <x xmlns="test:urn">

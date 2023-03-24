@@ -53,7 +53,7 @@ class HalcyonBuilderTest {
 		}
 		assertEquals("localhost", assertNotNull(halcyon.config).declaredDomain)
 		assertEquals("test00909090", assertNotNull(halcyon.getModule(BindModule)).resource)
-		assertEquals("http://tigase.org/TigaseHalcyon", assertNotNull(halcyon.getModule(EntityCapabilitiesModule)).node)
+		assertEquals("https://tigase.org/halcyon", assertNotNull(halcyon.getModule(EntityCapabilitiesModule)).node)
 	}
 
 	@Test

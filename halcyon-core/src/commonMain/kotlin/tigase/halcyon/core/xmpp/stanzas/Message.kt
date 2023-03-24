@@ -18,10 +18,9 @@
 package tigase.halcyon.core.xmpp.stanzas
 
 import kotlinx.datetime.Instant
+import kotlinx.serialization.Serializable
 import tigase.halcyon.core.parseISO8601
-import tigase.halcyon.core.xml.Element
-import tigase.halcyon.core.xml.attributeProp
-import tigase.halcyon.core.xml.stringElementProperty
+import tigase.halcyon.core.xml.*
 import tigase.halcyon.core.xmpp.ErrorCondition
 import tigase.halcyon.core.xmpp.XMPPException
 
@@ -32,6 +31,7 @@ enum class MessageType(val value: String) { Chat("chat"),
 	Normal("normal")
 }
 
+@Serializable(with = MessageStanzaSerialzer::class)
 class Message(wrappedElement: Element) : Stanza<MessageType?>(wrappedElement) {
 
 	companion object {

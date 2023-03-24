@@ -21,6 +21,7 @@ import com.soywiz.krypto.sha1
 import kotlinx.serialization.Serializable
 import tigase.halcyon.core.*
 import tigase.halcyon.core.builder.ConfigurationDSLMarker
+import tigase.halcyon.core.logger.LoggerFactory
 import tigase.halcyon.core.modules.*
 import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xml.element
@@ -28,6 +29,7 @@ import tigase.halcyon.core.xmpp.BareJID
 import tigase.halcyon.core.xmpp.ErrorCondition
 import tigase.halcyon.core.xmpp.JID
 import tigase.halcyon.core.xmpp.XMPPException
+import tigase.halcyon.core.xmpp.forms.JabberDataForm
 import tigase.halcyon.core.xmpp.modules.StreamFeaturesModule
 import tigase.halcyon.core.xmpp.modules.discovery.DiscoveryModule
 import tigase.halcyon.core.xmpp.modules.discovery.NodeDetailsProvider
@@ -49,6 +51,12 @@ interface EntityCapabilitiesModuleConfig {
 	 * Specify a cache to keep discovered entity capabilities.
 	 */
 	var cache: EntityCapabilitiesCache
+
+	/**
+	 * Allows to store capabilities with invalid verification string. `false` by default.
+	 * Check [Security Considerations¶](https://xmpp.org/extensions/xep-0115.html#security) chapter for details.
+	 */
+	var storeInvalid: Boolean
 
 }
 
@@ -91,11 +99,14 @@ class EntityCapabilitiesModule(
 
 	}
 
+	private val log = LoggerFactory.logger("tigase.halcyon.core.xmpp.modules.caps.EntityCapabilitiesModule")
+
 	override val type: String = TYPE
 	override val criteria: Criteria? = null
 	override val stanzaInterceptors: Array<StanzaInterceptor> = arrayOf(this)
 	override val features: Array<String> = arrayOf(XMLNS)
 
+	override var storeInvalid: Boolean = false
 	override var node: String = "https://tigase.org/halcyon"
 	override var cache: EntityCapabilitiesCache = DefaultEntityCapabilitiesCache()
 
@@ -179,13 +190,27 @@ class EntityCapabilitiesModule(
 			.send()
 	}
 
-	internal fun calculateVer(identities: List<DiscoveryModule.Identity>, features: List<String>): String {
-		val ids = identities.map { i -> i.category + "/" + i.type + "//" + i.name }
+	internal fun calculateVer(
+		identities: List<DiscoveryModule.Identity>,
+		features: List<String>,
+		forms: List<JabberDataForm> = emptyList(),
+	): String {
+		val ids = identities.map { i -> i.category + "/" + i.type + "/" + (i.lang ?: "") + "/" + i.name }
 			.sorted()
-			.joinToString(separator = "<", postfix = "<")
 		val ftrs = features.sorted()
-			.joinToString(separator = "<", postfix = "<")
-		val s = "$ids$ftrs"
+
+		val frms = forms.sortedBy { it.getFieldByVar("FORM_TYPE")?.fieldValue }
+			.map { form ->
+				(form.getAllFields()
+					.filter { it.fieldName == "FORM_TYPE" }
+					.map { it.fieldValues.joinToString(separator = "<") { it } } + form.getAllFields()
+					.filterNot { it.fieldName == "FORM_TYPE" }
+					.sortedBy { it.fieldName }
+					.map { it.fieldName + "<" + it.fieldValues.joinToString(separator = "<") { it } })
+			}
+			.flatten()
+
+		val s = (ids + ftrs + frms).joinToString(separator = "<", postfix = "<")
 
 		val hash = s.encodeToByteArray()
 			.sha1().bytes
@@ -206,7 +231,21 @@ class EntityCapabilitiesModule(
 	}
 
 	private fun storeInfo(node: String, info: DiscoveryModule.Info) {
-		cache.store(node, Caps(node, info.identities, info.features))
+		val isValid = validateVerificationString(info)
+		if (!storeInvalid && !isValid) {
+			log.warning("JID ${info.jid} provided invalid CAPS verification string. Skipping caching item.")
+			return
+		} else if (!isValid) {
+			log.warning("JID ${info.jid} provided invalid CAPS verification string.")
+		}
+		val caps = Caps(node, info.identities, info.features)
+		cache.store(node, caps)
+	}
+
+	fun validateVerificationString(info: DiscoveryModule.Info): Boolean {
+		val calculatedVer = calculateVer(identities = info.identities, features = info.features, forms = info.forms)
+		val receivedVer = info.node?.substringAfterLast("#")
+		return receivedVer != null && calculatedVer == receivedVer
 	}
 
 	override fun afterReceive(element: Element): Element {
@@ -227,7 +266,7 @@ class EntityCapabilitiesModule(
 	 * Return server capabilities.
 	 * @return [Caps] or `null` is capabilities are not received from server.
 	 */
-		fun getServerCapabilities(): Caps? {
+	fun getServerCapabilities(): Caps? {
 		return getServerNode()?.let { serverNode ->
 			cache.load(serverNode)
 		}

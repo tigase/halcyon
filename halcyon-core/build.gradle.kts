@@ -105,6 +105,7 @@ kotlin {
 		named("commonTest") {
 			dependencies {
 				implementation(kotlin("test"))
+				implementation(deps.kotlinx.serialization.json)
 			}
 		}
 		named("jvmMain") {

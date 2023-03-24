@@ -29,6 +29,7 @@ import tigase.halcyon.core.requests.RequestBuilder
 import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xml.response
 import tigase.halcyon.core.xmpp.*
+import tigase.halcyon.core.xmpp.forms.JabberDataForm
 import tigase.halcyon.core.xmpp.modules.caps.EntityCapabilitiesModule
 import tigase.halcyon.core.xmpp.stanzas.IQ
 import tigase.halcyon.core.xmpp.stanzas.IQType
@@ -83,6 +84,8 @@ class DiscoveryModule(override val context: Context) : XmppModule, DiscoveryModu
 		val type: String,
 		/** Entity name. */
 		val name: String?,
+		/** Language */
+		val lang: String? = null,
 	)
 
 	/**
@@ -98,6 +101,7 @@ class DiscoveryModule(override val context: Context) : XmppModule, DiscoveryModu
 		val identities: List<Identity>,
 		/** List of received entity features. */
 		val features: List<String>,
+		val forms: List<JabberDataForm> = emptyList(),
 	)
 
 	/**
@@ -272,14 +276,19 @@ class DiscoveryModule(override val context: Context) : XmppModule, DiscoveryModu
 			.map(this@DiscoveryModule::buildInfo)
 	}
 
-	private fun buildInfo(response: Element): Info {
+	internal fun buildInfo(response: Element): Info {
 		val query = response.getChildrenNS("query", XMLNS_INFO)!!
 		val node = query.attributes["node"]
 		val jid = JID.parse(response.attributes["from"]!!)
 
 		val identities = query.getChildren("identity")
 			.map {
-				Identity(it.attributes["category"]!!, it.attributes["type"]!!, it.attributes["name"])
+				Identity(
+					it.attributes["category"]!!,
+					it.attributes["type"]!!,
+					it.attributes["name"],
+					it.attributes["xml:lang"]
+				)
 			}
 			.toList()
 		val features = query.getChildren("feature")
@@ -288,7 +297,11 @@ class DiscoveryModule(override val context: Context) : XmppModule, DiscoveryModu
 			}
 			.toList()
 
-		return Info(jid, node, identities, features)
+		val forms = query.getChildren("x")
+			.filter { it.xmlns == JabberDataForm.XMLNS }
+			.map { JabberDataForm(it) }
+
+		return Info(jid, node, identities, features, forms)
 	}
 
 	/**

@@ -17,11 +17,11 @@
  */
 package tigase.halcyon.core.xmpp.stanzas
 
-import tigase.halcyon.core.xml.Element
-import tigase.halcyon.core.xml.jidAttributeProperty
-import tigase.halcyon.core.xml.stringAttributeProperty
+import kotlinx.serialization.Serializable
+import tigase.halcyon.core.xml.*
 import tigase.halcyon.core.xmpp.JID
 
+@Serializable(with = StanzaSerializer::class)
 sealed class Stanza<STANZA_TYPE>(protected val element: Element) : Element by element {
 
 	var to: JID? by jidAttributeProperty()

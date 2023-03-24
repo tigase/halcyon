@@ -17,6 +17,7 @@
  */
 package tigase.halcyon.core.xmpp.forms
 
+import kotlinx.serialization.Serializable
 import tigase.halcyon.core.xml.*
 import tigase.halcyon.core.xmpp.ErrorCondition
 import tigase.halcyon.core.xmpp.XMPPException
@@ -154,6 +155,7 @@ enum class FormType(val xmppValue: String) {
 
 }
 
+@Serializable(with = JabberDataFormSerializer::class)
 class JabberDataForm(val element: Element) {
 
 	companion object {

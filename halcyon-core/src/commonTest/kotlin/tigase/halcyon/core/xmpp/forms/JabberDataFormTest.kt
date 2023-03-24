@@ -17,8 +17,13 @@
  */
 package tigase.halcyon.core.xmpp.forms
 
+import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import tigase.halcyon.core.xml.Element
+import tigase.halcyon.core.xml.HalcyonSerializerModule
 import tigase.halcyon.core.xml.element
+import tigase.halcyon.core.xmpp.stanzas.IQ
 import kotlin.test.*
 
 fun assertContains(expected: Element, actual: Element, message: String? = null) {
@@ -41,6 +46,20 @@ fun assertContains(expected: Element, actual: Element, message: String? = null) 
 }
 
 class JabberDataFormTest {
+
+	val format = Json {
+		ignoreUnknownKeys = true
+		serializersModule = HalcyonSerializerModule
+	}
+
+	@Test
+	fun serialization_test() {
+		val form = createSampleForm()
+		val string = format.encodeToString(form)
+		val x = format.decodeFromString<JabberDataForm>(string)
+		assertIs<JabberDataForm>(x)
+		assertEquals(form.element, x.element)
+	}
 
 	@Test
 	fun testFieldValue() {
@@ -68,11 +87,9 @@ class JabberDataFormTest {
 		field.fieldValue = null
 		assertEquals(listOf(), field.fieldValues)
 		assertEquals(null, field.fieldValue)
-		assertEquals(
-			0,
-			field.element.children.filter { element -> element.name == "value" }
-				.count()
-		)
+		assertEquals(0,
+					 field.element.children.filter { element -> element.name == "value" }
+						 .count())
 	}
 
 	@Test
@@ -130,11 +147,9 @@ class JabberDataFormTest {
 		val submitingForm = form.createSubmitForm()
 		assertNotNull(submitingForm)
 
-		assertEquals(
-			8,
-			submitingForm.children.filter { it.name == "field" }
-				.count()
-		)
+		assertEquals(8,
+					 submitingForm.children.filter { it.name == "field" }
+						 .count())
 		val featuresField = submitingForm.children.first { it.attributes["var"] == "features" }
 		assertNotNull(featuresField)
 		assertNull(featuresField.attributes["label"])
@@ -302,11 +317,9 @@ class JabberDataFormTest {
 					 submit.children.first { it.attributes["var"] == "features" }.children.filter { it.name == "value" }
 						 .mapNotNull { it.value })
 
-		assertEquals(
-			"1234567890",
-			submit.children.first { it.attributes["var"] == "password" }
-				.getFirstChild("value")?.value
-		)
+		assertEquals("1234567890",
+					 submit.children.first { it.attributes["var"] == "password" }
+						 .getFirstChild("value")?.value)
 	}
 
 	@Test
@@ -431,9 +444,8 @@ class JabberDataFormTest {
 		}
 		assertFailsWith<IllegalArgumentException> {
 			form.addItem(
-				listOf(
-					Field.create("name")
-						.apply { fieldValue = "1" })
+				listOf(Field.create("name")
+						   .apply { fieldValue = "1" })
 			)
 		}
 
@@ -490,4 +502,3 @@ class JabberDataFormTest {
 		}, form.element)
 	}
 }
-

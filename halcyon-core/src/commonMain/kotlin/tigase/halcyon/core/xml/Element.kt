@@ -17,6 +17,9 @@
  */
 package tigase.halcyon.core.xml
 
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
+
 interface Element {
 
 	var parent: Element?
@@ -40,6 +43,7 @@ interface Element {
 
 open class ElementWrapper(val wrappedElement: Element) : Element by wrappedElement
 
+@Serializable(with = ElementImplSerializer::class)
 class ElementImpl(override val name: String) : Element {
 
 	override var parent: Element? = null

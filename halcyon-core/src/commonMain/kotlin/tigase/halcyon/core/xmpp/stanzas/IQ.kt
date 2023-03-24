@@ -17,7 +17,10 @@
  */
 package tigase.halcyon.core.xmpp.stanzas
 
+import kotlinx.serialization.Serializable
 import tigase.halcyon.core.xml.Element
+import tigase.halcyon.core.xml.IQStanzaSerialzer
+import tigase.halcyon.core.xml.MessageStanzaSerialzer
 import tigase.halcyon.core.xml.attributeProp
 import tigase.halcyon.core.xmpp.ErrorCondition
 import tigase.halcyon.core.xmpp.XMPPException
@@ -28,6 +31,7 @@ enum class IQType(val value: String) { Error("error"),
 	Set("set")
 }
 
+@Serializable(with = IQStanzaSerialzer::class)
 class IQ(wrappedElement: Element) : Stanza<IQType>(wrappedElement) {
 
 	companion object {

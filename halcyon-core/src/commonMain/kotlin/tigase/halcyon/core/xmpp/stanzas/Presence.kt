@@ -17,6 +17,7 @@
  */
 package tigase.halcyon.core.xmpp.stanzas
 
+import kotlinx.serialization.Serializable
 import tigase.halcyon.core.xml.*
 import tigase.halcyon.core.xmpp.ErrorCondition
 import tigase.halcyon.core.xmpp.XMPPException
@@ -60,6 +61,7 @@ enum class PresenceType(val value: String) {
 	Unsubscribed("unsubscribed"),
 }
 
+@Serializable(with = PresenceStanzaSerialzer::class)
 class Presence(wrappedElement: Element) : Stanza<PresenceType?>(wrappedElement) {
 
 	companion object {
