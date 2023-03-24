@@ -18,7 +18,7 @@
 package tigase.halcyon.core.xmpp.modules.caps
 
 import tigase.DummyHalcyon
-import tigase.halcyon.core.xmpp.forms.Field
+import tigase.halcyon.core.xml.parser.parseXML
 import tigase.halcyon.core.xmpp.forms.FieldType
 import tigase.halcyon.core.xmpp.forms.FormType
 import tigase.halcyon.core.xmpp.forms.JabberDataForm
@@ -35,6 +35,89 @@ class EntityCapabilitiesModuleTest {
 
 	val halcyon = DummyHalcyon().apply {
 		connect()
+	}
+
+	@Test
+	fun test_more_complex_validate_verification_string() {
+		val stanza = parseXML(
+			"""
+			<iq xmlns="jabber:client" from="sure.im" to="receiver@sure.im/1244996408-tigase-32233" id="ZZBfgtF7K7fR1bCbv5QtgfzD"
+			    type="result">
+			    <query xmlns="http://jabber.org/protocol/disco#info"
+			           node="https://tigase.net/tigase-xmpp-server#pQoVbnROdqZOAkf9JCi34N8xkws=">
+			        <identity name="Tigase ver. 8.4.0-SNAPSHOT-b12192/1431614e" category="component" type="router"/>
+			        <identity name="Tigase ver. 8.4.0-SNAPSHOT-b12192/1431614e" category="server" type="im"/>
+			        <identity category="pubsub" type="pep"/>
+			        <feature var="http://jabber.org/protocol/commands"/>
+			        <feature var="urn:xmpp:mix:pam:2"/>
+			        <feature var="urn:xmpp:carbons:2"/>
+			        <feature var="urn:xmpp:carbons:rules:0"/>
+			        <feature var="vcard-temp"/>
+			        <feature var="http://jabber.org/protocol/amp"/>
+			        <feature var="msgoffline"/>
+			        <feature var="jabber:iq:auth"/>
+			        <feature var="http://jabber.org/protocol/disco#info"/>
+			        <feature var="http://jabber.org/protocol/disco#items"/>
+			        <feature var="urn:xmpp:blocking"/>
+			        <feature var="urn:xmpp:reporting:0"/>
+			        <feature var="urn:xmpp:reporting:abuse:0"/>
+			        <feature var="urn:xmpp:reporting:spam:0"/>
+			        <feature var="urn:xmpp:reporting:1"/>
+			        <feature var="urn:xmpp:ping"/>
+			        <feature var="urn:ietf:params:xml:ns:xmpp-sasl"/>
+			        <feature var="http://jabber.org/protocol/pubsub"/>
+			        <feature var="http://jabber.org/protocol/pubsub#owner"/>
+			        <feature var="http://jabber.org/protocol/pubsub#publish"/>
+			        <feature var="urn:xmpp:pep-vcard-conversion:0"/>
+			        <feature var="urn:xmpp:bookmarks-conversion:0"/>
+			        <feature var="urn:xmpp:archive:auto"/>
+			        <feature var="urn:xmpp:archive:manage"/>
+			        <feature var="urn:xmpp:push:0"/>
+			        <feature var="tigase:push:away:0"/>
+			        <feature var="tigase:push:encrypt:0"/>
+			        <feature var="tigase:push:encrypt:aes-128-gcm"/>
+			        <feature var="tigase:push:filter:ignore-unknown:0"/>
+			        <feature var="tigase:push:filter:groupchat:0"/>
+			        <feature var="tigase:push:filter:muted:0"/>
+			        <feature var="urn:xmpp:mam:2"/>
+			        <feature var="tigase:push:priority:0"/>
+			        <feature var="tigase:push:jingle:0"/>
+			        <feature var="jabber:iq:roster"/>
+			        <feature var="jabber:iq:roster-dynamic"/>
+			        <feature var="urn:xmpp:mam:1"/>
+			        <feature var="urn:xmpp:mam:2#extended"/>
+			        <feature var="urn:xmpp:mix:pam:2#archive"/>
+			        <feature var="jabber:iq:version"/>
+			        <feature var="urn:xmpp:time"/>
+			        <feature var="jabber:iq:privacy"/>
+			        <feature var="urn:ietf:params:xml:ns:xmpp-bind"/>
+			        <feature var="urn:xmpp:extdisco:2"/>
+			        <feature var="http://jabber.org/protocol/commands"/>
+			        <feature var="urn:ietf:params:xml:ns:vcard-4.0"/>
+			        <feature var="urn:ietf:params:xml:ns:xmpp-session"/>
+			        <feature var="jabber:iq:private"/>
+			        <x xmlns="jabber:x:data" type="result">
+			            <field type="hidden" var="FORM_TYPE">
+			                <value>http://jabber.org/network/serverinfo</value>
+			            </field>
+			            <field type="list-multi" var="abuse-addresses">
+			                <value>mailto:support@tigase.net</value>
+			                <value>xmpp:tigase@mix.tigase.im</value>
+			                <value>xmpp:tigase@muc.tigase.org</value>
+			                <value>https://tigase.net/technical-support</value>
+			            </field>
+			        </x>
+			    </query>
+			</iq>
+		""".trimIndent()
+		).element!!
+		val info = halcyon.getModule(DiscoveryModule)
+			.buildInfo(stanza)
+
+		assertTrue("Verification string should be valid!") {
+			halcyon.getModule(EntityCapabilitiesModule)
+				.validateVerificationString(info)
+		}
 	}
 
 	@Test

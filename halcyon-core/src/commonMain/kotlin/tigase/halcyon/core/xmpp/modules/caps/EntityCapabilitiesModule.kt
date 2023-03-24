@@ -195,7 +195,7 @@ class EntityCapabilitiesModule(
 		features: List<String>,
 		forms: List<JabberDataForm> = emptyList(),
 	): String {
-		val ids = identities.map { i -> i.category + "/" + i.type + "/" + (i.lang ?: "") + "/" + i.name }
+		val ids = identities.map { i -> i.category + "/" + i.type + "/" + (i.lang ?: "") + "/" + (i.name ?: "") }
 			.sorted()
 		val ftrs = features.sorted()
 
@@ -206,7 +206,10 @@ class EntityCapabilitiesModule(
 					.map { it.fieldValues.joinToString(separator = "<") { it } } + form.getAllFields()
 					.filterNot { it.fieldName == "FORM_TYPE" }
 					.sortedBy { it.fieldName }
-					.map { it.fieldName + "<" + it.fieldValues.joinToString(separator = "<") { it } })
+					.map {
+						it.fieldName + "<" + it.fieldValues.sorted()
+							.joinToString(separator = "<") { it }
+					})
 			}
 			.flatten()
 

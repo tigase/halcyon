@@ -19,6 +19,7 @@ To install or configure preinstalled EntityCapabilities module, call function ``
         install(EntityCapabilitiesModule) {
             node = "http://mycompany.com/bestclientever"
             cache = MyCapsCacheImplementation()
+            storeInvalid = false
         }
     }
 
@@ -27,6 +28,9 @@ The ``EntityCapabilitiesModule`` configuration is provided by interface ``Entity
 * The ``node`` is URI to identify your software. As default library uses ``https://tigase.org/halcyon`` URI.
 
 * With ``cache`` propery you can use own implementation of capabilities cache store, for example JDBC based, to keep all received capabilities between your application restarts.
+
+* The ``storeInvalid`` property allow to force storing received capabilities with invalid versification string. By default, it is set to ``false``.
+For more information about the possible consequences of disabling the validation verification string, refer to the `Security Considerations <https://xmpp.org/extensions/xep-0115.html#security>`__ chapter.
 
 Getting capabilities
 ^^^^^^^^^^^^^^^^^^^^
