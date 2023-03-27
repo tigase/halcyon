@@ -2,14 +2,14 @@ package tigase.halcyon.core.xmpp.modules.auth
 
 import tigase.halcyon.core.builder.ConfigItemBuilder
 import tigase.halcyon.core.builder.ConfigurationBuilder
-import tigase.halcyon.core.builder.ConfigurationDSLMarker
+import tigase.halcyon.core.builder.HalcyonConfigDsl
 import tigase.halcyon.core.builder.ConfigurationException
 import tigase.halcyon.core.configuration.DomainProvider
 import tigase.halcyon.core.configuration.SaslConfig
 
 data class AnonymousSaslConfig(override val domain: String) : SaslConfig, DomainProvider
 
-@ConfigurationDSLMarker
+@HalcyonConfigDsl
 class AnonymousSaslConfigBuilder : ConfigItemBuilder<AnonymousSaslConfig> {
 
 	var domain: String? = null

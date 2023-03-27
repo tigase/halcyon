@@ -19,7 +19,7 @@ package tigase.halcyon.core.xmpp.modules
 
 import tigase.halcyon.core.Context
 import tigase.halcyon.core.Scope
-import tigase.halcyon.core.builder.ConfigurationDSLMarker
+import tigase.halcyon.core.builder.HalcyonConfigDsl
 import tigase.halcyon.core.eventbus.Event
 import tigase.halcyon.core.modules.XmppModule
 import tigase.halcyon.core.modules.XmppModuleProvider
@@ -33,7 +33,7 @@ data class StreamFeaturesEvent(val features: Element) : Event(TYPE) {
 	}
 }
 
-@ConfigurationDSLMarker
+@HalcyonConfigDsl
 interface StreamFeaturesModuleConfig
 
 class StreamFeaturesModule(override val context: Context) : XmppModule, StreamFeaturesModuleConfig {

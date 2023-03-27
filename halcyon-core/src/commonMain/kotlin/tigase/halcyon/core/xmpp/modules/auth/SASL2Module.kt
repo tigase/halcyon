@@ -2,7 +2,7 @@ package tigase.halcyon.core.xmpp.modules.auth
 
 import com.soywiz.krypto.sha1
 import tigase.halcyon.core.Context
-import tigase.halcyon.core.builder.ConfigurationDSLMarker
+import tigase.halcyon.core.builder.HalcyonConfigDsl
 import tigase.halcyon.core.connector.SessionController
 import tigase.halcyon.core.exceptions.HalcyonException
 import tigase.halcyon.core.logger.Level
@@ -16,7 +16,7 @@ import tigase.halcyon.core.xmpp.ErrorCondition
 import tigase.halcyon.core.xmpp.XMPPException
 import tigase.halcyon.core.xmpp.modules.discovery.DiscoveryModule
 
-@ConfigurationDSLMarker
+@HalcyonConfigDsl
 interface SASL2ModuleConfig : SASLModuleConfig
 
 class SASL2Module(override val context: Context, private val discoveryModule: DiscoveryModule) : XmppModule,

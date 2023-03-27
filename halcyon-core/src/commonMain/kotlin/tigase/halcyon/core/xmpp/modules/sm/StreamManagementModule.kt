@@ -22,7 +22,7 @@ import tigase.halcyon.core.ClearedEvent
 import tigase.halcyon.core.Context
 import tigase.halcyon.core.Scope
 import tigase.halcyon.core.TickEvent
-import tigase.halcyon.core.builder.ConfigurationDSLMarker
+import tigase.halcyon.core.builder.HalcyonConfigDsl
 import tigase.halcyon.core.connector.ReceivedXMLElementEvent
 import tigase.halcyon.core.connector.SentXMLElementEvent
 import tigase.halcyon.core.eventbus.Event
@@ -41,7 +41,7 @@ import tigase.halcyon.core.xmpp.stanzas.IQ
 import tigase.halcyon.core.xmpp.stanzas.Message
 import tigase.halcyon.core.xmpp.stanzas.Presence
 
-@ConfigurationDSLMarker
+@HalcyonConfigDsl
 interface StreamManagementModuleConfig
 
 class StreamManagementModule(override val context: Context) : XmppModule, InlineProtocol, StreamManagementModuleConfig {

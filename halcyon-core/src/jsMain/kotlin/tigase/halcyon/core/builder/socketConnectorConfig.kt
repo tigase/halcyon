@@ -2,7 +2,7 @@ package tigase.halcyon.core.builder
 
 import tigase.halcyon.core.connector.WebSocketConnectorConfig
 
-@ConfigurationDSLMarker
+@HalcyonConfigDsl
 class WebSocketConnectionBuilder : ConnectionConfigItemBuilder<WebSocketConnectorConfig> {
 
 	var webSocketUrl: String? = null

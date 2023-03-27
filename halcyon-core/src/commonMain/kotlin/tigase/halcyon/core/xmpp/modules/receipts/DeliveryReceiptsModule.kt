@@ -18,7 +18,7 @@
 package tigase.halcyon.core.xmpp.modules.receipts
 
 import tigase.halcyon.core.Context
-import tigase.halcyon.core.builder.ConfigurationDSLMarker
+import tigase.halcyon.core.builder.HalcyonConfigDsl
 import tigase.halcyon.core.eventbus.Event
 import tigase.halcyon.core.modules.*
 import tigase.halcyon.core.requests.RequestBuilder
@@ -41,7 +41,7 @@ data class MessageDeliveryReceiptEvent(val jid: JID, val msgId: String) : Event(
 	}
 }
 
-@ConfigurationDSLMarker
+@HalcyonConfigDsl
 interface DeliveryReceiptsModuleConfig {
 
 	enum class Mode {

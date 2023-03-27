@@ -87,6 +87,7 @@ List of aliases:
 +-----------------------+-----------------------------+
 
 .. include:: modules/PresenceModule.rst
+.. include:: modules/RosterModule.rst
 .. include:: modules/DiscoveryModule.rst
 .. include:: modules/EntityCapabilitiesModule.rst
 .. include:: modules/PingModule.rst

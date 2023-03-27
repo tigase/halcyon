@@ -19,7 +19,7 @@ package tigase.halcyon.core.xmpp.modules.discovery
 
 import kotlinx.serialization.Serializable
 import tigase.halcyon.core.Context
-import tigase.halcyon.core.builder.ConfigurationDSLMarker
+import tigase.halcyon.core.builder.HalcyonConfigDsl
 import tigase.halcyon.core.eventbus.Event
 import tigase.halcyon.core.modules.Criteria
 import tigase.halcyon.core.modules.Criterion
@@ -39,7 +39,7 @@ import tigase.halcyon.core.xmpp.stanzas.wrap
 /**
  * Configuration of [DiscoveryModule].
  */
-@ConfigurationDSLMarker
+@HalcyonConfigDsl
 interface DiscoveryModuleConfiguration {
 
 	/**

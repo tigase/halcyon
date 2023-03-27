@@ -2,10 +2,8 @@ package presence
 
 import tigase.halcyon.core.builder.createHalcyon
 import tigase.halcyon.core.xmpp.BareJID
-import tigase.halcyon.core.xmpp.modules.PingModule
 import tigase.halcyon.core.xmpp.modules.presence.PresenceModule
 import tigase.halcyon.core.xmpp.modules.presence.typeAndShow
-import tigase.halcyon.core.xmpp.modules.roster.RosterLoadedEvent
 import tigase.halcyon.core.xmpp.stanzas.PresenceType
 import tigase.halcyon.core.xmpp.stanzas.Show
 import tigase.halcyon.core.xmpp.toBareJID
@@ -31,12 +29,16 @@ fun main() {
 
 	// setting own presence
 	halcyon.getModule(PresenceModule)
-		.sendPresence(show = Show.Chat, status = "I'm ready for party!")
+		.sendPresence(
+			show = Show.Chat, status = "I'm ready for party!"
+		)
 		.send()
 
 	// sending direct presence
 	halcyon.getModule(PresenceModule)
-		.sendPresence(jid = "mom@server.com".toJID(), show = Show.DnD, status = "I'm doing my homework!")
+		.sendPresence(
+			jid = "mom@server.com".toJID(), show = Show.DnD, status = "I'm doing my homework!"
+		)
 		.send()
 
 	// subscribe presence of buddy@somewhere.com

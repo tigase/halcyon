@@ -2,7 +2,7 @@ package tigase.halcyon.core.configuration
 
 import tigase.halcyon.core.builder.ConfigItemBuilder
 import tigase.halcyon.core.builder.ConfigurationBuilder
-import tigase.halcyon.core.builder.ConfigurationDSLMarker
+import tigase.halcyon.core.builder.HalcyonConfigDsl
 import tigase.halcyon.core.builder.ConfigurationException
 import tigase.halcyon.core.xmpp.BareJID
 
@@ -25,7 +25,7 @@ data class JIDPasswordAuthConfig(
 		get() = userJID.domain
 }
 
-@ConfigurationDSLMarker
+@HalcyonConfigDsl
 class JIDPasswordAuthConfigBuilder : ConfigItemBuilder<JIDPasswordAuthConfig> {
 
 	var userJID: BareJID? = null

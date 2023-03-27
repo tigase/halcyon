@@ -18,7 +18,7 @@
 package tigase.halcyon.core.xmpp.modules.auth
 
 import tigase.halcyon.core.Context
-import tigase.halcyon.core.builder.ConfigurationDSLMarker
+import tigase.halcyon.core.builder.HalcyonConfigDsl
 import tigase.halcyon.core.exceptions.HalcyonException
 import tigase.halcyon.core.logger.LoggerFactory
 import tigase.halcyon.core.modules.Criterion
@@ -37,7 +37,7 @@ class ClientSaslException : HalcyonException {
 	constructor(cause: Throwable?) : super(cause)
 }
 
-@ConfigurationDSLMarker
+@HalcyonConfigDsl
 interface SASLModuleConfig {
 
 	var enabled: Boolean

@@ -29,7 +29,7 @@ import tigase.halcyon.core.xmpp.modules.uniqueId.UniqueStableStanzaIdModule
 import tigase.halcyon.core.xmpp.modules.vcard.VCardModule
 
 @DslMarker
-annotation class ConfigurationDSLMarker
+annotation class HalcyonConfigDsl
 
 interface ConfigItemBuilder<T> {
 
@@ -51,7 +51,7 @@ class ConfigurationException : HalcyonException {
 	constructor(cause: Throwable?) : super(cause)
 }
 
-@ConfigurationDSLMarker
+@HalcyonConfigDsl
 class RegistrationBuilder : ConfigItemBuilder<Registration> {
 
 	var domain: String? = null
@@ -79,7 +79,7 @@ class RegistrationBuilder : ConfigItemBuilder<Registration> {
 
 }
 
-@ConfigurationDSLMarker
+@HalcyonConfigDsl
 class ConfigurationBuilder {
 
 	internal val modulesConfigBuilder = ModulesConfigBuilder()

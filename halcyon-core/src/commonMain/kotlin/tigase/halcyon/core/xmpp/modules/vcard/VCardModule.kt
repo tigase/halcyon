@@ -18,7 +18,7 @@
 package tigase.halcyon.core.xmpp.modules.vcard
 
 import tigase.halcyon.core.Context
-import tigase.halcyon.core.builder.ConfigurationDSLMarker
+import tigase.halcyon.core.builder.HalcyonConfigDsl
 import tigase.halcyon.core.eventbus.Event
 import tigase.halcyon.core.modules.Criteria
 import tigase.halcyon.core.modules.XmppModule
@@ -42,7 +42,7 @@ data class VCardUpdatedEvent(val jid: BareJID, val vcard: VCard?) : Event(TYPE) 
 	}
 }
 
-@ConfigurationDSLMarker
+@HalcyonConfigDsl
 interface VCardModuleConfig
 
 class VCardModule(override val context: Context) : XmppModule, VCardModuleConfig {

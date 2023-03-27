@@ -36,7 +36,10 @@ To change own presence status, you should use `sendPresence` function.`
     import tigase.halcyon.core.xmpp.modules.presence.PresenceModule
 
     halcyon.getModule(PresenceModule)
-        .sendPresence(show = Show.Chat, status = "I'm ready for party!")
+        .sendPresence(
+            show = Show.Chat,
+            status = "I'm ready for party!"
+        )
         .send()
 
 It is also possible to send direct presence, only for specific recipient:
@@ -46,7 +49,11 @@ It is also possible to send direct presence, only for specific recipient:
     import tigase.halcyon.core.xmpp.modules.presence.PresenceModule
 
     halcyon.getModule(PresenceModule)
-        .sendPresence(jid = "mom@server.com".toJID(), show = Show.DnD, status = "I'm doing my homework!")
+        .sendPresence(
+            jid = "mom@server.com".toJID(),
+            show = Show.DnD,
+            status = "I'm doing my homework!"
+        )
         .send()
 
 Presence subscription

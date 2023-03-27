@@ -38,7 +38,7 @@ class MIXModuleTest {
 	@Test
 	fun testMIXMessageEventCalling() {
 		halcyon.getModule<RosterModule>(RosterModule.TYPE).store.addItem(
-			"arturs@mix.tigase.org".toBareJID(), RosterItem(
+			RosterItem(
 				"arturs@mix.tigase.org".toBareJID(), "MIX", annotations = arrayOf(
 					MIXRosterItemAnnotation("123")
 				)

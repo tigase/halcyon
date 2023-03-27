@@ -2,7 +2,7 @@ package tigase.halcyon.core.builder
 
 import tigase.halcyon.core.connector.socket.SocketConnectorConfig
 
-@ConfigurationDSLMarker
+@HalcyonConfigDsl
 class SocketConnectionBuilder : ConnectionConfigItemBuilder<SocketConnectorConfig> {
 
 	var hostname: String? = null

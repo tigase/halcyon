@@ -19,7 +19,7 @@ package tigase.halcyon.core.xmpp.modules.roster
 
 import kotlinx.serialization.Serializable
 import tigase.halcyon.core.Context
-import tigase.halcyon.core.builder.ConfigurationDSLMarker
+import tigase.halcyon.core.builder.HalcyonConfigDsl
 import tigase.halcyon.core.eventbus.Event
 import tigase.halcyon.core.exceptions.HalcyonException
 import tigase.halcyon.core.logger.LoggerFactory
@@ -37,20 +37,47 @@ import tigase.halcyon.core.xmpp.stanzas.IQType
 import tigase.halcyon.core.xmpp.stanzas.iq
 import tigase.halcyon.core.xmpp.toBareJID
 
-sealed class RosterEvent(@Suppress("unused") val itemElement: Element, val item: RosterItem) : Event(TYPE) {
+/**
+ * Base event for roster  item manipulation events.
+ */
+sealed class RosterEvent(
+	@Suppress("unused")
+	/** received XML element describing roster item. Should be used only handle extensions. */
+	val itemElement: Element,
+	/** Parsed roster item. */
+	val item: RosterItem,
+) : Event(TYPE) {
 
 	companion object {
 
 		const val TYPE = "tigase.halcyon.core.xmpp.modules.roster.RosterEvent"
 	}
 
+	/**
+	 * Fired when new item is added to roster.
+	 */
 	class ItemAdded(element: Element, item: RosterItem) : RosterEvent(element, item)
-	class ItemUpdated(element: Element, @Suppress("unused") val oldItem: RosterItem, item: RosterItem) :
-		RosterEvent(element, item)
 
+	/**
+	 * Fired when roster item is modified.
+	 */
+	class ItemUpdated(
+		element: Element,
+		@Suppress("unused")
+		/** Roster item before modification. */
+		val oldItem: RosterItem,
+		item: RosterItem,
+	) : RosterEvent(element, item)
+
+	/**
+	 * Fired when item is removed from roster.
+	 */
 	class ItemRemoved(element: Element, item: RosterItem) : RosterEvent(element, item)
 }
 
+/**
+ * Event fired when roster is loaded from XMPP server.
+ */
 class RosterLoadedEvent : Event(TYPE) {
 
 	companion object {
@@ -60,6 +87,9 @@ class RosterLoadedEvent : Event(TYPE) {
 
 }
 
+/**
+ * Event fired when local roster modification processing has been completed.
+ */
 class RosterUpdatedEvent : Event(TYPE) {
 
 	companion object {
@@ -69,14 +99,50 @@ class RosterUpdatedEvent : Event(TYPE) {
 
 }
 
-enum class Subscription(val value: String) { Both("both"),
+/**
+ * Subscription state. Check [documentation](https://www.rfc-editor.org/rfc/rfc6121#section-2.1.2.5) for details.
+ */
+enum class Subscription(val value: String) {
+
+	/**
+	 * The user and the contact have subscriptions to each other's presence (also called a "mutual subscription").
+	 */
+	Both("both"),
+
+	/**
+	 * The contact has a subscription to the user's presence,
+	 * but the user does not have a subscription to the contact's presence
+	 */
 	From("from"),
+
+	/**
+	 * The user does not have a subscription to the contact's presence,
+	 * and the contact does not have a subscription to the user's presence; this is the default value,
+	 * so if the subscription attribute is not included then the state is to be understood as "none".
+	 */
 	None("none"),
+
+	/**
+	 * Item must be removed from local roster.
+	 */
 	Remove("remove"),
+
+	/**
+	 * The user has a subscription to the contact's presence, but the
+	 * contact does not have a subscription to the user's presence.
+	 */
 	To("to")
 }
 
-enum class Ask(val value: String) { Subscribe("subscribe")
+/**
+ * Subscription pending indicator.
+ */
+enum class Ask(val value: String) {
+
+	/**
+	 * Subscription pending is progress.
+	 */
+	Subscribe("subscribe")
 }
 
 interface RosterItemAnnotationProcessor {
@@ -89,14 +155,24 @@ interface RosterItemAnnotationProcessor {
 
 interface RosterItemAnnotation
 
+/**
+ * Represents roster item.
+ */
 @Serializable
 data class RosterItem(
+	/** Identifier of roster item. */
 	val jid: BareJID,
+	/** Human-readable name of item. */
 	val name: String?,
+	/** List of groups item belongs to. */
 	val groups: List<String> = emptyList(),
+	/** Indicates that subscription request is processed.  */
 	val ask: Ask? = null,
+	/** Subscription state. */
 	val subscription: Subscription? = null,
-	val approved: Boolean? = null,
+	/** Is subscription pre-approved. */
+	val approved: Boolean = false,
+	/** List of optional annotations of roster item. */
 	val annotations: Array<RosterItemAnnotation> = emptyArray(),
 ) {
 
@@ -121,20 +197,35 @@ data class RosterItem(
 		result = 31 * result + groups.hashCode()
 		result = 31 * result + (ask?.hashCode() ?: 0)
 		result = 31 * result + (subscription?.hashCode() ?: 0)
-		result = 31 * result + (approved?.hashCode() ?: 0)
+		result = 31 * result + approved.hashCode()
 		result = 31 * result + annotations.contentHashCode()
 		return result
 	}
 }
 
-data class RosterResponse(val version: String?)
+/**
+ * Response for roster-request.
+ */
+data class RosterResponse(
+	/** Version of roster. */
+	val version: String?,
+)
 
-@ConfigurationDSLMarker
+/**
+ * Configuration of [RosterModule].
+ */
+@HalcyonConfigDsl
 interface RosterModuleConfiguration {
 
+	/**
+	 * Specify a store to keep received roster.
+	 */
 	var store: RosterStore
 }
 
+/**
+ * Module for managing roster.
+ */
 class RosterModule(context: Context) : RosterModuleConfiguration, AbstractXmppIQModule(
 	context, TYPE, emptyArray(), Criterion.chain(
 		Criterion.name(IQ.NAME), Criterion.xmlns(XMLNS)
@@ -155,6 +246,9 @@ class RosterModule(context: Context) : RosterModuleConfiguration, AbstractXmppIQ
 
 	override var store: RosterStore = InMemoryRosterStore()
 
+	/**
+	 * Prepares request for roster.
+	 */
 	fun rosterGet(): RequestBuilder<RosterResponse, IQ> {
 		val iq = iq {
 			type = IQType.Get
@@ -223,11 +317,11 @@ class RosterModule(context: Context) : RosterModuleConfiguration, AbstractXmppIQ
 			context.eventBus.fire(RosterEvent.ItemRemoved(itemElement, item))
 		} else if (oldItem == null && item.subscription != Subscription.Remove) {
 			log.fine { "Add item ${item.jid}" }
-			store.addItem(item.jid, item)
+			store.addItem(item)
 			context.eventBus.fire(RosterEvent.ItemAdded(itemElement, item))
 		} else if (oldItem != null && item.subscription != Subscription.Remove) {
 			log.fine { "Update item ${item.jid}" }
-			store.updateItem(item.jid, item)
+			store.updateItem(item)
 			context.eventBus.fire(RosterEvent.ItemUpdated(itemElement, oldItem, item))
 		} else {
 			log.fine { "Ignore item ${item.jid}" }
@@ -250,7 +344,7 @@ class RosterModule(context: Context) : RosterModuleConfiguration, AbstractXmppIQ
 		val approved = when (item.attributes["approved"]) {
 			"1", "true" -> true
 			"0", "false" -> false
-			null -> null
+			null -> false
 			else -> throw XMPPException(ErrorCondition.BadRequest, "Unknown value of approved field.")
 		}
 		val groups = item.getChildren("group")
@@ -283,7 +377,8 @@ class RosterModule(context: Context) : RosterModuleConfiguration, AbstractXmppIQ
 	}
 
 	/**
-	 * Add or update roster item.
+	 * Prepares request to add or update the roster item.
+	 * @param items [RosterItem]s to add or update.
 	 */
 	@Suppress("unused")
 	fun addItem(vararg items: RosterItem): RequestBuilder<Unit, IQ> {
@@ -299,6 +394,10 @@ class RosterModule(context: Context) : RosterModuleConfiguration, AbstractXmppIQ
 			.map {}
 	}
 
+	/**
+	 * Prepares request to remove items identifed by given JIDs from roster.
+	 * @param jids ) identifiers of items to remove.
+	 */
 	@Suppress("unused")
 	fun deleteItem(vararg jids: BareJID): RequestBuilder<Unit, IQ> {
 		return context.request.iq {
@@ -316,6 +415,9 @@ class RosterModule(context: Context) : RosterModuleConfiguration, AbstractXmppIQ
 			.map {}
 	}
 
+	/**
+	 * Returns all items from roster.
+	 */
 	@Suppress("unused")
 	fun getAllItems(): List<RosterItem> = store.getAllItems()
 

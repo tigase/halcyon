@@ -18,7 +18,7 @@
 package tigase.halcyon.core.xmpp.modules.chatstates
 
 import tigase.halcyon.core.Context
-import tigase.halcyon.core.builder.ConfigurationDSLMarker
+import tigase.halcyon.core.builder.HalcyonConfigDsl
 import tigase.halcyon.core.eventbus.Event
 import tigase.halcyon.core.modules.Criteria
 import tigase.halcyon.core.modules.XmppModule
@@ -93,7 +93,7 @@ data class ChatStateEvent(val jid: JID, val state: ChatState) : Event(TYPE) {
 	}
 }
 
-@ConfigurationDSLMarker
+@HalcyonConfigDsl
 interface ChatStateModuleConfig
 
 class ChatStateModule(override val context: Context) : XmppModule, ChatStateModuleConfig {

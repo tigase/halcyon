@@ -21,7 +21,7 @@ import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import kotlinx.serialization.Serializable
 import tigase.halcyon.core.Context
-import tigase.halcyon.core.builder.ConfigurationDSLMarker
+import tigase.halcyon.core.builder.HalcyonConfigDsl
 import tigase.halcyon.core.eventbus.Event
 import tigase.halcyon.core.exceptions.HalcyonException
 import tigase.halcyon.core.modules.Criteria
@@ -85,7 +85,7 @@ data class CreateResponse(val jid: BareJID, val name: String)
 
 data class Participant(val id: String, val nick: String?, val jid: BareJID?)
 
-@ConfigurationDSLMarker
+@HalcyonConfigDsl
 interface MIXModuleConfig
 
 class MIXModule(

@@ -18,7 +18,7 @@
 package tigase.halcyon.core.xmpp.modules.presence
 
 import tigase.halcyon.core.Context
-import tigase.halcyon.core.builder.ConfigurationDSLMarker
+import tigase.halcyon.core.builder.HalcyonConfigDsl
 import tigase.halcyon.core.eventbus.Event
 import tigase.halcyon.core.logger.LoggerFactory
 import tigase.halcyon.core.modules.Criterion
@@ -69,7 +69,7 @@ data class ContactChangeStatusEvent(
 	}
 }
 
-@ConfigurationDSLMarker
+@HalcyonConfigDsl
 /**
  * Configuration of [PresenceModule].
  */
@@ -141,7 +141,7 @@ class PresenceModule(override val context: Context) : XmppModule, PresenceModule
 	}
 
 	/**
-	 * Send user defined presence.
+	 * Prepare request for send user defined presence.
 	 * @param jid presence receiver.If `null`, the presence will be sent to all participants (default).
 	 * @param type presence type.
 	 * @param show availability state.

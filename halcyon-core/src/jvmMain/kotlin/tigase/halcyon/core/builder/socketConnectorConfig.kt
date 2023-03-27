@@ -6,7 +6,7 @@ import tigase.halcyon.core.connector.socket.SocketConnectorConfig
 import java.security.cert.X509Certificate
 import javax.net.ssl.X509TrustManager
 
-@ConfigurationDSLMarker
+@HalcyonConfigDsl
 class SocketConnectionBuilder : ConnectionConfigItemBuilder<SocketConnectorConfig> {
 
 	var hostname: String? = null

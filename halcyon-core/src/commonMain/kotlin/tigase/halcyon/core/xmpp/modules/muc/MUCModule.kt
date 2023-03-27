@@ -19,7 +19,7 @@ package tigase.halcyon.core.xmpp.modules.muc
 
 import kotlinx.datetime.Instant
 import tigase.halcyon.core.Context
-import tigase.halcyon.core.builder.ConfigurationDSLMarker
+import tigase.halcyon.core.builder.HalcyonConfigDsl
 import tigase.halcyon.core.eventbus.Event
 import tigase.halcyon.core.exceptions.HalcyonException
 import tigase.halcyon.core.modules.Criteria
@@ -201,7 +201,7 @@ class MucUserExt(private val element: Element) {
 
 }
 
-@ConfigurationDSLMarker
+@HalcyonConfigDsl
 interface MUCModuleConfig
 
 class MUCModule(override val context: Context) : XmppModule, MUCModuleConfig {

@@ -20,7 +20,7 @@ package tigase.halcyon.core.xmpp.modules
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import tigase.halcyon.core.Context
-import tigase.halcyon.core.builder.ConfigurationDSLMarker
+import tigase.halcyon.core.builder.HalcyonConfigDsl
 import tigase.halcyon.core.modules.AbstractXmppIQModule
 import tigase.halcyon.core.modules.Criterion
 import tigase.halcyon.core.modules.XmppModuleProvider
@@ -37,7 +37,7 @@ import kotlin.time.Duration
 /**
  * Configuration of [PingModule].
  */
-@ConfigurationDSLMarker
+@HalcyonConfigDsl
 interface PingModuleConfig
 
 /**

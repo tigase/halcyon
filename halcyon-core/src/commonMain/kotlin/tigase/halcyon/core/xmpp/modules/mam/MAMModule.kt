@@ -20,7 +20,7 @@ package tigase.halcyon.core.xmpp.modules.mam
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import tigase.halcyon.core.Context
-import tigase.halcyon.core.builder.ConfigurationDSLMarker
+import tigase.halcyon.core.builder.HalcyonConfigDsl
 import tigase.halcyon.core.eventbus.Event
 import tigase.halcyon.core.logger.LoggerFactory
 import tigase.halcyon.core.modules.Criteria
@@ -93,7 +93,7 @@ enum class DefaultBehaviour(val xmppValue: String) {
 
 data class Preferences(val default: DefaultBehaviour, val always: Collection<BareJID>, val never: Collection<BareJID>)
 
-@ConfigurationDSLMarker
+@HalcyonConfigDsl
 interface MAMModuleConfig
 class MAMModule(override val context: Context) : XmppModule, MAMModuleConfig {
 

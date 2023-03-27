@@ -9,7 +9,7 @@ data class Item<M : XmppModule, B : Any>(
 	val configuration: (B.() -> Unit)? = null,
 )
 
-@ConfigurationDSLMarker
+@HalcyonConfigDsl
 class ModulesConfigBuilder {
 
 	private val providers = mutableMapOf<String, Any>()

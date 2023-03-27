@@ -22,6 +22,7 @@ import tigase.halcyon.core.xml.*
 import tigase.halcyon.core.xmpp.JID
 import tigase.halcyon.core.xmpp.nextUID
 
+@HalcyonElementDsl
 abstract class StanzaNode<STANZA_TYPE>(element: Element) : ElementNode(element) {
 
 	private fun getJID(attName: String): JID? {
@@ -53,6 +54,7 @@ abstract class StanzaNode<STANZA_TYPE>(element: Element) : ElementNode(element) 
 
 }
 
+@HalcyonElementDsl
 class PresenceNode(private val presence: Presence) : StanzaNode<PresenceType?>(presence) {
 
 	override var type: PresenceType?
@@ -86,6 +88,7 @@ class PresenceNode(private val presence: Presence) : StanzaNode<PresenceType?>(p
 
 }
 
+@HalcyonElementDsl
 class IQNode(element: IQ) : StanzaNode<IQType>(element) {
 
 	override var type: IQType
@@ -108,6 +111,7 @@ class IQNode(element: IQ) : StanzaNode<IQType>(element) {
 
 }
 
+@HalcyonElementDsl
 class MessageNode(element: Message) : StanzaNode<MessageType?>(element) {
 
 	override var type: MessageType?

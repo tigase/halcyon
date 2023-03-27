@@ -37,12 +37,12 @@ class InMemoryRosterStore : RosterStore {
 		this.items.remove(jid)
 	}
 
-	override fun addItem(jid: BareJID, value: RosterItem) {
-		this.items[jid] = value
+	override fun addItem(value: RosterItem) {
+		this.items[value.jid] = value
 	}
 
-	override fun updateItem(jid: BareJID, value: RosterItem) {
-		this.items[jid] = value
+	override fun updateItem(value: RosterItem) {
+		this.items[value.jid] = value
 	}
 
 	override fun getAllItems(): List<RosterItem> = items.values.toList()

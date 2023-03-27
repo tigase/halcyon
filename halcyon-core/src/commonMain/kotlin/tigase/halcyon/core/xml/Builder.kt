@@ -17,6 +17,9 @@
  */
 package tigase.halcyon.core.xml
 
+@DslMarker
+annotation class HalcyonElementDsl
+
 class ElementAttributes(private val element: Element) {
 
 	operator fun set(name: String, value: String?) {
@@ -29,6 +32,7 @@ class ElementAttributes(private val element: Element) {
 	}
 }
 
+@HalcyonElementDsl
 open class ElementNode(internal val element: Element) {
 
 	fun attribute(name: String, value: String) {

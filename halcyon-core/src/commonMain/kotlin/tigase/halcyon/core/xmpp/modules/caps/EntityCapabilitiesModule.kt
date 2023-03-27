@@ -20,7 +20,7 @@ package tigase.halcyon.core.xmpp.modules.caps
 import com.soywiz.krypto.sha1
 import kotlinx.serialization.Serializable
 import tigase.halcyon.core.*
-import tigase.halcyon.core.builder.ConfigurationDSLMarker
+import tigase.halcyon.core.builder.HalcyonConfigDsl
 import tigase.halcyon.core.logger.LoggerFactory
 import tigase.halcyon.core.modules.*
 import tigase.halcyon.core.xml.Element
@@ -39,7 +39,7 @@ import tigase.halcyon.core.xmpp.stanzas.wrap
 /**
  * Configuration of [EntityCapabilitiesModule].
  */
-@ConfigurationDSLMarker
+@HalcyonConfigDsl
 interface EntityCapabilitiesModuleConfig {
 
 	/**

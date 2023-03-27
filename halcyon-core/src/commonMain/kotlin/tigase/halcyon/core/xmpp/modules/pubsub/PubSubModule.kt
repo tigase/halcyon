@@ -19,7 +19,7 @@ package tigase.halcyon.core.xmpp.modules.pubsub
 
 import kotlinx.serialization.Serializable
 import tigase.halcyon.core.Context
-import tigase.halcyon.core.builder.ConfigurationDSLMarker
+import tigase.halcyon.core.builder.HalcyonConfigDsl
 import tigase.halcyon.core.eventbus.Event
 import tigase.halcyon.core.exceptions.HalcyonException
 import tigase.halcyon.core.modules.Criterion
@@ -131,7 +131,7 @@ data class Subscription(
  * PubSub Module.
  */
 
-@ConfigurationDSLMarker
+@HalcyonConfigDsl
 interface PubSubModuleConfig
 class PubSubModule(override val context: Context) : XmppModule, PubSubModuleConfig {
 
