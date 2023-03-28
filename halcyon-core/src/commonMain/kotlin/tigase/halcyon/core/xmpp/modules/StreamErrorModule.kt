@@ -20,6 +20,7 @@ package tigase.halcyon.core.xmpp.modules
 import tigase.halcyon.core.Context
 import tigase.halcyon.core.builder.HalcyonConfigDsl
 import tigase.halcyon.core.eventbus.Event
+import tigase.halcyon.core.eventbus.EventDefinition
 import tigase.halcyon.core.modules.Criterion
 import tigase.halcyon.core.modules.XmppModule
 import tigase.halcyon.core.modules.XmppModuleProvider
@@ -35,9 +36,9 @@ import tigase.halcyon.core.xmpp.StreamError
  */
 data class StreamErrorEvent(val element: Element, val condition: StreamError, val errorElement: Element) : Event(TYPE) {
 
-	companion object {
+	companion object : EventDefinition<StreamErrorEvent> {
 
-		const val TYPE = "tigase.halcyon.core.xmpp.modules.StreamErrorEvent"
+		override val TYPE = "tigase.halcyon.core.xmpp.modules.StreamErrorEvent"
 	}
 }
 

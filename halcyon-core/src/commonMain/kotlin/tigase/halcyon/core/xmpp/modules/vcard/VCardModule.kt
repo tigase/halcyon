@@ -20,6 +20,7 @@ package tigase.halcyon.core.xmpp.modules.vcard
 import tigase.halcyon.core.Context
 import tigase.halcyon.core.builder.HalcyonConfigDsl
 import tigase.halcyon.core.eventbus.Event
+import tigase.halcyon.core.eventbus.EventDefinition
 import tigase.halcyon.core.modules.Criteria
 import tigase.halcyon.core.modules.XmppModule
 import tigase.halcyon.core.modules.XmppModuleProvider
@@ -36,9 +37,9 @@ import tigase.halcyon.core.xmpp.toJID
 
 data class VCardUpdatedEvent(val jid: BareJID, val vcard: VCard?) : Event(TYPE) {
 
-	companion object {
+	companion object : EventDefinition<VCardUpdatedEvent> {
 
-		const val TYPE = "tigase.halcyon.core.xmpp.modules.vcard.VCardUpdatedEvent"
+		override val TYPE = "tigase.halcyon.core.xmpp.modules.vcard.VCardUpdatedEvent"
 	}
 }
 
@@ -69,7 +70,7 @@ class VCardModule(override val context: Context) : XmppModule, VCardModuleConfig
 	var autoRetrieve: Boolean = false
 
 	override fun initialize() {
-		context.eventBus.register(PubSubItemEvent.TYPE, this@VCardModule::processEvent)
+		context.eventBus.register(PubSubItemEvent, this@VCardModule::processEvent)
 	}
 
 	override fun process(element: Element) = throw XMPPException(ErrorCondition.FeatureNotImplemented)

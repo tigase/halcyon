@@ -7,6 +7,7 @@ import tigase.halcyon.core.builder.createConfiguration
 import tigase.halcyon.core.connector.AbstractConnector
 import tigase.halcyon.core.eventbus.Event
 import tigase.halcyon.core.eventbus.EventBus
+import tigase.halcyon.core.eventbus.EventDefinition
 import tigase.halcyon.core.xmpp.toBareJID
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -16,17 +17,17 @@ class EventBusExtTest {
 
 	data class Test1Event(val data: String) : Event(TYPE) {
 
-		companion object {
+		companion object : EventDefinition<Test1Event> {
 
-			const val TYPE = "Test1Event"
+			override val TYPE = "Test1Event"
 		}
 	}
 
 	data class Test2Event(val data: String) : Event(TYPE) {
 
-		companion object {
+		companion object : EventDefinition<Test2Event> {
 
-			const val TYPE = "Test2Event"
+			override val TYPE = "Test2Event"
 		}
 	}
 

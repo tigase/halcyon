@@ -21,6 +21,7 @@ import kotlinx.serialization.Serializable
 import tigase.halcyon.core.Context
 import tigase.halcyon.core.builder.HalcyonConfigDsl
 import tigase.halcyon.core.eventbus.Event
+import tigase.halcyon.core.eventbus.EventDefinition
 import tigase.halcyon.core.exceptions.HalcyonException
 import tigase.halcyon.core.modules.Criterion
 import tigase.halcyon.core.modules.XmppModule
@@ -56,9 +57,9 @@ sealed class PubSubItemEvent(
 		pubSubJID: JID?, stanza: Message, nodeName: String, val itemId: String?,
 	) : PubSubItemEvent(pubSubJID, stanza, nodeName)
 
-	companion object {
+	companion object : EventDefinition<PubSubItemEvent> {
 
-		const val TYPE = "tigase.halcyon.core.xmpp.modules.pubsub.PubSubEventReceivedEvent"
+		override val TYPE = "tigase.halcyon.core.xmpp.modules.pubsub.PubSubEventReceivedEvent"
 	}
 }
 

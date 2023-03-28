@@ -21,6 +21,7 @@ import kotlinx.serialization.Serializable
 import tigase.halcyon.core.Context
 import tigase.halcyon.core.builder.HalcyonConfigDsl
 import tigase.halcyon.core.eventbus.Event
+import tigase.halcyon.core.eventbus.EventDefinition
 import tigase.halcyon.core.exceptions.HalcyonException
 import tigase.halcyon.core.logger.LoggerFactory
 import tigase.halcyon.core.modules.AbstractXmppIQModule
@@ -48,9 +49,9 @@ sealed class RosterEvent(
 	val item: RosterItem,
 ) : Event(TYPE) {
 
-	companion object {
+	companion object : EventDefinition<RosterEvent> {
 
-		const val TYPE = "tigase.halcyon.core.xmpp.modules.roster.RosterEvent"
+		override val TYPE = "tigase.halcyon.core.xmpp.modules.roster.RosterEvent"
 	}
 
 	/**
@@ -80,9 +81,9 @@ sealed class RosterEvent(
  */
 class RosterLoadedEvent : Event(TYPE) {
 
-	companion object {
+	companion object : EventDefinition<RosterLoadedEvent> {
 
-		const val TYPE = "tigase.halcyon.core.xmpp.modules.roster.RosterLoadedEvent"
+		override val TYPE = "tigase.halcyon.core.xmpp.modules.roster.RosterLoadedEvent"
 	}
 
 }
@@ -92,9 +93,9 @@ class RosterLoadedEvent : Event(TYPE) {
  */
 class RosterUpdatedEvent : Event(TYPE) {
 
-	companion object {
+	companion object : EventDefinition<RosterUpdatedEvent> {
 
-		const val TYPE = "tigase.halcyon.core.xmpp.modules.roster.RosterUpdatedEvent"
+		override val TYPE = "tigase.halcyon.core.xmpp.modules.roster.RosterUpdatedEvent"
 	}
 
 }

@@ -20,18 +20,14 @@ package tigase.halcyon.core.excutor
 import kotlinx.datetime.Instant
 import tigase.halcyon.core.TickEvent
 import tigase.halcyon.core.eventbus.AbstractEventBus
-import tigase.halcyon.core.eventbus.EventHandler
+import tigase.halcyon.core.eventbus.handler
 import kotlin.time.Duration
 
 class TickExecutor(
 	private val eventBus: AbstractEventBus, val minimalTime: Duration, private val runnable: () -> Unit,
 ) {
 
-	private val handler: EventHandler<TickEvent> = object : EventHandler<TickEvent> {
-		override fun onEvent(event: TickEvent) {
-			onTick(event)
-		}
-	}
+	private val handler = TickEvent.handler(::onTick)
 
 	init {
 		start()
@@ -47,11 +43,11 @@ class TickExecutor(
 	}
 
 	fun start() {
-		eventBus.register(TickEvent.TYPE, handler)
+		eventBus.register(TickEvent, handler)
 	}
 
 	fun stop() {
-		eventBus.unregister(TickEvent.TYPE, handler)
+		eventBus.unregister(TickEvent, handler)
 	}
 
 }

@@ -23,6 +23,7 @@ import kotlinx.serialization.Serializable
 import tigase.halcyon.core.Context
 import tigase.halcyon.core.builder.HalcyonConfigDsl
 import tigase.halcyon.core.eventbus.Event
+import tigase.halcyon.core.eventbus.EventDefinition
 import tigase.halcyon.core.exceptions.HalcyonException
 import tigase.halcyon.core.modules.Criteria
 import tigase.halcyon.core.modules.Criterion
@@ -54,9 +55,9 @@ data class MIXInvitation(val inviter: BareJID, val invitee: BareJID, val channel
 
 data class MIXMessageEvent(val channel: BareJID, val stanza: Message, val timestamp: Instant) : Event(TYPE) {
 
-	companion object {
+	companion object : EventDefinition<MIXMessageEvent> {
 
-		const val TYPE = "tigase.halcyon.core.xmpp.modules.mix.MIXMessageEvent"
+		override val TYPE = "tigase.halcyon.core.xmpp.modules.mix.MIXMessageEvent"
 	}
 }
 

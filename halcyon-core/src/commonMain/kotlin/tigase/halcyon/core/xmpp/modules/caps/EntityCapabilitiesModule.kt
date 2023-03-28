@@ -135,7 +135,7 @@ class EntityCapabilitiesModule(
 
 	override fun initialize() {
 		this.discoModule.addNodeDetailsProvider(CapsNodeDetailsProvider())
-		context.eventBus.register<HalcyonStateChangeEvent>(HalcyonStateChangeEvent.TYPE) {
+		context.eventBus.register(HalcyonStateChangeEvent) {
 			if (it.newState == AbstractHalcyon.State.Connected) {
 				checkServerFeatures()
 			}

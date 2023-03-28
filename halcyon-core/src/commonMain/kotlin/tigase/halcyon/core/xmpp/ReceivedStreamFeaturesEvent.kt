@@ -17,12 +17,14 @@
  */
 package tigase.halcyon.core.xmpp
 
+import tigase.halcyon.core.eventbus.Event
+import tigase.halcyon.core.eventbus.EventDefinition
 import tigase.halcyon.core.xml.Element
 
-data class ReceivedStreamFeaturesEvent(val features: List<Element>) : tigase.halcyon.core.eventbus.Event(TYPE) {
+data class ReceivedStreamFeaturesEvent(val features: List<Element>) : Event(TYPE) {
 
-	companion object {
+	companion object : EventDefinition<ReceivedStreamFeaturesEvent> {
 
-		const val TYPE = "tigase.halcyon.core.xmpp.ReceivedStreamFeaturesEvent"
+		override val TYPE = "tigase.halcyon.core.xmpp.ReceivedStreamFeaturesEvent"
 	}
 }

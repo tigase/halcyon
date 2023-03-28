@@ -1,6 +1,7 @@
 package tigase.halcyon.core.xmpp.modules.auth
 
 import tigase.halcyon.core.eventbus.Event
+import tigase.halcyon.core.eventbus.EventDefinition
 
 enum class State {
 
@@ -33,9 +34,9 @@ class SASLContext {
 
 sealed class SASLEvent : Event(TYPE) {
 
-	companion object {
+	companion object : EventDefinition<SASLEvent> {
 
-		const val TYPE = "tigase.halcyon.core.xmpp.modules.auth.SASLEvent"
+		override val TYPE = "tigase.halcyon.core.xmpp.modules.auth.SASLEvent"
 	}
 
 	data class SASLStarted(val mechanism: String) : SASLEvent()

@@ -105,7 +105,7 @@ class ClearableValue<T>(
 	private var value = initialValueFactory.invoke()
 
 	init {
-		eventBus.register(ClearedEvent.TYPE, this::clear)
+		eventBus.register(ClearedEvent, this::clear)
 		log.finest { "Registered cleaner scope=$scope; initialValueFactory=$initialValueFactory" }
 	}
 

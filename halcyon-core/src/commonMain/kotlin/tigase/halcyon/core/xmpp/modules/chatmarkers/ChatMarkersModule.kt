@@ -20,6 +20,7 @@ package tigase.halcyon.core.xmpp.modules.chatmarkers
 import tigase.halcyon.core.Context
 import tigase.halcyon.core.builder.HalcyonConfigDsl
 import tigase.halcyon.core.eventbus.Event
+import tigase.halcyon.core.eventbus.EventDefinition
 import tigase.halcyon.core.modules.*
 import tigase.halcyon.core.requests.RequestBuilder
 import tigase.halcyon.core.xml.Element
@@ -38,9 +39,9 @@ import tigase.halcyon.core.xmpp.toJID
 data class ChatMarkerEvent(val jid: JID, val msgId: String, val stanza: Message, val marker: ChatMarkersModule.Marker) :
 	Event(TYPE) {
 
-	companion object {
+	companion object : EventDefinition<ChatMarkerEvent> {
 
-		const val TYPE = "tigase.halcyon.core.xmpp.modules.chatmarkers.ChatMarkerEvent"
+		override val TYPE = "tigase.halcyon.core.xmpp.modules.chatmarkers.ChatMarkerEvent"
 	}
 }
 

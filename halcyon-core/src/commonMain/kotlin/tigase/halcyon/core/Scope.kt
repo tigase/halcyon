@@ -18,6 +18,7 @@
 package tigase.halcyon.core
 
 import tigase.halcyon.core.eventbus.Event
+import tigase.halcyon.core.eventbus.EventDefinition
 
 enum class Scope {
 
@@ -42,10 +43,12 @@ enum class Scope {
 	User,
 }
 
-data class ClearedEvent(val scopes: Array<Scope>) : Event(TYPE) { companion object {
+data class ClearedEvent(val scopes: Array<Scope>) : Event(TYPE) {
 
-	const val TYPE = "tigase.halcyon.core.ClearedEvent"
-}
+	companion object : EventDefinition<ClearedEvent> {
+
+		override val TYPE = "tigase.halcyon.core.ClearedEvent"
+	}
 
 	override fun equals(other: Any?): Boolean {
 		if (this === other) return true

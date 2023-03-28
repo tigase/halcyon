@@ -20,6 +20,11 @@ package tigase.halcyon.core.eventbus
 import kotlinx.datetime.Instant
 import tigase.halcyon.core.AbstractHalcyon
 
+interface EventDefinition<out M : Event> {
+
+	val TYPE: String
+}
+
 /**
  * Base class for events.
  */

@@ -21,15 +21,16 @@ import tigase.halcyon.core.Context
 import tigase.halcyon.core.Scope
 import tigase.halcyon.core.builder.HalcyonConfigDsl
 import tigase.halcyon.core.eventbus.Event
+import tigase.halcyon.core.eventbus.EventDefinition
 import tigase.halcyon.core.modules.XmppModule
 import tigase.halcyon.core.modules.XmppModuleProvider
 import tigase.halcyon.core.xml.Element
 
 data class StreamFeaturesEvent(val features: Element) : Event(TYPE) {
 
-	companion object {
+	companion object : EventDefinition<StreamFeaturesEvent> {
 
-		const val TYPE = "tigase.halcyon.core.xmpp.modules.StreamFeaturesEvent"
+		override val TYPE = "tigase.halcyon.core.xmpp.modules.StreamFeaturesEvent"
 	}
 }
 

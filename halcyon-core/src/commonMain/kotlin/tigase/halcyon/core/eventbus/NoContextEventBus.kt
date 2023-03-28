@@ -78,6 +78,9 @@ abstract class NoContextEventBus : EventBusInterface {
 		handlers.add(handler)
 	}
 
+	override fun <T : Event> register(definition: EventDefinition<T>, handler: EventHandler<T>) =
+		register(definition.TYPE, handler)
+
 	override fun <T : Event> register(eventType: String, handler: (T) -> Unit) {
 		register(eventType, object : EventHandler<T> {
 			override fun onEvent(event: T) {
@@ -86,9 +89,15 @@ abstract class NoContextEventBus : EventBusInterface {
 		})
 	}
 
+	override fun <T : Event> register(definition: EventDefinition<T>, handler: (T) -> Unit) =
+		register(definition.TYPE, handler)
+
 	override fun unregister(eventType: String, handler: EventHandler<*>) {
 		handlersMap[eventType]?.remove(handler)
 	}
+
+	override fun unregister(definition: EventDefinition<*>, handler: EventHandler<*>) =
+		unregister(definition.TYPE, handler)
 
 	override fun unregister(handler: EventHandler<*>) {
 		for ((_, handlers) in handlersMap) {

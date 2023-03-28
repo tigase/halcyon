@@ -19,6 +19,7 @@ package tigase.halcyon.core.connector
 
 import tigase.halcyon.core.AbstractHalcyon
 import tigase.halcyon.core.eventbus.Event
+import tigase.halcyon.core.eventbus.EventDefinition
 
 interface SessionController {
 
@@ -26,9 +27,9 @@ interface SessionController {
 
 	sealed class SessionControllerEvents : Event(TYPE) {
 
-		companion object {
+		companion object : EventDefinition<SessionControllerEvents> {
 
-			const val TYPE = "tigase.halcyon.core.connector.SessionController.SessionControllerEvents"
+			override val TYPE = "tigase.halcyon.core.connector.SessionController.SessionControllerEvents"
 		}
 
 		data class ErrorStop(val message: String) : SessionControllerEvents()

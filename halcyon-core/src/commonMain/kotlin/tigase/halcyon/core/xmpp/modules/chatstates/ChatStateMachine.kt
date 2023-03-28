@@ -21,6 +21,7 @@ import kotlinx.datetime.Clock
 import tigase.halcyon.core.TickEvent
 import tigase.halcyon.core.eventbus.Event
 import tigase.halcyon.core.eventbus.EventBus
+import tigase.halcyon.core.eventbus.EventDefinition
 import tigase.halcyon.core.eventbus.EventHandler
 import tigase.halcyon.core.xmpp.BareJID
 import kotlin.time.Duration.Companion.seconds
@@ -29,9 +30,9 @@ data class OwnChatStateChangeEvent(
 	val jid: BareJID, val oldState: ChatState, val state: ChatState, val sendUpdate: Boolean,
 ) : Event(TYPE) {
 
-	companion object {
+	companion object : EventDefinition<OwnChatStateChangeEvent> {
 
-		const val TYPE = "tigase.halcyon.core.xmpp.modules.chatstates.OwnChatStateChangeEvent"
+		override val TYPE = "tigase.halcyon.core.xmpp.modules.chatstates.OwnChatStateChangeEvent"
 	}
 }
 

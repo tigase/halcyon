@@ -22,6 +22,7 @@ import tigase.halcyon.core.Context
 import tigase.halcyon.core.Scope
 import tigase.halcyon.core.builder.HalcyonConfigDsl
 import tigase.halcyon.core.eventbus.Event
+import tigase.halcyon.core.eventbus.EventDefinition
 import tigase.halcyon.core.modules.Criteria
 import tigase.halcyon.core.modules.XmppModule
 import tigase.halcyon.core.modules.XmppModuleProvider
@@ -40,9 +41,9 @@ import tigase.halcyon.core.xmpp.toJID
 
 sealed class BindEvent : Event(TYPE) {
 
-	companion object {
+	companion object : EventDefinition<BindEvent> {
 
-		const val TYPE = "tigase.halcyon.core.xmpp.modules.BindEvent"
+		override val TYPE = "tigase.halcyon.core.xmpp.modules.BindEvent"
 	}
 
 	data class Success(val jid: JID) : BindEvent()

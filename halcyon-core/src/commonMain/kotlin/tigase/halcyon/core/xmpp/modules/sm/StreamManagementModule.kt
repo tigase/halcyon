@@ -26,6 +26,7 @@ import tigase.halcyon.core.builder.HalcyonConfigDsl
 import tigase.halcyon.core.connector.ReceivedXMLElementEvent
 import tigase.halcyon.core.connector.SentXMLElementEvent
 import tigase.halcyon.core.eventbus.Event
+import tigase.halcyon.core.eventbus.EventDefinition
 import tigase.halcyon.core.exceptions.HalcyonException
 import tigase.halcyon.core.logger.LoggerFactory
 import tigase.halcyon.core.modules.Criterion
@@ -98,10 +99,12 @@ class StreamManagementModule(override val context: Context) : XmppModule, Inline
 
 	var resumptionContext: ResumptionContext by property(Scope.Session) { ResumptionContext() }
 
-	sealed class StreamManagementEvent : Event(TYPE) { companion object {
+	sealed class StreamManagementEvent : Event(TYPE) {
 
-		const val TYPE = "tigase.halcyon.core.xmpp.modules.sm.StreamManagementModule.StreamManagementEvent"
-	}
+		companion object : EventDefinition<StreamManagementEvent> {
+
+			override val TYPE = "tigase.halcyon.core.xmpp.modules.sm.StreamManagementModule.StreamManagementEvent"
+		}
 
 		class Enabled(val id: String, val resume: Boolean, val mx: Long?) : StreamManagementEvent()
 		class Failed(val error: ErrorCondition) : StreamManagementEvent()
@@ -117,19 +120,19 @@ class StreamManagementModule(override val context: Context) : XmppModule, Inline
 	private val queue = ArrayList<Any>()
 
 	override fun initialize() {
-		context.eventBus.register<SentXMLElementEvent>(SentXMLElementEvent.TYPE) { event ->
+		context.eventBus.register(SentXMLElementEvent) { event ->
 			processElementSent(event.element, event.request)
 		}
-		context.eventBus.register<ReceivedXMLElementEvent>(ReceivedXMLElementEvent.TYPE) { event ->
+		context.eventBus.register(ReceivedXMLElementEvent) { event ->
 			processElementReceived(event.element)
 		}
-		context.eventBus.register<ClearedEvent>(ClearedEvent.TYPE) {
+		context.eventBus.register(ClearedEvent) {
 			if (it.scopes.contains(Scope.Connection)) {
 				log.fine { "Disabling ACK" }
 				resumptionContext.isActive = false
 			}
 		}
-		context.eventBus.register<TickEvent>(TickEvent.TYPE) { onTick() }
+		context.eventBus.register(TickEvent) { onTick() }
 	}
 
 	private fun onTick() {

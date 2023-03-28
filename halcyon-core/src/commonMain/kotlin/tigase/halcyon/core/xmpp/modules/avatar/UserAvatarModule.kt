@@ -20,6 +20,7 @@ package tigase.halcyon.core.xmpp.modules.avatar
 import kotlinx.serialization.Serializable
 import tigase.halcyon.core.Context
 import tigase.halcyon.core.eventbus.Event
+import tigase.halcyon.core.eventbus.EventDefinition
 import tigase.halcyon.core.logger.LoggerFactory
 import tigase.halcyon.core.modules.Criteria
 import tigase.halcyon.core.modules.XmppModule
@@ -33,10 +34,12 @@ import tigase.halcyon.core.xmpp.modules.pubsub.PubSubModule
 import tigase.halcyon.core.xmpp.stanzas.IQ
 import tigase.halcyon.core.xmpp.stanzas.Message
 
-data class UserAvatarUpdatedEvent(val jid: BareJID, val avatarId: String) : Event(TYPE) { companion object {
+data class UserAvatarUpdatedEvent(val jid: BareJID, val avatarId: String) : Event(TYPE) {
 
-	const val TYPE = "tigase.halcyon.core.xmpp.modules.avatar.UserAvatarUpdatedEvent"
-}
+	companion object : EventDefinition<UserAvatarUpdatedEvent> {
+
+		override val TYPE = "tigase.halcyon.core.xmpp.modules.avatar.UserAvatarUpdatedEvent"
+	}
 }
 
 interface UserAvatarModuleConfig {
@@ -87,7 +90,7 @@ class UserAvatarModule(override val context: Context, private val pubSubModule: 
 	}
 
 	override fun initialize() {
-		context.eventBus.register<PubSubItemEvent>(PubSubItemEvent.TYPE) { event ->
+		context.eventBus.register(PubSubItemEvent) { event ->
 			if (event.nodeName == XMLNS_METADATA && event is PubSubItemEvent.Published) {
 				val metadata =
 					event.content?.let { if (it.name == "metadata" && it.xmlns == XMLNS_METADATA) it else null }

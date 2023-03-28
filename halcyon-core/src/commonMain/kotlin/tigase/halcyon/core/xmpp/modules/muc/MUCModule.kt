@@ -21,6 +21,7 @@ import kotlinx.datetime.Instant
 import tigase.halcyon.core.Context
 import tigase.halcyon.core.builder.HalcyonConfigDsl
 import tigase.halcyon.core.eventbus.Event
+import tigase.halcyon.core.eventbus.EventDefinition
 import tigase.halcyon.core.exceptions.HalcyonException
 import tigase.halcyon.core.modules.Criteria
 import tigase.halcyon.core.modules.Criterion
@@ -89,9 +90,9 @@ sealed class MucEvents : Event(TYPE) {
 	 */
 	class InvitationReceived(val invitation: Invitation) : MucEvents()
 
-	companion object {
+	companion object : EventDefinition<MucEvents> {
 
-		const val TYPE = "tigase.halcyon.core.xmpp.modules.muc.MucEvents"
+		override val TYPE = "tigase.halcyon.core.xmpp.modules.muc.MucEvents"
 	}
 }
 
@@ -145,9 +146,9 @@ sealed class MucRoomEvents(val room: Room) : Event(TYPE) {
 	 */
 	class ReceivedMessage(room: Room, val nickname: String?, val message: Message) : MucRoomEvents(room)
 
-	companion object {
+	companion object : EventDefinition<MucRoomEvents> {
 
-		const val TYPE = "tigase.halcyon.core.xmpp.modules.muc.MucRoomEvents"
+		override val TYPE = "tigase.halcyon.core.xmpp.modules.muc.MucRoomEvents"
 	}
 }
 

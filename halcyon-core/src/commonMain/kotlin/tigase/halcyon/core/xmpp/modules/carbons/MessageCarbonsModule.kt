@@ -19,9 +19,10 @@ package tigase.halcyon.core.xmpp.modules.carbons
 
 import tigase.halcyon.core.AbstractHalcyon
 import tigase.halcyon.core.Context
-import tigase.halcyon.core.builder.HalcyonConfigDsl
 import tigase.halcyon.core.builder.ConfigurationException
+import tigase.halcyon.core.builder.HalcyonConfigDsl
 import tigase.halcyon.core.eventbus.Event
+import tigase.halcyon.core.eventbus.EventDefinition
 import tigase.halcyon.core.modules.Criterion
 import tigase.halcyon.core.modules.XmppModule
 import tigase.halcyon.core.modules.XmppModuleProvider
@@ -41,9 +42,9 @@ import tigase.halcyon.core.xmpp.stanzas.asStanza
 
 sealed class CarbonEvent(@Suppress("unused") val fromJID: JID?, val stanza: Message) : Event(TYPE) {
 
-	companion object {
+	companion object : EventDefinition<CarbonEvent> {
 
-		const val TYPE = "tigase.halcyon.core.xmpp.modules.carbons.CarbonEvent"
+		override val TYPE = "tigase.halcyon.core.xmpp.modules.carbons.CarbonEvent"
 	}
 
 	class Sent(fromJID: JID?, stanza: Message) : CarbonEvent(fromJID, stanza)

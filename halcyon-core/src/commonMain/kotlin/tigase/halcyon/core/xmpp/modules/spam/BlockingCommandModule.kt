@@ -20,6 +20,7 @@ package tigase.halcyon.core.xmpp.modules.spam
 import tigase.halcyon.core.Context
 import tigase.halcyon.core.builder.HalcyonConfigDsl
 import tigase.halcyon.core.eventbus.Event
+import tigase.halcyon.core.eventbus.EventDefinition
 import tigase.halcyon.core.exceptions.HalcyonException
 import tigase.halcyon.core.modules.AbstractXmppIQModule
 import tigase.halcyon.core.modules.Criterion
@@ -55,9 +56,9 @@ enum class Reason {
  */
 sealed class BlockingCommandEvent : Event(TYPE) {
 
-	companion object {
+	companion object : EventDefinition<BlockingCommandEvent> {
 
-		const val TYPE = "tigase.halcyon.core.xmpp.modules.spam.BlockingCommandEvent"
+		override val TYPE = "tigase.halcyon.core.xmpp.modules.spam.BlockingCommandEvent"
 	}
 
 	/**

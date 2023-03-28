@@ -73,10 +73,12 @@ class EventBusJvmTest {
 
 	}
 
-	internal class TestEvent(val value: String?) : Event(TYPE) { companion object {
+	internal class TestEvent(val value: String?) : Event(TYPE) {
 
-		const val TYPE = "test"
-	}
+		companion object : EventDefinition<TestEvent> {
+
+			override val TYPE = "test"
+		}
 
 	}
 

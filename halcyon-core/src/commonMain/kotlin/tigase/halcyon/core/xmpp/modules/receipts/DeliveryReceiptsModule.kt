@@ -20,6 +20,7 @@ package tigase.halcyon.core.xmpp.modules.receipts
 import tigase.halcyon.core.Context
 import tigase.halcyon.core.builder.HalcyonConfigDsl
 import tigase.halcyon.core.eventbus.Event
+import tigase.halcyon.core.eventbus.EventDefinition
 import tigase.halcyon.core.modules.*
 import tigase.halcyon.core.requests.RequestBuilder
 import tigase.halcyon.core.xml.Element
@@ -35,9 +36,9 @@ import tigase.halcyon.core.xmpp.toJID
 
 data class MessageDeliveryReceiptEvent(val jid: JID, val msgId: String) : Event(TYPE) {
 
-	companion object {
+	companion object : EventDefinition<MessageDeliveryReceiptEvent> {
 
-		const val TYPE = "tigase.halcyon.core.xmpp.modules.receipts.MessageDeliveryReceiptEvent"
+		override val TYPE = "tigase.halcyon.core.xmpp.modules.receipts.MessageDeliveryReceiptEvent"
 	}
 }
 

@@ -22,6 +22,7 @@ import tigase.halcyon.core.configuration.Configuration
 import tigase.halcyon.core.connector.*
 import tigase.halcyon.core.eventbus.Event
 import tigase.halcyon.core.eventbus.EventBus
+import tigase.halcyon.core.eventbus.EventDefinition
 import tigase.halcyon.core.eventbus.EventHandler
 import tigase.halcyon.core.exceptions.HalcyonException
 import tigase.halcyon.core.logger.Level
@@ -44,17 +45,17 @@ import tigase.halcyon.core.xmpp.stanzas.IQType
 data class HalcyonStateChangeEvent(val oldState: AbstractHalcyon.State, val newState: AbstractHalcyon.State) :
 	Event(TYPE) {
 
-	companion object {
+	companion object : EventDefinition<HalcyonStateChangeEvent> {
 
-		const val TYPE = "tigase.halcyon.core.HalcyonStateChangeEvent"
+		override val TYPE = "tigase.halcyon.core.HalcyonStateChangeEvent"
 	}
 }
 
 data class TickEvent(val counter: Long) : Event(TYPE) {
 
-	companion object {
+	companion object : EventDefinition<TickEvent> {
 
-		const val TYPE = "tigase.halcyon.core.TickEvent"
+		override val TYPE = "tigase.halcyon.core.TickEvent"
 	}
 }
 
@@ -105,9 +106,9 @@ abstract class AbstractHalcyon(configurator: ConfigurationBuilder) : Context, Pa
 		modules.context = this
 		this.config = configurator.build()
 
-		eventBus.register(ReceivedXMLElementEvent.TYPE, ::processReceivedXmlElementEvent)
-		eventBus.register(SessionController.SessionControllerEvents.TYPE, ::onSessionControllerEvent)
-		eventBus.register<TickEvent>(TickEvent.TYPE) { requestsManager.findOutdated() }
+		eventBus.register(ReceivedXMLElementEvent, ::processReceivedXmlElementEvent)
+		eventBus.register(SessionController.SessionControllerEvents, ::onSessionControllerEvent)
+		eventBus.register<TickEvent>(TickEvent) { requestsManager.findOutdated() }
 
 		configurator.modulesConfigBuilder.initializeModules(modules)
 	}
@@ -346,7 +347,7 @@ abstract class AbstractHalcyon(configurator: ConfigurationBuilder) : Context, Pa
 				}
 			}
 			try {
-				connector.halcyon.eventBus.register(ConnectorStateChangeEvent.TYPE, h)
+				connector.halcyon.eventBus.register(ConnectorStateChangeEvent, h)
 				if (!fired && connector.state == tigase.halcyon.core.connector.State.Disconnected) {
 					connector.halcyon.eventBus.unregister(h)
 					fired = true

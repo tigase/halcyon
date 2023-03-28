@@ -21,6 +21,7 @@ import kotlinx.serialization.Serializable
 import tigase.halcyon.core.Context
 import tigase.halcyon.core.builder.HalcyonConfigDsl
 import tigase.halcyon.core.eventbus.Event
+import tigase.halcyon.core.eventbus.EventDefinition
 import tigase.halcyon.core.modules.Criteria
 import tigase.halcyon.core.modules.Criterion
 import tigase.halcyon.core.modules.XmppModule
@@ -410,9 +411,9 @@ class DiscoveryModule(override val context: Context) : XmppModule, DiscoveryModu
 data class AccountFeaturesReceivedEvent(val identities: List<DiscoveryModule.Identity>, val features: List<String>) :
 	Event(TYPE) {
 
-	companion object {
+	companion object : EventDefinition<AccountFeaturesReceivedEvent> {
 
-		const val TYPE = "tigase.halcyon.core.xmpp.modules.discovery.AccountFeaturesReceivedEvent"
+		override val TYPE = "tigase.halcyon.core.xmpp.modules.discovery.AccountFeaturesReceivedEvent"
 	}
 }
 
@@ -422,8 +423,8 @@ data class AccountFeaturesReceivedEvent(val identities: List<DiscoveryModule.Ide
 data class ServerFeaturesReceivedEvent(val identities: List<DiscoveryModule.Identity>, val features: List<String>) :
 	Event(TYPE) {
 
-	companion object {
+	companion object : EventDefinition<ServerFeaturesReceivedEvent> {
 
-		const val TYPE = "tigase.halcyon.core.xmpp.modules.discovery.ServerFeaturesReceivedEvent"
+		override val TYPE = "tigase.halcyon.core.xmpp.modules.discovery.ServerFeaturesReceivedEvent"
 	}
 }

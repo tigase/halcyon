@@ -43,7 +43,7 @@ class EventBusMultiThreadTest {
 		val result1 = ConcurrentLinkedQueue<String>()
 		val result2 = ConcurrentLinkedQueue<String>()
 
-		eventBus.register<TestEvent>(TestEvent.TYPE) { }
+		eventBus.register(TestEvent) { }
 
 		eventBus.register<TestEvent>(ALL_EVENTS) { event ->
 			try {
@@ -52,14 +52,14 @@ class EventBusMultiThreadTest {
 				e.printStackTrace()
 			}
 		}
-		eventBus.register<TestEvent>(TestEvent.TYPE) { event ->
+		eventBus.register(TestEvent) { event ->
 			try {
 				result1.add(event.value)
 			} catch (e: Exception) {
 				e.printStackTrace()
 			}
 		}
-		eventBus.register<TestEvent>(TestEvent.TYPE) { event ->
+		eventBus.register(TestEvent) { event ->
 			try {
 				result2.add(event.value)
 			} catch (e: Exception) {
@@ -78,8 +78,8 @@ class EventBusMultiThreadTest {
 			@Override
 			override fun run() {
 				while (working) {
-					eventBus.register(TestEvent.TYPE, ttt)
-					eventBus.unregister(TestEvent.TYPE, ttt)
+					eventBus.register(TestEvent, ttt)
+					eventBus.unregister(TestEvent, ttt)
 				}
 				println("Stop")
 			}
@@ -110,10 +110,12 @@ class EventBusMultiThreadTest {
 		assertEquals(THREADS * EVENTS, result2.size)
 	}
 
-	internal class TestEvent(val value: String?) : Event(TYPE) { companion object {
+	internal class TestEvent(val value: String?) : Event(TYPE) {
 
-		const val TYPE = "test:event"
-	}
+		companion object : EventDefinition<TestEvent> {
+
+			override val TYPE = "test:event"
+		}
 
 	}
 

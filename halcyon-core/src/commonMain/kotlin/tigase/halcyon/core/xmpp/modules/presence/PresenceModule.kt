@@ -20,6 +20,7 @@ package tigase.halcyon.core.xmpp.modules.presence
 import tigase.halcyon.core.Context
 import tigase.halcyon.core.builder.HalcyonConfigDsl
 import tigase.halcyon.core.eventbus.Event
+import tigase.halcyon.core.eventbus.EventDefinition
 import tigase.halcyon.core.logger.LoggerFactory
 import tigase.halcyon.core.modules.Criterion
 import tigase.halcyon.core.modules.XmppModule
@@ -43,9 +44,9 @@ data class PresenceReceivedEvent(
 	val stanza: Presence,
 ) : Event(TYPE) {
 
-	companion object {
+	companion object : EventDefinition<PresenceReceivedEvent> {
 
-		const val TYPE = "tigase.halcyon.core.xmpp.modules.presence.PresenceReceivedEvent"
+		override val TYPE = "tigase.halcyon.core.xmpp.modules.presence.PresenceReceivedEvent"
 	}
 }
 
@@ -63,9 +64,9 @@ data class ContactChangeStatusEvent(
 	val lastReceivedPresence: Presence,
 ) : Event(TYPE) {
 
-	companion object {
+	companion object : EventDefinition<ContactChangeStatusEvent> {
 
-		const val TYPE = "tigase.halcyon.core.xmpp.modules.presence.ContactChangeStatusEvent"
+		override val TYPE = "tigase.halcyon.core.xmpp.modules.presence.ContactChangeStatusEvent"
 	}
 }
 

@@ -20,6 +20,7 @@ package tigase.halcyon.core.xmpp.modules
 import tigase.halcyon.core.Context
 import tigase.halcyon.core.builder.HalcyonConfigDsl
 import tigase.halcyon.core.eventbus.Event
+import tigase.halcyon.core.eventbus.EventDefinition
 import tigase.halcyon.core.logger.LoggerFactory
 import tigase.halcyon.core.modules.Criteria
 import tigase.halcyon.core.modules.Criterion
@@ -36,9 +37,9 @@ import tigase.halcyon.core.xmpp.stanzas.wrap
 
 data class MessageReceivedEvent(val fromJID: JID?, val stanza: Message) : Event(TYPE) {
 
-	companion object {
+	companion object : EventDefinition<MessageReceivedEvent> {
 
-		const val TYPE = "tigase.halcyon.core.xmpp.modules.MessageReceivedEvent"
+		override val TYPE = "tigase.halcyon.core.xmpp.modules.MessageReceivedEvent"
 	}
 }
 

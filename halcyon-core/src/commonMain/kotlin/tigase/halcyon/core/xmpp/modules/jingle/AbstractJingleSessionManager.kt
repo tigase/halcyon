@@ -19,6 +19,7 @@ package tigase.halcyon.core.xmpp.modules.jingle
 
 import tigase.halcyon.core.AbstractHalcyon
 import tigase.halcyon.core.eventbus.Event
+import tigase.halcyon.core.eventbus.EventDefinition
 import tigase.halcyon.core.eventbus.handler
 import tigase.halcyon.core.logger.LoggerFactory
 import tigase.halcyon.core.xmpp.BareJID
@@ -34,7 +35,7 @@ abstract class AbstractJingleSessionManager<S : AbstractJingleSession>(
 
 	protected var sessions: List<S> = emptyList()
 
-	private val jingleEventHandler = handler<JingleEvent> { event ->
+	private val jingleEventHandler = JingleEvent.handler { event ->
 		when (event.action) {
 			Action.SessionInitiate -> sessionInitiated(event)
 			Action.SessionAccept -> sessionAccepted(event)
@@ -50,7 +51,7 @@ abstract class AbstractJingleSessionManager<S : AbstractJingleSession>(
 			toClose.forEach { it.terminate(TerminateReason.Success) }
 		}
 	}
-	private val jingleMessageInitiationEvent = handler<JingleMessageInitiationEvent> { event ->
+	private val jingleMessageInitiationEvent = JingleMessageInitiationEvent.handler { event ->
 		val account = event.context.boundJID!!.bareJID
 		when (event.action) {
 			is MessageInitiationAction.Propose -> {
@@ -79,15 +80,15 @@ abstract class AbstractJingleSessionManager<S : AbstractJingleSession>(
 	abstract fun isDesciptionSupported(descrition: MessageInitiationDescription): Boolean
 
 	fun register(halcyon: AbstractHalcyon) {
-		halcyon.eventBus.register(JingleEvent.TYPE, this.jingleEventHandler)
-		halcyon.eventBus.register(ContactChangeStatusEvent.TYPE, this.contactChangeStatusEventHandler)
-		halcyon.eventBus.register(JingleMessageInitiationEvent.TYPE, this.jingleMessageInitiationEvent)
+		halcyon.eventBus.register(JingleEvent, this.jingleEventHandler)
+		halcyon.eventBus.register(ContactChangeStatusEvent, this.contactChangeStatusEventHandler)
+		halcyon.eventBus.register(JingleMessageInitiationEvent, this.jingleMessageInitiationEvent)
 	}
 
 	fun unregister(halcyon: AbstractHalcyon) {
-		halcyon.eventBus.unregister(JingleEvent.TYPE, this.jingleEventHandler)
-		halcyon.eventBus.unregister(ContactChangeStatusEvent.TYPE, this.contactChangeStatusEventHandler)
-		halcyon.eventBus.unregister(JingleMessageInitiationEvent.TYPE, this.jingleMessageInitiationEvent)
+		halcyon.eventBus.unregister(JingleEvent, this.jingleEventHandler)
+		halcyon.eventBus.unregister(ContactChangeStatusEvent, this.contactChangeStatusEventHandler)
+		halcyon.eventBus.unregister(JingleMessageInitiationEvent, this.jingleMessageInitiationEvent)
 	}
 
 	override fun activateSessionSid(account: BareJID, with: JID): String? {
@@ -188,8 +189,8 @@ abstract class AbstractJingleSessionManager<S : AbstractJingleSession>(
 class JingleIncomingSessionEvent(val session: AbstractJingleSession, @Suppress("unused") val media: List<String>) :
 	Event(TYPE) {
 
-	companion object {
+	companion object : EventDefinition<JingleIncomingSessionEvent> {
 
-		const val TYPE = "tigase.halcyon.core.xmpp.modules.jingle.JingleIncomingSession"
+		override val TYPE = "tigase.halcyon.core.xmpp.modules.jingle.JingleIncomingSession"
 	}
 }

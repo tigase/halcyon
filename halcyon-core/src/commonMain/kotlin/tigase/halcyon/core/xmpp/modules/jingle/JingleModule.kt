@@ -18,7 +18,9 @@
 package tigase.halcyon.core.xmpp.modules.jingle
 
 import tigase.halcyon.core.Context
+import tigase.halcyon.core.builder.HalcyonConfigDsl
 import tigase.halcyon.core.eventbus.Event
+import tigase.halcyon.core.eventbus.EventDefinition
 import tigase.halcyon.core.modules.Criteria
 import tigase.halcyon.core.modules.Criterion
 import tigase.halcyon.core.modules.XmppModule
@@ -59,11 +61,14 @@ class Jingle {
 	}
 }
 
+@HalcyonConfigDsl
+interface JingleModuleConfig
+
 class JingleModule(
 	override val context: Context,
 	val sessionManager: Jingle.SessionManager,
 	val supportsMessageInitiation: Boolean = true,
-) : XmppModule {
+) : XmppModule, JingleModuleConfig {
 
 	companion object {
 
@@ -291,17 +296,17 @@ data class JingleEvent(
 	val bundle: List<String>?,
 ) : Event(TYPE) {
 
-	companion object {
+	companion object : EventDefinition<JingleEvent> {
 
-		const val TYPE = "tigase.halcyon.core.xmpp.modules.jingle.JingleEvent"
+		override val TYPE = "tigase.halcyon.core.xmpp.modules.jingle.JingleEvent"
 	}
 
 }
 
 data class JingleMessageInitiationEvent(val jid: JID, val action: MessageInitiationAction) : Event(TYPE) {
 
-	companion object {
+	companion object : EventDefinition<JingleMessageInitiationEvent> {
 
-		const val TYPE = "tigase.halcyon.core.xmpp.modules.jingle.JingleMessageInitiationEvent"
+		override val TYPE = "tigase.halcyon.core.xmpp.modules.jingle.JingleMessageInitiationEvent"
 	}
 }

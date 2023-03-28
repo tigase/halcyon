@@ -22,6 +22,7 @@ import kotlinx.datetime.Instant
 import tigase.halcyon.core.Context
 import tigase.halcyon.core.builder.HalcyonConfigDsl
 import tigase.halcyon.core.eventbus.Event
+import tigase.halcyon.core.eventbus.EventDefinition
 import tigase.halcyon.core.logger.LoggerFactory
 import tigase.halcyon.core.modules.Criteria
 import tigase.halcyon.core.modules.Criterion
@@ -46,9 +47,9 @@ data class MAMMessageEvent(
 	val resultStanza: Message, val queryId: String, val id: String, val forwardedStanza: ForwardedStanza<Message>,
 ) : Event(TYPE) {
 
-	companion object {
+	companion object : EventDefinition<MAMMessageEvent> {
 
-		const val TYPE = "tigase.halcyon.core.xmpp.modules.mam.MAMMessageEvent"
+		override val TYPE = "tigase.halcyon.core.xmpp.modules.mam.MAMMessageEvent"
 	}
 }
 

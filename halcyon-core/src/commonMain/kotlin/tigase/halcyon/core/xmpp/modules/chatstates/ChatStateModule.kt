@@ -20,6 +20,7 @@ package tigase.halcyon.core.xmpp.modules.chatstates
 import tigase.halcyon.core.Context
 import tigase.halcyon.core.builder.HalcyonConfigDsl
 import tigase.halcyon.core.eventbus.Event
+import tigase.halcyon.core.eventbus.EventDefinition
 import tigase.halcyon.core.modules.Criteria
 import tigase.halcyon.core.modules.XmppModule
 import tigase.halcyon.core.modules.XmppModuleProvider
@@ -87,9 +88,9 @@ var Message.chatState: ChatState?
 
 data class ChatStateEvent(val jid: JID, val state: ChatState) : Event(TYPE) {
 
-	companion object {
+	companion object : EventDefinition<ChatStateEvent> {
 
-		const val TYPE = "tigase.halcyon.core.xmpp.modules.chatstates.ChatStateEvent"
+		override val TYPE = "tigase.halcyon.core.xmpp.modules.chatstates.ChatStateEvent"
 	}
 }
 
@@ -114,12 +115,12 @@ class ChatStateModule(override val context: Context) : XmppModule, ChatStateModu
 	}
 
 	override fun initialize() {
-		context.eventBus.register<MessageReceivedEvent>(MessageReceivedEvent.TYPE) { event ->
+		context.eventBus.register(MessageReceivedEvent) { event ->
 			findChatState(event.stanza)?.let { state ->
 				if (event.fromJID != null) context.eventBus.fire(ChatStateEvent(event.fromJID, state))
 			}
 		}
-		context.eventBus.register<OwnChatStateChangeEvent>(OwnChatStateChangeEvent.TYPE) { event ->
+		context.eventBus.register(OwnChatStateChangeEvent) { event ->
 			if (event.sendUpdate) {
 				publishChatState(event.jid, event.state)
 			}
