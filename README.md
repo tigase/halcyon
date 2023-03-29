@@ -40,22 +40,26 @@ Halcyon is under active development, so list of features is changing very often.
 Here is example of simplest client sending single message.
 
 ```kotlin
-val halcyon = Halcyon()
-halcyon.configuration.let {
-    it.setJID("client@tigase.net".toBareJID())
-    it.setPassword("secret")
+val halcyon = createHalcyon {
+    auth {
+        userJID = "client@tigase.net".toBareJID()
+        password { "secret" }
+    }
 }
 halcyon.connectAndWait()
 
 halcyon.request.message {
     to = "romeo@example.net".toJID()
-    "body"{
+    "body" {
         +"Art thou not Romeo, and a Montague?"
     }
 }.send()
 
 halcyon.disconnect()
 ``` 
+## Code snippets
+
+There is a set of small examples of Halcyon library usage. You can find them in [codeSnippets project](./docs/codeSnippets/).
 
 # Support
 

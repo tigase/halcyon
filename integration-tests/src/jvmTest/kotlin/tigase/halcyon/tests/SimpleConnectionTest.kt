@@ -2,6 +2,7 @@ package tigase.halcyon.tests
 
 import tigase.halcyon.core.AbstractHalcyon
 import tigase.halcyon.core.ReflectionModuleManager
+import tigase.halcyon.core.configuration.declaredUserJID
 import tigase.halcyon.core.connector.ReceivedXMLElementEvent
 import tigase.halcyon.core.connector.SentXMLElementEvent
 import tigase.halcyon.core.eventbus.Event
@@ -9,11 +10,15 @@ import tigase.halcyon.core.exceptions.AuthenticationException
 import tigase.halcyon.core.xmpp.modules.auth.SASLModule
 import tigase.halcyon.core.xmpp.modules.auth.State
 import tigase.halcyon.core.xmpp.toBareJID
+import java.util.*
 import java.util.logging.ConsoleHandler
 import java.util.logging.Handler
 import java.util.logging.Level
 import java.util.logging.Logger
-import kotlin.test.*
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
+import kotlin.test.assertNotNull
 
 class SimpleConnectionTest {
 
@@ -41,7 +46,7 @@ class SimpleConnectionTest {
 		assertEquals(
 			State.Success, halcyon.modules.getModule<SASLModule>().saslContext.state, "Client should be authenticated."
 		)
-		assertEquals("admin@sailboat.local".toBareJID(), assertNotNull(halcyon.boundJID).bareJID)
+		assertEquals(halcyon.config.declaredUserJID, assertNotNull(halcyon.boundJID).bareJID)
 
 
 		halcyon.waitForAllResponses()
@@ -52,10 +57,11 @@ class SimpleConnectionTest {
 
 	@Test
 	fun notExistingUserLogin() {
+		val (user, password) = loadProperties()
 		val halcyon = tigase.halcyon.core.builder.createHalcyon {
 			auth {
-				userJID = "oiujhgyuiklkjhb@sailboat.local".toBareJID()
-				password { "dfghjsdnfgvsdfhjasdfasdfsdf" }
+				userJID = "NOT-EXISTING-${UUID.randomUUID()}@${user.domain}".toBareJID()
+				password { "sdfasdfsdf${UUID.randomUUID()}90273864trfiuydhjks" }
 			}
 		}
 			.apply {
