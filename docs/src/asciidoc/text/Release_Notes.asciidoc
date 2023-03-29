@@ -1,7 +1,0 @@
-[[releaseNotes]]
-== Halcyon Release Notes
-
-:toc:
-:numbered:
-:website: http://www.tigase.net
-

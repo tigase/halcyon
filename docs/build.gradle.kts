@@ -18,13 +18,6 @@
 
 plugins {
 	id("kr.motd.sphinx") version "2.10.0" apply true
-	id("org.asciidoctor.jvm.convert") version "3.3.2"
-}
-
-asciidoctorj {
-	modules {
-		diagram.use()
-	}
 }
 
 tasks {
@@ -36,15 +29,4 @@ tasks {
 		env("ENV_BAZ", "value3")
 		tags
 	}
-
-	asciidoctor {
-		baseDirFollowsSourceDir()
-		setSourceDir(file("src/asciidoc"))
-		sources(delegateClosureOf<PatternSet> {
-			include("index.asciidoc")
-		})
-		options(mapOf("doctype" to "book", "ruby" to "erubis"))
-		attributes(mapOf("source-highlighter" to "coderay", "toc" to "", "idprefix" to "", "idseparator" to "-"))
-	}
-
 }
