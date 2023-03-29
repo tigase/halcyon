@@ -41,7 +41,7 @@ kotlin {
 			}
 		}
 	}
-	ios()
+//	ios()
 
 	sourceSets {
 		named("commonMain") {

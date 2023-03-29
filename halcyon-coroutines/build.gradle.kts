@@ -39,7 +39,7 @@ kotlin {
 			}
 		}
 	}
-	ios()
+//	ios()
 	sourceSets {
 		named("commonMain") {
 			dependencies {
