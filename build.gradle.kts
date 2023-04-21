@@ -21,6 +21,7 @@ import net.researchgate.release.ReleaseExtension
 
 plugins {
 	`maven-publish`
+	signing
 	id("net.researchgate.release") version "3.0.2"
 }
 
@@ -46,6 +47,11 @@ configure<ReleaseExtension> {
 	with(git) {
 		requireBranch.set("master")
 	}
+}
+
+val props = Properties().also { props ->
+	val file = File("local.properties")
+	if (file.exists()) file.reader().use { props.load(it) }
 }
 
 tasks["afterReleaseBuild"].dependsOn("publish")
@@ -84,19 +90,24 @@ subprojects {
 		maven(url = findProperty("tigaseMavenRepoSnapshot").toString())
 		jcenter()
 	}
+	pluginManager.withPlugin("signing") {
+		val secretKey = props["signing.secretKey"]?.toString()
+		val password = props["signing.password"]?.toString()
+		if (!secretKey.isNullOrBlank()) {
+			logger.info("Signing is enabled.")
+			signing {
+				useInMemoryPgpKeys(secretKey, password)
+				sign(publishing.publications)
+			}
+		} else {
+			logger.info("Signing is disabled.")
+		}
+	}
 	pluginManager.withPlugin("maven-publish") {
-
 		publishing {
-			val props = Properties().also { props ->
-					val file = File("local.properties")
-					if (file.exists()) file.reader()
-						.use { props.load(it) }
-				}
 			repositories {
 				maven {
-					url = if (project.version.toString()
-							.endsWith("-SNAPSHOT", ignoreCase = true)
-					) {
+					url = if (project.version.toString().endsWith("-SNAPSHOT", ignoreCase = true)) {
 						uri(findProperty("tigaseMavenRepoSnapshot").toString())
 					} else {
 						uri(findProperty("tigaseMavenRepoRelease").toString())
@@ -108,5 +119,6 @@ subprojects {
 				}
 			}
 		}
+
 	}
 }
