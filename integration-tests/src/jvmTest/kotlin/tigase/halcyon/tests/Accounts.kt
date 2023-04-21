@@ -17,8 +17,7 @@ fun loadProperties() = Properties().let { prop ->
 	}
 	FileReader(file).use { prop.load(it) }
 	Pair<BareJID, String>(
-		prop.getProperty("userJID")
-			.toBareJID(), prop.getProperty("password")
+		prop.getProperty("userJID").toBareJID(), prop.getProperty("password")
 	)
 }
 
@@ -29,9 +28,12 @@ fun createHalcyon(): Halcyon {
 			userJID = jid
 			password { password }
 		}
-	}
-		.apply {
-			eventBus.register<ReceivedXMLElementEvent>(ReceivedXMLElementEvent.TYPE) { println(">> ${it.element.getAsString()}") }
-			eventBus.register<SentXMLElementEvent>(SentXMLElementEvent.TYPE) { println("<< ${it.element.getAsString()}") }
+	}.apply {
+		eventBus.register<ReceivedXMLElementEvent>(ReceivedXMLElementEvent.TYPE) {
+			println(">> ${it.element.getAsString(showValue = false)}")
 		}
+		eventBus.register<SentXMLElementEvent>(SentXMLElementEvent.TYPE) {
+			println("<< ${it.element.getAsString(showValue = false)}")
+		}
+	}
 }

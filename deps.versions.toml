@@ -1,12 +1,13 @@
 [versions]
 
-kotlin = "1.7.10"
-reactive = "1.2.2"
+kotlin = "1.8.20"
+reactive = "1.2.3"
 dateTime = "0.4.0"
-serialization = "1.4.0"
+serialization = "1.5.0"
 coroutines = "1.6.4"
-krypto = "2.4.12"
+krypto = "4.0.0-beta3"
 minidns = "1.0.3"
+dokka = "1.8.10"
 
 [libraries]
 
@@ -15,7 +16,7 @@ kotlin-kotlinTestCommon = { group = "org.jetbrains.kotlin", name = "kotlin-test-
 kotlin-kotlinTestJunit = { group = "org.jetbrains.kotlin", name = "kotlin-test-junit", version.ref = "kotlin" }
 kotlin-kotlinTestJs = { group = "org.jetbrains.kotlin", name = "kotlin-test-js", version.ref = "kotlin" }
 kotlin-kotlinTestAnnotationsCommon = { group = "org.jetbrains.kotlin", name = "kotlin-test-annotations-common", version.ref = "kotlin" }
-kotlin-dokkaPlug = { group = "org.jetbrains.dokka", name = "dokka-gradle-plugin", version.ref = "kotlin" }
+kotlin-dokkaPlug = { group = "org.jetbrains.dokka", name = "dokka-gradle-plugin", version.ref = "dokka" }
 
 kotlinx-datetime = { group = "org.jetbrains.kotlinx", name = "kotlinx-datetime", version.ref = "dateTime" }
 kotlinx-serialization-core = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-core", version.ref = "serialization" }

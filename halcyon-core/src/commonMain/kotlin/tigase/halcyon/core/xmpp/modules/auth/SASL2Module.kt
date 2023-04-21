@@ -1,6 +1,6 @@
 package tigase.halcyon.core.xmpp.modules.auth
 
-import com.soywiz.krypto.sha1
+import korlibs.crypto.sha1
 import tigase.halcyon.core.Context
 import tigase.halcyon.core.builder.HalcyonConfigDsl
 import tigase.halcyon.core.connector.SessionController

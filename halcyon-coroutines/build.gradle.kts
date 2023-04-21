@@ -21,16 +21,17 @@ plugins {
 }
 
 kotlin {
+	jvmToolchain(11)
 	jvm {
 		withJava()
 		testRuns["test"].executionTask.configure {
 			useJUnit()
 		}
 	}
-	js(BOTH) {
+	js(IR) {
 		browser {
 			commonWebpackConfig {
-				cssSupport.enabled = true
+//				cssSupport()
 			}
 			testTask {
 				useKarma {

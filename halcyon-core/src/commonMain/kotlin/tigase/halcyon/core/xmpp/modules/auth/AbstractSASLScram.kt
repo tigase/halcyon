@@ -1,9 +1,9 @@
 package tigase.halcyon.core.xmpp.modules.auth
 
-import com.soywiz.krypto.HMAC
-import com.soywiz.krypto.PBKDF2
-import com.soywiz.krypto.sha1
-import com.soywiz.krypto.sha256
+import korlibs.crypto.HMAC
+import korlibs.crypto.PBKDF2
+import korlibs.crypto.sha1
+import korlibs.crypto.sha256
 import tigase.halcyon.core.configuration.Configuration
 import tigase.halcyon.core.configuration.JIDPasswordSaslConfig
 import tigase.halcyon.core.fromBase64
@@ -150,12 +150,12 @@ abstract class AbstractSASLScram(
 				ScramHashAlgorithm.SHA1 -> PBKDF2.pbkdf2WithHmacSHA1(
 					password = config.sasl.passwordCallback.invoke()
 						.encodeToByteArray(), salt = salt, iterationCount = iterations, 160
-				)
+				).bytes
 
 				ScramHashAlgorithm.SHA256 -> PBKDF2.pbkdf2WithHmacSHA256(
 					password = config.sasl.passwordCallback.invoke()
 						.encodeToByteArray(), salt = salt, iterationCount = iterations, 256
-				)
+				).bytes
 			}
 
 			val clientKey = when (hashAlgorithm) {

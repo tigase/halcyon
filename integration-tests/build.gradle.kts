@@ -22,6 +22,7 @@ plugins {
 
 
 kotlin {
+	jvmToolchain(11)
 	jvm {
 		withJava()
 		testRuns["test"].executionTask.configure {

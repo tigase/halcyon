@@ -17,7 +17,7 @@
  */
 package tigase.halcyon.core.xmpp.modules.caps
 
-import com.soywiz.krypto.sha1
+import korlibs.crypto.sha1
 import kotlinx.serialization.Serializable
 import tigase.halcyon.core.*
 import tigase.halcyon.core.builder.HalcyonConfigDsl
