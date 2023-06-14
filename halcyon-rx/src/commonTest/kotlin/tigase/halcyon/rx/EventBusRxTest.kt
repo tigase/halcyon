@@ -50,7 +50,7 @@ class EventBusRxTest {
 			.subscribe(o1)
 		eventBus.observe<Test1Event>(Test1Event.TYPE)
 			.subscribe(o2)
-		eventBus.observe<Test2Event>(Test2Event.TYPE)
+		eventBus.observe(Test2Event)
 			.subscribe(o3)
 
 		eventBus.fire(Test1Event("1.1"))
