@@ -10,7 +10,7 @@
         <shortdesc xml:lang="en">XMPP Client Library</shortdesc>
         <description xml:lang="en">Multiplatform XMPP Client library written in Kotlin</description>
         <schema:logo
-                rdf:resource="https://raw.githubusercontent.com/tigase/halcyon/master/docs/src/asciidoc/images/logo_320.png"/>
+                rdf:resource="https://tigase.org/assets/images/logos/Halcyon-shadow.svg"/>
 
         <homepage rdf:resource="https://github.com/tigase/halcyon"/>
         <download-page rdf:resource='https://github.com/tigase/halcyon/releases/latest'/>
