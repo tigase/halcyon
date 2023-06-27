@@ -16,8 +16,8 @@
         <download-page rdf:resource='https://github.com/tigase/halcyon/releases/latest'/>
         <bug-database rdf:resource='https://github.com/tigase/halcyon/issues'/>
 
-        <!--<developer-forum rdf:resource='xmpp:'/>
-        <support-forum rdf:resource='xmpp:'/>-->
+        <developer-forum rdf:resource="xmpp:tigase@muc.tigase.org?join"/>
+        <support-forum rdf:resource="xmpp:tigase@muc.tigase.org?join"/>
 
         <license rdf:resource='https://raw.githubusercontent.com/tigase/halcyon/master/COPYING'/>
 
