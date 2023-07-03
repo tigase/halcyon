@@ -47,8 +47,7 @@ interface DeliveryReceiptsModuleConfig {
 
 	enum class Mode {
 
-		All,
-		Off
+		All, Off
 	}
 
 	var autoSendReceived: Boolean
@@ -56,8 +55,8 @@ interface DeliveryReceiptsModuleConfig {
 
 }
 
-class DeliveryReceiptsModule(override val context: Context) : XmppModule, HasInterceptors, StanzaInterceptor,
-															  DeliveryReceiptsModuleConfig {
+class DeliveryReceiptsModule(override val context: Context) : XmppModule, StanzaInterceptor,
+	DeliveryReceiptsModuleConfig {
 
 	companion object : XmppModuleProvider<DeliveryReceiptsModule, DeliveryReceiptsModuleConfig> {
 
@@ -68,18 +67,18 @@ class DeliveryReceiptsModule(override val context: Context) : XmppModule, HasInt
 
 		override fun configure(module: DeliveryReceiptsModule, cfg: DeliveryReceiptsModuleConfig.() -> Unit) =
 			module.cfg()
+
+		override fun doAfterRegistration(module: DeliveryReceiptsModule, moduleManager: ModulesManager) =
+			moduleManager.registerInterceptors(arrayOf(module))
+
 	}
 
 	override val criteria: Criteria? = null
 	override val features: Array<String> = arrayOf(XMLNS)
 	override val type = TYPE
-	override val stanzaInterceptors: Array<StanzaInterceptor> = arrayOf(this)
 
 	override var autoSendReceived = false
 	override var mode: DeliveryReceiptsModuleConfig.Mode = DeliveryReceiptsModuleConfig.Mode.All
-
-	override fun initialize() {
-	}
 
 	override fun process(element: Element) = throw XMPPException(ErrorCondition.FeatureNotImplemented)
 
@@ -88,27 +87,25 @@ class DeliveryReceiptsModule(override val context: Context) : XmppModule, HasInt
 		if (element.attributes["type"] == MessageType.Error.value) return element
 		val from = element.attributes["from"]?.toJID() ?: return element
 
-		element.getReceiptReceivedID()
-			?.let { id -> context.eventBus.fire(MessageDeliveryReceiptEvent(from, id)) }
+		element.getReceiptReceivedID()?.let { id -> context.eventBus.fire(MessageDeliveryReceiptEvent(from, id)) }
 
-		if (autoSendReceived) element.getChildrenNS("request", XMLNS)
-			?.let {
-				element.attributes["id"]?.let { id ->
-					val resp = message {
-						element.attributes["from"]?.let {
-							attribute("to", it)
-						}
-						element.attributes["type"]?.let {
-							attribute("type", it)
-						}
-						"received" {
-							xmlns = XMLNS
-							attribute("id", id)
-						}
+		if (autoSendReceived) element.getChildrenNS("request", XMLNS)?.let {
+			element.attributes["id"]?.let { id ->
+				val resp = message {
+					element.attributes["from"]?.let {
+						attribute("to", it)
 					}
-					context.writer.writeDirectly(resp)
+					element.attributes["type"]?.let {
+						attribute("type", it)
+					}
+					"received" {
+						xmlns = XMLNS
+						attribute("id", id)
+					}
 				}
+				context.writer.writeDirectly(resp)
 			}
+		}
 		return element
 	}
 
@@ -143,6 +140,5 @@ fun Element?.isDeliveryReceiptRequested(): Boolean =
 	this != null && this.getChildrenNS("request", DeliveryReceiptsModule.XMLNS) != null
 
 fun Element.getReceiptReceivedID(): String? {
-	return this.getChildrenNS("received", DeliveryReceiptsModule.XMLNS)
-		?.let { it.attributes["id"] }
+	return this.getChildrenNS("received", DeliveryReceiptsModule.XMLNS)?.let { it.attributes["id"] }
 }

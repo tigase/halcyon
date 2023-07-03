@@ -22,6 +22,7 @@ import tigase.halcyon.core.builder.HalcyonConfigDsl
 import tigase.halcyon.core.eventbus.Event
 import tigase.halcyon.core.eventbus.EventDefinition
 import tigase.halcyon.core.modules.Criteria
+import tigase.halcyon.core.modules.ModulesManager
 import tigase.halcyon.core.modules.XmppModule
 import tigase.halcyon.core.modules.XmppModuleProvider
 import tigase.halcyon.core.xml.Element
@@ -66,15 +67,13 @@ private fun findChatState(element: Element): ChatState? {
 	val csi = element.children.find {
 		it.xmlns == ChatStateModule.XMLNS
 	} ?: return null
-	return ChatState.values()
-		.find { chatState -> chatState.xmppValue == csi.name } ?: throw XMPPException(
+	return ChatState.values().find { chatState -> chatState.xmppValue == csi.name } ?: throw XMPPException(
 		ErrorCondition.BadRequest, "Unknown chat state ${csi.name}"
 	)
 }
 
 private fun setChatState(element: Element, state: ChatState?) {
-	element.children.find { it.xmlns == ChatStateModule.XMLNS }
-		?.let { element.remove(it) }
+	element.children.find { it.xmlns == ChatStateModule.XMLNS }?.let { element.remove(it) }
 	state?.let {
 		element.add(element(state.xmppValue) {
 			xmlns = ChatStateModule.XMLNS
@@ -112,9 +111,12 @@ class ChatStateModule(override val context: Context) : XmppModule, ChatStateModu
 		override fun instance(context: Context): ChatStateModule = ChatStateModule(context)
 
 		override fun configure(module: ChatStateModule, cfg: ChatStateModuleConfig.() -> Unit) = module.cfg()
+
+		override fun doAfterRegistration(module: ChatStateModule, moduleManager: ModulesManager) = module.initialize()
+
 	}
 
-	override fun initialize() {
+	private fun initialize() {
 		context.eventBus.register(MessageReceivedEvent) { event ->
 			findChatState(event.stanza)?.let { state ->
 				if (event.fromJID != null) context.eventBus.fire(ChatStateEvent(event.fromJID, state))
@@ -137,8 +139,7 @@ class ChatStateModule(override val context: Context) : XmppModule, ChatStateModu
 				xmlns = "urn:xmpp:hints"
 			}
 		}
-		context.request.message(msg)
-			.send()
+		context.request.message(msg).send()
 	}
 
 	override fun process(element: Element) = throw XMPPException(ErrorCondition.FeatureNotImplemented)

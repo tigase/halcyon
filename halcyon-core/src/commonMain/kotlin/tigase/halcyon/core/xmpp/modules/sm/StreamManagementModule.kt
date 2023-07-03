@@ -30,6 +30,7 @@ import tigase.halcyon.core.eventbus.EventDefinition
 import tigase.halcyon.core.exceptions.HalcyonException
 import tigase.halcyon.core.logger.LoggerFactory
 import tigase.halcyon.core.modules.Criterion
+import tigase.halcyon.core.modules.ModulesManager
 import tigase.halcyon.core.modules.XmppModule
 import tigase.halcyon.core.modules.XmppModuleProvider
 import tigase.halcyon.core.requests.Request
@@ -95,6 +96,9 @@ class StreamManagementModule(override val context: Context) : XmppModule, Inline
 		override fun configure(module: StreamManagementModule, cfg: StreamManagementModuleConfig.() -> Unit) =
 			module.cfg()
 
+		override fun doAfterRegistration(module: StreamManagementModule, moduleManager: ModulesManager) =
+			module.initialize()
+
 	}
 
 	var resumptionContext: ResumptionContext by property(Scope.Session) { ResumptionContext() }
@@ -119,7 +123,7 @@ class StreamManagementModule(override val context: Context) : XmppModule, Inline
 
 	private val queue = ArrayList<Any>()
 
-	override fun initialize() {
+	private fun initialize() {
 		context.eventBus.register(SentXMLElementEvent) { event ->
 			processElementSent(event.element, event.request)
 		}
@@ -171,8 +175,7 @@ class StreamManagementModule(override val context: Context) : XmppModule, Inline
 	private fun processFailed(element: Element) {
 		reset()
 		val e = ErrorCondition.getByElementName(
-			element.getChildrenNS(XMPPException.XMLNS)
-				.first().name
+			element.getChildrenNS(XMPPException.XMLNS).first().name
 		)
 		context.eventBus.fire(StreamManagementEvent.Failed(e))
 	}

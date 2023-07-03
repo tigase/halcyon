@@ -61,10 +61,7 @@ class BindModule(override val context: AbstractHalcyon) : XmppModule, InlineProt
 
 	enum class State {
 
-		Unknown,
-		InProgress,
-		Success,
-		Failed
+		Unknown, InProgress, Success, Failed
 	}
 
 	companion object : XmppModuleProvider<BindModule, BindModuleConfig> {
@@ -92,8 +89,6 @@ class BindModule(override val context: AbstractHalcyon) : XmppModule, InlineProt
 
 	override var resource: String? = null
 
-	override fun initialize() {}
-
 	fun bind(resource: String? = this.resource): RequestBuilder<BindResult, IQ> {
 		val stanza = iq {
 			type = IQType.Set
@@ -106,18 +101,15 @@ class BindModule(override val context: AbstractHalcyon) : XmppModule, InlineProt
 				}
 			}
 		}
-		return context.request.iq(stanza)
-			.onSend { state = State.InProgress }
-			.map(this::createBindResult)
-			.response {
-				it.onSuccess { success ->
-					bind(success.jid)
-				}
-				it.onFailure {
-					state = State.Failed
-					context.eventBus.fire(BindEvent.Failure(it))
-				}
+		return context.request.iq(stanza).onSend { state = State.InProgress }.map(this::createBindResult).response {
+			it.onSuccess { success ->
+				bind(success.jid)
 			}
+			it.onFailure {
+				state = State.Failed
+				context.eventBus.fire(BindEvent.Failure(it))
+			}
+		}
 	}
 
 	private fun createBindResult(element: IQ): BindResult {
@@ -149,8 +141,7 @@ class BindModule(override val context: AbstractHalcyon) : XmppModule, InlineProt
 				element("bind") {
 					xmlns = BIND2_XMLNS
 					"tag" { +"Halcyon" }
-					context.modules.getModules()
-						.filterIsInstance<InlineProtocol>()
+					context.modules.getModules().filterIsInstance<InlineProtocol>()
 						.mapNotNull { it.featureFor(bindInlineFeatures, InlineProtocolStage.AfterBind) }
 						.forEach { addChild(it) }
 				}
@@ -163,11 +154,9 @@ class BindModule(override val context: AbstractHalcyon) : XmppModule, InlineProt
 			bind(response.element.getFirstChild("authorization-identifier")!!.value!!.toJID())
 
 			InlineResponse(InlineProtocolStage.AfterBind, boundElement).let { response ->
-				context.modules.getModules()
-					.filterIsInstance<InlineProtocol>()
-					.forEach { consumer ->
-						consumer.process(response)
-					}
+				context.modules.getModules().filterIsInstance<InlineProtocol>().forEach { consumer ->
+					consumer.process(response)
+				}
 			}
 
 		}

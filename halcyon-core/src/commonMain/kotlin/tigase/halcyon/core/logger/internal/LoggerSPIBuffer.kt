@@ -20,7 +20,7 @@ package tigase.halcyon.core.logger.internal
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import tigase.halcyon.core.logger.Level
-import tigase.halcyon.core.logger.LoggerSPI
+import tigase.halcyon.core.logger.LoggerInternal
 
 class LoggerSPIBuffer(val bufferSize: Int = 100) {
 
@@ -28,7 +28,7 @@ class LoggerSPIBuffer(val bufferSize: Int = 100) {
 		val timestamp: Instant, val level: Level, val loggerName: String, val msg: String, val caught: Throwable?,
 	)
 
-	var spiFactory: ((String, Boolean) -> LoggerSPI) = { name, enabled -> DefaultLoggerSPI(name, enabled) }
+	var spiFactory: ((String, Boolean) -> LoggerInternal) = { name, enabled -> DefaultLoggerSPI(name, enabled) }
 
 	private val buffer = mutableListOf<Entry>()
 
@@ -44,9 +44,9 @@ class LoggerSPIBuffer(val bufferSize: Int = 100) {
 
 	fun getBuffer(): List<Entry> = buffer
 
-	fun create(name: String, enabled: Boolean): LoggerSPI {
+	fun create(name: String, enabled: Boolean): LoggerInternal {
 		val spi = spiFactory.invoke(name, enabled)
-		return object : LoggerSPI {
+		return object : LoggerInternal {
 			override fun isLoggable(level: Level): Boolean = spi.isLoggable(level)
 
 			override fun log(level: Level, msg: String, caught: Throwable?) {

@@ -1,6 +1,6 @@
 package tigase.halcyon.core.builder
 
-import tigase.halcyon.core.modules.XmppModule
+import tigase.halcyon.core.modules.HalcyonModule
 
 object TopoSort {
 
@@ -13,8 +13,7 @@ object TopoSort {
 			}
 		}
 		while (!nodesEmptyIncom.isEmpty()) {
-			val n: Node<T> = nodesEmptyIncom.iterator()
-				.next()
+			val n: Node<T> = nodesEmptyIncom.iterator().next()
 			nodesEmptyIncom.remove(n)
 			result.add(n)
 			val it: MutableIterator<Edge<T>> = n.outEdges.iterator()
@@ -64,31 +63,24 @@ object TopoSort {
 	}
 }
 
-inline fun Iterable<Item<out XmppModule, out Any>>.extendForDependencies(): List<Item<out XmppModule, out Any>> {
+inline fun Iterable<Item<out HalcyonModule, out Any>>.extendForDependencies(): List<Item<out HalcyonModule, out Any>> {
 
-	val result = mutableSetOf<Item<out XmppModule, out Any>>()
+	val result = mutableSetOf<Item<out HalcyonModule, out Any>>()
 	result.addAll(this)
 
 	do {
 		val toAdd2 = result.flatMap {
-			it.provider.requiredModules()
-				.filter { c -> !result.any { it.provider.TYPE == c.TYPE } }
-				.map { Item(it) }
-		}
-			.distinctBy { it.provider.TYPE }
+			it.provider.requiredModules().filter { c -> !result.any { it.provider.TYPE == c.TYPE } }.map { Item(it) }
+		}.distinctBy { it.provider.TYPE }
 		result.addAll(toAdd2)
 	} while (toAdd2.isNotEmpty())
 
-	val x = result.distinctBy { it.provider.TYPE }
-		.map { TopoSort.Node(it) }
+	val x = result.distinctBy { it.provider.TYPE }.map { TopoSort.Node(it) }
 
 	x.forEach { node ->
-		node.data.provider.requiredModules()
-			.flatMap { dep -> x.filter { it.data.provider.TYPE == dep.TYPE } }
-			.forEach {
-				node.after(it)
-			}
+		node.data.provider.requiredModules().flatMap { dep -> x.filter { it.data.provider.TYPE == dep.TYPE } }.forEach {
+			node.after(it)
+		}
 	}
-	return TopoSort.sort(x)
-		.map { it.data }
+	return TopoSort.sort(x).map { it.data }
 }

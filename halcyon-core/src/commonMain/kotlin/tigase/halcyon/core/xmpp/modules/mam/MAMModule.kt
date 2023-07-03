@@ -24,10 +24,7 @@ import tigase.halcyon.core.builder.HalcyonConfigDsl
 import tigase.halcyon.core.eventbus.Event
 import tigase.halcyon.core.eventbus.EventDefinition
 import tigase.halcyon.core.logger.LoggerFactory
-import tigase.halcyon.core.modules.Criteria
-import tigase.halcyon.core.modules.Criterion
-import tigase.halcyon.core.modules.XmppModule
-import tigase.halcyon.core.modules.XmppModuleProvider
+import tigase.halcyon.core.modules.*
 import tigase.halcyon.core.parseISO8601
 import tigase.halcyon.core.requests.ConsumerPublisher
 import tigase.halcyon.core.requests.RequestBuilder
@@ -61,10 +58,9 @@ class ForwardedStanza<TYPE : Stanza<*>>(val resultId: String, private val elemen
 		get() = getForwardedStanza()
 
 	private fun getXmppDelay(): Instant? {
-		return element.getChildrenNS("delay", "urn:xmpp:delay")
-			?.let {
-				it.attributes["stamp"]?.let { stamp -> parseISO8601(stamp) }
-			}
+		return element.getChildrenNS("delay", "urn:xmpp:delay")?.let {
+			it.attributes["stamp"]?.let { stamp -> parseISO8601(stamp) }
+		}
 	}
 
 	private fun getForwardedStanza(): TYPE {
@@ -114,6 +110,9 @@ class MAMModule(override val context: Context) : XmppModule, MAMModuleConfig {
 		override fun instance(context: Context): MAMModule = MAMModule(context)
 
 		override fun configure(module: MAMModule, cfg: MAMModuleConfig.() -> Unit) = module.cfg()
+
+		override fun doAfterRegistration(module: MAMModule, moduleManager: ModulesManager) = module.initialize()
+
 	}
 
 	override val type = TYPE
@@ -125,7 +124,7 @@ class MAMModule(override val context: Context) : XmppModule, MAMModuleConfig {
 
 	private val log = LoggerFactory.logger("tigase.halcyon.core.xmpp.modules.mam.MAMModule")
 
-	override fun initialize() {
+	private fun initialize() {
 		requests.expirationChecker = {
 			it.validUntil < Clock.System.now()
 		}
@@ -198,11 +197,9 @@ class MAMModule(override val context: Context) : XmppModule, MAMModuleConfig {
 	private fun createResponse(responseStanza: Element, registeredQuery: RegisteredQuery): Fin {
 		val fin = responseStanza.getChildrenNS("fin", XMLNS)
 		registeredQuery.validUntil = Clock.System.now() + 10.seconds
-		val rsm: RSM.Result? = fin?.getChildrenNS(RSM.NAME, RSM.XMLNS)
-			?.let { p -> RSM.parseResult(p) }
+		val rsm: RSM.Result? = fin?.getChildrenNS(RSM.NAME, RSM.XMLNS)?.let { p -> RSM.parseResult(p) }
 		return Fin(
-			complete = fin?.attributes?.get("complete")
-				.toBool(), rsm = rsm
+			complete = fin?.attributes?.get("complete").toBool(), rsm = rsm
 		)
 	}
 
@@ -216,15 +213,10 @@ class MAMModule(override val context: Context) : XmppModule, MAMModuleConfig {
 	private fun parsePreferences(iq: IQ): Preferences {
 		val prefs =
 			iq.getChildrenNS("prefs", XMLNS) ?: throw XMPPError(iq, ErrorCondition.BadRequest, "No 'prefs' element")
-		val always = prefs.getChildren("always")
-			.mapNotNull { p -> p.getFirstChild("jid")?.value?.toBareJID() }
-			.toList()
-		val never = prefs.getChildren("never")
-			.mapNotNull { p -> p.getFirstChild("jid")?.value?.toBareJID() }
-			.toList()
+		val always = prefs.getChildren("always").mapNotNull { p -> p.getFirstChild("jid")?.value?.toBareJID() }.toList()
+		val never = prefs.getChildren("never").mapNotNull { p -> p.getFirstChild("jid")?.value?.toBareJID() }.toList()
 		val b = prefs.attributes["default"]
-		val default = DefaultBehaviour.values()
-			.find { db -> db.xmppValue == b } ?: throw XMPPException(
+		val default = DefaultBehaviour.values().find { db -> db.xmppValue == b } ?: throw XMPPException(
 			ErrorCondition.BadRequest, "Unknown default value: $b"
 		)
 		return Preferences(default, always, never)
@@ -236,8 +228,7 @@ class MAMModule(override val context: Context) : XmppModule, MAMModuleConfig {
 			"prefs" {
 				xmlns = XMLNS
 			}
-		}
-			.map(this@MAMModule::parsePreferences)
+		}.map(this@MAMModule::parsePreferences)
 	}
 
 	fun updatePreferences(preferences: Preferences): RequestBuilder<Unit, IQ> {
@@ -257,8 +248,7 @@ class MAMModule(override val context: Context) : XmppModule, MAMModuleConfig {
 					}
 				}
 			}
-		}
-			.map { }
+		}.map { }
 	}
 
 }

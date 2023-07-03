@@ -3,8 +3,8 @@ package tigase.halcyon.core.builder
 import tigase.halcyon.core.Halcyon
 import tigase.halcyon.core.configuration.*
 import tigase.halcyon.core.exceptions.HalcyonException
-import tigase.halcyon.core.modules.XmppModule
-import tigase.halcyon.core.modules.XmppModuleProvider
+import tigase.halcyon.core.modules.HalcyonModule
+import tigase.halcyon.core.modules.HalcyonModuleProvider
 import tigase.halcyon.core.xmpp.forms.JabberDataForm
 import tigase.halcyon.core.xmpp.modules.*
 import tigase.halcyon.core.xmpp.modules.auth.SASL2Module
@@ -113,8 +113,8 @@ class ConfigurationBuilder {
 		this.modulesConfigBuilder.init()
 	}
 
-	fun <M : XmppModule, B : Any> install(
-		provider: XmppModuleProvider<M, B>,
+	fun <M : HalcyonModule, B : Any> install(
+		provider: HalcyonModuleProvider<M, B>,
 		configuration: B.() -> Unit = {},
 	) = this.modulesConfigBuilder.install(provider, configuration)
 

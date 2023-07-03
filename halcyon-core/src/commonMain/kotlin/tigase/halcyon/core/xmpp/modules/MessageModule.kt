@@ -63,9 +63,6 @@ class MessageModule(override val context: Context) : XmppModule, MessageModuleCo
 		override fun configure(module: MessageModule, cfg: MessageModuleConfig.() -> Unit) = module.cfg()
 	}
 
-	override fun initialize() {
-	}
-
 	private fun isMessage(message: Element): Boolean = when {
 		context.modules.isRegistered(MIXModule.TYPE) && message.isMixMessage() -> false
 		context.modules.isRegistered(PubSubModule.TYPE) && message.isPubSubMessage() -> false

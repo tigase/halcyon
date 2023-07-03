@@ -26,10 +26,7 @@ import tigase.halcyon.core.xml.Element
 import kotlin.properties.ReadWriteProperty
 import kotlin.reflect.KProperty
 
-/**
- * Main Module Provider interface.
- */
-interface XmppModuleProvider<out M : XmppModule, Configuration : Any> {
+interface HalcyonModuleProvider<out M : HalcyonModule, Configuration : Any> {
 
 	/**
 	 * Module identifier.
@@ -49,14 +46,18 @@ interface XmppModuleProvider<out M : XmppModule, Configuration : Any> {
 	/**
 	 * Return list of dependent modules.
 	 */
-	fun requiredModules(): List<XmppModuleProvider<XmppModule, out Any>> = emptyList()
+	fun requiredModules(): List<HalcyonModuleProvider<HalcyonModule, out Any>> = emptyList()
+
+	fun doAfterRegistration(module: @UnsafeVariance M, moduleManager: ModulesManager) {}
 
 }
 
 /**
- * Main Module interface.
+ * Main Module Provider interface.
  */
-interface XmppModule {
+interface XmppModuleProvider<out M : XmppModule, Configuration : Any> : HalcyonModuleProvider<M, Configuration>
+
+interface HalcyonModule {
 
 	/**
 	 * Module identifier.
@@ -69,19 +70,21 @@ interface XmppModule {
 	val context: Context
 
 	/**
-	 * Module selection criteria for incoming stanza.
-	 */
-	val criteria: Criteria?
-
-	/**
 	 * List of features provided by module.
 	 */
 	val features: Array<String>?
 
+}
+
+/**
+ * Main Module interface.
+ */
+interface XmppModule : HalcyonModule {
+
 	/**
-	 * Initializes module. Is called once.
+	 * Module selection criteria for incoming stanza.
 	 */
-	fun initialize()
+	val criteria: Criteria?
 
 	/**
 	 * Process incoming stanza.

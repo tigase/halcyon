@@ -18,10 +18,10 @@
 package tigase.halcyon.core.logger.internal
 
 import tigase.halcyon.core.logger.Level
-import tigase.halcyon.core.logger.LoggerSPI
+import tigase.halcyon.core.logger.LoggerInternal
 import java.util.logging.LogRecord
 
-actual class DefaultLoggerSPI actual constructor(name: String, val enabled: Boolean) : LoggerSPI {
+actual class DefaultLoggerSPI actual constructor(name: String, val enabled: Boolean) : LoggerInternal {
 
 	private val log = java.util.logging.Logger.getLogger(name)
 
@@ -59,8 +59,7 @@ actual class DefaultLoggerSPI actual constructor(name: String, val enabled: Bool
 			!stackTraceElement.className.startsWith(
 				"tigase.halcyon.core.logger."
 			)
-		}
-			.let { stackTraceElement ->
+		}.let { stackTraceElement ->
 				if (stackTraceElement != null) {
 					lr.sourceClassName = stackTraceElement.className
 					lr.sourceMethodName = stackTraceElement.methodName

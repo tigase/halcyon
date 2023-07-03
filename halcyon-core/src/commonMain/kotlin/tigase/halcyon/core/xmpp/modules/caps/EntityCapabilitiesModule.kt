@@ -67,7 +67,7 @@ class EntityCapabilitiesModule(
 	override val context: Context,
 	private val discoModule: DiscoveryModule,
 	private val streamFeaturesModule: StreamFeaturesModule,
-) : XmppModule, HasInterceptors, StanzaInterceptor, EntityCapabilitiesModuleConfig {
+) : XmppModule, StanzaInterceptor, EntityCapabilitiesModuleConfig {
 
 	/**
 	 * Represents entity capabilities for specific node.
@@ -97,13 +97,17 @@ class EntityCapabilitiesModule(
 
 		override fun requiredModules() = listOf(DiscoveryModule, StreamFeaturesModule)
 
+		override fun doAfterRegistration(module: EntityCapabilitiesModule, moduleManager: ModulesManager) {
+			module.initialize()
+			moduleManager.registerInterceptors(arrayOf(module))
+		}
+
 	}
 
 	private val log = LoggerFactory.logger("tigase.halcyon.core.xmpp.modules.caps.EntityCapabilitiesModule")
 
 	override val type: String = TYPE
 	override val criteria: Criteria? = null
-	override val stanzaInterceptors: Array<StanzaInterceptor> = arrayOf(this)
 	override val features: Array<String> = arrayOf(XMLNS)
 
 	override var storeInvalid: Boolean = false
@@ -133,7 +137,7 @@ class EntityCapabilitiesModule(
 
 	}
 
-	override fun initialize() {
+	private fun initialize() {
 		this.discoModule.addNodeDetailsProvider(CapsNodeDetailsProvider())
 		context.eventBus.register(HalcyonStateChangeEvent) {
 			if (it.newState == AbstractHalcyon.State.Connected) {
@@ -144,8 +148,7 @@ class EntityCapabilitiesModule(
 
 	private fun getVerificationString(): String {
 		if (verificationStringCache == null) {
-			val clientFeatures = context.modules.getAvailableFeatures()
-				.toList()
+			val clientFeatures = context.modules.getAvailableFeatures().toList()
 			val clientIdentities = listOf(discoModule.getClientIdentity())
 			verificationStringCache = calculateVer(clientIdentities, clientFeatures)
 		}
@@ -156,21 +159,18 @@ class EntityCapabilitiesModule(
 		getServerNode()?.let { node ->
 			val jid = context.boundJID ?: return
 			if (cache.isCached(node)) return
-			discoModule.info(JID.parse(jid.domain), node)
-				.response {
-					if (it.isSuccess) storeInfo(node, it.getOrThrow())
-				}
-				.send()
+			discoModule.info(JID.parse(jid.domain), node).response {
+				if (it.isSuccess) storeInfo(node, it.getOrThrow())
+			}.send()
 		}
 	}
 
 	private fun getServerNode(): String? {
-		return streamFeaturesModule.streamFeatures?.getChildrenNS("c", XMLNS)
-			?.let { c ->
-				val node = c.attributes["node"]
-				val ver = c.attributes["ver"]
-				"$node#$ver"
-			}
+		return streamFeaturesModule.streamFeatures?.getChildrenNS("c", XMLNS)?.let { c ->
+			val node = c.attributes["node"]
+			val ver = c.attributes["ver"]
+			"$node#$ver"
+		}
 	}
 
 	override fun process(element: Element) = throw XMPPException(ErrorCondition.FeatureNotImplemented)
@@ -183,11 +183,9 @@ class EntityCapabilitiesModule(
 
 		if (cache.isCached("$node#$ver")) return
 
-		discoModule.info(presence.from, "$node#$ver")
-			.response {
-				if (it.isSuccess) storeInfo("$node#$ver", it.getOrThrow())
-			}
-			.send()
+		discoModule.info(presence.from, "$node#$ver").response {
+			if (it.isSuccess) storeInfo("$node#$ver", it.getOrThrow())
+		}.send()
 	}
 
 	internal fun calculateVer(
@@ -195,28 +193,21 @@ class EntityCapabilitiesModule(
 		features: List<String>,
 		forms: List<JabberDataForm> = emptyList(),
 	): String {
-		val ids = identities.map { i -> i.category + "/" + i.type + "/" + (i.lang ?: "") + "/" + (i.name ?: "") }
-			.sorted()
+		val ids =
+			identities.map { i -> i.category + "/" + i.type + "/" + (i.lang ?: "") + "/" + (i.name ?: "") }.sorted()
 		val ftrs = features.sorted()
 
-		val frms = forms.sortedBy { it.getFieldByVar("FORM_TYPE")?.fieldValue }
-			.map { form ->
-				(form.getAllFields()
-					.filter { it.fieldName == "FORM_TYPE" }
-					.map { it.fieldValues.joinToString(separator = "<") { it } } + form.getAllFields()
-					.filterNot { it.fieldName == "FORM_TYPE" }
-					.sortedBy { it.fieldName }
-					.map {
-						it.fieldName + "<" + it.fieldValues.sorted()
-							.joinToString(separator = "<") { it }
-					})
-			}
-			.flatten()
+		val frms = forms.sortedBy { it.getFieldByVar("FORM_TYPE")?.fieldValue }.map { form ->
+			(form.getAllFields().filter { it.fieldName == "FORM_TYPE" }
+				.map { it.fieldValues.joinToString(separator = "<") { it } } + form.getAllFields()
+				.filterNot { it.fieldName == "FORM_TYPE" }.sortedBy { it.fieldName }.map {
+					it.fieldName + "<" + it.fieldValues.sorted().joinToString(separator = "<") { it }
+				})
+		}.flatten()
 
 		val s = (ids + ftrs + frms).joinToString(separator = "<", postfix = "<")
 
-		val hash = s.encodeToByteArray()
-			.sha1().bytes
+		val hash = s.encodeToByteArray().sha1().bytes
 		return Base64.encode(hash)
 	}
 

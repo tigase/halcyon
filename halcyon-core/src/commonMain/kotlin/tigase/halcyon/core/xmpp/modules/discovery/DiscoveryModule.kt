@@ -22,10 +22,7 @@ import tigase.halcyon.core.Context
 import tigase.halcyon.core.builder.HalcyonConfigDsl
 import tigase.halcyon.core.eventbus.Event
 import tigase.halcyon.core.eventbus.EventDefinition
-import tigase.halcyon.core.modules.Criteria
-import tigase.halcyon.core.modules.Criterion
-import tigase.halcyon.core.modules.XmppModule
-import tigase.halcyon.core.modules.XmppModuleProvider
+import tigase.halcyon.core.modules.*
 import tigase.halcyon.core.requests.RequestBuilder
 import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xml.response
@@ -141,6 +138,8 @@ class DiscoveryModule(override val context: Context) : XmppModule, DiscoveryModu
 
 		override fun configure(module: DiscoveryModule, cfg: DiscoveryModuleConfiguration.() -> Unit) = module.cfg()
 
+		override fun doAfterRegistration(module: DiscoveryModule, moduleManager: ModulesManager) = module.initialize()
+
 	}
 
 	override val type: String = TYPE
@@ -163,14 +162,13 @@ class DiscoveryModule(override val context: Context) : XmppModule, DiscoveryModu
 			if (node == null) listOf(getClientIdentity()) else emptyList()
 
 		override fun getFeatures(sender: BareJID?, node: String?): List<String> =
-			if (node == null) context.modules.getAvailableFeatures()
-				.toList() else emptyList()
+			if (node == null) context.modules.getAvailableFeatures().toList() else emptyList()
 
 		override fun getItems(sender: BareJID?, node: String?): List<Item> = emptyList()
 
 	}
 
-	override fun initialize() {
+	private fun initialize() {
 		addNodeDetailsProvider(DefaultNodeDetailsProvider())
 	}
 
@@ -228,8 +226,7 @@ class DiscoveryModule(override val context: Context) : XmppModule, DiscoveryModu
 
 	private fun processGetItems(iq: IQ) {
 		val node = iq.getChildrenNS("query", XMLNS_ITEMS)?.attributes?.get("node")
-		val items = detailsProviders.map { it.getItems(iq.from?.bareJID, node) }
-			.flatten()
+		val items = detailsProviders.map { it.getItems(iq.from?.bareJID, node) }.flatten()
 
 //		if (node == CommandsModule.NODE) {
 //			val module = context.modules.getModuleOrNull<CommandsModule>(CommandsModule.TYPE) ?: throw XMPPException(
@@ -273,8 +270,7 @@ class DiscoveryModule(override val context: Context) : XmppModule, DiscoveryModu
 				}
 			}
 		}
-		return context.request.iq(stanza)
-			.map(this@DiscoveryModule::buildInfo)
+		return context.request.iq(stanza).map(this@DiscoveryModule::buildInfo)
 	}
 
 	internal fun buildInfo(response: Element): Info {
@@ -282,25 +278,16 @@ class DiscoveryModule(override val context: Context) : XmppModule, DiscoveryModu
 		val node = query.attributes["node"]
 		val jid = JID.parse(response.attributes["from"]!!)
 
-		val identities = query.getChildren("identity")
-			.map {
-				Identity(
-					it.attributes["category"]!!,
-					it.attributes["type"]!!,
-					it.attributes["name"],
-					it.attributes["xml:lang"]
-				)
-			}
-			.toList()
-		val features = query.getChildren("feature")
-			.map {
-				it.attributes["var"]!!
-			}
-			.toList()
+		val identities = query.getChildren("identity").map {
+			Identity(
+				it.attributes["category"]!!, it.attributes["type"]!!, it.attributes["name"], it.attributes["xml:lang"]
+			)
+		}.toList()
+		val features = query.getChildren("feature").map {
+			it.attributes["var"]!!
+		}.toList()
 
-		val forms = query.getChildren("x")
-			.filter { it.xmlns == JabberDataForm.XMLNS }
-			.map { JabberDataForm(it) }
+		val forms = query.getChildren("x").filter { it.xmlns == JabberDataForm.XMLNS }.map { JabberDataForm(it) }
 
 		return Info(jid, node, identities, features, forms)
 	}
@@ -324,12 +311,10 @@ class DiscoveryModule(override val context: Context) : XmppModule, DiscoveryModu
 								consumer.invoke(inf)
 							}
 						}
-					}
-						.send()
+					}.send()
 				}
 			}
-		}
-			.send()
+		}.send()
 	}
 
 	/**
@@ -349,8 +334,7 @@ class DiscoveryModule(override val context: Context) : XmppModule, DiscoveryModu
 				}
 			}
 		}
-		return context.request.iq(stanza)
-			.map(this@DiscoveryModule::buildItems)
+		return context.request.iq(stanza).map(this@DiscoveryModule::buildItems)
 	}
 
 	private fun buildItems(response: Element): Items {
@@ -358,11 +342,9 @@ class DiscoveryModule(override val context: Context) : XmppModule, DiscoveryModu
 		val node = query.attributes["node"]
 		val jid = JID.parse(response.attributes["from"]!!)
 
-		val items = query.getChildren("item")
-			.map {
-				Item(JID.parse(it.attributes["jid"]!!), it.attributes["name"], it.attributes["node"])
-			}
-			.toList()
+		val items = query.getChildren("item").map {
+			Item(JID.parse(it.attributes["jid"]!!), it.attributes["name"], it.attributes["node"])
+		}.toList()
 
 		return Items(jid, node, items)
 	}
@@ -376,13 +358,11 @@ class DiscoveryModule(override val context: Context) : XmppModule, DiscoveryModu
 		val ownJid = context.boundJID?.bareJID ?: return
 		info(JID.parse(ownJid.toString())).response {
 			if (it.isSuccess) {
-				it.getOrNull()
-					?.let { info ->
-						context.eventBus.fire(AccountFeaturesReceivedEvent(info.identities, info.features))
-					}
+				it.getOrNull()?.let { info ->
+					context.eventBus.fire(AccountFeaturesReceivedEvent(info.identities, info.features))
+				}
 			}
-		}
-			.send()
+		}.send()
 	}
 
 	internal fun discoverServerFeatures() {
@@ -394,13 +374,11 @@ class DiscoveryModule(override val context: Context) : XmppModule, DiscoveryModu
 			val ownJid = context.boundJID?.bareJID ?: return
 			info(JID.parse(ownJid.domain)).response {
 				if (it.isSuccess) {
-					it.getOrNull()
-						?.let { info ->
-							context.eventBus.fire(ServerFeaturesReceivedEvent(info.identities, info.features))
-						}
+					it.getOrNull()?.let { info ->
+						context.eventBus.fire(ServerFeaturesReceivedEvent(info.identities, info.features))
+					}
 				}
-			}
-				.send()
+			}.send()
 		}
 	}
 }

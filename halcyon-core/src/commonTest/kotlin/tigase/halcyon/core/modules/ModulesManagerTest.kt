@@ -36,9 +36,6 @@ class ModulesManagerTest {
 		override val criteria: Criteria = Criterion.name("iq")
 		override val features: Array<String> = arrayOf("1", "2")
 
-		override fun initialize() {
-		}
-
 		override fun process(element: Element) {
 		}
 	}
@@ -48,9 +45,6 @@ class ModulesManagerTest {
 		override val type = "Module02"
 		override val criteria = Criterion.name("msg")
 		override val features = arrayOf("a", "b")
-
-		override fun initialize() {
-		}
 
 		override fun process(element: Element) {
 		}
@@ -80,17 +74,14 @@ class ModulesManagerTest {
 		mm.register(Module02(mm.context))
 
 		assertTrue(
-			arrayOf("1", "2", "a", "b").sortedArray() contentDeepEquals mm.getAvailableFeatures()
-				.sortedArray()
+			arrayOf("1", "2", "a", "b").sortedArray() contentDeepEquals mm.getAvailableFeatures().sortedArray()
 		)
 
 		assertEquals(0, mm.getModulesFor(element("presence") {}).size)
 		assertEquals(1, mm.getModulesFor(element("iq") {}).size)
 		assertEquals(1, mm.getModulesFor(element("msg") {}).size)
 		assertEquals(
-			"Module01",
-			mm.getModulesFor(element("iq") {})
-				.first().type
+			"Module01", mm.getModulesFor(element("iq") {}).first().type
 		)
 
 	}

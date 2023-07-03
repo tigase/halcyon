@@ -22,7 +22,7 @@ import tigase.halcyon.core.logger.internal.DefaultLoggerSPI
 /**
  * Service Provider Interface.
  */
-interface LoggerSPI {
+interface LoggerInternal {
 
 	fun isLoggable(level: Level): Boolean
 	fun log(level: Level, msg: String, caught: Throwable?)
@@ -31,10 +31,10 @@ interface LoggerSPI {
 
 object LoggerFactory {
 
-	var spiFactory: ((String, Boolean) -> LoggerSPI) = { name, enabled -> DefaultLoggerSPI(name, enabled) }
+	var spiFactory: ((String, Boolean) -> LoggerInternal) = { name, enabled -> DefaultLoggerSPI(name, enabled) }
 
 	fun logger(name: String, enabled: Boolean = true): Logger {
-		return SimpleLogger(spiFactory.invoke(name, enabled))
+		return LoggerWrapper(spiFactory.invoke(name, enabled))
 	}
 
 }
@@ -56,14 +56,11 @@ interface Logger {
 
 	fun log(level: Level, caught: Throwable? = null, msg: () -> Any?) {
 		if (isLoggable(level)) {
-			if (caught == null) log(level,
-									msg.invoke()
-										.toString()
+			if (caught == null) log(
+				level, msg.invoke().toString()
 			)
-			else log(level,
-					 msg.invoke()
-						 .toString(),
-					 caught
+			else log(
+				level, msg.invoke().toString(), caught
 			)
 		}
 	}
@@ -78,7 +75,7 @@ interface Logger {
 	fun severe(caught: Throwable? = null, msg: () -> Any?) = log(level = Level.SEVERE, caught = caught, msg = msg)
 }
 
-class SimpleLogger(private val spi: LoggerSPI) : Logger {
+class LoggerWrapper(private val spi: LoggerInternal) : Logger {
 
 	override fun isLoggable(level: Level): Boolean = spi.isLoggable(level)
 

@@ -68,12 +68,7 @@ sealed class PubSubItemEvent(
  */
 enum class Affiliation(val xmppName: String) {
 
-	Owner("owner"),
-	Publisher("publisher"),
-	PublishOnly("publish-only"),
-	Member("member"),
-	None("none"),
-	Outcast("outcast");
+	Owner("owner"), Publisher("publisher"), PublishOnly("publish-only"), Member("member"), None("none"), Outcast("outcast");
 
 	companion object {
 
@@ -153,9 +148,6 @@ class PubSubModule(override val context: Context) : XmppModule, PubSubModuleConf
 		override fun configure(module: PubSubModule, cfg: PubSubModuleConfig.() -> Unit) = module.cfg()
 	}
 
-	override fun initialize() {
-	}
-
 	/**
 	 * Prepares PubSub node creation request.
 	 *
@@ -181,8 +173,7 @@ class PubSubModule(override val context: Context) : XmppModule, PubSubModuleConf
 				}
 			}
 		}
-		return context.request.iq(iq)
-			.map {}
+		return context.request.iq(iq).map {}
 	}
 
 	/**
@@ -205,12 +196,10 @@ class PubSubModule(override val context: Context) : XmppModule, PubSubModuleConf
 				}
 			}
 		}
-		return context.request.iq(iq)
-			.map { element ->
-				val s =
-					element.findChild("iq", "pubsub", "subscription") ?: throw XMPPException(ErrorCondition.BadRequest)
-				parseSubscriptionElement(s)
-			}
+		return context.request.iq(iq).map { element ->
+			val s = element.findChild("iq", "pubsub", "subscription") ?: throw XMPPException(ErrorCondition.BadRequest)
+			parseSubscriptionElement(s)
+		}
 	}
 
 	@Suppress("unused")
@@ -226,12 +215,10 @@ class PubSubModule(override val context: Context) : XmppModule, PubSubModuleConf
 				}
 			}
 		}
-		return context.request.iq(iq)
-			.map { element ->
-				val s =
-					element.findChild("iq", "pubsub", "subscription") ?: throw XMPPException(ErrorCondition.BadRequest)
-				parseSubscriptionElement(s)
-			}
+		return context.request.iq(iq).map { element ->
+			val s = element.findChild("iq", "pubsub", "subscription") ?: throw XMPPException(ErrorCondition.BadRequest)
+			parseSubscriptionElement(s)
+		}
 	}
 
 	/**
@@ -252,8 +239,7 @@ class PubSubModule(override val context: Context) : XmppModule, PubSubModuleConf
 			}
 		}
 
-		return context.request.iq(iq)
-			.map {}
+		return context.request.iq(iq).map {}
 	}
 
 	private fun retrieveSubscriptions(
@@ -269,16 +255,14 @@ class PubSubModule(override val context: Context) : XmppModule, PubSubModuleConf
 				}
 			}
 		}
-		return context.request.iq(iq)
-			.map { element: Element ->
-				val subscriptions =
-					element.findChild("iq", "pubsub", "subscriptions") ?: throw XMPPException(ErrorCondition.BadRequest)
-				val nodeName = subscriptions.attributes["node"]
-				subscriptions.children.filter { sel -> "subscription" == sel.name }
-					.map { sel ->
-						parseSubscriptionElement(sel, nodeName)
-					}
+		return context.request.iq(iq).map { element: Element ->
+			val subscriptions =
+				element.findChild("iq", "pubsub", "subscriptions") ?: throw XMPPException(ErrorCondition.BadRequest)
+			val nodeName = subscriptions.attributes["node"]
+			subscriptions.children.filter { sel -> "subscription" == sel.name }.map { sel ->
+				parseSubscriptionElement(sel, nodeName)
 			}
+		}
 	}
 
 	/**
@@ -312,11 +296,7 @@ class PubSubModule(override val context: Context) : XmppModule, PubSubModuleConf
 		)
 
 		return Subscription(
-			nn,
-			JID.parse(jid),
-			SubscriptionState.values()
-				.first { state -> state.xmppName == sstate },
-			subid
+			nn, JID.parse(jid), SubscriptionState.values().first { state -> state.xmppName == sstate }, subid
 		)
 	}
 
@@ -346,8 +326,7 @@ class PubSubModule(override val context: Context) : XmppModule, PubSubModuleConf
 				}
 			}
 		}
-		return context.request.iq(iq)
-			.map {}
+		return context.request.iq(iq).map {}
 	}
 
 	override fun process(element: Element) {
@@ -412,8 +391,7 @@ class PubSubModule(override val context: Context) : XmppModule, PubSubModuleConf
 				}
 			}
 		}
-		return context.request.iq(iq)
-			.map {}
+		return context.request.iq(iq).map {}
 	}
 
 	fun deleteNode(jid: JID?, node: String): RequestBuilder<Unit, IQ> {
@@ -427,8 +405,7 @@ class PubSubModule(override val context: Context) : XmppModule, PubSubModuleConf
 				}
 			}
 		}
-		return context.request.iq(iq)
-			.map {}
+		return context.request.iq(iq).map {}
 	}
 
 	/**
@@ -458,19 +435,15 @@ class PubSubModule(override val context: Context) : XmppModule, PubSubModuleConf
 				}
 			}
 		}
-		return context.request.iq(iq)
-			.map { resp: IQ -> buildRetrieveResponse(resp, node, itemId) }
+		return context.request.iq(iq).map { resp: IQ -> buildRetrieveResponse(resp, node, itemId) }
 	}
 
 	private fun buildRetrieveResponse(iq: IQ, node: String, requestedItemId: String?): RetrieveResponse {
-		val items = iq.getChildrenNS("pubsub", XMLNS)!!
-			.getFirstChild("items")!!
+		val items = iq.getChildrenNS("pubsub", XMLNS)!!.getFirstChild("items")!!
 
-		val content = items.children.filter { it.name == "item" }
-			.map { item ->
-				RetrievedItem(item.attributes["id"]!!, item.getFirstChild())
-			}
-			.toList()
+		val content = items.children.filter { it.name == "item" }.map { item ->
+			RetrievedItem(item.attributes["id"]!!, item.getFirstChild())
+		}.toList()
 
 		if (requestedItemId != null && content.isEmpty()) throw XMPPError(
 			iq, ErrorCondition.ItemNotFound, "There is no item $requestedItemId in node $node."
@@ -521,18 +494,17 @@ class PubSubModule(override val context: Context) : XmppModule, PubSubModuleConf
 				}
 			}
 		}
-		return context.request.iq(iq)
-			.map { resp ->
-				val publish = resp.getChildrenNS("pubsub", XMLNS)
-					?.getFirstChild("publish") ?: throw HalcyonException("No publish element")
-				val item = publish.getFirstChild("item") ?: throw HalcyonException("No item element")
-				val j = resp.getFromAttr() ?: throw HalcyonException("No sender JID")
-				PublishingInfo(
-					j,
-					publish.attributes["node"] ?: throw HalcyonException("No node name"),
-					item.attributes["id"] ?: throw HalcyonException("No item ID")
-				)
-			}
+		return context.request.iq(iq).map { resp ->
+			val publish = resp.getChildrenNS("pubsub", XMLNS)?.getFirstChild("publish")
+				?: throw HalcyonException("No publish element")
+			val item = publish.getFirstChild("item") ?: throw HalcyonException("No item element")
+			val j = resp.getFromAttr() ?: throw HalcyonException("No sender JID")
+			PublishingInfo(
+				j,
+				publish.attributes["node"] ?: throw HalcyonException("No node name"),
+				item.attributes["id"] ?: throw HalcyonException("No item ID")
+			)
+		}
 	}
 
 	/**
@@ -561,17 +533,13 @@ class PubSubModule(override val context: Context) : XmppModule, PubSubModuleConf
 				}
 			}
 		}
-		return context.request.iq(iq)
-			.map { r ->
-				r.getChildrenNS("pubsub", XMLNS)
-					?.getFirstChild("affiliations")
-					?.getChildren("affiliation")
-					?.map { a ->
-						RetrievedAffiliation(
-							a.attributes["node"]!!, Affiliation.byXMPPName(a.attributes["affiliation"]!!)
-						)
-					} ?: emptyList()
-			}
+		return context.request.iq(iq).map { r ->
+			r.getChildrenNS("pubsub", XMLNS)?.getFirstChild("affiliations")?.getChildren("affiliation")?.map { a ->
+				RetrievedAffiliation(
+					a.attributes["node"]!!, Affiliation.byXMPPName(a.attributes["affiliation"]!!)
+				)
+			} ?: emptyList()
+		}
 	}
 
 }

@@ -79,8 +79,7 @@ interface ChatMarkersModuleConfig {
 
 }
 
-class ChatMarkersModule(override val context: Context) : XmppModule, HasInterceptors, StanzaInterceptor,
-														 ChatMarkersModuleConfig {
+class ChatMarkersModule(override val context: Context) : XmppModule, StanzaInterceptor, ChatMarkersModuleConfig {
 
 	enum class Marker(val xmppValue: String) {
 
@@ -108,19 +107,20 @@ class ChatMarkersModule(override val context: Context) : XmppModule, HasIntercep
 		override fun instance(context: Context): ChatMarkersModule = ChatMarkersModule(context)
 
 		override fun configure(module: ChatMarkersModule, cfg: ChatMarkersModuleConfig.() -> Unit) = module.cfg()
+
+		override fun doAfterRegistration(module: ChatMarkersModule, moduleManager: ModulesManager) =
+			moduleManager.registerInterceptors(arrayOf(module))
+
+
 	}
 
 	override val criteria: Criteria? = null
 	override val features: Array<String> = arrayOf(XMLNS)
 	override val type = TYPE
-	override val stanzaInterceptors: Array<StanzaInterceptor> = arrayOf(this)
 
 	override var mode: ChatMarkersModuleConfig.Mode = ChatMarkersModuleConfig.Mode.Auto
 	override var autoSendReceived = false
 
-	override fun initialize() {
-
-	}
 
 	override fun process(element: Element) = throw XMPPException(ErrorCondition.FeatureNotImplemented)
 
@@ -146,8 +146,7 @@ class ChatMarkersModule(override val context: Context) : XmppModule, HasIntercep
 		if (element.attributes["type"] == MessageType.Error.value) return element
 		val from = element.attributes["from"]?.toJID() ?: return element
 
-		val command = element.getChildrenNS(XMLNS)
-			.firstOrNull() ?: return element
+		val command = element.getChildrenNS(XMLNS).firstOrNull() ?: return element
 		when (command.name) {
 			"markable" -> {
 				if (autoSendReceived) element.getOriginID() ?: element.attributes["id"]?.let { id ->
@@ -226,8 +225,7 @@ fun Element.getChatMarkerOrNull(): ChatMarker? {
 	if (this.name != Message.NAME) return null
 	if (this.attributes["type"] == MessageType.Error.value) return null
 	val from = this.attributes["from"]?.toJID() ?: return null
-	val command = this.getChildrenNS(ChatMarkersModule.XMLNS)
-		.firstOrNull() ?: return null
+	val command = this.getChildrenNS(ChatMarkersModule.XMLNS).firstOrNull() ?: return null
 	val id = command.attributes["id"] ?: return null
 
 	return when (command.name) {

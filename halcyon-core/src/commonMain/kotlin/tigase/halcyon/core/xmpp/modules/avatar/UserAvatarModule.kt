@@ -23,6 +23,7 @@ import tigase.halcyon.core.eventbus.Event
 import tigase.halcyon.core.eventbus.EventDefinition
 import tigase.halcyon.core.logger.LoggerFactory
 import tigase.halcyon.core.modules.Criteria
+import tigase.halcyon.core.modules.ModulesManager
 import tigase.halcyon.core.modules.XmppModule
 import tigase.halcyon.core.modules.XmppModuleProvider
 import tigase.halcyon.core.requests.RequestBuilder
@@ -49,7 +50,7 @@ interface UserAvatarModuleConfig {
 }
 
 class UserAvatarModule(override val context: Context, private val pubSubModule: PubSubModule) : XmppModule,
-																								UserAvatarModuleConfig {
+	UserAvatarModuleConfig {
 
 	companion object : XmppModuleProvider<UserAvatarModule, UserAvatarModuleConfig> {
 
@@ -62,6 +63,8 @@ class UserAvatarModule(override val context: Context, private val pubSubModule: 
 		override fun configure(module: UserAvatarModule, cfg: UserAvatarModuleConfig.() -> Unit) = module.cfg()
 
 		override fun requiredModules() = listOf(PubSubModule)
+
+		override fun doAfterRegistration(module: UserAvatarModule, moduleManager: ModulesManager) = module.initialize()
 
 	}
 
@@ -89,7 +92,7 @@ class UserAvatarModule(override val context: Context, private val pubSubModule: 
 		override fun isStored(userJID: BareJID, avatarID: String): Boolean = items.containsKey(avatarID)
 	}
 
-	override fun initialize() {
+	private fun initialize() {
 		context.eventBus.register(PubSubItemEvent) { event ->
 			if (event.nodeName == XMLNS_METADATA && event is PubSubItemEvent.Published) {
 				val metadata =
@@ -112,8 +115,7 @@ class UserAvatarModule(override val context: Context, private val pubSubModule: 
 
 	private fun processMetadataItem(stanza: Message, metadata: Element) {
 		val userJID = stanza.from?.bareJID ?: return
-		val info = metadata.getFirstChild("info")
-			?.let { parseInfo(it) }
+		val info = metadata.getFirstChild("info")?.let { parseInfo(it) }
 		if (info == null) {
 			store.store(userJID, null, null)
 			return
@@ -122,25 +124,22 @@ class UserAvatarModule(override val context: Context, private val pubSubModule: 
 		val stored = store.isStored(userJID, info.id)
 		if (!stored) {
 			retrieveAvatar(
-				userJID.toString()
-					.toJID(), info.id
+				userJID.toString().toJID(), info.id
 			).response {
 				if (it.isSuccess) {
 					log.finest { "Storing UserAvatar data $info.id " + it.getOrNull() }
-					val avatar = it.getOrNull()
-						?.let { data ->
-							if (data.base64Data == null) {
-								null
-							} else {
-								Avatar(info, data)
-							}
+					val avatar = it.getOrNull()?.let { data ->
+						if (data.base64Data == null) {
+							null
+						} else {
+							Avatar(info, data)
 						}
+					}
 					store.store(userJID, info.id, avatar)
 					log.fine { "Stored data! $userJID" }
 					context.eventBus.fire(UserAvatarUpdatedEvent(userJID, info.id))
 				}
-			}
-				.send()
+			}.send()
 		} else {
 			context.eventBus.fire(UserAvatarUpdatedEvent(userJID, info.id))
 		}
@@ -158,12 +157,11 @@ class UserAvatarModule(override val context: Context, private val pubSubModule: 
 	)
 
 	fun retrieveAvatar(jid: JID, avatarID: String): RequestBuilder<AvatarData, IQ> {
-		return pubSubModule.retrieveItem(JID.parse(jid.bareJID.toString()), XMLNS_DATA, avatarID)
-			.map { response ->
-				val item = response.items.first()
-				val data = item.content!!.value
-				AvatarData(avatarID, data)
-			}
+		return pubSubModule.retrieveItem(JID.parse(jid.bareJID.toString()), XMLNS_DATA, avatarID).map { response ->
+			val item = response.items.first()
+			val data = item.content!!.value
+			AvatarData(avatarID, data)
+		}
 	}
 
 	override fun process(element: Element) = throw XMPPException(ErrorCondition.FeatureNotImplemented)

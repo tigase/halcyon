@@ -56,7 +56,10 @@ class VCardModule(override val context: Context) : XmppModule, VCardModuleConfig
 
 		override fun instance(context: Context): VCardModule = VCardModule(context)
 
-		override fun configure(module: VCardModule, cfg: VCardModuleConfig.() -> Unit) = module.cfg()
+		override fun configure(module: VCardModule, cfg: VCardModuleConfig.() -> Unit) {
+			module.cfg()
+			module.initialize()
+		}
 
 	}
 
@@ -69,7 +72,7 @@ class VCardModule(override val context: Context) : XmppModule, VCardModuleConfig
 	 */
 	var autoRetrieve: Boolean = false
 
-	override fun initialize() {
+	private fun initialize() {
 		context.eventBus.register(PubSubItemEvent, this@VCardModule::processEvent)
 	}
 
@@ -88,8 +91,7 @@ class VCardModule(override val context: Context) : XmppModule, VCardModuleConfig
 				xmlns = XMLNS
 			}
 		}
-		return context.request.iq(iq)
-			.map(this@VCardModule::parseResponse)
+		return context.request.iq(iq).map(this@VCardModule::parseResponse)
 	}
 
 	/**
@@ -102,13 +104,11 @@ class VCardModule(override val context: Context) : XmppModule, VCardModuleConfig
 		val iq = iq {
 			type = IQType.Set
 			ownJid?.let {
-				to = it.toString()
-					.toJID()
+				to = it.toString().toJID()
 			}
 			addChild(vcard.element)
 		}
-		return context.request.iq(iq)
-			.map {}
+		return context.request.iq(iq).map {}
 	}
 
 	private fun processEvent(event: PubSubItemEvent) {
@@ -120,8 +120,7 @@ class VCardModule(override val context: Context) : XmppModule, VCardModuleConfig
 				if (it.isSuccess) {
 					context.eventBus.fire(VCardUpdatedEvent(jid.bareJID, it.getOrNull()))
 				}
-			}
-				.send()
+			}.send()
 		} else {
 			context.eventBus.fire(VCardUpdatedEvent(jid.bareJID, null))
 		}

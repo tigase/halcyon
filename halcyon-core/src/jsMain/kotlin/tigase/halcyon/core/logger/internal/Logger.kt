@@ -18,10 +18,10 @@
 package tigase.halcyon.core.logger.internal
 
 import tigase.halcyon.core.logger.Level
-import tigase.halcyon.core.logger.LoggerSPI
+import tigase.halcyon.core.logger.LoggerInternal
 import kotlin.js.Date
 
-actual class DefaultLoggerSPI actual constructor(val name: String, val enabled: Boolean) : LoggerSPI {
+actual class DefaultLoggerSPI actual constructor(val name: String, val enabled: Boolean) : LoggerInternal {
 
 	companion object {
 

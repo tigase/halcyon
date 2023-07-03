@@ -18,9 +18,9 @@
 package tigase.halcyon.core.logger.internal
 
 import tigase.halcyon.core.logger.Level
-import tigase.halcyon.core.logger.LoggerSPI
+import tigase.halcyon.core.logger.LoggerInternal
 
-expect class DefaultLoggerSPI(name: String, enabled: Boolean) : LoggerSPI {
+expect class DefaultLoggerSPI(name: String, enabled: Boolean) : LoggerInternal {
 
 	override fun isLoggable(level: Level): Boolean
 	override fun log(level: Level, msg: String, caught: Throwable?)

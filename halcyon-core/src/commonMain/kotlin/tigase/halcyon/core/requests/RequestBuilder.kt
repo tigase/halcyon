@@ -122,8 +122,10 @@ class RequestBuilder<V, STT : Stanza<*>>(
 
 	private var onSendHandler: SendHandler<V, STT>? = null
 
-	fun build(): Request<V, STT> {
-		val stanza = wrap<STT>(halcyon.modules.processSendInterceptors(element))
+	fun build(): Request<V, STT> = build(true)
+
+	private fun build(callInterceptor: Boolean): Request<V, STT> {
+		val stanza = wrap<STT>(if (callInterceptor) halcyon.modules.processSendInterceptors(element) else element)
 		return Request(
 			stanza.to,
 			stanza.id!!,
@@ -132,7 +134,7 @@ class RequestBuilder<V, STT : Stanza<*>>(
 			timeoutDelay,
 			resultHandler,
 			transform,
-			parentBuilder?.build(),
+			parentBuilder?.build(false),
 			callHandlerOnSent,
 			onSendHandler
 		).apply {

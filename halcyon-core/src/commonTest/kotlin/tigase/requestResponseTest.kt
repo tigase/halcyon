@@ -31,24 +31,20 @@ class IQTestBuilder<V>(private val halcyon: DummyHalcyon) {
 
 	internal fun run() {
 		var result: Result<V>? = null
-		val req = request!!.invoke(halcyon)
-			.response {
-				result = it
-			}
-			.send()
+		val req = request!!.invoke(halcyon).response {
+			result = it
+		}.send()
 
 		requestValidator?.let {
 			assertContains(it.invoke(), halcyon.peekLastSend(), "Invalid request")
 		}
 
 
-		response?.invoke()
-			?.also {
-				it.attributes["id"] = req.id
-			}
-			?.let {
-				halcyon.addReceived(it)
-			}
+		response?.invoke()?.also {
+			it.attributes["id"] = req.id
+		}?.let {
+			halcyon.processReceivedXmlElement(it)
+		}
 
 		responseValidator?.invoke(result)
 	}
@@ -68,10 +64,9 @@ fun assertContains(expected: Element, actual: Element?, message: String? = null)
 		if (expected.value != null && expected.value != actual.value) return false
 		if (!expected.attributes.filter { it.key != "id" }
 				.all { e -> actual.attributes[e.key] == e.value }) return false
-		if (!expected.children.all { e ->
-				actual.children.any { a -> check(e, a) }
-			}) return false
-		return true
+		return expected.children.all { e ->
+			actual.children.any { a -> check(e, a) }
+		}
 	}
 
 	fun messagePrefix(message: String?) = if (message == null) "" else "$message. "

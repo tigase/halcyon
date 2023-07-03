@@ -58,8 +58,6 @@ class StreamFeaturesModule(override val context: Context) : XmppModule, StreamFe
 
 	override val features: Array<String>? = null
 
-	override fun initialize() {}
-
 	fun isFeatureAvailable(name: String, xmlns: String): Boolean = streamFeatures?.getChildrenNS(name, xmlns) != null
 
 	override fun process(element: Element) {

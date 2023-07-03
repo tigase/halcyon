@@ -22,6 +22,7 @@ import tigase.halcyon.core.builder.HalcyonConfigDsl
 import tigase.halcyon.core.exceptions.HalcyonException
 import tigase.halcyon.core.logger.LoggerFactory
 import tigase.halcyon.core.modules.Criterion
+import tigase.halcyon.core.modules.ModulesManager
 import tigase.halcyon.core.modules.XmppModule
 import tigase.halcyon.core.modules.XmppModuleProvider
 import tigase.halcyon.core.xml.Element
@@ -93,8 +94,7 @@ class SASLModule(override val context: Context) : XmppModule, SASLModuleConfig {
 		 * case of an unknown username); sent in reply to a &lt;response/&gt
 		 * element or an &lt;auth/&gt element with initial response data.
 		 */
-		NotAuthorized("not-authorized"),
-		ServerNotTrusted("server-not-trusted"),
+		NotAuthorized("not-authorized"), ServerNotTrusted("server-not-trusted"),
 
 		/**
 		 * The authentication failed because of a temporary error condition
@@ -120,6 +120,8 @@ class SASLModule(override val context: Context) : XmppModule, SASLModuleConfig {
 		override fun configure(module: SASLModule, cfg: SASLModuleConfig.() -> Unit) = module.cfg()
 
 		override fun instance(context: Context): SASLModule = SASLModule(context)
+
+		override fun doAfterRegistration(module: SASLModule, moduleManager: ModulesManager) = module.initialize()
 	}
 
 	private val log = LoggerFactory.logger("tigase.halcyon.core.xmpp.modules.auth.SASLModule")
@@ -137,7 +139,7 @@ class SASLModule(override val context: Context) : XmppModule, SASLModuleConfig {
 
 	override var enabled: Boolean = true
 
-	override fun initialize() {
+	private fun initialize() {
 		engine.add(SASLScramSHA256())
 		engine.add(SASLScramSHA1())
 		engine.add(SASLPlain())
@@ -146,8 +148,7 @@ class SASLModule(override val context: Context) : XmppModule, SASLModuleConfig {
 	fun startAuth(streamFeatures: Element) {
 		val saslStreamFeatures =
 			streamFeatures.getChildrenNS("mechanisms", XMLNS) ?: throw HalcyonException("No SASL features in stream.")
-		val allowedMechanisms = saslStreamFeatures.children.filter { it.name == "mechanism" }
-			.mapNotNull { it.value }
+		val allowedMechanisms = saslStreamFeatures.children.filter { it.name == "mechanism" }.mapNotNull { it.value }
 		val authData = engine.start(allowedMechanisms)
 		val authElement = element("auth") {
 			xmlns = XMLNS
@@ -187,10 +188,9 @@ class SASLModule(override val context: Context) : XmppModule, SASLModuleConfig {
 		val saslError = SASLError.valueByElementName(errElement.name)!!
 
 		var errorText: String? = null
-		element.getFirstChild("text")
-			?.apply {
-				errorText = this.value
-			}
+		element.getFirstChild("text")?.apply {
+			errorText = this.value
+		}
 		engine.evaluateFailure(saslError, errorText)
 	}
 

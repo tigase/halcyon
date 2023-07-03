@@ -41,10 +41,7 @@ class Jingle {
 
 		enum class State {
 
-			Created,
-			Initiating,
-			Accepted,
-			Terminated
+			Created, Initiating, Accepted, Terminated
 		}
 
 		val account: BareJID
@@ -93,10 +90,6 @@ class JingleModule(
 			SUPPORTED_FEATURES
 		}
 
-	override fun initialize() {
-		TODO("Not yet implemented")
-	}
-
 	override fun process(element: Element) {
 		when (element.name) {
 			IQ.NAME -> processIq(element)
@@ -119,12 +112,10 @@ class JingleModule(
 
 		val initiator = jingle.attributes["initiator"]?.let { JID.parse(it) } ?: from
 
-		val contents = jingle.children.map { Content.parse(it) }
-			.filterNotNull()
+		val contents = jingle.children.map { Content.parse(it) }.filterNotNull()
 		val bundle =
 			jingle.getChildrenNS("group", "urn:xmpp:jingle:apps:grouping:0")?.children?.filter { it.name == "content" }
-				?.map { it.attributes["name"] }
-				?.filterNotNull()
+				?.map { it.attributes["name"] }?.filterNotNull()
 
 		context.eventBus.fire(JingleEvent(from, action, initiator, sid, contents, bundle))
 	}
@@ -138,8 +129,7 @@ class JingleModule(
 		when (action) {
 			is MessageInitiationAction.Propose -> {
 				if (action.descriptions.none { features.contains(it.xmlns) }) {
-					this.sendMessageInitiation(MessageInitiationAction.Reject(action.id), from)
-						.send()
+					this.sendMessageInitiation(MessageInitiationAction.Reject(action.id), from).send()
 					return
 				}
 			}
@@ -203,8 +193,7 @@ class JingleModule(
 					"initiator", context.boundJID?.toString() ?: throw XMPPException(ErrorCondition.NotAuthorized)
 				)
 
-				contents.map { it.toElement() }
-					.forEach { contentEl -> addChild(contentEl) }
+				contents.map { it.toElement() }.forEach { contentEl -> addChild(contentEl) }
 				bundle?.let { bundle ->
 					addChild(element("group") {
 						xmlns = "urn:xmpp:jingle:apps:grouping:0"
@@ -217,8 +206,7 @@ class JingleModule(
 					})
 				}
 			})
-		}
-			.map { }
+		}.map { }
 	}
 
 	fun acceptSession(
@@ -236,8 +224,7 @@ class JingleModule(
 					"responder", context.boundJID?.toString() ?: throw XMPPException(ErrorCondition.NotAuthorized)
 				)
 
-				contents.map { it.toElement() }
-					.forEach { contentEl -> addChild(contentEl) }
+				contents.map { it.toElement() }.forEach { contentEl -> addChild(contentEl) }
 				bundle?.let { bundle ->
 					addChild(element("group") {
 						xmlns = "urn:xmpp:jingle:apps:grouping:0"
@@ -250,8 +237,7 @@ class JingleModule(
 					})
 				}
 			})
-		}
-			.map { }
+		}.map { }
 	}
 
 	fun terminateSession(jid: JID, sid: String, reason: TerminateReason): RequestBuilder<Unit, IQ> {
@@ -265,8 +251,7 @@ class JingleModule(
 				attribute("sid", sid)
 				addChild(reason.toReasonElement())
 			})
-		}
-			.map { }
+		}.map { }
 	}
 
 	fun transportInfo(jid: JID, sid: String, contents: List<Content>): RequestBuilder<Unit, IQ> {
@@ -279,11 +264,9 @@ class JingleModule(
 				attribute("action", Action.SessionAccept.value)
 				attribute("sid", sid)
 
-				contents.map { it.toElement() }
-					.forEach { contentEl -> addChild(contentEl) }
+				contents.map { it.toElement() }.forEach { contentEl -> addChild(contentEl) }
 			})
-		}
-			.map { }
+		}.map { }
 	}
 }
 

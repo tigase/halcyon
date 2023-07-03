@@ -62,8 +62,6 @@ class StreamErrorModule(override val context: Context) : XmppModule, StreamError
 	)
 	override val features: Array<String>? = null
 
-	override fun initialize() {}
-
 	private fun getByElementName(name: String): StreamError {
 		for (e in StreamError.values()) {
 			if (e.elementName == name) {
@@ -74,8 +72,7 @@ class StreamErrorModule(override val context: Context) : XmppModule, StreamError
 	}
 
 	override fun process(element: Element) {
-		val c = element.getChildrenNS(XMLNS)
-			.first()
+		val c = element.getChildrenNS(XMLNS).first()
 		val e = getByElementName(c.name)
 
 		context.eventBus.fire(StreamErrorEvent(element, e, c))

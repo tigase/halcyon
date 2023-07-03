@@ -69,9 +69,7 @@ data class JoinResponse(val jid: JID, val nick: String, val nodes: Array<String>
 
 		if (jid != other.jid) return false
 		if (nick != other.nick) return false
-		if (!nodes.contentEquals(other.nodes)) return false
-
-		return true
+		return nodes.contentEquals(other.nodes)
 	}
 
 	override fun hashCode(): Int {
@@ -124,9 +122,6 @@ class MIXModule(
 	override val type = TYPE
 	override val features = arrayOf(XMLNS)
 
-	override fun initialize() {
-	}
-
 	private fun checkCriteria(message: Element): Boolean {
 		if (message.name != Message.NAME) return false
 		if (message.getChildrenNS("mix", XMLNS) == null) return false
@@ -167,12 +162,11 @@ class MIXModule(
 					attributes["channel"] = it
 				}
 			}
+		}.map {
+			val cr = it.getChildrenNS("create", XMLNS)!!
+			val chname = cr.attributes["channel"]!!
+			CreateResponse(BareJID(chname, mixComponent.domain), chname)
 		}
-			.map {
-				val cr = it.getChildrenNS("create", XMLNS)!!
-				val chname = cr.attributes["channel"]!!
-				CreateResponse(BareJID(chname, mixComponent.domain), chname)
-			}
 	}
 
 	fun createAllowed(channel: BareJID): RequestBuilder<Unit, IQ> {
@@ -184,13 +178,11 @@ class MIXModule(
 	}
 
 	fun addToAllowed(channel: BareJID, participant: BareJID): RequestBuilder<Unit, IQ> {
-		return pubsubModule.publish(channel.toJID(), NODE_ALLOWED, participant.toString())
-			.map { }
+		return pubsubModule.publish(channel.toJID(), NODE_ALLOWED, participant.toString()).map { }
 	}
 
 	fun addToBanned(channel: BareJID, participant: BareJID): RequestBuilder<Unit, IQ> {
-		return pubsubModule.publish(channel.toJID(), NODE_BANNED, participant.toString())
-			.map { }
+		return pubsubModule.publish(channel.toJID(), NODE_BANNED, participant.toString()).map { }
 	}
 
 	fun createInvitation(
@@ -233,17 +225,12 @@ class MIXModule(
 					}
 				}
 			}
+		}.map { iq ->
+			val join = iq.getChildrenNS("client-join", "urn:xmpp:mix:pam:2")!!.getChildrenNS("join", XMLNS)!!
+			val nodes = join.getChildren("subscribe").map { it.attributes["node"]!! }.toTypedArray()
+			val nck = join.getChildren("subscribe").firstOrNull()?.value ?: nick
+			JoinResponse(join.attributes["jid"]!!.toJID(), nck, nodes)
 		}
-			.map { iq ->
-				val join = iq.getChildrenNS("client-join", "urn:xmpp:mix:pam:2")!!
-					.getChildrenNS("join", XMLNS)!!
-				val nodes = join.getChildren("subscribe")
-					.map { it.attributes["node"]!! }
-					.toTypedArray()
-				val nck = join.getChildren("subscribe")
-					.firstOrNull()?.value ?: nick
-				JoinResponse(join.attributes["jid"]!!.toJID(), nck, nodes)
-			}
 	}
 
 	fun leave(channel: BareJID): RequestBuilder<Unit, IQ> {
@@ -256,24 +243,19 @@ class MIXModule(
 					xmlns = XMLNS
 				}
 			}
-		}
-			.map { }
+		}.map { }
 	}
 
 	private fun createParticipant(id: String, p: Element): Participant {
 		return Participant(
-			id,
-			p.getChildContent("nick"),
-			p.getChildContent("jid")
-				?.toBareJID()
+			id, p.getChildContent("nick"), p.getChildContent("jid")?.toBareJID()
 		)
 	}
 
 	fun retrieveParticipants(channel: BareJID): RequestBuilder<Collection<Participant>, IQ> {
-		return pubsubModule.retrieveItem(channel.toJID(), NODE_PARTICIPANTS)
-			.map { r ->
-				r.items.map { item -> createParticipant(item.id, item.content!!) }
-			}
+		return pubsubModule.retrieveItem(channel.toJID(), NODE_PARTICIPANTS).map { r ->
+			r.items.map { item -> createParticipant(item.id, item.content!!) }
+		}
 	}
 
 	fun message(channel: BareJID, message: String): RequestBuilder<Unit, Message> {
@@ -285,17 +267,15 @@ class MIXModule(
 	}
 
 	override fun prepareRosterGetRequest(stanza: IQ) {
-		stanza.getChildrenNS("query", RosterModule.XMLNS)
-			?.add(element("annotate") {
-				xmlns = "urn:xmpp:mix:roster:0"
-			})
+		stanza.getChildrenNS("query", RosterModule.XMLNS)?.add(element("annotate") {
+			xmlns = "urn:xmpp:mix:roster:0"
+		})
 	}
 
 	override fun processRosterItem(item: Element): RosterItemAnnotation? {
-		return item.getChildrenNS("channel", "urn:xmpp:mix:roster:0")
-			?.let { channel ->
-				MIXRosterItemAnnotation(channel.attributes["participant-id"]!!)
-			}
+		return item.getChildrenNS("channel", "urn:xmpp:mix:roster:0")?.let { channel ->
+			MIXRosterItemAnnotation(channel.attributes["participant-id"]!!)
+		}
 	}
 
 	fun retrieveHistory(
@@ -320,22 +300,20 @@ fun Element.isMixMessage(): Boolean {
 
 fun Element.getMixAnnotation(): MixAnnotation? {
 	if (this.name != Message.NAME) return null
-	return this.getChildrenNS("mix", MIXModule.XMLNS)
-		?.let {
-			val nick = it.getFirstChild("nick")!!.value!!
-			val jid = it.getFirstChild("jid")?.value?.toBareJID()
-			MixAnnotation(nick, jid)
-		}
+	return this.getChildrenNS("mix", MIXModule.XMLNS)?.let {
+		val nick = it.getFirstChild("nick")!!.value!!
+		val jid = it.getFirstChild("jid")?.value?.toBareJID()
+		MixAnnotation(nick, jid)
+	}
 }
 
-fun Element.getMixInvitation(): MIXInvitation? = this.getChildrenNS("invitation", MIXModule.MISC_XMLNS)
-	?.let {
-		val inviter = it.getChildContent("inviter") ?: return null
-		val invitee = it.getChildContent("invitee") ?: return null
-		val channel = it.getChildContent("channel") ?: return null
-		val token = it.getChildContent("token")
+fun Element.getMixInvitation(): MIXInvitation? = this.getChildrenNS("invitation", MIXModule.MISC_XMLNS)?.let {
+	val inviter = it.getChildContent("inviter") ?: return null
+	val invitee = it.getChildContent("invitee") ?: return null
+	val channel = it.getChildContent("channel") ?: return null
+	val token = it.getChildContent("token")
 
-		MIXInvitation(inviter.toBareJID(), invitee.toBareJID(), channel.toBareJID(), token)
-	}
+	MIXInvitation(inviter.toBareJID(), invitee.toBareJID(), channel.toBareJID(), token)
+}
 
 

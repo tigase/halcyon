@@ -105,9 +105,6 @@ class PresenceModule(override val context: Context) : XmppModule, PresenceModule
 		override fun configure(module: PresenceModule, cfg: PresenceModuleConfig.() -> Unit) = module.cfg()
 	}
 
-	override fun initialize() {
-	}
-
 	override fun process(element: Element) {
 		val presence: Presence = wrap(element)
 		val fromJID = presence.getFromAttr()
@@ -188,10 +185,8 @@ class PresenceModule(override val context: Context) : XmppModule, PresenceModule
 			val comp: String by lazy { "${(500 - presence.priority)}:${100 + presence.typeAndShow().ordinal}" }
 		}
 
-		return store.getPresences(jid)
-			.filter { presence -> presence.type == null }
-			.map { presence -> Envelope(presence) }
-			.minByOrNull { envelope -> envelope.comp }?.presence
+		return store.getPresences(jid).filter { presence -> presence.type == null }
+			.map { presence -> Envelope(presence) }.minByOrNull { envelope -> envelope.comp }?.presence
 	}
 
 	/**
@@ -207,8 +202,7 @@ class PresenceModule(override val context: Context) : XmppModule, PresenceModule
 	 * @param jid JabberID
 	 */
 	fun getResources(jid: BareJID): List<JID> {
-		return store.getPresences(jid)
-			.mapNotNull { p -> p.from }
+		return store.getPresences(jid).mapNotNull { p -> p.from }
 	}
 
 }

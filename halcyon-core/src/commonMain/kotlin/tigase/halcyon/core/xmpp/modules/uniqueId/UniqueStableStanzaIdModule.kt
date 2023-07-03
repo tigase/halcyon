@@ -29,8 +29,8 @@ import tigase.halcyon.core.xmpp.stanzas.Message
 @HalcyonConfigDsl
 interface UniqueStableStanzaIdModuleConfig
 
-class UniqueStableStanzaIdModule(override val context: Context) : XmppModule, HasInterceptors, StanzaInterceptor,
-																  UniqueStableStanzaIdModuleConfig {
+class UniqueStableStanzaIdModule(override val context: Context) : XmppModule, StanzaInterceptor,
+	UniqueStableStanzaIdModuleConfig {
 
 	companion object : XmppModuleProvider<UniqueStableStanzaIdModule, UniqueStableStanzaIdModuleConfig> {
 
@@ -41,14 +41,15 @@ class UniqueStableStanzaIdModule(override val context: Context) : XmppModule, Ha
 
 		override fun configure(module: UniqueStableStanzaIdModule, cfg: UniqueStableStanzaIdModuleConfig.() -> Unit) =
 			module.cfg()
+
+		override fun doAfterRegistration(module: UniqueStableStanzaIdModule, moduleManager: ModulesManager) =
+			moduleManager.registerInterceptors(arrayOf(module))
+
 	}
 
 	override val type = TYPE
 	override val criteria: Criteria? = null
 	override val features = arrayOf(XMLNS)
-	override val stanzaInterceptors: Array<StanzaInterceptor> = arrayOf(this)
-
-	override fun initialize() {}
 
 	override fun process(element: Element) = throw XMPPException(ErrorCondition.BadRequest)
 

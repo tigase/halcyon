@@ -8,6 +8,7 @@ import tigase.halcyon.core.exceptions.HalcyonException
 import tigase.halcyon.core.logger.Level
 import tigase.halcyon.core.logger.LoggerFactory
 import tigase.halcyon.core.modules.Criterion
+import tigase.halcyon.core.modules.ModulesManager
 import tigase.halcyon.core.modules.XmppModule
 import tigase.halcyon.core.modules.XmppModuleProvider
 import tigase.halcyon.core.xml.Element
@@ -20,7 +21,7 @@ import tigase.halcyon.core.xmpp.modules.discovery.DiscoveryModule
 interface SASL2ModuleConfig : SASLModuleConfig
 
 class SASL2Module(override val context: Context, private val discoveryModule: DiscoveryModule) : XmppModule,
-																								 SASL2ModuleConfig {
+	SASL2ModuleConfig {
 
 	private val log = LoggerFactory.logger("tigase.halcyon.core.xmpp.modules.auth.SASL2Module")
 
@@ -34,6 +35,9 @@ class SASL2Module(override val context: Context, private val discoveryModule: Di
 			SASL2Module(context, discoveryModule = context.modules.getModule(DiscoveryModule))
 
 		override fun requiredModules() = listOf(DiscoveryModule)
+
+		override fun doAfterRegistration(module: SASL2Module, moduleManager: ModulesManager) = module.initialize()
+
 	}
 
 	override val type = TYPE
@@ -48,7 +52,7 @@ class SASL2Module(override val context: Context, private val discoveryModule: Di
 
 	override var enabled: Boolean = true
 
-	override fun initialize() {
+	private fun initialize() {
 		engine.add(SASLScramSHA256())
 		engine.add(SASLScramSHA1())
 		engine.add(SASLPlain())
@@ -57,8 +61,7 @@ class SASL2Module(override val context: Context, private val discoveryModule: Di
 	fun startAuth(streamFeatures: Element) {
 		val saslStreamFeatures = streamFeatures.getChildrenNS("authentication", XMLNS)
 			?: throw HalcyonException("No SASL2 features in stream.")
-		val allowedMechanisms = saslStreamFeatures.children.filter { it.name == "mechanism" }
-			.mapNotNull { it.value }
+		val allowedMechanisms = saslStreamFeatures.children.filter { it.name == "mechanism" }.mapNotNull { it.value }
 		val authData = engine.start(allowedMechanisms)
 		val authElement = element("authenticate") {
 			xmlns = XMLNS
@@ -69,15 +72,13 @@ class SASL2Module(override val context: Context, private val discoveryModule: Di
 			"user-agent" {
 				val softwareName = discoveryModule.clientName
 				val deviceName = getDeviceName()
-				attributes["id"] = "$softwareName:$deviceName".encodeToByteArray()
-					.sha1().hex
+				attributes["id"] = "$softwareName:$deviceName".encodeToByteArray().sha1().hex
 				"software" { +softwareName }
 				"device" { +deviceName }
 			}
 
 			val saslInlineFeatures = InlineFeatures.create(saslStreamFeatures)
-			context.modules.getModules()
-				.filterIsInstance<InlineProtocol>()
+			context.modules.getModules().filterIsInstance<InlineProtocol>()
 				.mapNotNull { it.featureFor(saslInlineFeatures, InlineProtocolStage.AfterSasl) }
 				.forEach { addChild(it) }
 		}
@@ -103,11 +104,9 @@ class SASL2Module(override val context: Context, private val discoveryModule: Di
 		engine.evaluateSuccess(element.getFirstChild("additional-data")?.value)
 		try {
 			InlineResponse(InlineProtocolStage.AfterSasl, element).let { response ->
-				context.modules.getModules()
-					.filterIsInstance<InlineProtocol>()
-					.forEach { consumer ->
-						consumer.process(response)
-					}
+				context.modules.getModules().filterIsInstance<InlineProtocol>().forEach { consumer ->
+					consumer.process(response)
+				}
 			}
 		} catch (e: Throwable) {
 			log.log(Level.SEVERE, "Error during inline processing: ${e.message}", e)
@@ -120,10 +119,9 @@ class SASL2Module(override val context: Context, private val discoveryModule: Di
 		val saslError = SASLModule.SASLError.valueByElementName(errElement.name)!!
 
 		var errorText: String? = null
-		element.getFirstChild("text")
-			?.apply {
-				errorText = this.value
-			}
+		element.getFirstChild("text")?.apply {
+			errorText = this.value
+		}
 		engine.evaluateFailure(saslError, errorText)
 	}
 

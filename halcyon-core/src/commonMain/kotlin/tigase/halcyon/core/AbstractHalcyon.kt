@@ -36,7 +36,6 @@ import tigase.halcyon.core.xml.element
 import tigase.halcyon.core.xmpp.ErrorCondition
 import tigase.halcyon.core.xmpp.JID
 import tigase.halcyon.core.xmpp.XMPPException
-import tigase.halcyon.core.xmpp.modules.*
 import tigase.halcyon.core.xmpp.modules.auth.SASLContext
 import tigase.halcyon.core.xmpp.modules.sm.StreamManagementModule
 import tigase.halcyon.core.xmpp.stanzas.IQ
@@ -69,11 +68,7 @@ abstract class AbstractHalcyon(configurator: ConfigurationBuilder) : Context, Pa
 
 	enum class State {
 
-		Connecting,
-		Connected,
-		Disconnecting,
-		Disconnected,
-		Stopped
+		Connecting, Connected, Disconnecting, Disconnected, Stopped
 	}
 
 	protected var connector: AbstractConnector? = null
@@ -149,10 +144,10 @@ abstract class AbstractHalcyon(configurator: ConfigurationBuilder) : Context, Pa
 	internal fun processReceivedXmlElement(receivedElement: Element) {
 		var element = receivedElement
 		try {
+			element = modules.processReceiveInterceptors(element) ?: return
 			val handled = requestsManager.findAndExecute(element)
 			if (element.name == IQ.NAME && (handled || (element.attributes["type"] == IQType.Result.value || element.attributes["type"] == IQType.Error.value))) return
 
-			element = modules.processReceiveInterceptors(element) ?: return
 
 			val modules = modules.getModulesFor(element)
 			if (modules.isEmpty()) {
@@ -180,6 +175,7 @@ abstract class AbstractHalcyon(configurator: ConfigurationBuilder) : Context, Pa
 			sendErrorBack(element, e)
 		}
 	}
+
 
 	private fun createError(element: Element, caught: Exception): Element? {
 		if (caught is XMPPException) {
@@ -288,15 +284,15 @@ abstract class AbstractHalcyon(configurator: ConfigurationBuilder) : Context, Pa
 
 	protected open fun onDisconnecting() {}
 
-	fun <T : XmppModule> getModule(type: String): T = modules.getModule(type)
-	fun <T : XmppModule> getModule(provider: XmppModuleProvider<T, out Any>): T = modules.getModule(provider.TYPE)
+	fun <T : HalcyonModule> getModule(type: String): T = modules.getModule(type)
+	fun <T : HalcyonModule> getModule(provider: HalcyonModuleProvider<T, out Any>): T = modules.getModule(provider.TYPE)
 
-	fun <T : XmppModule> getModuleOrNull(type: String): T? = modules.getModuleOrNull(type)
-	fun <T : XmppModule> getModuleOrNull(provider: XmppModuleProvider<T, out Any>): T? =
+	fun <T : HalcyonModule> getModuleOrNull(type: String): T? = modules.getModuleOrNull(type)
+	fun <T : HalcyonModule> getModuleOrNull(provider: HalcyonModuleProvider<T, out Any>): T? =
 		modules.getModuleOrNull(provider.TYPE)
 
 	@ReflectionModuleManager
-	inline fun <reified T : XmppModule> getModule(): T = modules.getModule(T::class)
+	inline fun <reified T : HalcyonModule> getModule(): T = modules.getModule(T::class)
 
 	protected fun startConnector() {
 		if (running) {
@@ -362,7 +358,6 @@ abstract class AbstractHalcyon(configurator: ConfigurationBuilder) : Context, Pa
 	fun connect() {
 		clear(Scope.Session)
 		this.running = true
-		modules.initModules()
 		log.info { "Connecting" }
 		state = State.Connecting
 		onConnecting()
@@ -380,14 +375,13 @@ abstract class AbstractHalcyon(configurator: ConfigurationBuilder) : Context, Pa
 			this.running = false
 			log.info { "Disconnecting" }
 
-			modules.getModuleOrNull<StreamManagementModule>(StreamManagementModule.TYPE)
-				?.let {
-					val ackEnabled =
-						getModule<StreamManagementModule>(StreamManagementModule.TYPE).resumptionContext.isAckActive
-					if (ackEnabled && getConnectorState() == tigase.halcyon.core.connector.State.Connected) {
-						it.sendAck(true)
-					}
+			modules.getModuleOrNull<StreamManagementModule>(StreamManagementModule.TYPE)?.let {
+				val ackEnabled =
+					getModule<StreamManagementModule>(StreamManagementModule.TYPE).resumptionContext.isAckActive
+				if (ackEnabled && getConnectorState() == tigase.halcyon.core.connector.State.Connected) {
+					it.sendAck(true)
 				}
+			}
 
 			state = State.Disconnecting
 			onDisconnecting()
@@ -401,9 +395,7 @@ abstract class AbstractHalcyon(configurator: ConfigurationBuilder) : Context, Pa
 
 	internal fun clear(scope: Scope) {
 		internalDataStore.clear(scope)
-		val scopes = Scope.values()
-			.filter { s -> s.ordinal <= scope.ordinal }
-			.toTypedArray()
+		val scopes = Scope.values().filter { s -> s.ordinal <= scope.ordinal }.toTypedArray()
 		eventBus.fire(ClearedEvent(scopes))
 	}
 }
