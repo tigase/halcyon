@@ -16,6 +16,7 @@ import tigase.halcyon.core.xmpp.modules.chatmarkers.ChatMarkersModule
 import tigase.halcyon.core.xmpp.modules.chatstates.ChatStateModule
 import tigase.halcyon.core.xmpp.modules.commands.CommandsModule
 import tigase.halcyon.core.xmpp.modules.discovery.DiscoveryModule
+import tigase.halcyon.core.xmpp.modules.fileupload.FileUploadModule
 import tigase.halcyon.core.xmpp.modules.mam.MAMModule
 import tigase.halcyon.core.xmpp.modules.mix.MIXModule
 import tigase.halcyon.core.xmpp.modules.muc.MUCModule
@@ -23,6 +24,7 @@ import tigase.halcyon.core.xmpp.modules.presence.PresenceModule
 import tigase.halcyon.core.xmpp.modules.pubsub.PubSubModule
 import tigase.halcyon.core.xmpp.modules.receipts.DeliveryReceiptsModule
 import tigase.halcyon.core.xmpp.modules.roster.RosterModule
+import tigase.halcyon.core.xmpp.modules.serviceFinder.ServiceFinderModule
 import tigase.halcyon.core.xmpp.modules.sm.StreamManagementModule
 import tigase.halcyon.core.xmpp.modules.spam.BlockingCommandModule
 import tigase.halcyon.core.xmpp.modules.uniqueId.UniqueStableStanzaIdModule
@@ -190,4 +192,6 @@ fun ConfigurationBuilder.installAllModules() {
 	this.install(MUCModule)
 	this.install(SASL2Module)
 	this.install(InBandRegistrationModule)
+	this.install(FileUploadModule)
+	this.install(ServiceFinderModule)
 }

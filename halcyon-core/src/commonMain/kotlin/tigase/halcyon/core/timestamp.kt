@@ -89,3 +89,5 @@ fun parseISO8601(date: String): Instant {
 
 	return Instant.parse(date)
 }
+
+fun String.fromISO8601(): Instant = parseISO8601(this)

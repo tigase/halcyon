@@ -24,7 +24,7 @@ class SerializerTest {
 			"body" {
 				+"Wherefore art thou, Romeo?"
 			}
-			"thread"("e0ffe42b28561960c6b12b944a092794b9683a38")
+			"thread" { +"e0ffe42b28561960c6b12b944a092794b9683a38" }
 			element("subject") {
 				value = "I implore you!"
 			}
@@ -53,7 +53,7 @@ class SerializerTest {
 			"body" {
 				+"Wherefore art thou, Romeo?"
 			}
-			"thread"("e0ffe42b28561960c6b12b944a092794b9683a38")
+			"thread" { +"e0ffe42b28561960c6b12b944a092794b9683a38" }
 			element("subject") {
 				value = "I implore you!"
 			}
@@ -82,7 +82,7 @@ class SerializerTest {
 			"body" {
 				+"Wherefore art thou, Romeo?"
 			}
-			"thread"("e0ffe42b28561960c6b12b944a092794b9683a38")
+			"thread" { +"e0ffe42b28561960c6b12b944a092794b9683a38" }
 			element("subject") {
 				value = "I implore you!"
 			}
@@ -111,7 +111,7 @@ class SerializerTest {
 			"body" {
 				+"Wherefore art thou, Romeo?"
 			}
-			"thread"("e0ffe42b28561960c6b12b944a092794b9683a38")
+			"thread" { +"e0ffe42b28561960c6b12b944a092794b9683a38" }
 			element("subject") {
 				value = "I implore you!"
 			}

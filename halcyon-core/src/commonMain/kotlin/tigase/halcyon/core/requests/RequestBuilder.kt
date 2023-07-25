@@ -22,6 +22,7 @@ import tigase.halcyon.core.Context
 import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xml.ElementImpl
 import tigase.halcyon.core.xmpp.ErrorCondition
+import tigase.halcyon.core.xmpp.XMPPException
 import tigase.halcyon.core.xmpp.stanzas.*
 import kotlin.time.Duration
 import kotlin.time.DurationUnit
@@ -30,7 +31,8 @@ import kotlin.time.toDuration
 //typealias ResultHandler<V> = (Result<V>) -> Unit
 typealias ResponseStanzaHandler<STT> = (Request<*, STT>, STT?) -> Unit
 
-class XMPPError(val response: Stanza<*>?, val error: ErrorCondition, val description: String?) : Exception(description)
+open class XMPPError(val response: Stanza<*>?, val error: ErrorCondition, val description: String?) :
+	Exception(description)
 
 typealias RHandler<V> = (Result<V>) -> Unit
 
@@ -122,6 +124,11 @@ class RequestBuilder<V, STT : Stanza<*>>(
 
 	private var onSendHandler: SendHandler<V, STT>? = null
 
+	private var errorTransformer: (STT) -> XMPPError = {
+		val e = findCondition(it)
+		XMPPError(it, e.condition, e.message)
+	}
+
 	fun build(): Request<V, STT> = build(true)
 
 	private fun build(callInterceptor: Boolean): Request<V, STT> {
@@ -134,6 +141,7 @@ class RequestBuilder<V, STT : Stanza<*>>(
 			timeoutDelay,
 			resultHandler,
 			transform,
+			errorTransformer,
 			parentBuilder?.build(false),
 			callHandlerOnSent,
 			onSendHandler
@@ -148,12 +156,19 @@ class RequestBuilder<V, STT : Stanza<*>>(
 		check(!writeDirectly) { "Mapping cannot be added to directly writable request." }
 		val res =
 			RequestBuilder<R, STT>(halcyon, element, writeDirectly, callHandlerOnSent, transform as (((Any) -> R)))
+		res.errorTransformer = errorTransformer
 		res.timeoutDelay = timeoutDelay
 		res.resultHandler = null
 		res.onSendHandler = null
 		res.parentBuilder = this
 		return res
 	}
+
+	fun errorConverter(transform: (STT) -> XMPPError): RequestBuilder<V, STT> {
+		this.errorTransformer = transform
+		return this
+	}
+
 
 	fun handleResponseStanza(name: String? = null, handler: ResponseStanzaHandler<STT>): RequestBuilder<V, STT> {
 		check(!writeDirectly) { "Response handler cannot be added to directly writable request." }
@@ -232,6 +247,11 @@ class RequestConsumerBuilder<CSR, V, STT : Stanza<*>>(
 
 	private var onSendHandler: SendHandler<V, STT>? = null
 
+	private var errorTransformer: (STT) -> XMPPError = {
+		val e = findCondition(it)
+		XMPPError(it, e.condition, e.message)
+	}
+
 	fun build(): Request<V, STT> {
 		val stanza = wrap<STT>(halcyon.modules.processSendInterceptors(element))
 		return Request(
@@ -242,6 +262,7 @@ class RequestConsumerBuilder<CSR, V, STT : Stanza<*>>(
 			timeoutDelay,
 			resultHandler,
 			transform,
+			errorTransformer,
 			parentBuilder?.build(),
 			callHandlerOnSent,
 			onSendHandler
@@ -255,11 +276,17 @@ class RequestConsumerBuilder<CSR, V, STT : Stanza<*>>(
 	fun <R : Any> map(transform: (value: V) -> R): RequestConsumerBuilder<CSR, R, STT> {
 		val xx: ((Any) -> R) = transform as (((Any) -> R))
 		val res = RequestConsumerBuilder<CSR, R, STT>(halcyon, element, writeDirectly, callHandlerOnSent, xx)
+		res.errorTransformer = errorTransformer
 		res.timeoutDelay = timeoutDelay
 		res.resultHandler = null
 		res.onSendHandler = null
 		res.parentBuilder = this
 		return res
+	}
+
+	fun errorConverter(transform: (STT) -> XMPPError): RequestConsumerBuilder<CSR, V, STT> {
+		this.errorTransformer = transform
+		return this
 	}
 
 	@Suppress("unused")
@@ -311,4 +338,17 @@ class RequestConsumerBuilder<CSR, V, STT : Stanza<*>>(
 		return this
 	}
 
+}
+
+fun findCondition(stanza: Element): Request.Error {
+	val error = stanza.children.firstOrNull { element -> element.name == "error" } ?: return Request.Error(
+		ErrorCondition.Unknown, null
+	)
+	// Condition Element
+	val cnd = error.children.firstOrNull { element -> element.name != "text" && element.xmlns == XMPPException.XMLNS }
+		?: return Request.Error(ErrorCondition.Unknown, null)
+	val txt = error.children.firstOrNull { element -> element.name == "text" && element.xmlns == XMPPException.XMLNS }
+
+	val c = ErrorCondition.getByElementName(cnd.name)
+	return Request.Error(c, txt?.value)
 }

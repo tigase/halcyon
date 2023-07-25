@@ -33,6 +33,24 @@ class ElementAttributes(private val element: Element) {
 }
 
 @HalcyonElementDsl
+open class AttributesHelper(internal val element: Element) {
+
+	infix fun String.to(target: String) {
+		element.attributes[this] = target
+	}
+
+	operator fun set(name: String, value: String?) {
+		if (value == null) element.attributes.remove(name)
+		else element.attributes[name] = value
+	}
+
+	operator fun get(name: String): String? {
+		return element.attributes[name]
+	}
+
+}
+
+@HalcyonElementDsl
 open class ElementNode(internal val element: Element) {
 
 	fun attribute(name: String, value: String) {
@@ -40,6 +58,11 @@ open class ElementNode(internal val element: Element) {
 	}
 
 	val attributes = ElementAttributes(element)
+
+	fun attributes(init: (AttributesHelper.() -> Unit)) {
+		val h = AttributesHelper(element)
+		h.init()
+	}
 
 	var xmlns: String?
 		set(value) {
@@ -60,6 +83,7 @@ open class ElementNode(internal val element: Element) {
 	/**
 	 * To tkjfjkshdfjk
 	 */
+	@Deprecated("WIll be removed")
 	operator fun String.invoke(value: String): Element {
 		val n = element(this)
 		n.value = value
@@ -67,10 +91,13 @@ open class ElementNode(internal val element: Element) {
 	}
 
 	operator fun String.invoke(
-		vararg attributes: Pair<String, String>, init: (ElementNode.() -> Unit)? = null,
+		xmlns: String? = null,
+		init: (ElementNode.() -> Unit)? = null,
 	): Element {
 		return element(this, init).apply {
-			this.attributes.putAll(attributes)
+			xmlns?.let {
+				attributes["xmlns"] = it
+			}
 		}
 	}
 

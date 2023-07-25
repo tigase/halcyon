@@ -1,5 +1,3 @@
-import java.util.*
-
 /*
  * halcyon-core
  * Copyright (C) 2018 Tigase, Inc. (office@tigase.com)
@@ -18,6 +16,7 @@ import java.util.*
  * If not, see http://www.gnu.org/licenses/.
  */
 import net.researchgate.release.ReleaseExtension
+import java.util.*
 
 plugins {
 	`maven-publish`
@@ -78,8 +77,13 @@ repositories {
 
 allprojects {
 	group = "tigase.halcyon"
-	version = findProperty("version").toString()
+	version = insertBuildNumber(findProperty("version").toString(), "git rev-list --count HEAD".runCommand(File("./")))
+}
 
+fun insertBuildNumber(version: String, build: String): String {
+	return version
+//	if (!version.contains("-SNAPSHOT")) return "$version.$build"
+//	return version.substringBefore("-SNAPSHOT") + ".$build"
 }
 
 subprojects {
@@ -122,3 +126,16 @@ subprojects {
 
 	}
 }
+
+
+fun String.runCommand(
+	workingDir: File = File("."), timeoutAmount: Long = 60, timeoutUnit: TimeUnit = TimeUnit.SECONDS,
+): String = ProcessBuilder(split("\\s(?=(?:[^'\"`]*(['\"`])[^'\"`]*\\1)*[^'\"`]*$)".toRegex())).directory(workingDir)
+	.redirectOutput(ProcessBuilder.Redirect.PIPE).redirectError(ProcessBuilder.Redirect.PIPE).start()
+	.apply { waitFor(timeoutAmount, timeoutUnit) }.run {
+		val error = errorStream.bufferedReader().readText().trim()
+		if (error.isNotEmpty()) {
+			println("Cannot determine build number.")
+			"0"
+		} else inputStream.bufferedReader().readText().trim()
+	}

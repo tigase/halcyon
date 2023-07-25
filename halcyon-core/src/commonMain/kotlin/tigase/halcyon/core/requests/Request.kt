@@ -35,6 +35,7 @@ class Request<V, STT : Stanza<*>>(
 	var timeoutDelay: Duration,
 	private val handler: ResultHandler<V>?,
 	private val transform: (value: Any) -> V,
+	private val errorHandler: (STT)->XMPPError,
 	private val parentRequest: Request<*, STT>? = null,
 	@Deprecated("Will be removed") private val callHandlerOnSent: Boolean,
 	private val onSendHandler: SendHandler<V, STT>?,
@@ -106,8 +107,10 @@ class Request<V, STT : Stanza<*>>(
 					}
 
 					"error" -> {
-						val e = findCondition(response!!)
-						Result.failure(XMPPError(response!!, e.condition, e.message))
+						val z = errorHandler.invoke(response!!)
+						Result.failure<XMPPError>(z)
+//						val e = findCondition(response!!)
+//						Result.failure(XMPPError(response!!, e.condition, e.message))
 					}
 
 					else -> {
@@ -172,21 +175,6 @@ class Request<V, STT : Stanza<*>>(
 				}
 			}
 		}
-	}
-
-	private fun findCondition(stanza: Element): Error {
-		val error = stanza.children.firstOrNull { element -> element.name == "error" } ?: return Error(
-			ErrorCondition.Unknown, null
-		)
-		// Condition Element
-		val cnd =
-			error.children.firstOrNull { element -> element.name != "text" && element.xmlns == XMPPException.XMLNS }
-				?: return Error(ErrorCondition.Unknown, null)
-		val txt =
-			error.children.firstOrNull { element -> element.name == "text" && element.xmlns == XMPPException.XMLNS }
-
-		val c = ErrorCondition.getByElementName(cnd.name)
-		return Error(c, txt?.value)
 	}
 
 	private fun callResponseStanzaHandler() {
