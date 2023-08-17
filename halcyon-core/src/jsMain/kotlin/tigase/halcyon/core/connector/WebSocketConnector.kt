@@ -27,6 +27,7 @@ import tigase.halcyon.core.logger.Level
 import tigase.halcyon.core.logger.LoggerFactory
 import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xml.parser.StreamParser
+import tigase.halcyon.core.xmpp.modules.discoaltconn.AlternativeConnectionMethodModule
 import kotlin.time.Duration.Companion.seconds
 
 class WebSocketConnectionErrorEvent(@Suppress("unused") val description: String) : ConnectionErrorEvent()
@@ -94,22 +95,56 @@ class WebSocketConnector(halcyon: Halcyon) : AbstractConnector(halcyon) {
 	}
 
 	override fun start() {
-		log.fine { "Starting WebSocket connector" }
 		state = State.Connecting
+		log.fine { "Starting WebSocket connector" }
 
-		val url = config.webSocketUrl
+		createSocket { sckt ->
+			log.finest { "Created WS: $sckt" }
 
-		log.finer { "Connecting to $url" }
+			this.ws = sckt
+			ws.onmessage = this::onSocketMessageEvent
+			ws.onerror = this::onSocketError
+			ws.onopen = this::onSocketOpen
+			ws.onclose = this::onSocketClose
+		}
+	}
 
-		this.ws = WebSocket(url, "xmpp")
+	private fun createSocket(completionHandler: (WebSocket) -> Unit) {
+		resolveTarget { url ->
+			try {
+				log.info { "Opening WebSocket connection to $url" }
+				val s = WebSocket(url, "xmpp")
+				completionHandler(s)
+				return@resolveTarget
+			} catch (e: Throwable) {
+				log.fine { "Websocket $url is unreachable." }
+				throw ConnectorException(e)
+			}
+		}
+	}
 
-		log.finest { "Created WS: $ws" }
+	private fun resolveTarget(completionHandler: (String) -> Unit) {
+		config.webSocketUrl?.let {
+			log.fine("WebSocket URL is declared: $it")
+			completionHandler(it)
+			return
+		}
 
-		ws.onmessage = this::onSocketMessageEvent
-		ws.onerror = this::onSocketError
-		ws.onopen = this::onSocketOpen
-		ws.onclose = this::onSocketClose
+		halcyon.getModuleOrNull(AlternativeConnectionMethodModule)?.let { md ->
+			log.fine("Checking alternative connection methods...")
+			md.discovery(config.domain) {
+				log.fine("Found connection methods: $it")
+				val url =
+					it.filter { it.rel == "urn:xmpp:alt-connections:websocket" }.filter { it.href.startsWith("wss:") }
+						.map {
+							it.href
+						}.firstOrNull()
+				completionHandler(url ?: "wss://${config.domain}:5291/")
+			}
+			return
+		}
 
+		completionHandler("wss://${config.domain}:5291/")
 	}
 
 	private fun onSocketClose(event: Event): dynamic {

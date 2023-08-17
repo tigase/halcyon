@@ -149,21 +149,21 @@ class VCardTest {
 
 	@Test
 	fun testBDay() {
-		val vCard = VCard(parseXML(sample).element!!)
+		val vCard = VCard(parseXML(sample))
 		assertFalse(vCard.isEmpty())
 		assertEquals("1966-08-06", vCard.birthday)
 	}
 
 	@Test
 	fun testTimeZone() {
-		val vCard = VCard(parseXML(sample).element!!)
+		val vCard = VCard(parseXML(sample))
 		assertFalse(vCard.isEmpty())
 		assertEquals("America/Chicago", vCard.timeZone)
 	}
 
 	@Test
 	fun testEmails() {
-		val vCard = VCard(parseXML(sample).element!!)
+		val vCard = VCard(parseXML(sample))
 		assertFalse(vCard.isEmpty())
 
 		assertNotNull(vCard.emails)[0].let { email ->
@@ -180,7 +180,7 @@ class VCardTest {
 
 	@Test
 	fun testAddress() {
-		val vCard = VCard(parseXML(sample).element!!)
+		val vCard = VCard(parseXML(sample))
 		assertFalse(vCard.isEmpty())
 
 		assertEquals(2, vCard.addresses.size)
@@ -212,7 +212,7 @@ class VCardTest {
 
 	@Test
 	fun testProperties() {
-		val vCard = VCard(parseXML(sample).element!!)
+		val vCard = VCard(parseXML(sample))
 		assertFalse(vCard.isEmpty())
 
 		println(vCard.element.getAsString())

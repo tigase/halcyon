@@ -110,20 +110,17 @@ class EntityCapabilitiesModuleTest {
 			    </query>
 			</iq>
 		""".trimIndent()
-		).element!!
-		val info = halcyon.getModule(DiscoveryModule)
-			.buildInfo(stanza)
+		)
+		val info = halcyon.getModule(DiscoveryModule).buildInfo(stanza)
 
 		assertTrue("Verification string should be valid!") {
-			halcyon.getModule(EntityCapabilitiesModule)
-				.validateVerificationString(info)
+			halcyon.getModule(EntityCapabilitiesModule).validateVerificationString(info)
 		}
 	}
 
 	@Test
 	fun test_validateVerificationString() {
-		val info = halcyon.getModule(DiscoveryModule)
-			.buildInfo(iq {
+		val info = halcyon.getModule(DiscoveryModule).buildInfo(iq {
 				type = IQType.Result
 				to = "juliet@capulet.lit/chamber".toJID()
 				from = "benvolio@capulet.lit/230193".toJID()
@@ -179,8 +176,7 @@ class EntityCapabilitiesModuleTest {
 				}
 			})
 		assertTrue("Verification string should be valid!") {
-			halcyon.getModule(EntityCapabilitiesModule)
-				.validateVerificationString(info)
+			halcyon.getModule(EntityCapabilitiesModule).validateVerificationString(info)
 		}
 	}
 
@@ -214,8 +210,7 @@ class EntityCapabilitiesModuleTest {
 			"http://jabber.org/protocol/muc"
 		)
 
-		val form = JabberDataForm.create(FormType.Result)
-			.apply {
+		val form = JabberDataForm.create(FormType.Result).apply {
 				addField("FORM_TYPE", FieldType.Hidden).fieldValue = "urn:xmpp:dataforms:softwareinfo"
 				addField("ip_version", FieldType.TextMulti).fieldValues = listOf("ipv4", "ipv6")
 				addField("os", null).fieldValue = "Mac"

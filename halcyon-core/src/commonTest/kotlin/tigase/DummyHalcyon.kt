@@ -41,7 +41,7 @@ class DummyHalcyon(cf: ConfigurationBuilder = dummyConfig) : AbstractHalcyon(cf)
 		override fun send(data: CharSequence) {
 			try {
 				val pr = parseXML(data.toString())
-				pr.element?.let {
+				pr.let {
 					sentElements.add(it)
 				}
 			} catch (ignore: Throwable) {

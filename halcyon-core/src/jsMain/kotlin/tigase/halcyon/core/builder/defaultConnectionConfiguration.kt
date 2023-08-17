@@ -8,7 +8,5 @@ actual fun defaultConnectionConfiguration(
 	defaultDomain: String,
 ): ConnectionConfig {
 	val d = defaultDomain
-	return WebSocketConnectorConfig(
-		domain = defaultDomain, webSocketUrl = "ws://$d:5290/"
-	)
+	return WebSocketConnectorConfig(domain = defaultDomain, webSocketUrl = null)
 }
