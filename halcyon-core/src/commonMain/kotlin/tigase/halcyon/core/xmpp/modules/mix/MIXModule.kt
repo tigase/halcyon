@@ -34,8 +34,7 @@ import tigase.halcyon.core.requests.RequestConsumerBuilder
 import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xml.element
 import tigase.halcyon.core.xml.getChildContent
-import tigase.halcyon.core.xmpp.BareJID
-import tigase.halcyon.core.xmpp.JID
+import tigase.halcyon.core.xmpp.*
 import tigase.halcyon.core.xmpp.modules.RSM
 import tigase.halcyon.core.xmpp.modules.mam.ForwardedStanza
 import tigase.halcyon.core.xmpp.modules.mam.MAMModule
@@ -44,8 +43,6 @@ import tigase.halcyon.core.xmpp.modules.roster.RosterItemAnnotation
 import tigase.halcyon.core.xmpp.modules.roster.RosterItemAnnotationProcessor
 import tigase.halcyon.core.xmpp.modules.roster.RosterModule
 import tigase.halcyon.core.xmpp.stanzas.*
-import tigase.halcyon.core.xmpp.toBareJID
-import tigase.halcyon.core.xmpp.toJID
 
 @Serializable
 data class MIXRosterItemAnnotation(val participantId: String) : RosterItemAnnotation
@@ -138,7 +135,7 @@ class MIXModule(
 		context.eventBus.fire(MIXMessageEvent(message.from!!.bareJID, message, time))
 	}
 
-	private fun myJID(): JID = context.boundJID ?: throw HalcyonException("Resource not bound.")
+	private fun myJID(): FullJID = context.boundJID ?: throw HalcyonException("Resource not bound.")
 
 	private fun invitationToElement(invitation: MIXInvitation, withXmlns: Boolean = false): Element {
 		return element("invitation") {
@@ -155,7 +152,7 @@ class MIXModule(
 	fun create(mixComponent: BareJID, name: String?): RequestBuilder<CreateResponse, IQ> {
 		return context.request.iq {
 			type = IQType.Set
-			to = mixComponent.toJID()
+			to = mixComponent
 			"create" {
 				xmlns = XMLNS
 				name?.let {
@@ -170,19 +167,19 @@ class MIXModule(
 	}
 
 	fun createAllowed(channel: BareJID): RequestBuilder<Unit, IQ> {
-		return pubsubModule.create(channel.toJID(), NODE_ALLOWED)
+		return pubsubModule.create(channel, NODE_ALLOWED)
 	}
 
 	fun createBanned(channel: BareJID): RequestBuilder<Unit, IQ> {
-		return pubsubModule.create(channel.toJID(), NODE_BANNED)
+		return pubsubModule.create(channel, NODE_BANNED)
 	}
 
 	fun addToAllowed(channel: BareJID, participant: BareJID): RequestBuilder<Unit, IQ> {
-		return pubsubModule.publish(channel.toJID(), NODE_ALLOWED, participant.toString()).map { }
+		return pubsubModule.publish(channel, NODE_ALLOWED, participant.toString()).map { }
 	}
 
 	fun addToBanned(channel: BareJID, participant: BareJID): RequestBuilder<Unit, IQ> {
-		return pubsubModule.publish(channel.toJID(), NODE_BANNED, participant.toString()).map { }
+		return pubsubModule.publish(channel, NODE_BANNED, participant.toString()).map { }
 	}
 
 	fun createInvitation(
@@ -193,7 +190,7 @@ class MIXModule(
 
 	fun invitationMessage(invitation: MIXInvitation, message: String): RequestBuilder<Unit, Message> {
 		return context.request.message {
-			to = invitation.invitee.toJID()
+			to = invitation.invitee
 			body = message
 			addChild(invitationToElement(invitation, true))
 		}
@@ -207,7 +204,7 @@ class MIXModule(
 	): RequestBuilder<JoinResponse, IQ> {
 		return context.request.iq {
 			type = IQType.Set
-			to = myJID().bareJID.toJID()
+			to = myJID().bareJID
 			"client-join" {
 				xmlns = "urn:xmpp:mix:pam:2"
 				attributes["channel"] = channel.toString()
@@ -253,14 +250,14 @@ class MIXModule(
 	}
 
 	fun retrieveParticipants(channel: BareJID): RequestBuilder<Collection<Participant>, IQ> {
-		return pubsubModule.retrieveItem(channel.toJID(), NODE_PARTICIPANTS).map { r ->
+		return pubsubModule.retrieveItem(channel, NODE_PARTICIPANTS).map { r ->
 			r.items.map { item -> createParticipant(item.id, item.content!!) }
 		}
 	}
 
 	fun message(channel: BareJID, message: String): RequestBuilder<Unit, Message> {
 		return context.request.message {
-			to = channel.toJID()
+			to = channel
 			type = MessageType.Groupchat
 			body = message
 		}

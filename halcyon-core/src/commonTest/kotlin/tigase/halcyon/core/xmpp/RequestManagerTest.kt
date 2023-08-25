@@ -33,14 +33,13 @@ class RequestManagerTest {
 	@Test
 	fun testFindingResponseForRequestWithoutTo() {
 		val rm = RequestsManager()
-		rm.boundJID = "a@b.c/123".toJID()
+		rm.boundJID = "a@b.c/123".toFullJID()
 
 		val e = element("iq") {
 			attribute("id", "1")
 			attribute("type", "get")
 		}
-		val rq = halcyon.request.iq(e)
-			.build()
+		val rq = halcyon.request.iq(e).build()
 		rm.register(rq)
 
 		val resp = element("iq") {
@@ -56,15 +55,14 @@ class RequestManagerTest {
 	@Test
 	fun testFindingResponseFromUnknownForRequestWithoutTo() {
 		val rm = RequestsManager()
-		rm.boundJID = "a@b.c/123".toJID()
+		rm.boundJID = "a@b.c/123".toFullJID()
 
 		val e = element("iq") {
 			attribute("id", "1")
 			attribute("type", "get")
 		}
 
-		val rq = halcyon.request.iq(e)
-			.build()
+		val rq = halcyon.request.iq(e).build()
 		rm.register(rq)
 
 		val resp = element("iq") {
@@ -80,7 +78,7 @@ class RequestManagerTest {
 	@Test
 	fun testFindingResponseFromUnknownForRequest() {
 		val rm = RequestsManager()
-		rm.boundJID = "a@b.c/123".toJID()
+		rm.boundJID = "a@b.c/123".toFullJID()
 
 		val e = element("iq") {
 			attribute("id", "1")
@@ -88,8 +86,7 @@ class RequestManagerTest {
 			attribute("to", "a@b.c")
 		}
 
-		val rq = halcyon.request.iq(e)
-			.build()
+		val rq = halcyon.request.iq(e).build()
 		rm.register(rq)
 
 		val resp = element("iq") {
@@ -105,15 +102,14 @@ class RequestManagerTest {
 	@Test
 	fun testFindingResponseWithoutFromForRequestWithoutTo() {
 		val rm = RequestsManager()
-		rm.boundJID = "a@b.c/123".toJID()
+		rm.boundJID = "a@b.c/123".toFullJID()
 
 		val e = element("iq") {
 			attribute("id", "1")
 			attribute("type", "get")
 		}
 
-		val rq = halcyon.request.iq(e)
-			.build()
+		val rq = halcyon.request.iq(e).build()
 		rm.register(rq)
 
 		val resp = element("iq") {
@@ -137,15 +133,13 @@ class RequestManagerTest {
 
 		var successCounter = 0
 
-		val rq = halcyon.request.iq(e)
-			.response {
+		val rq = halcyon.request.iq(e).response {
 				if (it.isSuccess) {
 					++successCounter
 				} else {
 					fail()
 				}
-			}
-			.build()
+			}.build()
 
 		rm.register(rq)
 
@@ -173,11 +167,9 @@ class RequestManagerTest {
 
 		var successCounter = 0
 
-		val req = halcyon.request.iq(e)
-			.response {
+		val req = halcyon.request.iq(e).response {
 				if (it.isSuccess) ++successCounter
-			}
-			.build()
+			}.build()
 
 		rm.register(req)
 
@@ -203,8 +195,7 @@ class RequestManagerTest {
 
 		var successCounter = 0
 
-		val req = halcyon.request.iq(e)
-			.response { result ->
+		val req = halcyon.request.iq(e).response { result ->
 				when {
 					result.isSuccess -> {
 						++successCounter
@@ -212,8 +203,7 @@ class RequestManagerTest {
 
 					else -> fail()
 				}
-			}
-			.build()
+			}.build()
 
 		rm.register(req)
 
@@ -237,14 +227,12 @@ class RequestManagerTest {
 			attribute("type", "get")
 			attribute("to", "a@b.c")
 		}
-		val req = halcyon.request.iq(e)
-			.response {
+		val req = halcyon.request.iq(e).response {
 				if (it.isFailure) {
 					++errorCounter
 					assertEquals(ErrorCondition.NotAllowed, (it.exceptionOrNull()!! as XMPPError).error)
 				}
-			}
-			.build()
+			}.build()
 
 
 		rm.register(req)
@@ -276,14 +264,11 @@ class RequestManagerTest {
 			attribute("id", "1")
 			attribute("type", "get")
 			attribute("to", "a@b.c")
-		})
-			.timeToLive(0)
-			.response {
+		}).timeToLive(0).response {
 				it.onFailure {
 					if ((it as XMPPError).error == ErrorCondition.RemoteServerTimeout) ++counter
 				}
-			}
-			.build()
+			}.build()
 		println("2")
 		rm.register(r1)
 
@@ -292,14 +277,12 @@ class RequestManagerTest {
 			attribute("id", "2")
 			attribute("type", "get")
 			attribute("to", "a@b.c")
-		})
-			.response {
+		}).response {
 				it.onFailure {
 					if ((it as XMPPError).error == ErrorCondition.RemoteServerTimeout) ++counter
 
 				}
-			}
-			.build()
+			}.build()
 		rm.register(r2)
 
 
@@ -329,19 +312,16 @@ class RequestManagerTest {
 			attribute("type", "get")
 			attribute("from", "my@jid.com")
 			attribute("to", "to@jid.com")
-		}
-			.map {
+		}.map {
 				throw XMPPError(null, ErrorCondition.Gone, "TeST")
-			}
-			.response {
+			}.response {
 				it.onSuccess {
 					fail("it shouldn't be called at all")
 				}
 				it.onFailure {
 					catchedException = it
 				}
-			}
-			.build()
+			}.build()
 		halcyon.requestsManager.register(req)
 		val respStanza = element("iq") {
 			xmlns = "jabber:client"
@@ -365,16 +345,14 @@ class RequestManagerTest {
 
 		var catchedException: Throwable? = null
 
-		val req = module.retrieveVCard("to@jid.com".toBareJID())
-			.response {
+		val req = module.retrieveVCard("to@jid.com".toBareJID()).response {
 				it.onSuccess {
 					fail("it shouldn't be called at all")
 				}
 				it.onFailure {
 					catchedException = it
 				}
-			}
-			.build()
+			}.build()
 		halcyon.requestsManager.register(req)
 
 		val respStanza = element("iq") {

@@ -18,6 +18,7 @@
 package tigase.halcyon.core.eventbus
 
 import tigase.halcyon.core.AbstractHalcyon
+import tigase.halcyon.core.TickEvent
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Executors
 
@@ -81,6 +82,7 @@ actual class EventBus actual constructor(context: AbstractHalcyon) : AbstractEve
 	}
 
 	override fun fire(event: Event, handlers: Collection<EventHandler<*>>) {
+		if(event !is TickEvent)
 		log.finest { "Firing event $event with ${handlers.size} handlers" }
 
 		when (mode) {

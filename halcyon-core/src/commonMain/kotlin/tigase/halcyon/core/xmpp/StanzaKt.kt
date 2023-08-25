@@ -17,15 +17,9 @@
  */
 package tigase.halcyon.core.xmpp
 
-fun tigase.halcyon.core.xml.Element.getFromAttr(): JID? {
-	val tmp = this.attributes["from"] ?: return null
-	return JID.parse(tmp)
-}
+fun tigase.halcyon.core.xml.Element.getFromAttr(): FullJID? = this.attributes["from"]?.toFullJID()
 
-fun tigase.halcyon.core.xml.Element.getToAttr(): JID? {
-	val tmp = this.attributes["to"] ?: return null
-	return JID.parse(tmp)
-}
+fun tigase.halcyon.core.xml.Element.getToAttr(): FullJID? = this.attributes["to"]?.toFullJID()
 
 fun tigase.halcyon.core.xml.Element.getIdAttr(): String? {
 	return this.attributes["id"]

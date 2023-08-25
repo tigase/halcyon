@@ -34,6 +34,7 @@ import tigase.halcyon.core.requests.RequestsManager
 import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xml.element
 import tigase.halcyon.core.xmpp.ErrorCondition
+import tigase.halcyon.core.xmpp.FullJID
 import tigase.halcyon.core.xmpp.JID
 import tigase.halcyon.core.xmpp.XMPPException
 import tigase.halcyon.core.xmpp.modules.auth.SASLContext
@@ -75,7 +76,7 @@ abstract class AbstractHalcyon(configurator: ConfigurationBuilder) : Context, Pa
 	protected var sessionController: SessionController? = null
 	final override val eventBus: EventBus = EventBus(this)
 	override val authContext: SASLContext by property(Scope.Connection) { SASLContext() }
-	override var boundJID: JID? by propertySimple(Scope.Session, null)
+	override var boundJID: FullJID? by propertySimple(Scope.Session, null)
 
 	var autoReconnect: Boolean = true
 

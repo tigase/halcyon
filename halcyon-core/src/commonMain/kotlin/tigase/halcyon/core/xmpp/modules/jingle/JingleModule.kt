@@ -26,10 +26,7 @@ import tigase.halcyon.core.modules.Criterion
 import tigase.halcyon.core.modules.XmppModule
 import tigase.halcyon.core.requests.RequestBuilder
 import tigase.halcyon.core.xml.Element
-import tigase.halcyon.core.xmpp.BareJID
-import tigase.halcyon.core.xmpp.ErrorCondition
-import tigase.halcyon.core.xmpp.JID
-import tigase.halcyon.core.xmpp.XMPPException
+import tigase.halcyon.core.xmpp.*
 import tigase.halcyon.core.xmpp.stanzas.IQ
 import tigase.halcyon.core.xmpp.stanzas.IQType
 import tigase.halcyon.core.xmpp.stanzas.Message
@@ -106,11 +103,11 @@ class JingleModule(
 		val jingle = iq.getChildrenNS("jingle", XMLNS) ?: throw XMPPException(ErrorCondition.BadRequest)
 		val action = Action.fromValue(iq.attributes["action"] ?: throw XMPPException(ErrorCondition.BadRequest))
 			?: throw XMPPException(ErrorCondition.BadRequest)
-		val from = JID.parse(iq.attributes["from"] ?: throw XMPPException(ErrorCondition.BadRequest))
+		val from = iq.attributes["from"]?.toJID() ?: throw XMPPException(ErrorCondition.BadRequest)
 		val sid = (jingle.attributes["sid"] ?: sessionManager.activateSessionSid(context.boundJID!!.bareJID, from))
 			?: throw XMPPException(ErrorCondition.BadRequest)
 
-		val initiator = jingle.attributes["initiator"]?.let { JID.parse(it) } ?: from
+		val initiator = jingle.attributes["initiator"]?.toJID() ?: from
 
 		val contents = jingle.children.map { Content.parse(it) }.filterNotNull()
 		val bundle =
@@ -121,7 +118,7 @@ class JingleModule(
 	}
 
 	private fun processMessage(message: Element) {
-		val from = message.attributes["from"]?.let { JID.parse(it) } ?: return
+		val from = message.attributes["from"]?.toJID() ?: return
 		val action =
 			MessageInitiationAction.parse(message.children.filter { "urn:xmpp:jingle-message:0".equals(it.xmlns) }
 											  .firstOrNull() ?: throw XMPPException(ErrorCondition.BadRequest))
@@ -151,13 +148,13 @@ class JingleModule(
 	): RequestBuilder<Unit, Message> {
 		when (action) {
 			is MessageInitiationAction.Proceed -> sendMessageInitiation(
-				MessageInitiationAction.Accept(action.id), context.boundJID!!.copy(resource = null)
+				MessageInitiationAction.Accept(action.id), context.boundJID!!.bareJID
 			).send()
 
 			is MessageInitiationAction.Reject -> {
 				if (jid.bareJID != context.boundJID?.bareJID) {
 					sendMessageInitiation(
-						MessageInitiationAction.Accept(action.id), context.boundJID!!.copy(resource = null)
+						MessageInitiationAction.Accept(action.id), context.boundJID!!.bareJID
 					).send()
 				}
 			}

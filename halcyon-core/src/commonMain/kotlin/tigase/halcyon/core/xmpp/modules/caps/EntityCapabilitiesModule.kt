@@ -25,10 +25,7 @@ import tigase.halcyon.core.logger.LoggerFactory
 import tigase.halcyon.core.modules.*
 import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xml.element
-import tigase.halcyon.core.xmpp.BareJID
-import tigase.halcyon.core.xmpp.ErrorCondition
-import tigase.halcyon.core.xmpp.JID
-import tigase.halcyon.core.xmpp.XMPPException
+import tigase.halcyon.core.xmpp.*
 import tigase.halcyon.core.xmpp.forms.JabberDataForm
 import tigase.halcyon.core.xmpp.modules.StreamFeaturesModule
 import tigase.halcyon.core.xmpp.modules.discovery.DiscoveryModule
@@ -159,7 +156,7 @@ class EntityCapabilitiesModule(
 		getServerNode()?.let { node ->
 			val jid = context.boundJID ?: return
 			if (cache.isCached(node)) return
-			discoModule.info(JID.parse(jid.domain), node).response {
+			discoModule.info(jid.domain.toBareJID(), node).response {
 				if (it.isSuccess) storeInfo(node, it.getOrThrow())
 			}.send()
 		}

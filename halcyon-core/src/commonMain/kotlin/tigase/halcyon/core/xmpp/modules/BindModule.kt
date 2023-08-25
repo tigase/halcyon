@@ -29,15 +29,12 @@ import tigase.halcyon.core.modules.XmppModuleProvider
 import tigase.halcyon.core.requests.RequestBuilder
 import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xml.element
-import tigase.halcyon.core.xmpp.ErrorCondition
-import tigase.halcyon.core.xmpp.JID
-import tigase.halcyon.core.xmpp.XMPPException
+import tigase.halcyon.core.xmpp.*
 import tigase.halcyon.core.xmpp.modules.auth.*
 import tigase.halcyon.core.xmpp.modules.sm.StreamManagementModule
 import tigase.halcyon.core.xmpp.stanzas.IQ
 import tigase.halcyon.core.xmpp.stanzas.IQType
 import tigase.halcyon.core.xmpp.stanzas.iq
-import tigase.halcyon.core.xmpp.toJID
 
 sealed class BindEvent : Event(TYPE) {
 
@@ -81,7 +78,7 @@ class BindModule(override val context: AbstractHalcyon) : XmppModule, InlineProt
 	override val features = arrayOf(XMLNS)
 
 	@Deprecated("Moved to Context")
-	var boundJID: JID? by context::boundJID
+	var boundJID: FullJID? by context::boundJID
 		internal set
 
 	var state: State by propertySimple(Scope.Session, State.Unknown)
@@ -115,7 +112,7 @@ class BindModule(override val context: AbstractHalcyon) : XmppModule, InlineProt
 	private fun createBindResult(element: IQ): BindResult {
 		val bind = element.getChildrenNS("bind", XMLNS)!!
 		val jidElement = bind.getFirstChild("jid")!!
-		val jid = JID.parse(jidElement.value!!)
+		val jid = jidElement.value!!.toFullJID()
 		return BindResult(jid)
 	}
 
@@ -123,13 +120,13 @@ class BindModule(override val context: AbstractHalcyon) : XmppModule, InlineProt
 		throw XMPPException(ErrorCondition.BadRequest)
 	}
 
-	private fun bind(jid: JID) {
+	private fun bind(jid: FullJID) {
 		state = State.Success
 		context.boundJID = jid
 		context.eventBus.fire(BindEvent.Success(jid))
 	}
 
-	data class BindResult(val jid: JID)
+	data class BindResult(val jid: FullJID)
 
 	override fun featureFor(features: InlineFeatures, stage: InlineProtocolStage): Element? {
 		return if (stage == InlineProtocolStage.AfterSasl) {
@@ -151,7 +148,7 @@ class BindModule(override val context: AbstractHalcyon) : XmppModule, InlineProt
 
 	override fun process(response: InlineResponse) {
 		response.whenExists(InlineProtocolStage.AfterSasl, "bound", BIND2_XMLNS) { boundElement ->
-			bind(response.element.getFirstChild("authorization-identifier")!!.value!!.toJID())
+			bind(response.element.getFirstChild("authorization-identifier")!!.value!!.toFullJID())
 
 			InlineResponse(InlineProtocolStage.AfterBind, boundElement).let { response ->
 				context.modules.getModules().filterIsInstance<InlineProtocol>().forEach { consumer ->

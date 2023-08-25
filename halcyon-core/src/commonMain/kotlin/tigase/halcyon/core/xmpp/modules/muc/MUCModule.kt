@@ -357,7 +357,7 @@ class MUCModule(override val context: Context) : XmppModule, MUCModuleConfig {
 		val room = store.findRoom(roomJID) ?: store.createRoom(roomJID, nickname)
 		room.password = password
 		return context.request.presence {
-			to = room.roomJID.toJID().copy(resource = nickname)
+			to = room.roomJID.copy(resource = nickname)
 			"x" {
 				xmlns = XMLNS
 				room.password?.let { pwd ->
@@ -379,7 +379,7 @@ class MUCModule(override val context: Context) : XmppModule, MUCModuleConfig {
 	 */
 	fun leave(room: Room): RequestBuilder<Unit, Presence> {
 		return context.request.presence {
-			to = room.roomJID.toJID().copy(resource = room.nickname)
+			to = room.roomJID.copy(resource = room.nickname)
 			type = PresenceType.Unavailable
 		}
 	}
@@ -389,7 +389,7 @@ class MUCModule(override val context: Context) : XmppModule, MUCModuleConfig {
 	 */
 	fun destroy(room: Room): RequestBuilder<Unit, IQ> = context.request.iq {
 		type = IQType.Set
-		to = room.roomJID.toJID()
+		to = room.roomJID
 		"query" {
 			xmlns = "$XMLNS#owner"
 			"destroy" {}
@@ -401,7 +401,7 @@ class MUCModule(override val context: Context) : XmppModule, MUCModuleConfig {
 	 */
 	fun invite(room: Room, invitedJid: BareJID, reason: String? = null): RequestBuilder<Unit, Message> =
 		context.request.message {
-			to = room.roomJID.toJID()
+			to = room.roomJID
 			"x" {
 				xmlns = "$XMLNS#user"
 				"invite" {
@@ -416,7 +416,7 @@ class MUCModule(override val context: Context) : XmppModule, MUCModuleConfig {
 	 */
 	fun inviteDirectly(room: Room, invitedJid: BareJID, reason: String? = null): RequestBuilder<Unit, Message> =
 		context.request.message {
-			to = invitedJid.toJID()
+			to = invitedJid
 			"x" {
 				xmlns = "jabber:x:conference"
 				attributes["jid"] = room.roomJID.toString()
@@ -433,7 +433,7 @@ class MUCModule(override val context: Context) : XmppModule, MUCModuleConfig {
 	 * Builds retrieve room configuration request. In response it returns data form with configuration.
 	 */
 	fun retrieveRoomConfig(room: Room): RequestBuilder<JabberDataForm, IQ> = context.request.iq {
-		to = room.roomJID.toJID()
+		to = room.roomJID
 		type = IQType.Get
 		"query" {
 			xmlns = "$XMLNS#owner"
@@ -448,7 +448,7 @@ class MUCModule(override val context: Context) : XmppModule, MUCModuleConfig {
 	 * Builds update room configuration request.
 	 */
 	fun updateRoomConfig(room: Room, form: JabberDataForm): RequestBuilder<Unit, IQ> = context.request.iq {
-		to = room.roomJID.toJID()
+		to = room.roomJID
 		type = IQType.Set
 		"query" {
 			xmlns = "$XMLNS#owner"
@@ -461,7 +461,7 @@ class MUCModule(override val context: Context) : XmppModule, MUCModuleConfig {
 	 */
 	fun message(room: Room, messageBody: String): RequestBuilder<Unit, Message> {
 		return context.request.message {
-			to = room.roomJID.toJID()
+			to = room.roomJID
 			type = MessageType.Groupchat
 			body = messageBody
 		}
@@ -473,7 +473,7 @@ class MUCModule(override val context: Context) : XmppModule, MUCModuleConfig {
 	fun decline(invitation: Invitation, reason: String? = null): RequestBuilder<Unit, Message> {
 		if (invitation.direct) throw HalcyonException("Direct invitation should be silently ignored.")
 		return context.request.message {
-			to = invitation.roomjid.toJID()
+			to = invitation.roomjid
 			"x" {
 				xmlns = "$XMLNS#user"
 				"decline" {
@@ -496,7 +496,7 @@ class MUCModule(override val context: Context) : XmppModule, MUCModuleConfig {
 	 */
 	fun retrieveAffiliations(room: Room, filter: Affiliation? = null): RequestBuilder<Collection<RoomAffiliation>, IQ> =
 		context.request.iq {
-			to = room.roomJID.toJID()
+			to = room.roomJID
 			type = IQType.Get
 			"query" {
 				xmlns = "$XMLNS#admin"
@@ -526,7 +526,7 @@ class MUCModule(override val context: Context) : XmppModule, MUCModuleConfig {
 	 */
 	fun updateAffiliations(room: Room, affiliations: Collection<RoomAffiliation>): RequestBuilder<Unit, IQ> =
 		context.request.iq {
-			to = room.roomJID.toJID()
+			to = room.roomJID
 			type = IQType.Set
 			"query" {
 				xmlns = "$XMLNS#admin"
@@ -544,7 +544,7 @@ class MUCModule(override val context: Context) : XmppModule, MUCModuleConfig {
 	 * Builds request for set room subject.
 	 */
 	fun updateRoomSubject(room: Room, subject: String?): RequestBuilder<Unit, Message> = context.request.message {
-		to = room.roomJID.toJID()
+		to = room.roomJID
 		type = MessageType.Groupchat
 		"subject" {
 			if (subject != null) {
@@ -557,6 +557,6 @@ class MUCModule(override val context: Context) : XmppModule, MUCModuleConfig {
 	 * Builds request from self ping.
 	 */
 	fun ping(room: Room): RequestBuilder<PingModule.Pong, IQ> =
-		context.modules.get<PingModule>(PingModule.TYPE).ping(JID(room.roomJID, room.nickname))
+		context.modules.get<PingModule>(PingModule.TYPE).ping(FullJID(room.roomJID, room.nickname))
 
 }

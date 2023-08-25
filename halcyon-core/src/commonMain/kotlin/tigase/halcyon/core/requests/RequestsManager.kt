@@ -21,7 +21,8 @@ import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import tigase.halcyon.core.logger.LoggerFactory
 import tigase.halcyon.core.xml.Element
-import tigase.halcyon.core.xmpp.JID
+import tigase.halcyon.core.xmpp.FullJID
+import tigase.halcyon.core.xmpp.bareJID
 import tigase.halcyon.core.xmpp.getFromAttr
 
 class RequestsManager {
@@ -36,7 +37,7 @@ class RequestsManager {
 		requests[key(request.stanza)] = request
 	}
 
-	var boundJID: JID? = null
+	var boundJID: FullJID? = null
 
 	private fun key(element: Element): String = "${element.name}:${element.attributes["id"]}"
 
@@ -84,8 +85,7 @@ class RequestsManager {
 
 		requests.entries.filter {
 			it.value.creationTimestamp < maxCreationTimestamp
-		}
-			.forEach {
+		}.forEach {
 				requests.remove(it.key)
 				if (!it.value.isCompleted) {
 					execute { it.value.markTimeout() }
@@ -107,7 +107,6 @@ class RequestsManager {
 	}
 
 	fun getWaitingRequestsSize(): Int = requests.size
-	fun getRequestsIDs(): String = requests.values.map { it.id }
-		.joinToString { it }
+	fun getRequestsIDs(): String = requests.values.map { it.id }.joinToString { it }
 
 }

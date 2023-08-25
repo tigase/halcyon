@@ -19,6 +19,7 @@ package tigase.halcyon.core.xmpp.modules.presence
 
 import tigase.halcyon.core.xmpp.BareJID
 import tigase.halcyon.core.xmpp.JID
+import tigase.halcyon.core.xmpp.bareJID
 import tigase.halcyon.core.xmpp.stanzas.Presence
 
 class InMemoryPresenceStore : PresenceStore {

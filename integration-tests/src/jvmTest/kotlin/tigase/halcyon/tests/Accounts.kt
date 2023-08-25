@@ -1,6 +1,7 @@
 package tigase.halcyon.tests
 
 import tigase.halcyon.core.Halcyon
+import tigase.halcyon.core.builder.socketConnector
 import tigase.halcyon.core.connector.ReceivedXMLElementEvent
 import tigase.halcyon.core.connector.SentXMLElementEvent
 import tigase.halcyon.core.xmpp.BareJID
@@ -27,6 +28,9 @@ fun createHalcyon(): Halcyon {
 		auth {
 			userJID = jid
 			password { password }
+		}
+		socketConnector {
+//			hostname="ec2-54-189-207-239.us-west-2.compute.amazonaws.com"
 		}
 	}.apply {
 		eventBus.register<ReceivedXMLElementEvent>(ReceivedXMLElementEvent.TYPE) {

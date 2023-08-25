@@ -276,7 +276,7 @@ class DiscoveryModule(override val context: Context) : XmppModule, DiscoveryModu
 	internal fun buildInfo(response: Element): Info {
 		val query = response.getChildrenNS("query", XMLNS_INFO)!!
 		val node = query.attributes["node"]
-		val jid = JID.parse(response.attributes["from"]!!)
+		val jid = response.attributes["from"]!!.toJID()
 
 		val identities = query.getChildren("identity").map {
 			Identity(
@@ -341,10 +341,10 @@ class DiscoveryModule(override val context: Context) : XmppModule, DiscoveryModu
 	private fun buildItems(response: Element): Items {
 		val query = response.getChildrenNS("query", XMLNS_ITEMS)!!
 		val node = query.attributes["node"]
-		val jid = JID.parse(response.attributes["from"]!!)
+		val jid = response.attributes["from"]!!.toJID()
 
 		val items = query.getChildren("item").map {
-			Item(JID.parse(it.attributes["jid"]!!), it.attributes["name"], it.attributes["node"])
+			Item(it.attributes["jid"]!!.toJID(), it.attributes["name"], it.attributes["node"])
 		}.toList()
 
 		return Items(jid, node, items)
@@ -357,7 +357,7 @@ class DiscoveryModule(override val context: Context) : XmppModule, DiscoveryModu
 
 	internal fun discoverAccountFeatures() {
 		val ownJid = context.boundJID?.bareJID ?: return
-		info(JID.parse(ownJid.toString())).response {
+		info(ownJid).response {
 			if (it.isSuccess) {
 				it.getOrNull()?.let { info ->
 					context.eventBus.fire(AccountFeaturesReceivedEvent(info.identities, info.features))
@@ -373,7 +373,7 @@ class DiscoveryModule(override val context: Context) : XmppModule, DiscoveryModu
 			context.eventBus.fire(ServerFeaturesReceivedEvent(caps.identities, caps.features))
 		} else {
 			val ownJid = context.boundJID?.bareJID ?: return
-			info(JID.parse(ownJid.domain)).response {
+			info(ownJid.domain.toBareJID()).response {
 				if (it.isSuccess) {
 					it.getOrNull()?.let { info ->
 						context.eventBus.fire(ServerFeaturesReceivedEvent(info.identities, info.features))

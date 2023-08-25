@@ -24,9 +24,7 @@ import tigase.halcyon.core.eventbus.EventDefinition
 import tigase.halcyon.core.modules.*
 import tigase.halcyon.core.requests.RequestBuilder
 import tigase.halcyon.core.xml.Element
-import tigase.halcyon.core.xmpp.ErrorCondition
-import tigase.halcyon.core.xmpp.JID
-import tigase.halcyon.core.xmpp.XMPPException
+import tigase.halcyon.core.xmpp.*
 import tigase.halcyon.core.xmpp.modules.caps.EntityCapabilitiesModule
 import tigase.halcyon.core.xmpp.modules.presence.PresenceModule
 import tigase.halcyon.core.xmpp.modules.uniqueId.getOriginID
@@ -34,7 +32,6 @@ import tigase.halcyon.core.xmpp.stanzas.Message
 import tigase.halcyon.core.xmpp.stanzas.MessageNode
 import tigase.halcyon.core.xmpp.stanzas.MessageType
 import tigase.halcyon.core.xmpp.stanzas.wrap
-import tigase.halcyon.core.xmpp.toJID
 
 data class ChatMarkerEvent(val jid: JID, val msgId: String, val stanza: Message, val marker: ChatMarkersModule.Marker) :
 	Event(TYPE) {

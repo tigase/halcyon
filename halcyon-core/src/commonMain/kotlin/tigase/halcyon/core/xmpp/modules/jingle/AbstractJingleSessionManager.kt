@@ -24,7 +24,9 @@ import tigase.halcyon.core.eventbus.handler
 import tigase.halcyon.core.logger.LoggerFactory
 import tigase.halcyon.core.xmpp.BareJID
 import tigase.halcyon.core.xmpp.JID
+import tigase.halcyon.core.xmpp.bareJID
 import tigase.halcyon.core.xmpp.modules.presence.ContactChangeStatusEvent
+import tigase.halcyon.core.xmpp.resource
 import tigase.halcyon.core.xmpp.stanzas.PresenceType
 
 abstract class AbstractJingleSessionManager<S : AbstractJingleSession>(
@@ -64,8 +66,7 @@ abstract class AbstractJingleSessionManager<S : AbstractJingleSession>(
 						Content.Creator.Responder,
 						InitiationType.Message
 					)
-					val media = event.action.descriptions.filter { isDesciptionSupported(it) }
-						.map { it.media }
+					val media = event.action.descriptions.filter { isDesciptionSupported(it) }.map { it.media }
 					fireIncomingSessionEvent(event.context, session, media)
 				}
 			}
@@ -134,8 +135,7 @@ abstract class AbstractJingleSessionManager<S : AbstractJingleSession>(
 			session.initiated(event.contents, event.bundle)
 			fireIncomingSessionEvent(event.context,
 									 session,
-									 event.contents.map { it.description?.media }
-										 .filterNotNull())
+									 event.contents.map { it.description?.media }.filterNotNull())
 		}
 	}
 
@@ -162,8 +162,7 @@ abstract class AbstractJingleSessionManager<S : AbstractJingleSession>(
 		val account = event.context.boundJID!!.bareJID
 		session(account, event.jid, event.sid)?.let { session ->
 			for (content in event.contents) {
-				content.transports.flatMap { it.candidates }
-					.forEach { session.addCandidate(it, content.name) }
+				content.transports.flatMap { it.candidates }.forEach { session.addCandidate(it, content.name) }
 			}
 		}
 	}

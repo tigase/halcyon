@@ -172,7 +172,7 @@ class MAMModule(override val context: Context) : XmppModule, MAMModuleConfig {
 		val queryId = nextUID()
 		val form: Element? = prepareForm(with, start, end)
 		val stanza = iq {
-			if (to != null) this.to = to.toJID()
+			if (to != null) this.to = to
 			type = IQType.Set
 			query(XMLNS) {
 				attribute("queryid", queryId)

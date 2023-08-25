@@ -21,13 +21,14 @@ import tigase.halcyon.core.exceptions.HalcyonException
 import tigase.halcyon.core.xml.*
 import tigase.halcyon.core.xmpp.JID
 import tigase.halcyon.core.xmpp.nextUID
+import tigase.halcyon.core.xmpp.toJID
 
 @HalcyonElementDsl
 abstract class StanzaNode<STANZA_TYPE>(element: Element) : ElementNode(element) {
 
 	private fun getJID(attName: String): JID? {
 		val att = element.attributes[attName]
-		return if (att == null) null else JID.parse(att)
+		return if (att == null) null else att.toJID()
 	}
 
 	protected open fun setAtt(attName: String, value: String?) {

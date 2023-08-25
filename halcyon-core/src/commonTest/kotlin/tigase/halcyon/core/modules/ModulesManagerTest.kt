@@ -22,7 +22,7 @@ import tigase.halcyon.core.configuration.Configuration
 import tigase.halcyon.core.requests.RequestBuilderFactory
 import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xml.element
-import tigase.halcyon.core.xmpp.JID
+import tigase.halcyon.core.xmpp.FullJID
 import tigase.halcyon.core.xmpp.modules.auth.SASLContext
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -67,7 +67,7 @@ class ModulesManagerTest {
 				get() = TODO("not implemented") //To change initializer of created properties use File | Settings | File Templates.
 			override val authContext: SASLContext
 				get() = TODO("Not yet implemented")
-			override val boundJID: JID
+			override val boundJID: FullJID
 				get() = TODO("Not yet implemented")
 		}
 		mm.register(Module01(mm.context))

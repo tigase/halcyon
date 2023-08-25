@@ -131,7 +131,7 @@ class ChatStateModule(override val context: Context) : XmppModule, ChatStateModu
 
 	fun publishChatState(jid: BareJID, state: ChatState) {
 		val msg = message {
-			to = jid.toJID()
+			to = jid
 			state.xmppValue {
 				xmlns = XMLNS
 			}

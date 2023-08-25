@@ -30,13 +30,10 @@ import tigase.halcyon.core.modules.XmppModuleProvider
 import tigase.halcyon.core.requests.RequestBuilder
 import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xml.element
-import tigase.halcyon.core.xmpp.BareJID
-import tigase.halcyon.core.xmpp.ErrorCondition
-import tigase.halcyon.core.xmpp.XMPPException
+import tigase.halcyon.core.xmpp.*
 import tigase.halcyon.core.xmpp.stanzas.IQ
 import tigase.halcyon.core.xmpp.stanzas.IQType
 import tigase.halcyon.core.xmpp.stanzas.iq
-import tigase.halcyon.core.xmpp.toBareJID
 
 /**
  * Base event for roster  item manipulation events.
@@ -259,10 +256,11 @@ class RosterModule(context: Context) : RosterModuleConfiguration, AbstractXmppIQ
 			}
 		}
 		updateRequest(iq)
-		return context.request.iq(iq)
-			.map {
-				val result = it.getChildrenNS("query", XMLNS)
-					?.let(this@RosterModule::processQueryResponse) ?: RosterResponse(null)
+		return context.request.iq(iq).map {
+				val result =
+					it.getChildrenNS("query", XMLNS)?.let(this@RosterModule::processQueryResponse) ?: RosterResponse(
+						null
+					)
 				context.eventBus.fire(RosterLoadedEvent())
 				context.eventBus.fire(RosterUpdatedEvent())
 				result
@@ -270,9 +268,7 @@ class RosterModule(context: Context) : RosterModuleConfiguration, AbstractXmppIQ
 	}
 
 	private fun updateRequest(iq: IQ) {
-		context.modules.getModules()
-			.filter { it is RosterItemAnnotationProcessor }
-			.forEach {
+		context.modules.getModules().filter { it is RosterItemAnnotationProcessor }.forEach {
 				(it as RosterItemAnnotationProcessor).prepareRosterGetRequest(iq)
 			}
 	}
@@ -301,8 +297,7 @@ class RosterModule(context: Context) : RosterModuleConfiguration, AbstractXmppIQ
 	private fun processQueryResponse(query: Element): RosterResponse {
 		log.fine { "Processing roster data" }
 		val ver = query.attributes["ver"]
-		query.getChildren("item")
-			.map { item ->
+		query.getChildren("item").map { item ->
 				val ri = parseItem(item)
 				processRosterItem(item, ri)
 			}
@@ -335,12 +330,11 @@ class RosterModule(context: Context) : RosterModuleConfiguration, AbstractXmppIQ
 		)
 		val name = item.attributes["name"]
 		val subscription = item.attributes["subscription"]?.let { sname ->
-			Subscription.values()
-				.firstOrNull { s -> s.value == sname } ?: throw XMPPException(ErrorCondition.BadRequest)
+			Subscription.values().firstOrNull { s -> s.value == sname }
+				?: throw XMPPException(ErrorCondition.BadRequest)
 		}
 		val ask = item.attributes["ask"]?.let { sname ->
-			Ask.values()
-				.firstOrNull { s -> s.value == sname } ?: throw XMPPException(ErrorCondition.BadRequest)
+			Ask.values().firstOrNull { s -> s.value == sname } ?: throw XMPPException(ErrorCondition.BadRequest)
 		}
 		val approved = when (item.attributes["approved"]) {
 			"1", "true" -> true
@@ -348,8 +342,7 @@ class RosterModule(context: Context) : RosterModuleConfiguration, AbstractXmppIQ
 			null -> false
 			else -> throw XMPPException(ErrorCondition.BadRequest, "Unknown value of approved field.")
 		}
-		val groups = item.getChildren("group")
-			.map { it.value ?: "" }
+		val groups = item.getChildren("group").map { it.value ?: "" }
 
 		val annotations = createAnnotations(item)
 
@@ -357,10 +350,8 @@ class RosterModule(context: Context) : RosterModuleConfiguration, AbstractXmppIQ
 	}
 
 	private fun createAnnotations(item: Element): Array<RosterItemAnnotation> {
-		return context.modules.getModules()
-			.filter { it is RosterItemAnnotationProcessor }
-			.mapNotNull { (it as RosterItemAnnotationProcessor).processRosterItem(item) }
-			.toTypedArray()
+		return context.modules.getModules().filter { it is RosterItemAnnotationProcessor }
+			.mapNotNull { (it as RosterItemAnnotationProcessor).processRosterItem(item) }.toTypedArray()
 	}
 
 	override fun processGet(element: IQ) = throw XMPPException(ErrorCondition.NotAllowed)
@@ -372,8 +363,7 @@ class RosterModule(context: Context) : RosterModuleConfiguration, AbstractXmppIQ
 		if (from != null && from.bareJID != boundJID.bareJID) {
 			throw XMPPException(ErrorCondition.NotAllowed)
 		}
-		element.getChildrenNS("query", XMLNS)
-			?.let(this@RosterModule::processQueryResponse)
+		element.getChildrenNS("query", XMLNS)?.let(this@RosterModule::processQueryResponse)
 		context.eventBus.fire(RosterUpdatedEvent())
 	}
 
@@ -391,8 +381,7 @@ class RosterModule(context: Context) : RosterModuleConfiguration, AbstractXmppIQ
 					addChild(createItem(it))
 				}
 			}
-		}
-			.map {}
+		}.map {}
 	}
 
 	/**
@@ -412,8 +401,7 @@ class RosterModule(context: Context) : RosterModuleConfiguration, AbstractXmppIQ
 					}
 				}
 			}
-		}
-			.map {}
+		}.map {}
 	}
 
 	/**

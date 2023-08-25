@@ -157,7 +157,7 @@ class UserAvatarModule(override val context: Context, private val pubSubModule: 
 	)
 
 	fun retrieveAvatar(jid: JID, avatarID: String): RequestBuilder<AvatarData, IQ> {
-		return pubSubModule.retrieveItem(JID.parse(jid.bareJID.toString()), XMLNS_DATA, avatarID).map { response ->
+		return pubSubModule.retrieveItem(jid.bareJID, XMLNS_DATA, avatarID).map { response ->
 			val item = response.items.first()
 			val data = item.content!!.value
 			AvatarData(avatarID, data)

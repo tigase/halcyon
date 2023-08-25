@@ -29,11 +29,8 @@ import tigase.halcyon.core.modules.XmppModuleProvider
 import tigase.halcyon.core.requests.RequestBuilder
 import tigase.halcyon.core.requests.XMPPError
 import tigase.halcyon.core.xml.Element
-import tigase.halcyon.core.xmpp.ErrorCondition
-import tigase.halcyon.core.xmpp.JID
-import tigase.halcyon.core.xmpp.XMPPException
+import tigase.halcyon.core.xmpp.*
 import tigase.halcyon.core.xmpp.forms.JabberDataForm
-import tigase.halcyon.core.xmpp.getFromAttr
 import tigase.halcyon.core.xmpp.stanzas.*
 
 /**
@@ -296,7 +293,7 @@ class PubSubModule(override val context: Context) : XmppModule, PubSubModuleConf
 		)
 
 		return Subscription(
-			nn, JID.parse(jid), SubscriptionState.values().first { state -> state.xmppName == sstate }, subid
+			nn, jid.toJID(), SubscriptionState.values().first { state -> state.xmppName == sstate }, subid
 		)
 	}
 

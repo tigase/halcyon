@@ -64,22 +64,19 @@ class InBandRegistrationModule(context: Context) : InBandRegistrationModuleConfi
 	override fun process(element: Element) = throw XMPPException(ErrorCondition.NotAcceptable)
 
 	private fun createRegistrationForm(query: Element): JabberDataForm {
-		query.getChildrenNS("x", JabberDataForm.XMLNS)
-			?.let {
+		query.getChildrenNS("x", JabberDataForm.XMLNS)?.let {
 				return JabberDataForm(it)
 			}
 		val form = JabberDataForm.create(FormType.Form)
 
-		query.children.filter { it.name in allowedRegistrationFields }
-			.map { element ->
+		query.children.filter { it.name in allowedRegistrationFields }.map { element ->
 				Field.create(
 					element.name, when (element.name) {
 						"password" -> FieldType.TextPrivate
 						"registered" -> FieldType.Bool
 						else -> FieldType.TextSingle
 					}
-				)
-					.also { field ->
+				).also { field ->
 						if (element.name == "registered") {
 							field.fieldValue = "1"
 						} else {
@@ -87,8 +84,7 @@ class InBandRegistrationModule(context: Context) : InBandRegistrationModuleConfi
 							field.fieldValue = element.value
 						}
 					}
-			}
-			.forEach {
+			}.forEach {
 				form.addField(it)
 			}
 
@@ -99,53 +95,44 @@ class InBandRegistrationModule(context: Context) : InBandRegistrationModuleConfi
 
 	fun requestRegistrationForm(toJID: BareJID): RequestBuilder<JabberDataForm, IQ> = context.request.iq {
 		type = IQType.Get
-		to = toJID.toJID()
+		to = toJID
 		query(XMLNS) {}
-	}
-		.map { iq ->
-			iq.getChildrenNS("query", XMLNS)
-				?.let(::createRegistrationForm) ?: throw XMPPException(
+	}.map { iq ->
+			iq.getChildrenNS("query", XMLNS)?.let(::createRegistrationForm) ?: throw XMPPException(
 				ErrorCondition.NotAcceptable, "Missing registration fields."
 			)
 		}
 
 	fun submitRegistrationForm(toJID: BareJID, form: JabberDataForm): RequestBuilder<Unit, IQ> = context.request.iq {
 		type = IQType.Set
-		to = toJID.toJID()
+		to = toJID
 		query(XMLNS) {
 			if ((form.getFieldByVar(REGISTRATION_FORM_TYPE)?.fieldValue) == "plain") {
-				form.getAllFields()
-					.filter {
+				form.getAllFields().filter {
 						it.fieldName in allowedRegistrationFields && it.fieldName !in listOf(
 							"registered", "instructions"
 						)
-					}
-					.map { element(it.fieldName!!) { +it.fieldValue!! } }
-					.forEach {
+					}.map { element(it.fieldName!!) { +it.fieldValue!! } }.forEach {
 						addChild(it)
 					}
 			} else if ((form.getFieldByVar(REGISTRATION_FORM_TYPE)?.fieldValue ?: "form") == "form") {
-				form.createSubmitForm()
-					.apply {
+				form.createSubmitForm().apply {
 						children.firstOrNull { it.name == "field" && it.attributes["var"] == REGISTRATION_FORM_TYPE }
 							?.let {
 								remove(it)
 							}
-					}
-					.let {
+					}.let {
 						addChild(it)
 					}
 			}
 		}
-	}
-		.map { }
+	}.map { }
 
 	fun cancelRegistration(): RequestBuilder<Unit, IQ> = context.request.iq {
 		query(XMLNS) {
 			"remove" {}
 		}
-	}
-		.map { }
+	}.map { }
 
 	fun isAllowed(streamFeatures: Element): Boolean =
 		context.config.registration != null && streamFeatures.getChildrenNS(

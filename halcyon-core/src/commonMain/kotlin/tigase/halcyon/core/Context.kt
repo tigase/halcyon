@@ -21,7 +21,7 @@ import tigase.halcyon.core.configuration.Configuration
 import tigase.halcyon.core.eventbus.EventBus
 import tigase.halcyon.core.modules.ModulesManager
 import tigase.halcyon.core.requests.RequestBuilderFactory
-import tigase.halcyon.core.xmpp.JID
+import tigase.halcyon.core.xmpp.FullJID
 import tigase.halcyon.core.xmpp.modules.auth.SASLContext
 
 interface Context {
@@ -38,5 +38,5 @@ interface Context {
 
 	val authContext: SASLContext
 
-	val boundJID: JID?
+	val boundJID: FullJID?
 }
