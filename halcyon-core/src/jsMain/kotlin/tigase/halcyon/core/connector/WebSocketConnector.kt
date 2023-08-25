@@ -28,6 +28,7 @@ import tigase.halcyon.core.logger.LoggerFactory
 import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xml.parser.StreamParser
 import tigase.halcyon.core.xmpp.modules.discoaltconn.AlternativeConnectionMethodModule
+import tigase.halcyon.core.xmpp.modules.discoaltconn.HostLink
 import kotlin.time.Duration.Companion.seconds
 
 class WebSocketConnectionErrorEvent(@Suppress("unused") val description: String) : ConnectionErrorEvent()
@@ -111,6 +112,9 @@ class WebSocketConnector(halcyon: Halcyon) : AbstractConnector(halcyon) {
 
 	private fun createSocket(completionHandler: (WebSocket) -> Unit) {
 		resolveTarget { url ->
+			if (!config.allowUnsecureConnection && url.startsWith("ws:")) {
+				throw ConnectorException("Unsecure connection is not allowed.")
+			}
 			try {
 				log.info { "Opening WebSocket connection to $url" }
 				val s = WebSocket(url, "xmpp")
@@ -134,12 +138,17 @@ class WebSocketConnector(halcyon: Halcyon) : AbstractConnector(halcyon) {
 			log.fine("Checking alternative connection methods...")
 			md.discovery(config.domain) {
 				log.fine("Found connection methods: $it")
-				val url =
-					it.filter { it.rel == "urn:xmpp:alt-connections:websocket" }.filter { it.href.startsWith("wss:") }
-						.map {
-							it.href
-						}.firstOrNull()
-				completionHandler(url ?: "wss://${config.domain}:5291/")
+				it.searchForProtocol("wss:")?.let { url ->
+					completionHandler(url)
+					return@discovery
+				}
+				if (config.allowUnsecureConnection) {
+					it.searchForProtocol("ws:")?.let { url ->
+						completionHandler(url)
+						return@discovery
+					}
+				}
+				completionHandler("wss://${config.domain}:5291/")
 			}
 			return
 		}
@@ -223,3 +232,7 @@ class WebSocketConnector(halcyon: Halcyon) : AbstractConnector(halcyon) {
 	}
 
 }
+
+private fun List<HostLink>.searchForProtocol(protocolPrefix: String) =
+	this.filter { it.rel == "urn:xmpp:alt-connections:websocket" }.filter { it.href.startsWith(protocolPrefix) }
+		.map { it.href }.firstOrNull()

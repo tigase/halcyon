@@ -20,6 +20,5 @@ package tigase.halcyon.core.connector
 import tigase.halcyon.core.configuration.ConnectionConfig
 
 data class WebSocketConnectorConfig(
-	val domain: String,
-	val webSocketUrl: String?,
+	val domain: String, val webSocketUrl: String?, val allowUnsecureConnection: Boolean
 ) : ConnectionConfig

@@ -59,61 +59,61 @@ class StreamParserTest {
 		assertEquals("&#123;", e.attributes["id"])
 
 		try {
-			e = parse("<message from=\"test@example.com\"><body>123 - &123;</body></message>")
+			parse("<message from=\"test@example.com\"><body>123 - &123;</body></message>")
 			fail("Error expected!")
 		} catch (_: Exception) {
 		}
 
 		try {
-			e = parse("<message from=\"test@example.com\"><body>123 - &#123</body></message>")
+			parse("<message from=\"test@example.com\"><body>123 - &#123</body></message>")
 			fail("Error expected!")
 		} catch (_: Exception) {
 		}
 
 		try {
-			e = parse("<message from=\"test@example.com\"><body>123 - &a123</body></message>")
+			parse("<message from=\"test@example.com\"><body>123 - &a123</body></message>")
 			fail("Error expected!")
 		} catch (_: Exception) {
 		}
 
 		try {
-			e = parse("<message from=\"test@example.com\" id=\"&123;\"></message>")
+			parse("<message from=\"test@example.com\" id=\"&123;\"></message>")
 			fail("Error expected!")
 		} catch (_: Exception) {
 		}
 
 		try {
-			e = parse("<message from=\"test@example.com\" id=\"&a123\"></message>")
+			parse("<message from=\"test@example.com\" id=\"&a123\"></message>")
 			fail("Error expected!")
 		} catch (_: Exception) {
 		}
 
 		try {
-			e = parse("<mes&sage from=\"test@example.com\"></message>")
+			parse("<mes&sage from=\"test@example.com\"></message>")
 			fail("Error expected!")
 		} catch (_: Exception) {
 		}
 
 		try {
-			e = parse("<mes&amp;sage from=\"test@example.com\"></message>")
+			parse("<mes&amp;sage from=\"test@example.com\"></message>")
 			fail("Error expected!")
 		} catch (_: Exception) {
 		}
 
 		try {
-			e = parse("<message from=\"test@example.com\"><<body>Test</body></message>")
+			parse("<message from=\"test@example.com\"><<body>Test</body></message>")
 			fail("Error expected!")
 		} catch (_: Exception) {
 		}
 
 		try {
-			e = parse("<message from=\"test@example.com\"><body>Test</body1></message>")
+			parse("<message from=\"test@example.com\"><body>Test</body1></message>")
 			fail("Error expected!")
 		} catch (_: Exception) {
 		}
 
 		try {
-			e = parse("<message to=\"test@zeus\" type=\"chat\" id=\"t&amp;t<\"><body>Test &amp; done</body></message>")
+			parse("<message to=\"test@zeus\" type=\"chat\" id=\"t&amp;t<\"><body>Test &amp; done</body></message>")
 			fail("Error expected!")
 		} catch (_: Exception) {
 		}
