@@ -71,6 +71,8 @@ class SocketConnector(halcyon: Halcyon) : AbstractConnector(halcyon) {
 	var secured: Boolean = false
 		private set
 
+	private var started = false
+
 	private val log = LoggerFactory.logger("tigase.halcyon.core.connector.socket.SocketConnector")
 
 	private lateinit var socket: Socket
@@ -109,24 +111,24 @@ class SocketConnector(halcyon: Halcyon) : AbstractConnector(halcyon) {
 
 		override fun onStreamClosed() {
 			log.finest { "Stream closed" }
-			halcyon.eventBus.fire(StreamTerminatedEvent())
+			this@SocketConnector.fire(StreamTerminatedEvent())
 		}
 
 		override fun onStreamStarted(attrs: Map<String, String>) {
 			log.finest { "Stream started: $attrs" }
-			halcyon.eventBus.fire(StreamStartedEvent(attrs))
+			this@SocketConnector.fire(StreamStartedEvent(attrs))
 		}
 
 		override fun onParseError(errorMessage: String) {
 			log.finest { "Parse error: $errorMessage" }
-			halcyon.eventBus.fire(ParseErrorEvent(errorMessage))
+			this@SocketConnector.fire(ParseErrorEvent(errorMessage))
 		}
 	}
 
 	private fun processReceivedElement(element: Element) {
 		when (element.xmlns) {
 			XMLNS_START_TLS -> processTLSStanza(element)
-			else -> halcyon.eventBus.fire(ReceivedXMLElementEvent(element))
+			else -> this@SocketConnector.fire(ReceivedXMLElementEvent(element))
 		}
 	}
 
@@ -138,7 +140,7 @@ class SocketConnector(halcyon: Halcyon) : AbstractConnector(halcyon) {
 
 			"failure" -> {
 				log.warning { "Cannot establish TLS connection!" }
-				halcyon.eventBus.fire(SocketConnectionErrorEvent.TLSFailureEvent())
+				fire(SocketConnectionErrorEvent.TLSFailureEvent())
 			}
 
 			else -> throw XMPPException(ErrorCondition.BadRequest)
@@ -178,7 +180,7 @@ class SocketConnector(halcyon: Halcyon) : AbstractConnector(halcyon) {
 			restartStream()
 		} catch (e: Throwable) {
 			state = State.Disconnecting
-			halcyon.eventBus.fire(createSocketConnectionErrorEvent(e))
+			fire(createSocketConnectionErrorEvent(e))
 		} finally {
 			log.finest { "Enabling whitespace ping" }
 			whiteSpaceEnabled = true
@@ -219,8 +221,7 @@ class SocketConnector(halcyon: Halcyon) : AbstractConnector(halcyon) {
 				hosts += HostPort(config.domain, config.port)
 			}
 			result.onSuccess {
-				hosts.addAll(it.shuffled()
-								 .map { HostPort(it.target, it.port.toInt()) })
+				hosts.addAll(it.shuffled().map { HostPort(it.target, it.port.toInt()) })
 			}
 
 			completionHandler(hosts)
@@ -244,6 +245,7 @@ class SocketConnector(halcyon: Halcyon) : AbstractConnector(halcyon) {
 	}
 
 	override fun start() {
+		started = true
 		state = State.Connecting
 
 		val userJid = halcyon.config.declaredUserJID
@@ -273,18 +275,17 @@ class SocketConnector(halcyon: Halcyon) : AbstractConnector(halcyon) {
 			}
 		} catch (e: HostNotFound) {
 			state = State.Disconnected
-			halcyon.eventBus.fire(SocketConnectionErrorEvent.HostNotFount())
-			eventsEnabled = false
+			fire(SocketConnectionErrorEvent.HostNotFount())
 		} catch (e: Exception) {
 			state = State.Disconnected
-			halcyon.eventBus.fire(createSocketConnectionErrorEvent(e))
+			fire(createSocketConnectionErrorEvent(e))
 			eventsEnabled = false
 		}
 	}
 
 	private fun onWorkerException(cause: Exception) {
 		cause.printStackTrace()
-		halcyon.eventBus.fire(createSocketConnectionErrorEvent(cause))
+		fire(createSocketConnectionErrorEvent(cause))
 		state = when (state) {
 			State.Connecting -> State.Disconnected
 			State.Connected -> State.Disconnecting
@@ -300,6 +301,7 @@ class SocketConnector(halcyon: Halcyon) : AbstractConnector(halcyon) {
 	}
 
 	override fun stop() {
+		started = false
 		if ((state != State.Disconnected)) {
 			log.fine { "Stopping..." }
 			try {
@@ -315,6 +317,7 @@ class SocketConnector(halcyon: Halcyon) : AbstractConnector(halcyon) {
 
 				while (worker.isActive) Thread.sleep(32)
 			} finally {
+				log.fine { "Stopped" }
 				state = State.Disconnected
 				eventsEnabled = false
 			}
@@ -333,7 +336,7 @@ class SocketConnector(halcyon: Halcyon) : AbstractConnector(halcyon) {
 		} catch (e: Exception) {
 			log.warning(e) { "Cannot send data to server" }
 			state = State.Disconnecting
-			halcyon.eventBus.fire(createSocketConnectionErrorEvent(e))
+			fire(createSocketConnectionErrorEvent(e))
 			throw e
 		}
 	}

@@ -28,7 +28,7 @@ abstract class AbstractConnector(val halcyon: AbstractHalcyon) {
 		protected set(value) {
 			val old = field
 			field = value
-			if (old != field) halcyon.eventBus.fire(ConnectorStateChangeEvent(old, field))
+			if (old != field) fire(ConnectorStateChangeEvent(old, field))
 		}
 
 	abstract fun createSessionController(): SessionController
@@ -39,7 +39,7 @@ abstract class AbstractConnector(val halcyon: AbstractHalcyon) {
 
 	abstract fun stop()
 
-	protected fun fire(e: () -> Event) {
-		if (eventsEnabled) halcyon.eventBus.fire(e.invoke())
+	protected fun fire(e: Event) {
+		if (eventsEnabled) halcyon.eventBus.fire(e)
 	}
 }

@@ -72,7 +72,7 @@ class SocketWorker(s: Socket, private val parser: StreamParser) : Thread() {
 					break
 				}
 
-				parser.parse(buffer, 0, len - 1)
+				if (isActive && !interrupted() && isAlive) parser.parse(buffer, 0, len - 1)
 			}
 			if (isActive) {
 				log.warning { "Unexpected stop!" }
