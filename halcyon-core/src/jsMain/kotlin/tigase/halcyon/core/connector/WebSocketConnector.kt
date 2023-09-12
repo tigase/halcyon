@@ -111,49 +111,62 @@ class WebSocketConnector(halcyon: Halcyon) : AbstractConnector(halcyon) {
 	}
 
 	private fun createSocket(completionHandler: (WebSocket) -> Unit) {
-		resolveTarget { url ->
-			if (!config.allowUnsecureConnection && url.startsWith("ws:")) {
-				throw ConnectorException("Unsecure connection is not allowed.")
+		resolveTarget { urls ->
+			for (url in urls) {
+				if (!config.allowUnsecureConnection && url.startsWith("ws:")) {
+					throw ConnectorException("Unsecure connection is not allowed.")
+				}
+				try {
+					log.info { "Opening WebSocket connection to $url" }
+					val s = WebSocket(url, "xmpp")
+					completionHandler(s)
+					return@resolveTarget
+				} catch (e: Throwable) {
+					log.fine(e) { "Websocket $url is unreachable. ${e.message}" }
+				}
 			}
-			try {
-				log.info { "Opening WebSocket connection to $url" }
-				val s = WebSocket(url, "xmpp")
-				completionHandler(s)
-				return@resolveTarget
-			} catch (e: Throwable) {
-				log.fine { "Websocket $url is unreachable." }
-				throw ConnectorException(e)
-			}
+			throw ConnectorException("Cannot open WebSocket connection.")
 		}
 	}
 
-	private fun resolveTarget(completionHandler: (String) -> Unit) {
+	private fun resolveTarget(completionHandler: (List<String>) -> Unit) {
 		config.webSocketUrl?.let {
 			log.fine("WebSocket URL is declared: $it")
-			completionHandler(it)
+			completionHandler(listOf(it))
 			return
 		}
 
-		halcyon.getModuleOrNull(AlternativeConnectionMethodModule)?.let { md ->
+		val result = mutableListOf<String>()
+
+		val md = halcyon.getModuleOrNull(AlternativeConnectionMethodModule)
+		if (md != null) {
 			log.fine("Checking alternative connection methods...")
 			md.discovery(config.domain) {
 				log.fine("Found connection methods: $it")
-				it.searchForProtocol("wss:")?.let { url ->
-					completionHandler(url)
-					return@discovery
+				it.searchForProtocol("wss:").forEach { url ->
+					log.fine("Found secure WebSocket endpoint: $url")
+					result.add(url)
 				}
 				if (config.allowUnsecureConnection) {
-					it.searchForProtocol("ws:")?.let { url ->
-						completionHandler(url)
-						return@discovery
+					it.searchForProtocol("ws:").forEach { url ->
+						log.fine("Found unsecure WebSocket endpoint: $url")
+						result.add(url)
 					}
 				}
-				completionHandler("wss://${config.domain}:5291/")
-			}
-			return
-		}
 
-		completionHandler("wss://${config.domain}:5291/")
+				result += "wss://${config.domain}:5291/"
+				completionHandler(result)
+			}
+		} else {
+			log.fine("Creating default WebSocket endpoints.")
+			result.add("wss://${config.domain}:5291/")
+
+			if (config.allowUnsecureConnection) {
+				result.add("ws://${config.domain}:5290/")
+			}
+
+			completionHandler(result)
+		}
 	}
 
 	private fun onSocketClose(event: Event): dynamic {
@@ -175,7 +188,8 @@ class WebSocketConnector(halcyon: Halcyon) : AbstractConnector(halcyon) {
 	}
 
 	private fun onSocketError(event: Event): dynamic {
-		log.warning { "Socket error: $event" }
+		log.warning { "Socket error: $event   ${event.type}   ${JSON.stringify(event)}" }
+
 		halcyon.eventBus.fire(WebSocketConnectionErrorEvent("Unknown error"))
 		state = when (state) {
 			State.Connecting -> State.Disconnected
@@ -235,4 +249,4 @@ class WebSocketConnector(halcyon: Halcyon) : AbstractConnector(halcyon) {
 
 private fun List<HostLink>.searchForProtocol(protocolPrefix: String) =
 	this.filter { it.rel == "urn:xmpp:alt-connections:websocket" }.filter { it.href.startsWith(protocolPrefix) }
-		.map { it.href }.firstOrNull()
+		.map { it.href }
