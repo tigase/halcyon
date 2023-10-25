@@ -140,6 +140,10 @@ class SASLModule(override val context: Context) : XmppModule, SASLModuleConfig {
 	override var enabled: Boolean = true
 
 	private fun initialize() {
+		engine.add(SASLScramSHA512Plus())
+		engine.add(SASLScramSHA256Plus())
+		engine.add(SASLScramSHA1Plus())
+		engine.add(SASLScramSHA512())
 		engine.add(SASLScramSHA256())
 		engine.add(SASLScramSHA1())
 		engine.add(SASLPlain())

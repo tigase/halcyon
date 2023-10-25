@@ -17,6 +17,7 @@
  */
 package tigase.halcyon.core.xmpp.modules.auth
 
+import tigase.halcyon.core.Context
 import tigase.halcyon.core.configuration.Configuration
 
 interface SASLMechanism {
@@ -29,7 +30,7 @@ interface SASLMechanism {
 	 *
 	 * @return calculated response
 	 */
-	fun evaluateChallenge(input: String?, config: Configuration, saslContext: SASLContext): String?
+	fun evaluateChallenge(input: String?, context: Context, config: Configuration, saslContext: SASLContext): String?
 
 	/**
 	 * This method is used to check if mechanism can be used with current
@@ -40,7 +41,7 @@ interface SASLMechanism {
 	 *
 	 * @return `true` if mechanism can be used it current XMPP session.
 	 */
-	fun isAllowedToUse(config: Configuration, saslContext: SASLContext): Boolean
+	fun isAllowedToUse(context: Context, config: Configuration, saslContext: SASLContext): Boolean
 
 	/**
 	 * Determines whether the authentication exchange has completed.

@@ -72,7 +72,7 @@ abstract class AbstractHalcyon(configurator: ConfigurationBuilder) : Context, Pa
 		Connecting, Connected, Disconnecting, Disconnected, Stopped
 	}
 
-	protected var connector: AbstractConnector? = null
+	internal var connector: AbstractConnector? = null
 	protected var sessionController: SessionController? = null
 	final override val eventBus: EventBus = EventBus(this)
 	override val authContext: SASLContext by property(Scope.Connection) { SASLContext() }

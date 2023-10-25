@@ -1,9 +1,7 @@
 package tigase.halcyon.core.xmpp.modules.auth
 
-import korlibs.crypto.HMAC
-import korlibs.crypto.PBKDF2
-import korlibs.crypto.sha1
-import korlibs.crypto.sha256
+import korlibs.crypto.*
+import tigase.halcyon.core.Context
 import tigase.halcyon.core.configuration.Configuration
 import tigase.halcyon.core.configuration.JIDPasswordSaslConfig
 import tigase.halcyon.core.fromBase64
@@ -36,8 +34,7 @@ enum class BindType {
 
 enum class ScramHashAlgorithm {
 
-	SHA1,
-	SHA256
+	SHA1, SHA256, SHA512
 }
 
 @Suppress("ArrayInDataClass")
@@ -47,7 +44,9 @@ data class SCRAMData(
 	var authMessage: String? = null,
 	var bindData: ByteArray = ByteArray(0),
 	var bindType: BindType? = null,
-	var cb: String? = null,
+//	var cb: String? = null,
+	var gs2CBindFlag: String? = null,
+	var gs2Header: String? = null,
 	var clientFirstMessageBare: String? = null,
 	var conce: String? = null,
 	var saltedPassword: ByteArray? = null,
@@ -69,7 +68,7 @@ abstract class AbstractSASLScram(
 		"^(?:e=([^,]+)|v=([^,]+)(?:,.*)?)$", RegexOption.IGNORE_CASE
 	)
 
-	override fun isAllowedToUse(config: Configuration, saslContext: SASLContext): Boolean =
+	override fun isAllowedToUse(context: Context, config: Configuration, saslContext: SASLContext): Boolean =
 		config.sasl is JIDPasswordSaslConfig
 
 	private fun scramData(saslContext: SASLContext): SCRAMData {
@@ -79,36 +78,44 @@ abstract class AbstractSASLScram(
 		return saslContext.mechanismData as SCRAMData
 	}
 
-	override fun evaluateChallenge(input: String?, config: Configuration, saslContext: SASLContext): String? {
+	protected open fun prepareChannelBindingData(
+		context: Context, config: Configuration, saslContext: SASLContext
+	): Pair<BindType, ByteArray> {
+		return Pair(BindType.N, ByteArray(0))
+	}
+
+	override fun evaluateChallenge(
+		input: String?, context: Context, config: Configuration, saslContext: SASLContext
+	): String? {
 		val data = scramData(saslContext)
 		val credentials = config.sasl as JIDPasswordSaslConfig
 
 		if (data.stage == 0) {
 			data.conce = randomGenerator.invoke()
-			data.bindType = BindType.N // TODO Implement Support for binding
-			data.bindData = ByteArray(0)
+			prepareChannelBindingData(context, config, saslContext).let { (bindType, bindData) ->
+				data.bindType = bindType
+				data.bindData = bindData
+			}
 			data.authcId = credentials.authcId ?: credentials.userJID.localpart!!
 			data.authzId = if (credentials.authcId != null) {
 				credentials.userJID.toString()
 			} else null
 
+			data.gs2CBindFlag = when (data.bindType!!) {
+				BindType.N -> "n"
+				BindType.Y -> "y"
+				BindType.TlsUnique -> "p=tls-unique"
+				BindType.TlsServerEndPoint -> "p=tls-server-end-point"
+			}
 
-			data.cb = buildString {
-				when (data.bindType!!) {
-					BindType.N -> append("n")
-					BindType.Y -> append("y")
-					BindType.TlsUnique -> append("p=tls-unique")
-					BindType.TlsServerEndPoint -> append("p=tls-server-end-point")
-				}
+			data.gs2Header = buildString {
+				append(data.gs2CBindFlag)
 				append(",")
-
 				data.authzId?.let {
 					append("a=").append(it)
 				}
 				append(",")
 			}
-
-
 
 			data.clientFirstMessageBare = buildString {
 				append("n=${data.authcId},")
@@ -116,12 +123,11 @@ abstract class AbstractSASLScram(
 			}
 
 			++data.stage
-			return "${data.cb}${data.clientFirstMessageBare}".toBase64()
+			return "${data.gs2Header}${data.clientFirstMessageBare}".toBase64()
 		} else if (data.stage == 1) {
 			if (input == null) throw ClientSaslException("Unexpected empty input!")
 
-			val serverFirstMessage = input.fromBase64()
-				.decodeToString()
+			val serverFirstMessage = input.fromBase64().decodeToString()
 
 			val r = serverFirstMessageRegex.matchEntire(serverFirstMessage)
 				?: throw ClientSaslException("Bad challenge syntax")
@@ -135,49 +141,64 @@ abstract class AbstractSASLScram(
 
 			if (!nonce.startsWith(data.conce!!)) throw ClientSaslException("Wrong nonce")
 
-			val clientFinalMessageStep1 = buildString {
+			val cBindInput = "${data.gs2Header}".encodeToByteArray() + data.bindData
+
+			val clientFinalMessageBare = buildString {
 				append("c=")
-				append((data.cb!!.encodeToByteArray() + data.bindData).toBase64())
+				append(cBindInput.toBase64())
 				append(",")
 
 				append("r=")
 				append(nonce)
 			}
 
-			data.authMessage = data.clientFirstMessageBare + "," + serverFirstMessage + "," + clientFinalMessageStep1
+			data.authMessage = data.clientFirstMessageBare + "," + serverFirstMessage + "," + clientFinalMessageBare
 
 			data.saltedPassword = when (hashAlgorithm) {
 				ScramHashAlgorithm.SHA1 -> PBKDF2.pbkdf2WithHmacSHA1(
-					password = config.sasl.passwordCallback.invoke()
-						.encodeToByteArray(), salt = salt, iterationCount = iterations, 160
+					password = config.sasl.passwordCallback.invoke().encodeToByteArray(),
+					salt = salt,
+					iterationCount = iterations,
+					160
 				).bytes
 
 				ScramHashAlgorithm.SHA256 -> PBKDF2.pbkdf2WithHmacSHA256(
-					password = config.sasl.passwordCallback.invoke()
-						.encodeToByteArray(), salt = salt, iterationCount = iterations, 256
+					password = config.sasl.passwordCallback.invoke().encodeToByteArray(),
+					salt = salt,
+					iterationCount = iterations,
+					256
+				).bytes
+
+				ScramHashAlgorithm.SHA512 -> PBKDF2.pbkdf2WithHmacSHA512(
+					password = config.sasl.passwordCallback.invoke().encodeToByteArray(),
+					salt = salt,
+					iterationCount = iterations,
+					512
 				).bytes
 			}
 
 			val clientKey = when (hashAlgorithm) {
 				ScramHashAlgorithm.SHA1 -> HMAC.hmacSHA1(data.saltedPassword!!, clientKeyData)
 				ScramHashAlgorithm.SHA256 -> HMAC.hmacSHA256(data.saltedPassword!!, clientKeyData)
+				ScramHashAlgorithm.SHA512 -> HMAC.hmacSHA512(data.saltedPassword!!, clientKeyData)
 			}.bytes
 			val storedKey = when (hashAlgorithm) {
 				ScramHashAlgorithm.SHA1 -> clientKey.sha1()
 				ScramHashAlgorithm.SHA256 -> clientKey.sha256()
+				ScramHashAlgorithm.SHA512 -> clientKey.sha512()
 			}.bytes
 			val clientSignature = when (hashAlgorithm) {
 				ScramHashAlgorithm.SHA1 -> HMAC.hmacSHA1(key = storedKey, data.authMessage!!.encodeToByteArray())
 				ScramHashAlgorithm.SHA256 -> HMAC.hmacSHA256(key = storedKey, data.authMessage!!.encodeToByteArray())
+				ScramHashAlgorithm.SHA512 -> HMAC.hmacSHA512(key = storedKey, data.authMessage!!.encodeToByteArray())
 			}.bytes
 
-			val clientProof = clientKey.copyOf()
-				.also {
-					for (i in it.indices) it[i] = it[i] xor clientSignature[i]
-				}
+			val clientProof = clientKey.copyOf().also {
+				for (i in it.indices) it[i] = it[i] xor clientSignature[i]
+			}
 
 			val clientFinalMessageStep2 = buildString {
-				append(clientFinalMessageStep1)
+				append(clientFinalMessageBare)
 				append(",")
 				append("p=")
 				append(clientProof.toBase64())
@@ -188,8 +209,7 @@ abstract class AbstractSASLScram(
 			if (input == null) throw ClientSaslException("Unexpected empty input!")
 
 			val r = serverLastMessageRegex.matchEntire(
-				input.fromBase64()
-					.decodeToString()
+				input.fromBase64().decodeToString()
 			) ?: throw ClientSaslException("Bad challenge syntax")
 
 			r.groups[1]?.let {
@@ -200,10 +220,12 @@ abstract class AbstractSASLScram(
 			val serverKey = when (hashAlgorithm) {
 				ScramHashAlgorithm.SHA1 -> HMAC.hmacSHA1(data.saltedPassword!!, serverKeyData)
 				ScramHashAlgorithm.SHA256 -> HMAC.hmacSHA256(data.saltedPassword!!, serverKeyData)
+				ScramHashAlgorithm.SHA512 -> HMAC.hmacSHA512(data.saltedPassword!!, serverKeyData)
 			}.bytes
 			val serverSignature = when (hashAlgorithm) {
 				ScramHashAlgorithm.SHA1 -> HMAC.hmacSHA1(key = serverKey, data.authMessage!!.encodeToByteArray())
 				ScramHashAlgorithm.SHA256 -> HMAC.hmacSHA256(key = serverKey, data.authMessage!!.encodeToByteArray())
+				ScramHashAlgorithm.SHA512 -> HMAC.hmacSHA512(key = serverKey, data.authMessage!!.encodeToByteArray())
 			}.bytes
 
 			if (!(serverSignature contentEquals v.fromBase64())) {
@@ -232,8 +254,8 @@ fun hi(password: ByteArray, salt: ByteArray, iterations: Int): ByteArray {
 	return result
 }
 
-fun randomString(len: Int = 20): String {
-	val alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
+fun randomString(len: Int = 22): String {
+	val alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=_-"
 	var result = ""
 	for (i in 0..len) {
 		result += alphabet[Random.nextInt(alphabet.length)]

@@ -17,17 +17,18 @@
  */
 package tigase.halcyon.core.xmpp.modules.auth
 
+import tigase.halcyon.core.Context
 import tigase.halcyon.core.configuration.Configuration
 
 class SASLAnonymous : SASLMechanism {
 
 	override val name = "ANONYMOUS"
 
-	override fun evaluateChallenge(input: String?, config: Configuration, saslContext: SASLContext): String? {
+	override fun evaluateChallenge(input: String?, context: Context, config: Configuration, saslContext: SASLContext): String? {
 		saslContext.complete = true
 		return null
 	}
 
-	override fun isAllowedToUse(config: Configuration, saslContext: SASLContext): Boolean = true
+	override fun isAllowedToUse(context: Context, config: Configuration, saslContext: SASLContext): Boolean = true
 
 }

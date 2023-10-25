@@ -1,6 +1,7 @@
 package tigase.halcyon.core.xmpp.modules.auth
 
 import korlibs.crypto.PBKDF2
+import tigase.DummyHalcyon
 import tigase.halcyon.core.Base64
 import tigase.halcyon.core.builder.createConfiguration
 import tigase.halcyon.core.fromBase64
@@ -115,7 +116,7 @@ class SASLScramSHATest {
 		// first client message
 		assertEquals(
 			"n,a=user@example.com,n=differentusername,r=fyko+d2lbbFgONRv9qkxdawL",
-			scram.evaluateChallenge(null, configuration, context)!!
+			scram.evaluateChallenge(null,DummyHalcyon(), configuration, context)!!
 				.fromBase64()
 				.decodeToString(),
 			"Invalid first client message"
@@ -141,7 +142,7 @@ class SASLScramSHATest {
 		// first client message
 		assertEquals(
 			"n,a=user@example.com,n=user,r=fyko+d2lbbFgONRv9qkxdawL",
-			scram.evaluateChallenge(null, configuration, context)!!
+			scram.evaluateChallenge(null,DummyHalcyon(), configuration, context)!!
 				.fromBase64()
 				.decodeToString(),
 			"Invalid first client message"
@@ -166,7 +167,7 @@ class SASLScramSHATest {
 		// first client message
 		assertEquals(
 			"n,,n=user,r=fyko+d2lbbFgONRv9qkxdawL",
-			scram.evaluateChallenge(null, configuration, context)!!
+			scram.evaluateChallenge(null,DummyHalcyon(), configuration, context)!!
 				.fromBase64()
 				.decodeToString(),
 			"Invalid first client message"
@@ -176,7 +177,7 @@ class SASLScramSHATest {
 		assertEquals(
 			"c=biws,r=fyko+d2lbbFgONRv9qkxdawL3rfcNHYJY1ZVvWVs7j,p=v0X8v3Bz2T0CJGbJQyF0X+HI4Ts=", assertNotNull(
 				scram.evaluateChallenge(
-					"r=fyko+d2lbbFgONRv9qkxdawL3rfcNHYJY1ZVvWVs7j,s=QSXCR+Q6sek8bf92,i=4096".encodeToByteArray().toBase64(),
+					"r=fyko+d2lbbFgONRv9qkxdawL3rfcNHYJY1ZVvWVs7j,s=QSXCR+Q6sek8bf92,i=4096".encodeToByteArray().toBase64(),DummyHalcyon(),
 					configuration,
 					context
 				)
@@ -188,7 +189,7 @@ class SASLScramSHATest {
 
 		assertNull(
 			scram.evaluateChallenge(
-				"v=rmF9pqV8S7suAoZWja4dJRkFsKQ=".encodeToByteArray().toBase64(), configuration, context
+				"v=rmF9pqV8S7suAoZWja4dJRkFsKQ=".encodeToByteArray().toBase64(),DummyHalcyon(), configuration, context
 			)
 		)
 		assertTrue(context.complete, "It should be completed.")
@@ -212,7 +213,7 @@ class SASLScramSHATest {
 		// first client message
 		assertEquals(
 			"n,,n=user,r=rOprNGfwEbeRWgbNEkqO",
-			scram.evaluateChallenge(null, configuration, context)!!
+			scram.evaluateChallenge(null,DummyHalcyon(), configuration, context)!!
 				.fromBase64()
 				.decodeToString(),
 			"Invalid first client message"
@@ -223,7 +224,7 @@ class SASLScramSHATest {
 			"c=biws,r=rOprNGfwEbeRWgbNEkqO%hvYDpWUa2RaTCAfuxFIlj)hNlF\$k0,p=dHzbZapWIk4jUhN+Ute9ytag9zjfMHgsqmmiz7AndVQ=",
 			assertNotNull(
 				scram.evaluateChallenge(
-					"r=rOprNGfwEbeRWgbNEkqO%hvYDpWUa2RaTCAfuxFIlj)hNlF\$k0,s=W22ZaJ0SNY7soEsUEjb6gQ==,i=4096".encodeToByteArray().toBase64(),
+					"r=rOprNGfwEbeRWgbNEkqO%hvYDpWUa2RaTCAfuxFIlj)hNlF\$k0,s=W22ZaJ0SNY7soEsUEjb6gQ==,i=4096".encodeToByteArray().toBase64(),DummyHalcyon(),
 					configuration,
 					context
 				)
@@ -236,7 +237,7 @@ class SASLScramSHATest {
 
 		assertNull(
 			scram.evaluateChallenge(
-				"v=6rriTRBi23WpRR/wtup+mMhUZUn/dB5nLTJRsjl95G4=".encodeToByteArray().toBase64(), configuration, context
+				"v=6rriTRBi23WpRR/wtup+mMhUZUn/dB5nLTJRsjl95G4=".encodeToByteArray().toBase64(),DummyHalcyon(), configuration, context
 			)
 		)
 		assertTrue(context.complete, "It should be completed.")
@@ -260,7 +261,7 @@ class SASLScramSHATest {
 		// first client message
 		assertEquals(
 			"n,,n=user,r=rOprNGfwEbeRWgbNEkqO",
-			scram.evaluateChallenge(null, configuration, context)!!
+			scram.evaluateChallenge(null,DummyHalcyon(), configuration, context)!!
 				.fromBase64()
 				.decodeToString(),
 			"Invalid first client message"
@@ -271,7 +272,7 @@ class SASLScramSHATest {
 			"c=biws,r=rOprNGfwEbeRWgbNEkqO%hvYDpWUa2RaTCAfuxFIlj)hNlF\$k0,p=dHzbZapWIk4jUhN+Ute9ytag9zjfMHgsqmmiz7AndVQ=",
 			assertNotNull(
 				scram.evaluateChallenge(
-					"r=rOprNGfwEbeRWgbNEkqO%hvYDpWUa2RaTCAfuxFIlj)hNlF\$k0,s=W22ZaJ0SNY7soEsUEjb6gQ==,i=4096".encodeToByteArray().toBase64(),
+					"r=rOprNGfwEbeRWgbNEkqO%hvYDpWUa2RaTCAfuxFIlj)hNlF\$k0,s=W22ZaJ0SNY7soEsUEjb6gQ==,i=4096".encodeToByteArray().toBase64(),DummyHalcyon(),
 					configuration,
 					context
 				)
@@ -284,7 +285,7 @@ class SASLScramSHATest {
 
 		assertFailsWith<ClientSaslException>("Fail expected. Given server response is invalid!") {
 			scram.evaluateChallenge(
-				"v=6rriTRBi23wpRR/wtup+mMhUZUn/dB5nLTJRsjl15G1=".encodeToByteArray().toBase64(), configuration, context
+				"v=6rriTRBi23wpRR/wtup+mMhUZUn/dB5nLTJRsjl15G1=".encodeToByteArray().toBase64(),DummyHalcyon(), configuration, context
 			)
 		}
 

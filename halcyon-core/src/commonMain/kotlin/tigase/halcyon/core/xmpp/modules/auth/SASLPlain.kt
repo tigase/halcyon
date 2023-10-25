@@ -17,6 +17,7 @@
  */
 package tigase.halcyon.core.xmpp.modules.auth
 
+import tigase.halcyon.core.Context
 import tigase.halcyon.core.configuration.Configuration
 import tigase.halcyon.core.configuration.JIDPasswordSaslConfig
 import tigase.halcyon.core.toBase64
@@ -25,7 +26,7 @@ class SASLPlain : SASLMechanism {
 
 	override val name = "PLAIN"
 
-	override fun evaluateChallenge(input: String?, config: Configuration, saslContext: SASLContext): String? {
+	override fun evaluateChallenge(input: String?, context: Context, config: Configuration, saslContext: SASLContext): String? {
 		if (saslContext.complete) return null
 		val credentials = config.sasl as JIDPasswordSaslConfig
 
@@ -45,7 +46,7 @@ class SASLPlain : SASLMechanism {
 		}.toBase64()
 	}
 
-	override fun isAllowedToUse(config: Configuration, saslContext: SASLContext): Boolean =
+	override fun isAllowedToUse(context: Context, config: Configuration, saslContext: SASLContext): Boolean =
 		config.sasl is JIDPasswordSaslConfig
 
 }

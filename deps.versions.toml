@@ -5,7 +5,7 @@ reactive = "1.2.3"
 dateTime = "0.4.0"
 serialization = "1.5.0"
 coroutines = "1.6.4"
-krypto = "4.0.0-beta3"
+krypto = "4.0.10"
 minidns = "1.0.3"
 dokka = "1.8.10"
 

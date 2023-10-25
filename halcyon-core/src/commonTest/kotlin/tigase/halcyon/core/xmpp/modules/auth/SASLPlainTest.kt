@@ -1,5 +1,7 @@
 package tigase.halcyon.core.xmpp.modules.auth
 
+import tigase.DummyHalcyon
+import tigase.dummyConfig
 import tigase.halcyon.core.builder.createConfiguration
 import tigase.halcyon.core.fromBase64
 import tigase.halcyon.core.xmpp.toBareJID
@@ -20,7 +22,8 @@ class SASLPlainTest {
 		val ctx = SASLContext()
 		val sasl = SASLPlain()
 
-		val resp = sasl.evaluateChallenge(null, cfg, ctx)
+
+		val resp = sasl.evaluateChallenge(null, DummyHalcyon(), cfg, ctx)
 		assertEquals(
 			"\u0000user01\u0000secret",
 			assertNotNull(resp).fromBase64()
@@ -40,7 +43,7 @@ class SASLPlainTest {
 		val ctx = SASLContext()
 		val sasl = SASLPlain()
 
-		val resp = sasl.evaluateChallenge(null, cfg, ctx)
+		val resp = sasl.evaluateChallenge(null,DummyHalcyon(), cfg, ctx)
 		assertEquals(
 			"user01@example.com\u0000user01\u0000secret",
 			assertNotNull(resp).fromBase64()
@@ -60,7 +63,7 @@ class SASLPlainTest {
 		val ctx = SASLContext()
 		val sasl = SASLPlain()
 
-		val resp = sasl.evaluateChallenge(null, cfg, ctx)
+		val resp = sasl.evaluateChallenge(null,DummyHalcyon(), cfg, ctx)
 		assertEquals(
 			"user01@example.com\u0000differentusername\u0000secret",
 			assertNotNull(resp).fromBase64()
