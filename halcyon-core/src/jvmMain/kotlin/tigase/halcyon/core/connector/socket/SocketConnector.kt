@@ -33,8 +33,12 @@ import tigase.halcyon.core.xmpp.XMPPException
 import tigase.halcyon.core.xmpp.modules.sm.StreamManagementModule
 import java.net.Socket
 import java.net.UnknownHostException
+import java.security.MessageDigest
 import java.security.SecureRandom
+import java.security.cert.X509Certificate
+import java.util.*
 import javax.net.ssl.SSLContext
+import javax.net.ssl.SSLSession
 import javax.net.ssl.SSLSocket
 import javax.net.ssl.SSLSocketFactory
 import kotlin.time.Duration.Companion.seconds
@@ -57,12 +61,10 @@ class HostNotFound : HalcyonException()
 
 typealias HostPort = Pair<String, Int>
 
-class SocketConnector(halcyon: Halcyon) : AbstractConnector(halcyon) {
+class SocketConnector(halcyon: Halcyon) : AbstractConnector(halcyon), ChannelBindingDataProvider {
 
 	companion object {
 
-		const val SERVER_HOST = "tigase.halcyon.core.connector.socket.SocketConnector#serverHost"
-		const val SERVER_PORT = "tigase.halcyon.core.connector.socket.SocketConnector#serverPort"
 		const val SEE_OTHER_HOST_KEY = "tigase.halcyon.core.connector.socket.SocketConnector#seeOtherHost"
 
 		const val XMLNS_START_TLS = "urn:ietf:params:xml:ns:xmpp-tls"
@@ -70,6 +72,8 @@ class SocketConnector(halcyon: Halcyon) : AbstractConnector(halcyon) {
 
 	var secured: Boolean = false
 		private set
+
+	private var sslSession: SSLSession? = null
 
 	private var started = false
 
@@ -170,11 +174,11 @@ class SocketConnector(halcyon: Halcyon) : AbstractConnector(halcyon) {
 			s1.useClientMode = true
 			s1.addHandshakeCompletedListener { handshakeCompletedEvent ->
 				log.info { "Handshake completed $handshakeCompletedEvent" }
+				this.sslSession = handshakeCompletedEvent.session
 				secured = true
 			}
 
 			s1.startHandshake()
-
 
 			worker.socket = s1
 			restartStream()
@@ -372,4 +376,35 @@ class SocketConnector(halcyon: Halcyon) : AbstractConnector(halcyon) {
 		halcyon.writer.writeDirectly(element)
 	}
 
+	override fun isConnectionSecure(): Boolean = secured && sslSession != null
+
+	override fun getTlsUnique(): ByteArray? = null
+
+	override fun getTlsServerEndpoint(): ByteArray? {
+		val peerCerificates = sslSession?.peerCertificates ?: return null
+		val certificate = peerCerificates.first()
+		return if (certificate is X509Certificate) calculateCertificateHash(certificate) else null
+	}
+
+}
+
+fun calculateCertificateHash(certificate: X509Certificate): ByteArray? {
+	val log = LoggerFactory.logger("tigase.halcyon.core.connector.socket.calculateCertificateHash")
+	return try {
+		val sigAlgName = certificate.sigAlgName.substringBefore("with").uppercase(Locale.getDefault())
+		val useAlgo = when (sigAlgName) {
+			"MD5", "SHA1" -> "SHA-256"
+			"SHA224" -> "SHA-224"
+			"SHA256" -> "SHA-256"
+			"SHA384" -> "SHA-384"
+			"SHA512" -> "SHA-512"
+			else -> sigAlgName
+		}
+		log.finer { "Calculating hash of certificate with $useAlgo algorithm." }
+		MessageDigest.getInstance(useAlgo).digest(certificate.encoded)
+	} catch (e: Exception) {
+		log.severe(e) { "Cannot calculate certificate hash." }
+		e.printStackTrace()
+		null
+	}
 }
