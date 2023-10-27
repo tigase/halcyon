@@ -6,6 +6,8 @@ interface ChannelBindingDataProvider {
 
 	fun getTlsServerEndpoint(): ByteArray?
 
+	fun getTlsExporter(): ByteArray?
+
 	fun isConnectionSecure(): Boolean
 
 }

@@ -12,13 +12,17 @@ abstract class AbstractSASLScramPlus(
 	clientKeyData: ByteArray = "Client Key".encodeToByteArray(),
 	serverKeyData: ByteArray = "Server Key".encodeToByteArray(),
 	private val tlsUniqueProvider: (Context) -> ByteArray? = ::retrieveTlsUnique,
-	private val serverEndpointProvider: (Context) -> ByteArray? = ::retrieveTlsServerEndpoint
+	private val serverEndpointProvider: (Context) -> ByteArray? = ::retrieveTlsServerEndpoint,
+	private val tlsExporterProvider: (Context) -> ByteArray? = ::retrieveTlsExporter
 ) : AbstractSASLScram(name, hashAlgorithm, randomGenerator, clientKeyData, serverKeyData) {
 
 
 	override fun prepareChannelBindingData(
 		context: Context, config: Configuration, saslContext: SASLContext
 	): Pair<BindType, ByteArray> {
+		tlsExporterProvider(context)?.let {
+			return Pair(BindType.TlsExporter, it)
+		}
 		tlsUniqueProvider(context)?.let {
 			return Pair(BindType.TlsUnique, it)
 		}
@@ -43,6 +47,11 @@ private fun retrieveTlsUnique(context: Context): ByteArray? {
 }
 
 private fun retrieveTlsServerEndpoint(context: Context): ByteArray? {
+	val provider = (context as AbstractHalcyon).connector as ChannelBindingDataProvider
+	return provider.getTlsServerEndpoint()
+}
+
+private fun retrieveTlsExporter(context: Context): ByteArray? {
 	val provider = (context as AbstractHalcyon).connector as ChannelBindingDataProvider
 	return provider.getTlsServerEndpoint()
 }

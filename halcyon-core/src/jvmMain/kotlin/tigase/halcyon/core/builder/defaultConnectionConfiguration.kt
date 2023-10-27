@@ -1,6 +1,7 @@
 package tigase.halcyon.core.builder
 
 import tigase.halcyon.core.configuration.ConnectionConfig
+import tigase.halcyon.core.connector.socket.DefaultHostnameVerifier
 import tigase.halcyon.core.connector.socket.DnsResolverMiniDns
 import tigase.halcyon.core.connector.socket.SocketConnectorConfig
 import java.security.cert.X509Certificate
@@ -18,5 +19,5 @@ actual fun defaultConnectionConfiguration(
 		}
 
 		override fun getAcceptedIssuers(): Array<X509Certificate> = emptyArray()
-	}, dnsResolver = DnsResolverMiniDns()
+	}, dnsResolver = DnsResolverMiniDns(), hostnameVerifier = DefaultHostnameVerifier()
 )

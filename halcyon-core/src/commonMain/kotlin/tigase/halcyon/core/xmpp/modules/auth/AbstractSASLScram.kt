@@ -29,7 +29,12 @@ enum class BindType {
 	/**
 	 * Client requires channel binding: <code>tls-server-end-point</code>.
 	 */
-	TlsServerEndPoint
+	TlsServerEndPoint,
+
+	/**
+	 * Client requires channel binding: <code>tls-exporter</code>.
+	 */
+	TlsExporter
 }
 
 enum class ScramHashAlgorithm {
@@ -106,6 +111,7 @@ abstract class AbstractSASLScram(
 				BindType.Y -> "y"
 				BindType.TlsUnique -> "p=tls-unique"
 				BindType.TlsServerEndPoint -> "p=tls-server-end-point"
+				BindType.TlsExporter -> "p=tls-exporter"
 			}
 
 			data.gs2Header = buildString {

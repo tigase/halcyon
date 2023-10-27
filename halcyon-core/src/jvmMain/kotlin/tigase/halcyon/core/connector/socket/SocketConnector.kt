@@ -31,16 +31,10 @@ import tigase.halcyon.core.xml.parser.StreamParser
 import tigase.halcyon.core.xmpp.ErrorCondition
 import tigase.halcyon.core.xmpp.XMPPException
 import tigase.halcyon.core.xmpp.modules.sm.StreamManagementModule
+import java.io.InputStreamReader
+import java.io.OutputStreamWriter
 import java.net.Socket
 import java.net.UnknownHostException
-import java.security.MessageDigest
-import java.security.SecureRandom
-import java.security.cert.X509Certificate
-import java.util.*
-import javax.net.ssl.SSLContext
-import javax.net.ssl.SSLSession
-import javax.net.ssl.SSLSocket
-import javax.net.ssl.SSLSocketFactory
 import kotlin.time.Duration.Companion.seconds
 
 sealed class SocketConnectionErrorEvent : ConnectionErrorEvent() {
@@ -61,7 +55,8 @@ class HostNotFound : HalcyonException()
 
 typealias HostPort = Pair<String, Int>
 
-class SocketConnector(halcyon: Halcyon) : AbstractConnector(halcyon), ChannelBindingDataProvider {
+class SocketConnector(halcyon: Halcyon, val tlsProcesorFactory: TLSProcessorFactory) : AbstractConnector(halcyon),
+	ChannelBindingDataProvider {
 
 	companion object {
 
@@ -70,10 +65,10 @@ class SocketConnector(halcyon: Halcyon) : AbstractConnector(halcyon), ChannelBin
 		const val XMLNS_START_TLS = "urn:ietf:params:xml:ns:xmpp-tls"
 	}
 
-	var secured: Boolean = false
-		private set
+	private lateinit var tlsProcesor: TLSProcessor
 
-	private var sslSession: SSLSession? = null
+	val secured: Boolean
+		get() = tlsProcesor.isConnectionSecure()
 
 	private var started = false
 
@@ -151,13 +146,6 @@ class SocketConnector(halcyon: Halcyon) : AbstractConnector(halcyon), ChannelBin
 		}
 	}
 
-	private fun getSocketFactory(): SSLSocketFactory {
-		val ctx = SSLContext.getInstance("TLS")
-
-		ctx.init(emptyArray(), arrayOf(config.trustManager), SecureRandom())
-
-		return ctx.socketFactory
-	}
 
 	private fun proceedTLS() {
 		log.info { "Proceeding TLS" }
@@ -165,22 +153,12 @@ class SocketConnector(halcyon: Halcyon) : AbstractConnector(halcyon), ChannelBin
 			log.finest { "Disabling whitespace ping" }
 			whiteSpaceEnabled = false
 
-			val factory = getSocketFactory()
-
-			val s1 = factory.createSocket(socket, config.hostname, socket.port, true) as SSLSocket
-			s1.soTimeout = 0
-			s1.keepAlive = false
-			s1.tcpNoDelay = true
-			s1.useClientMode = true
-			s1.addHandshakeCompletedListener { handshakeCompletedEvent ->
-				log.info { "Handshake completed $handshakeCompletedEvent" }
-				this.sslSession = handshakeCompletedEvent.session
-				secured = true
+			tlsProcesor.proceedTLS { inputStream, outputStream ->
+				worker.setReaderAndWriter(
+					InputStreamReader(inputStream), OutputStreamWriter(outputStream)
+				)
 			}
 
-			s1.startHandshake()
-
-			worker.socket = s1
 			restartStream()
 		} catch (e: Throwable) {
 			state = State.Disconnecting
@@ -261,8 +239,13 @@ class SocketConnector(halcyon: Halcyon) : AbstractConnector(halcyon), ChannelBin
 				socket.keepAlive = false
 				socket.tcpNoDelay = true
 				log.fine { "Opening socket connection to ${this.socket.inetAddress}" }
-				this.worker = SocketWorker(socket, parser)
+				this.worker = SocketWorker(parser).apply {
+					setReaderAndWriter(
+						InputStreamReader(socket.getInputStream()), OutputStreamWriter(socket.getOutputStream())
+					)
+				}
 				this.worker.onError = { exception -> onWorkerException(exception) }
+				this.tlsProcesor = tlsProcesorFactory.create(this.socket, config)
 				worker.start()
 				val sb = buildString {
 					append("<stream:stream xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams' ")
@@ -318,7 +301,7 @@ class SocketConnector(halcyon: Halcyon) : AbstractConnector(halcyon), ChannelBin
 					this.socket.close()
 				}
 				worker.interrupt()
-
+				tlsProcesor.clear()
 				while (worker.isActive) Thread.sleep(32)
 			} finally {
 				log.fine { "Stopped" }
@@ -334,7 +317,7 @@ class SocketConnector(halcyon: Halcyon) : AbstractConnector(halcyon), ChannelBin
 
 	override fun send(data: CharSequence) {
 		try {
-			log.finest { "Sending (${worker.socket.isConnected}, ${!worker.socket.isOutputShutdown}): $data" }
+			log.finest { "Sending (${socket.isConnected}, ${!socket.isOutputShutdown}): $data" }
 			worker.writer.write(data.toString())
 			worker.writer.flush()
 		} catch (e: Exception) {
@@ -376,35 +359,12 @@ class SocketConnector(halcyon: Halcyon) : AbstractConnector(halcyon), ChannelBin
 		halcyon.writer.writeDirectly(element)
 	}
 
-	override fun isConnectionSecure(): Boolean = secured && sslSession != null
+	override fun isConnectionSecure(): Boolean = tlsProcesor.isConnectionSecure()
 
-	override fun getTlsUnique(): ByteArray? = null
+	override fun getTlsUnique(): ByteArray? = tlsProcesor.getTlsUnique()
 
-	override fun getTlsServerEndpoint(): ByteArray? {
-		val peerCerificates = sslSession?.peerCertificates ?: return null
-		val certificate = peerCerificates.first()
-		return if (certificate is X509Certificate) calculateCertificateHash(certificate) else null
-	}
+	override fun getTlsServerEndpoint(): ByteArray? = tlsProcesor.getTlsServerEndpoint()
 
-}
+	override fun getTlsExporter(): ByteArray? = tlsProcesor.getTlsServerEndpoint()
 
-fun calculateCertificateHash(certificate: X509Certificate): ByteArray? {
-	val log = LoggerFactory.logger("tigase.halcyon.core.connector.socket.calculateCertificateHash")
-	return try {
-		val sigAlgName = certificate.sigAlgName.substringBefore("with").uppercase(Locale.getDefault())
-		val useAlgo = when (sigAlgName) {
-			"MD5", "SHA1" -> "SHA-256"
-			"SHA224" -> "SHA-224"
-			"SHA256" -> "SHA-256"
-			"SHA384" -> "SHA-384"
-			"SHA512" -> "SHA-512"
-			else -> sigAlgName
-		}
-		log.finer { "Calculating hash of certificate with $useAlgo algorithm." }
-		MessageDigest.getInstance(useAlgo).digest(certificate.encoded)
-	} catch (e: Exception) {
-		log.severe(e) { "Cannot calculate certificate hash." }
-		e.printStackTrace()
-		null
-	}
 }

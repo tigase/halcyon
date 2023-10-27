@@ -20,12 +20,10 @@ package tigase.halcyon.core.connector.socket
 import tigase.halcyon.core.connector.ConnectorException
 import tigase.halcyon.core.logger.LoggerFactory
 import tigase.halcyon.core.xml.parser.StreamParser
-import java.io.InputStreamReader
-import java.io.OutputStreamWriter
 import java.io.Reader
-import java.net.Socket
+import java.io.Writer
 
-class SocketWorker(s: Socket, private val parser: StreamParser) : Thread() {
+class SocketWorker(private val parser: StreamParser) : Thread() {
 
 	private val log = LoggerFactory.logger("tigase.halcyon.core.connector.socket.SocketWorker")
 
@@ -38,26 +36,21 @@ class SocketWorker(s: Socket, private val parser: StreamParser) : Thread() {
 			if (tmp != field) onActiveChange?.invoke(field)
 		}
 
-	var socket: Socket = s
-		set(value) {
-			field = value
-			update()
-		}
-
-	private lateinit var reader: Reader
-	lateinit var writer: OutputStreamWriter
+	lateinit var  reader: Reader
 		private set
+	lateinit var writer: Writer
+		private set
+
 	var onError: ((Exception) -> Unit)? = null
 
 	init {
 		name = "Socket-Worker-Thread"
 		isDaemon = true
-		update()
 	}
 
-	private fun update() {
-		reader = InputStreamReader(socket.getInputStream())
-		writer = OutputStreamWriter(this.socket.getOutputStream())
+	internal fun setReaderAndWriter(reader: Reader, writer: Writer){
+		this.reader = reader
+		this.writer=writer
 	}
 
 	override fun run() {
@@ -70,6 +63,7 @@ class SocketWorker(s: Socket, private val parser: StreamParser) : Thread() {
 				if (len == -1) {
 					log.finest { "Nothing more to read" }
 					break
+				} else if (len == 0) {
 				}
 
 				if (isActive && !interrupted() && isAlive) parser.parse(buffer, 0, len - 1)
@@ -79,7 +73,7 @@ class SocketWorker(s: Socket, private val parser: StreamParser) : Thread() {
 				onError?.invoke(ConnectorException("Unexpected stop!"))
 			}
 		} catch (e: Exception) {
-			log.fine { "Exception in worker: isActive=$isActive interrupted=${!interrupted()} socket=${!socket.isClosed}" }
+			log.fine { "Exception in worker: isActive=$isActive interrupted=${!interrupted()}" }
 			if (isActive) {
 				log.fine(e) { "Exception in Socket Worker" }
 				onError?.invoke(e)
