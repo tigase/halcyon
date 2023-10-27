@@ -19,6 +19,7 @@ package tigase.halcyon.core.xmpp.modules.auth
 
 import tigase.halcyon.core.Context
 import tigase.halcyon.core.configuration.Configuration
+import tigase.halcyon.core.xml.Element
 
 class SASLAnonymous : SASLMechanism {
 
@@ -29,6 +30,11 @@ class SASLAnonymous : SASLMechanism {
 		return null
 	}
 
-	override fun isAllowedToUse(context: Context, config: Configuration, saslContext: SASLContext): Boolean = true
+	override fun isAllowedToUse(
+		context: Context,
+		config: Configuration,
+		saslContext: SASLContext,
+		streamFeatures: Element
+	): Boolean = true
 
 }

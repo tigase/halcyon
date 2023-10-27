@@ -150,10 +150,7 @@ class SASLModule(override val context: Context) : XmppModule, SASLModuleConfig {
 	}
 
 	fun startAuth(streamFeatures: Element) {
-		val saslStreamFeatures =
-			streamFeatures.getChildrenNS("mechanisms", XMLNS) ?: throw HalcyonException("No SASL features in stream.")
-		val allowedMechanisms = saslStreamFeatures.children.filter { it.name == "mechanism" }.mapNotNull { it.value }
-		val authData = engine.start(allowedMechanisms)
+		val authData = engine.start(streamFeatures)
 		val authElement = element("auth") {
 			xmlns = XMLNS
 			attribute("mechanism", authData.mechanismName)

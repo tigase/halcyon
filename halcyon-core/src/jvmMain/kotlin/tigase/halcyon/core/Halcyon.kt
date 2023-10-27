@@ -36,7 +36,7 @@ actual class Halcyon actual constructor(configuration: ConfigurationBuilder) : A
 	private val log = LoggerFactory.logger("tigase.halcyon.core.Halcyon")
 
 	override fun createConnector(): AbstractConnector {
-		return SocketConnector(this, BouncyCastleTLSProcessor)
+		return SocketConnector(this, JavaXTLSProcessor)
 	}
 
 	override fun reconnect(immediately: Boolean) {

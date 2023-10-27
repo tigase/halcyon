@@ -6,35 +6,38 @@ import tigase.halcyon.core.configuration.Configuration
 import tigase.halcyon.core.configuration.JIDPasswordSaslConfig
 import tigase.halcyon.core.fromBase64
 import tigase.halcyon.core.toBase64
+import tigase.halcyon.core.xml.Element
 import kotlin.experimental.xor
 import kotlin.random.Random
 
-enum class BindType {
+enum class BindType(val xmlValue: String) {
 
 	/**
 	 * Client doesn't support channel binding.
 	 */
-	N,
+	N("n"),
 
 	/**
 	 * Client does support channel binding but thinks the server does not.
 	 */
-	Y,
+	Y("y"),
 
 	/**
 	 * Client requires channel binding: <code>tls-unique</code>.
 	 */
-	TlsUnique,
+	TlsUnique("tls-unique"),
 
 	/**
 	 * Client requires channel binding: <code>tls-server-end-point</code>.
 	 */
-	TlsServerEndPoint,
+	TlsServerEndPoint("tls-server-end-point"),
 
 	/**
 	 * Client requires channel binding: <code>tls-exporter</code>.
 	 */
-	TlsExporter
+	TlsExporter("tls-exporter");
+
+
 }
 
 enum class ScramHashAlgorithm {
@@ -49,6 +52,7 @@ data class SCRAMData(
 	var authMessage: String? = null,
 	var bindData: ByteArray = ByteArray(0),
 	var bindType: BindType? = null,
+	var bindTypesSupportedByServer: List<BindType>? = null,
 //	var cb: String? = null,
 	var gs2CBindFlag: String? = null,
 	var gs2Header: String? = null,
@@ -73,10 +77,11 @@ abstract class AbstractSASLScram(
 		"^(?:e=([^,]+)|v=([^,]+)(?:,.*)?)$", RegexOption.IGNORE_CASE
 	)
 
-	override fun isAllowedToUse(context: Context, config: Configuration, saslContext: SASLContext): Boolean =
-		config.sasl is JIDPasswordSaslConfig
+	override fun isAllowedToUse(
+		context: Context, config: Configuration, saslContext: SASLContext, streamFeatures: Element
+	): Boolean = config.sasl is JIDPasswordSaslConfig
 
-	private fun scramData(saslContext: SASLContext): SCRAMData {
+	protected fun scramData(saslContext: SASLContext): SCRAMData {
 		if (saslContext.mechanismData == null) {
 			saslContext.mechanismData = SCRAMData()
 		}

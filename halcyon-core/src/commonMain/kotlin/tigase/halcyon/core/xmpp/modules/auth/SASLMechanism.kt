@@ -19,6 +19,7 @@ package tigase.halcyon.core.xmpp.modules.auth
 
 import tigase.halcyon.core.Context
 import tigase.halcyon.core.configuration.Configuration
+import tigase.halcyon.core.xml.Element
 
 interface SASLMechanism {
 
@@ -41,7 +42,7 @@ interface SASLMechanism {
 	 *
 	 * @return `true` if mechanism can be used it current XMPP session.
 	 */
-	fun isAllowedToUse(context: Context, config: Configuration, saslContext: SASLContext): Boolean
+	fun isAllowedToUse(context: Context, config: Configuration, saslContext: SASLContext, streamFeatures: Element): Boolean
 
 	/**
 	 * Determines whether the authentication exchange has completed.

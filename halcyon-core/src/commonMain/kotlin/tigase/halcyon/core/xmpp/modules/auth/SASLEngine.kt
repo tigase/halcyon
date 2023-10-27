@@ -3,6 +3,7 @@ package tigase.halcyon.core.xmpp.modules.auth
 import tigase.halcyon.core.Context
 import tigase.halcyon.core.exceptions.HalcyonException
 import tigase.halcyon.core.logger.LoggerFactory
+import tigase.halcyon.core.xml.Element
 
 data class AuthData(val mechanismName: String, val data: String?)
 
@@ -14,11 +15,13 @@ class SASLEngine(val context: Context) {
 
 	private val mechanisms: MutableList<SASLMechanism> = mutableListOf()
 
-	private fun selectMechanism(allowedMechanisms: List<String>): SASLMechanism {
+	private fun selectMechanism(streamFeatures: Element): SASLMechanism {
+		val allowedMechanisms = allowedMechanism(streamFeatures)
+
 		for (mechanism in mechanisms) {
 			log.finer { "Checking mechanism ${mechanism.name}" }
 			if (allowedMechanisms.contains(mechanism.name) && mechanism.isAllowedToUse(
-					context, context.config, saslContext
+					context, context.config, saslContext, streamFeatures
 				)
 			) {
 				log.fine { "Selected mechanism: ${mechanism.name}" }
@@ -30,9 +33,14 @@ class SASLEngine(val context: Context) {
 
 	fun add(mechanism: SASLMechanism) = mechanisms.add(mechanism)
 
-	fun start(allowedMechanisms: List<String>): AuthData {
+	private fun allowedMechanism(streamFeatures: Element): List<String> =
+		streamFeatures.getChildrenNS("mechanisms", SASLModule.XMLNS)?.children?.filter {
+			it.name == "mechanism"
+		}?.mapNotNull { it.value } ?: throw HalcyonException("No SASL features in stream.")
+
+	fun start(streamFeatures: Element): AuthData {
 		saslContext.state = State.InProgress
-		val mechanism = selectMechanism(allowedMechanisms)
+		val mechanism = selectMechanism(streamFeatures)
 		val authData = mechanism.evaluateChallenge(null, context, context.config, saslContext)
 		saslContext.mechanism = mechanism
 		context.eventBus.fire(SASLEvent.SASLStarted(mechanism.name))

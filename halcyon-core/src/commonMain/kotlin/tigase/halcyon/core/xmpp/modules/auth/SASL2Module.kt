@@ -65,8 +65,7 @@ class SASL2Module(override val context: Context, private val discoveryModule: Di
 	fun startAuth(streamFeatures: Element) {
 		val saslStreamFeatures = streamFeatures.getChildrenNS("authentication", XMLNS)
 			?: throw HalcyonException("No SASL2 features in stream.")
-		val allowedMechanisms = saslStreamFeatures.children.filter { it.name == "mechanism" }.mapNotNull { it.value }
-		val authData = engine.start(allowedMechanisms)
+		val authData = engine.start(streamFeatures)
 		val authElement = element("authenticate") {
 			xmlns = XMLNS
 			attribute("mechanism", authData.mechanismName)

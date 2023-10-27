@@ -21,6 +21,7 @@ import tigase.halcyon.core.Context
 import tigase.halcyon.core.configuration.Configuration
 import tigase.halcyon.core.configuration.JIDPasswordSaslConfig
 import tigase.halcyon.core.toBase64
+import tigase.halcyon.core.xml.Element
 
 class SASLPlain : SASLMechanism {
 
@@ -46,7 +47,12 @@ class SASLPlain : SASLMechanism {
 		}.toBase64()
 	}
 
-	override fun isAllowedToUse(context: Context, config: Configuration, saslContext: SASLContext): Boolean =
+	override fun isAllowedToUse(
+		context: Context,
+		config: Configuration,
+		saslContext: SASLContext,
+		streamFeatures: Element
+	): Boolean =
 		config.sasl is JIDPasswordSaslConfig
 
 }

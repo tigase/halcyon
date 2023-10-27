@@ -11,8 +11,6 @@ class DefaultHostnameVerifier : XMPPHostnameVerifier {
 	private val log = LoggerFactory.logger("tigase.halcyon.core.connector.socket.DefaultHostnameVerifier")
 
 	override fun verify(domainName: String, certificate: Certificate): Boolean {
-		log.info { "Checking domain $domainName against \n\n $certificate" }
-
 		return if (certificate is X509Certificate) {
 			validateCertificate(domainName, certificate)
 		} else {

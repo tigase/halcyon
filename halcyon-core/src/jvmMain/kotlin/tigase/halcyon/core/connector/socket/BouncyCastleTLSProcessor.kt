@@ -143,9 +143,6 @@ class BouncyCastleTLSProcessor(private val socket: Socket, private val config: S
 					"Certificate hostname doesn't match domain name you want to connect."
 				)
 			}
-
-
-			log.warning("!!!!!!!!!!!!!!")
 		}
 	}
 

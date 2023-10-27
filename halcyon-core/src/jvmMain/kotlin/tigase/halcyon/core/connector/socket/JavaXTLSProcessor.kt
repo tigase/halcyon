@@ -51,6 +51,8 @@ class JavaXTLSProcessor(private val socket: Socket, private val config: SocketCo
 		return ctx.socketFactory
 	}
 
+	private val lock = Object()
+
 	override fun proceedTLS(callback: TLSCallback) {
 		val factory = getSocketFactory()
 		val s1 = factory.createSocket(socket, config.hostname, socket.port, true) as SSLSocket
@@ -60,11 +62,18 @@ class JavaXTLSProcessor(private val socket: Socket, private val config: SocketCo
 		s1.useClientMode = true
 		s1.addHandshakeCompletedListener { handshakeCompletedEvent ->
 			log.info { "Handshake completed $handshakeCompletedEvent" }
-			this.secured = true
 			this.peerCertificates = handshakeCompletedEvent.session.peerCertificates
+			this.secured = true
+			synchronized(lock) {
+				lock.notify()
+			}
 		}
 		s1.startHandshake()
+		synchronized(lock) {
+			if (!secured) lock.wait(100)
+		}
 
+		log.info { "Verifying domain name" }
 		if (!config.hostnameVerifier.verify(config.domain, this.peerCertificates!!.first())) {
 			throw SSLHandshakeException(
 				"Certificate hostname doesn't match domain name you want to connect."
