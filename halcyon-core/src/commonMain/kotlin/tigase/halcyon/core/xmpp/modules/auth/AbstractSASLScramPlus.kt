@@ -18,13 +18,14 @@ abstract class AbstractSASLScramPlus(
 ) : AbstractSASLScram(name, hashAlgorithm, randomGenerator, clientKeyData, serverKeyData) {
 
 	private fun checkAvailability(
-		data: SCRAMData, type: BindType, bindingData: ByteArray?
+		context: Context, data: SCRAMData, type: BindType, bindingData: (Context) -> ByteArray?
 	): Pair<BindType, ByteArray>? {
-		return if (bindingData == null) null else if (data.bindTypesSupportedByServer == null) Pair(
-			type, bindingData
-		) else if (!data.bindTypesSupportedByServer!!.contains(type)) {
-			null
-		} else Pair(type, bindingData)
+		data.bindTypesSupportedByServer?.let {
+			if (!it.contains(type)) return null
+		}
+
+		val cbd = bindingData(context) ?: return null
+		return Pair(type, cbd)
 	}
 
 	override fun prepareChannelBindingData(
@@ -32,9 +33,9 @@ abstract class AbstractSASLScramPlus(
 	): Pair<BindType, ByteArray> {
 		val data = scramData(saslContext)
 
-		checkAvailability(data, BindType.TlsExporter, tlsExporterProvider(context))?.let { return it }
-		checkAvailability(data, BindType.TlsUnique, tlsUniqueProvider(context))?.let { return it }
-		checkAvailability(data, BindType.TlsServerEndPoint, serverEndpointProvider(context))?.let { return it }
+		checkAvailability(context, data, BindType.TlsUnique, tlsUniqueProvider)?.let { return it }
+		checkAvailability(context, data, BindType.TlsExporter, tlsExporterProvider)?.let { return it }
+		checkAvailability(context, data, BindType.TlsServerEndPoint, serverEndpointProvider)?.let { return it }
 
 		return super.prepareChannelBindingData(context, config, saslContext)
 	}
@@ -76,5 +77,5 @@ private fun retrieveTlsServerEndpoint(context: Context): ByteArray? {
 
 private fun retrieveTlsExporter(context: Context): ByteArray? {
 	val provider = (context as AbstractHalcyon).connector as ChannelBindingDataProvider
-	return provider.getTlsServerEndpoint()
+	return provider.getTlsExporter()
 }
