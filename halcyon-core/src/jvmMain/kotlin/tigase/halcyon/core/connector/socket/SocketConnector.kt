@@ -65,18 +65,18 @@ class SocketConnector(halcyon: Halcyon, val tlsProcesorFactory: TLSProcessorFact
 		const val XMLNS_START_TLS = "urn:ietf:params:xml:ns:xmpp-tls"
 	}
 
-	private lateinit var tlsProcesor: TLSProcessor
+	private var tlsProcesor: TLSProcessor? = null
 
 	val secured: Boolean
-		get() = tlsProcesor.isConnectionSecure()
+		get() = tlsProcesor?.isConnectionSecure() ?: false
 
 	private var started = false
 
 	private val log = LoggerFactory.logger("tigase.halcyon.core.connector.socket.SocketConnector")
 
-	private lateinit var socket: Socket
+	private var socket: Socket? = null
 
-	private lateinit var worker: SocketWorker
+	private var worker: SocketWorker? = null
 
 	private val whitespacePingExecutor = TickExecutor(halcyon.eventBus, 30.seconds) { onTick() }
 
@@ -153,11 +153,11 @@ class SocketConnector(halcyon: Halcyon, val tlsProcesorFactory: TLSProcessorFact
 			log.finest { "Disabling whitespace ping" }
 			whiteSpaceEnabled = false
 
-			tlsProcesor.proceedTLS { inputStream, outputStream ->
-				worker.setReaderAndWriter(
+			tlsProcesor?.proceedTLS { inputStream, outputStream ->
+				worker?.setReaderAndWriter(
 					InputStreamReader(inputStream), OutputStreamWriter(outputStream)
-				)
-			}
+				) ?: throw HalcyonException("Socket worker not initialized")
+			} ?: throw HalcyonException("TLS Processor not initialized")
 
 			restartStream()
 		} catch (e: Throwable) {
@@ -235,18 +235,19 @@ class SocketConnector(halcyon: Halcyon, val tlsProcesorFactory: TLSProcessorFact
 		try {
 			createSocket { sckt ->
 				this.socket = sckt
-				socket.soTimeout = 20 * 1000
-				socket.keepAlive = false
-				socket.tcpNoDelay = true
-				log.fine { "Opening socket connection to ${this.socket.inetAddress}" }
+				sckt.soTimeout = 20 * 1000
+				sckt.keepAlive = false
+				sckt.tcpNoDelay = true
+				log.fine { "Opening socket connection to ${sckt.inetAddress}" }
 				this.worker = SocketWorker(parser).apply {
 					setReaderAndWriter(
-						InputStreamReader(socket.getInputStream()), OutputStreamWriter(socket.getOutputStream())
+						InputStreamReader(sckt.getInputStream()), OutputStreamWriter(sckt.getOutputStream())
 					)
+				}.apply {
+					onError = { exception -> onWorkerException(exception) }
 				}
-				this.worker.onError = { exception -> onWorkerException(exception) }
-				this.tlsProcesor = tlsProcesorFactory.create(this.socket, config)
-				worker.start()
+				this.tlsProcesor = tlsProcesorFactory.create(sckt, config)
+				worker?.start() ?: throw HalcyonException("Socket Worker not created properly.")
 				val sb = buildString {
 					append("<stream:stream xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams' ")
 					append("version='1.0' ")
@@ -296,17 +297,19 @@ class SocketConnector(halcyon: Halcyon, val tlsProcesorFactory: TLSProcessorFact
 				state = State.Disconnecting
 				whitespacePingExecutor.stop()
 				Thread.sleep(175)
-				if (!this.socket.isClosed) {
-					worker.writer.close()
-					this.socket.close()
+				if (this.socket?.isClosed == false) {
+					worker?.writer?.close()
+					this.socket?.close()
 				}
-				worker.interrupt()
-				tlsProcesor.clear()
-				while (worker.isActive) Thread.sleep(32)
+				worker?.interrupt()
+				tlsProcesor?.clear()
+				while (worker?.isActive == true) Thread.sleep(32)
 			} finally {
 				log.fine { "Stopped" }
-				state = State.Disconnected
-				eventsEnabled = false
+				this.state = State.Disconnected
+				this.worker = null
+				this.socket = null
+				this.eventsEnabled = false
 			}
 		}
 	}
@@ -317,9 +320,11 @@ class SocketConnector(halcyon: Halcyon, val tlsProcesorFactory: TLSProcessorFact
 
 	override fun send(data: CharSequence) {
 		try {
-			log.finest { "Sending (${socket.isConnected}, ${!socket.isOutputShutdown}): $data" }
-			worker.writer.write(data.toString())
-			worker.writer.flush()
+			log.finest { "Sending (${socket?.isConnected}, ${!(socket?.isOutputShutdown ?: true)}): $data" }
+			worker?.let {
+				it.writer.write(data.toString())
+				it.writer.flush()
+			} ?: throw HalcyonException("Socket Worker not initialized.")
 		} catch (e: Exception) {
 			log.warning(e) { "Cannot send data to server" }
 			state = State.Disconnecting
@@ -345,8 +350,8 @@ class SocketConnector(halcyon: Halcyon, val tlsProcesorFactory: TLSProcessorFact
 	private fun onTick() {
 		if (state == State.Connected && whiteSpaceEnabled) {
 			log.finer { "Whitespace ping" }
-			worker.writer.write(' '.code)
-			worker.writer.flush()
+			worker?.writer?.write(' '.code)
+			worker?.writer?.flush()
 		}
 	}
 
@@ -359,12 +364,12 @@ class SocketConnector(halcyon: Halcyon, val tlsProcesorFactory: TLSProcessorFact
 		halcyon.writer.writeDirectly(element)
 	}
 
-	override fun isConnectionSecure(): Boolean = tlsProcesor.isConnectionSecure()
+	override fun isConnectionSecure(): Boolean = tlsProcesor?.isConnectionSecure() ?: false
 
-	override fun getTlsUnique(): ByteArray? = tlsProcesor.getTlsUnique()
+	override fun getTlsUnique(): ByteArray? = tlsProcesor?.getTlsUnique()
 
-	override fun getTlsServerEndpoint(): ByteArray? = tlsProcesor.getTlsServerEndpoint()
+	override fun getTlsServerEndpoint(): ByteArray? = tlsProcesor?.getTlsServerEndpoint()
 
-	override fun getTlsExporter(): ByteArray? = tlsProcesor.getTlsServerEndpoint()
+	override fun getTlsExporter(): ByteArray? = tlsProcesor?.getTlsServerEndpoint()
 
 }
