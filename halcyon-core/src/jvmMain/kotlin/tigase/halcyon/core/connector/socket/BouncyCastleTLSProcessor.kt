@@ -2,7 +2,6 @@ package tigase.halcyon.core.connector.socket
 
 import org.bouncycastle.tls.*
 import org.bouncycastle.tls.crypto.impl.bc.BcTlsCrypto
-import tigase.halcyon.core.connector.ChannelBindingDataProvider
 import tigase.halcyon.core.logger.LoggerFactory
 import java.io.ByteArrayInputStream
 import java.io.IOException
@@ -14,12 +13,27 @@ import java.security.cert.X509Certificate
 import javax.net.ssl.SSLHandshakeException
 import javax.net.ssl.X509TrustManager
 
-class BouncyCastleTLSProcessor(private val socket: Socket, private val config: SocketConnectorConfig) : TLSProcessor,
-	ChannelBindingDataProvider {
+
+/**
+ * The BouncyCastleTLSProcessor class implements the TLSProcessor interface for handling TLS encryption and security operations
+ * using the Bouncy Castle library. This TLS Processor allows to use `tls-exporter`, and `tls-unique` channel binding
+ * in SASL SCRAM.
+ *
+ * @param socket The socket to create a TLSProcessor for.
+ * @param config The SocketConnectorConfig containing the necessary configuration for TLS processing.
+ */
+class BouncyCastleTLSProcessor(private val socket: Socket, private val config: SocketConnectorConfig) : TLSProcessor {
 
 	private val log = LoggerFactory.logger("tigase.halcyon.core.connector.socket.BouncyCastleTLSProcessor")
 
+	/**
+	 * The BouncyCastleTLSProcessor class implements the TLSProcessor interface for handling TLS encryption and security operations
+	 * using the Bouncy Castle library. This TLS Processor allows to use `tls-exporter`, and `tls-unique` channel
+	 * binding in SASL SCRAM.
+	 */
 	companion object : TLSProcessorFactory {
+
+		override val NAME: String = "BouncyCastleTLSProcessor"
 
 		override fun create(socket: Socket, config: SocketConnectorConfig): TLSProcessor =
 			BouncyCastleTLSProcessor(socket, config)
@@ -92,8 +106,7 @@ class BouncyCastleTLSProcessor(private val socket: Socket, private val config: S
 			val keyExchangeField = AbstractTlsKeyExchange::class.java.getDeclaredField("keyExchange")
 			keyExchangeField.setAccessible(true)
 			val v = keyExchangeField[tlsKeyExchange]
-			val i = v.toString().toInt()
-			when (i) {
+			when (val i = v.toString().toInt()) {
 				0 -> "NULL"
 				1 -> "RSA"
 				2 -> "RSA_EXPORT"

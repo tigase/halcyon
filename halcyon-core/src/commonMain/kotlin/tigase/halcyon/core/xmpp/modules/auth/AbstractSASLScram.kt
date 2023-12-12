@@ -5,6 +5,7 @@ import tigase.halcyon.core.Context
 import tigase.halcyon.core.configuration.Configuration
 import tigase.halcyon.core.configuration.JIDPasswordSaslConfig
 import tigase.halcyon.core.fromBase64
+import tigase.halcyon.core.logger.LoggerFactory
 import tigase.halcyon.core.toBase64
 import tigase.halcyon.core.xml.Element
 import kotlin.experimental.xor
@@ -70,6 +71,8 @@ abstract class AbstractSASLScram(
 	private val serverKeyData: ByteArray = "Server Key".encodeToByteArray(),
 ) : SASLMechanism {
 
+	private val log = LoggerFactory.logger("tigase.halcyon.core.xmpp.modules.auth.AbstractSASLScram")
+
 	private val serverFirstMessageRegex = Regex(
 		"^(m=[^,]+,)?r=([^,]+),s=([^,]+),i=([0-9]+)(?:,.*)?$", RegexOption.IGNORE_CASE
 	)
@@ -106,6 +109,8 @@ abstract class AbstractSASLScram(
 				data.bindType = bindType
 				data.bindData = bindData
 			}
+			log.fine("Selected channel binding: ${data.bindType}")
+
 			data.authcId = credentials.authcId ?: credentials.userJID.localpart!!
 			data.authzId = if (credentials.authcId != null) {
 				credentials.userJID.toString()

@@ -370,6 +370,6 @@ class SocketConnector(halcyon: Halcyon, val tlsProcesorFactory: TLSProcessorFact
 
 	override fun getTlsServerEndpoint(): ByteArray? = tlsProcesor?.getTlsServerEndpoint()
 
-	override fun getTlsExporter(): ByteArray? = tlsProcesor?.getTlsServerEndpoint()
+	override fun getTlsExporter(): ByteArray? = tlsProcesor?.getTlsExporter()
 
 }

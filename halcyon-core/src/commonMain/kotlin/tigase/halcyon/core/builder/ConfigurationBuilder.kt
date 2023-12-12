@@ -81,6 +81,11 @@ class RegistrationBuilder : ConfigItemBuilder<Registration> {
 
 }
 
+/**
+ * A builder class for constructing a configuration object.
+ *
+ * @constructor Creates a new `ConfigurationBuilder`.
+ */
 @HalcyonConfigDsl
 class ConfigurationBuilder {
 
@@ -98,12 +103,18 @@ class ConfigurationBuilder {
 	var registration: RegistrationBuilder? = null
 		private set
 
+	/**
+	 * Sets the authentication configuration for the account.
+	 */
 	fun auth(init: JIDPasswordAuthConfigBuilder.() -> Unit) {
 		val n = JIDPasswordAuthConfigBuilder()
 		n.init()
 		this.auth = n
 	}
 
+	/**
+	 * Registers a new configuration for the account registration process.
+	 */
 	fun register(init: RegistrationBuilder.() -> Unit) {
 		val n = RegistrationBuilder()
 		n.init()
@@ -115,6 +126,11 @@ class ConfigurationBuilder {
 		this.modulesConfigBuilder.init()
 	}
 
+	/**
+	 * Installs a module with an optional configuration function.
+	 * @param provider The module provider to install.
+	 * @param configuration The configuration function to apply to the module.
+	 */
 	fun <M : HalcyonModule, B : Any> install(
 		provider: HalcyonModuleProvider<M, B>,
 		configuration: B.() -> Unit = {},

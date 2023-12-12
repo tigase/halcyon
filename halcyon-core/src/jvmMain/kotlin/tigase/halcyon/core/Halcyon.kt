@@ -19,9 +19,8 @@ package tigase.halcyon.core
 
 import tigase.halcyon.core.builder.ConfigurationBuilder
 import tigase.halcyon.core.connector.AbstractConnector
-import tigase.halcyon.core.connector.socket.BouncyCastleTLSProcessor
-import tigase.halcyon.core.connector.socket.JavaXTLSProcessor
 import tigase.halcyon.core.connector.socket.SocketConnector
+import tigase.halcyon.core.connector.socket.SocketConnectorConfig
 import tigase.halcyon.core.eventbus.Event
 import tigase.halcyon.core.eventbus.EventBus
 import tigase.halcyon.core.eventbus.EventHandler
@@ -36,7 +35,9 @@ actual class Halcyon actual constructor(configuration: ConfigurationBuilder) : A
 	private val log = LoggerFactory.logger("tigase.halcyon.core.Halcyon")
 
 	override fun createConnector(): AbstractConnector {
-		return SocketConnector(this, JavaXTLSProcessor)
+		val tlsProcessorFactory = (config.connection as SocketConnectorConfig).tlsProcessorFactory
+		log.fine("Selected TLS Processor: ${tlsProcessorFactory.NAME}")
+		return SocketConnector(this, tlsProcessorFactory)
 	}
 
 	override fun reconnect(immediately: Boolean) {

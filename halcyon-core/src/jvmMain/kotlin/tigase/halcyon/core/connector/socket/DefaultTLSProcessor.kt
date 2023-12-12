@@ -13,13 +13,27 @@ import javax.net.ssl.SSLHandshakeException
 import javax.net.ssl.SSLSocket
 import javax.net.ssl.SSLSocketFactory
 
-class JavaXTLSProcessor(private val socket: Socket, private val config: SocketConnectorConfig) : TLSProcessor,
+/**
+ * Default implementation of the TLSProcessor interface, used for handling TLS encryption in socket communication.
+ *
+ * @property socket The underlying socket used for communication.
+ * @property config The configuration for the socket connector.
+ */
+class DefaultTLSProcessor(private val socket: Socket, private val config: SocketConnectorConfig) : TLSProcessor,
 	ChannelBindingDataProvider {
 
+	/**
+	 * Provides default implementation of the TLSProcessor interface, used for handling TLS encryption in socket
+	 * communication.
+	 *
+	 * @see TLSProcessor
+	 */
 	companion object : TLSProcessorFactory {
 
+		override val NAME: String = "DefaultTLSProcessor"
+
 		override fun create(socket: Socket, config: SocketConnectorConfig): TLSProcessor =
-			JavaXTLSProcessor(socket, config)
+			DefaultTLSProcessor(socket, config)
 	}
 
 	private val log = LoggerFactory.logger("tigase.halcyon.core.connector.socket.JavaXTLSProcessor")
@@ -88,8 +102,7 @@ class JavaXTLSProcessor(private val socket: Socket, private val config: SocketCo
 fun calculateCertificateHash(certificate: X509Certificate): ByteArray? {
 	val log = LoggerFactory.logger("tigase.halcyon.core.connector.socket.calculateCertificateHash")
 	return try {
-		val sigAlgName = certificate.sigAlgName.substringBefore("with").uppercase(Locale.getDefault())
-		val useAlgo = when (sigAlgName) {
+		val useAlgo = when (val sigAlgName = certificate.sigAlgName.substringBefore("with").uppercase(Locale.getDefault())) {
 			"MD5", "SHA1" -> "SHA-256"
 			"SHA224" -> "SHA-224"
 			"SHA256" -> "SHA-256"

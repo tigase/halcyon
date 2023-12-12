@@ -27,5 +27,6 @@ data class SocketConnectorConfig(
 	val port: Int,
 	val trustManager: TrustManager,
 	val dnsResolver: DnsResolver,
-	val hostnameVerifier: XMPPHostnameVerifier
+	val hostnameVerifier: XMPPHostnameVerifier,
+	val tlsProcessorFactory: TLSProcessorFactory
 ) : ConnectionConfig
