@@ -1,8 +1,6 @@
 Release 1.0.0-SNAPSHOT (in development)
 =======================================
 
-* First public release
-
 Dependencies
 ------------
 
@@ -28,7 +26,7 @@ Testing
 -------
 
 
-Release 1.0.0--a.7 (12-12-2023)
+Release 1.0.0-a.7 (12-12-2023)
 ===============================
 
 Bugs fixed
@@ -37,7 +35,7 @@ Bugs fixed
 * #82: Add channel binding to SCRAM
 
 
-Release 1.0.0--a.6 (08-11-2023)
+Release 1.0.0-a.6 (08-11-2023)
 ===============================
 
 Dependencies
