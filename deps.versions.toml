@@ -8,6 +8,7 @@ coroutines = "1.6.4"
 krypto = "4.0.9"
 minidns = "1.0.3"
 dokka = "1.8.10"
+bouncycastle = "1.76"
 
 [libraries]
 
@@ -34,6 +35,8 @@ reactive-coroutinesInterop = { group = "com.badoo.reaktive", name = "coroutines-
 krypto = { group = "com.soywiz.korlibs.krypto", name = "krypto", version.ref = "krypto" }
 
 minidns = { group = "org.minidns", name = "minidns-hla", version.ref = "minidns" }
+
+bouncycastle  = { group = "org.bouncycastle", name = "bctls-jdk18on", version.ref = "bouncycastle" }
 
 #  = { group = "", name = "", version.ref = "" }
 

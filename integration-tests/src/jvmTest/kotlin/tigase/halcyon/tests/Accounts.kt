@@ -1,12 +1,10 @@
 package tigase.halcyon.tests
 
 import tigase.halcyon.core.Halcyon
-import tigase.halcyon.core.builder.DefaultTLSProcessorFactory
 import tigase.halcyon.core.builder.socketConnector
 import tigase.halcyon.core.connector.ReceivedXMLElementEvent
 import tigase.halcyon.core.connector.SentXMLElementEvent
 import tigase.halcyon.core.connector.socket.BouncyCastleTLSProcessor
-import tigase.halcyon.core.connector.socket.DefaultTLSProcessor
 import tigase.halcyon.core.xmpp.BareJID
 import tigase.halcyon.core.xmpp.toBareJID
 import java.io.File
@@ -27,8 +25,7 @@ fun loadProperties() = Properties().let { prop ->
 
 fun createHalcyon(): Halcyon {
 	val (jid, password) = loadProperties()
-	return tigase.halcyon.core.builder.
-	createHalcyon {
+	return tigase.halcyon.core.builder.createHalcyon {
 		auth {
 			userJID = jid
 			password { password }

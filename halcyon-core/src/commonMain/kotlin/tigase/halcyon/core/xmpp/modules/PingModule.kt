@@ -61,8 +61,10 @@ class PingModule(context: Context) : PingModuleConfig, AbstractXmppIQModule(
 	}
 
 	/**
-	 * Prepares ping request.
-	 * @param jid JabberID of entity to ping. If `null` then own account on server will be pinged.
+	 * Prepares a ping request using XMPP Ping (XEP-0199).
+	 *
+	 * @param jid The JID (Jabber ID) to ping. If null, a ping is sent to the server.
+	 * @return A RequestBuilder that can be used to handle the ping response.
 	 */
 	fun ping(jid: JID? = null): RequestBuilder<Pong, IQ> {
 		val stanza = iq {
@@ -73,9 +75,7 @@ class PingModule(context: Context) : PingModuleConfig, AbstractXmppIQModule(
 			}
 		}
 		var time0: Instant = Clock.System.now()
-		return context.request.iq(stanza)
-			.onSend { time0 = Clock.System.now() }
-			.map { Pong(Clock.System.now() - time0) }
+		return context.request.iq(stanza).onSend { time0 = Clock.System.now() }.map { Pong(Clock.System.now() - time0) }
 	}
 
 	override fun processGet(element: IQ) {

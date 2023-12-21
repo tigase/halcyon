@@ -17,6 +17,8 @@
  */
 plugins {
 	kotlin("multiplatform")
+	`maven-publish`
+	signing
 	kotlin("plugin.serialization")
 }
 
@@ -31,18 +33,11 @@ kotlin {
 	}
 
 	sourceSets {
-		all {
-			languageSettings {
-				optIn("kotlin.RequiresOptIn")
-			}
-		}
-		named("jvmTest") {
+		named("jvmMain") {
 			dependencies {
-				implementation(kotlin("test"))
-				implementation(kotlin("test-junit"))
+				implementation(kotlin("stdlib-common"))
 				implementation(project(":halcyon-core"))
-				implementation(project(":halcyon-bouncycastle"))
-				implementation(deps.kotlinx.datetime)
+				implementation(deps.bouncycastle)
 			}
 		}
 	}

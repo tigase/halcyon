@@ -11,23 +11,12 @@ General code to registering events:
 
 .. code:: kotlin
 
-   halcyon.eventBus.register<EVENT_TYPE>(EVENT_NAME) { event ->
-   …
-   }
+   halcyon.eventBus.register(Event) { event ->
 
-In Halcyon, name of event is defined as constant variable named ``TYPE``
-in each event.
-
-For example:
-
-.. code:: kotlin
-
-   halcyon.eventBus.register<ReceivedXMLElementEvent>(ReceivedXMLElementEvent.TYPE) { event ->
-       println(" >>> ${event.element.getAsString()}")
    }
 
 You can use EventBus for you own applications. No need to register
-events types. Just create object inherited from
+events before. Just create object inherited from
 ``tigase.halcyon.core.eventbus.Event`` and call method
 ``eventbus.fire()``:
 
@@ -35,10 +24,23 @@ events types. Just create object inherited from
 
    data class SampleEvent(val sampleData: String) : Event(TYPE){
 
-       companion object {
-           const val TYPE = "sampleEvent"
+       companion object : EventDefinition<SampleEvent> {
+           override val TYPE = "sampleEvent"
        }
 
    }
 
    halcyon.eventBus.fire(SampleEvent("test"))
+
+Remember that ``TYPE`` must be unique string, because it is the identifier of event in Event Bus.
+
+
+Using ``EventDefinition`` interface for companion object is very useful, because when you register events listener,
+no need to declare type of observer events:
+
+.. code:: kotlin
+
+   halcyon.eventBus.register(SampleEvent) { event ->
+
+   }
+

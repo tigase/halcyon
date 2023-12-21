@@ -111,7 +111,6 @@ kotlin {
 		named("jvmMain") {
 			dependencies {
 				implementation(deps.minidns)
-				implementation("org.bouncycastle:bctls-jdk18on:1.76")
 			}
 		}
 		named("jvmTest") {
@@ -164,8 +163,7 @@ kotlin {
 //	}
 //}
 
-tasks.withType<org.jetbrains.dokka.gradle.DokkaTask>()
-	.configureEach {
+tasks.withType<org.jetbrains.dokka.gradle.DokkaTask>().configureEach {
 		moduleName.set("Tigase Halcyon")
 		moduleVersion.set(project.version.toString())
 		failOnWarning.set(false)

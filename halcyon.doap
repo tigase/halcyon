@@ -26,7 +26,6 @@
         <programming-language>Kotlin</programming-language>
         <os>JVM</os>
         <os>Android</os>
-        <os>iOS</os>
         <os>JS</os>
 
         <category rdf:resource="https://linkmauve.fr/ns/xmpp-doap#category-xmpp"/>
@@ -203,6 +202,13 @@
             <xmpp:SupportedXep>
                 <xmpp:xep rdf:resource='https://xmpp.org/extensions/xep-0440.html'/>
                 <xmpp:status>complete</xmpp:status>
+                <xmpp:version>0.4.0</xmpp:version>
+            </xmpp:SupportedXep>
+        </implements>
+        <implements>
+            <xmpp:SupportedXep>
+                <xmpp:xep rdf:resource='https://xmpp.org/extensions/xep-0386.html'/>
+                <xmpp:status>partial</xmpp:status>
                 <xmpp:version>0.4.0</xmpp:version>
             </xmpp:SupportedXep>
         </implements>

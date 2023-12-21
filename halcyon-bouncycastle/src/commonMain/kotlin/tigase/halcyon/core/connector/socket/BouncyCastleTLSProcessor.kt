@@ -13,7 +13,6 @@ import java.security.cert.X509Certificate
 import javax.net.ssl.SSLHandshakeException
 import javax.net.ssl.X509TrustManager
 
-
 /**
  * The BouncyCastleTLSProcessor class implements the TLSProcessor interface for handling TLS encryption and security operations
  * using the Bouncy Castle library. This TLS Processor allows to use `tls-exporter`, and `tls-unique` channel binding
@@ -148,7 +147,7 @@ class BouncyCastleTLSProcessor(private val socket: Socket, private val config: S
 
 
 			if (config.trustManager is X509TrustManager) {
-				config.trustManager.checkServerTrusted(peerCertificates!!, "")
+				(config.trustManager as X509TrustManager).checkServerTrusted(peerCertificates!!, "")
 			}
 
 			if (!config.hostnameVerifier.verify(config.domain, peerCertificates!!.first())) {

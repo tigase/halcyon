@@ -78,6 +78,29 @@ In Socket Connector you may configure own DNS resolver, set custom host and port
 
    Note that by default Halcyon doesn't check SSL server certificates at all!
 
+Halcyon provides two TLS processors: default one, using built-in JSSE and the second using BouncyCastle_.
+The only reason and difference between them is fact that JSSE_ doesn't provides a way to get Channel Binding data to
+use in SASL SCRAM (see :ref:`header-SaslModule`) authentication protocol.
+
+If you want to use BouncyCastle, you have to import ``tigase.halcyon:halcyon-bouncycastle`` to your project, and
+add ``BouncyCastleTLSProcessor`` to configuration of connector:
+
+.. code:: kotlin
+
+    import tigase.halcyon.core.builder.createHalcyon
+    import tigase.halcyon.core.builder.socketConnector
+    import tigase.halcyon.core.connector.socket.BouncyCastleTLSProcessor
+
+    val halcyon = createHalcyon {
+        socketConnector {
+            dnsResolver = CustomDNSResolver()
+            hostname = "127.0.0.1"
+            port = 15222
+            trustManager = MyTrustManager()
+            tlsProcessorFactory = BouncyCastleTLSProcessor
+       }
+    }
+
 JavaScript WebSocketConnector
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -119,7 +142,7 @@ We can listen for changing status of connection:
 
 .. code:: kotlin
 
-   halcyon.eventBus.register<HalcyonStateChangeEvent>(HalcyonStateChangeEvent.TYPE) { stateChangeEvent ->
+   halcyon.eventBus.register(HalcyonStateChangeEvent) { stateChangeEvent ->
        println("Halcyon state: ${stateChangeEvent.oldState}->${stateChangeEvent.newState}")
    }
 
@@ -134,3 +157,7 @@ Available states:
 -  ``Disconnected`` - Halcyon is disconnected from XMPP server, but it is still active. It may start reconnecting to server automatically.
 
 -  ``Stopped`` - Halcyon is turned off (not active).
+
+
+.. _JSSE: https://docs.oracle.com/javase/8/docs/technotes/guides/security/jsse/JSSERefGuide.html
+.. _BouncyCastle: https://www.bouncycastle.org/java.html

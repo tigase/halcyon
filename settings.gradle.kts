@@ -31,5 +31,6 @@ include(
 	":halcyon-core",
 	"halcyon-rx",
 	"halcyon-coroutines",
+	"halcyon-bouncycastle",
 	"integration-tests",
 )
