@@ -1,3 +1,5 @@
+.. _header-setting-up-client:
+
 Setting up a client
 ===================
 
@@ -37,5 +39,3 @@ At the end, you have to add dependency to ``tigase.halcyon:halcyon-core`` artifa
     implementation("tigase.halcyon:halcyon-core:$halcyon_version")
 
 Where ``$halcyon_version`` is required Halcyon version.
-
-

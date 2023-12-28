@@ -11,6 +11,7 @@ Tigase Halcyon XMPP Library
 
    topics/Welcome
    topics/Setting_Up_A_Library
+   topics/FiveMinutesClient.rst
    topics/Creating_And_Configuring_Client
 
 .. toctree::
