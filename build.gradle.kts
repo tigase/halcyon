@@ -15,7 +15,6 @@
  * along with this program. Look for COPYING file in the top folder.
  * If not, see http://www.gnu.org/licenses/.
  */
-import net.researchgate.release.ReleaseExtension
 import java.util.*
 
 plugins {
@@ -24,7 +23,7 @@ plugins {
 	id("net.researchgate.release") version "3.0.2"
 }
 
-configure<ReleaseExtension> {
+configure<net.researchgate.release.ReleaseExtension> {
 	ignoredSnapshotDependencies.set(listOf("net.researchgate:gradle-release"))
 
 	versionPropertyFile.set("gradle.properties")
