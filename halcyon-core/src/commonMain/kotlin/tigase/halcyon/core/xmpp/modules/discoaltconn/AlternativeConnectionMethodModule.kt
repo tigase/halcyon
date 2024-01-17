@@ -13,7 +13,19 @@ import tigase.halcyon.core.xml.parser.parseXMLOrNull
 @HalcyonConfigDsl
 interface AlternativeConnectionMethodModuleConfig
 
-data class HostLink(val rel: String, val href: String)
+/**
+ * Connection method definition.
+ */
+data class HostLink(
+	/**
+	 * Relation type: `urn:xmpp:alt-connections:websocket` or `urn:xmpp:alt-connections:xbosh`.
+	 */
+	val rel: String,
+	/**
+	 * Connection URL.
+	 */
+	val href: String
+)
 
 /**
  * Module is implementing Discovering Alternative XMPP Connection Methods ([XEP-0156](https://xmpp.org/extensions/xep-0156.html)).
@@ -41,6 +53,12 @@ class AlternativeConnectionMethodModule(override val context: Context) : Halcyon
 		LoggerFactory.logger("tigase.halcyon.core.xmpp.modules.discoaltconn.AlternativeConnectionMethodModule")
 
 
+	/**
+	 * Look up for list of alternative connection method.
+	 *
+	 * @param domain XMPP domain
+	 * @param callback called when list is retrieved and when some errors occur.
+	 */
 	fun discovery(domain: String, callback: (List<HostLink>) -> Unit) {
 		val url = "https://$domain/.well-known/host-meta"
 		log.finer { "Loading host info from $url" }

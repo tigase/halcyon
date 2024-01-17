@@ -7,5 +7,6 @@ actual fun loadRemoteContent(url: String, callback: (String) -> Unit) {
 		callback(URL(url).readText())
 	} catch (e: Exception) {
 		e.printStackTrace()
+		callback("")
 	}
 }
