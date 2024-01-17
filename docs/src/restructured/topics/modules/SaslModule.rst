@@ -39,6 +39,12 @@ and configure socket connector:
        }
     }
 
+SaslModule vs Sasl2Module
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+``Sasl2Module`` does exactly the same what ``SaslModule``. The only difference is that ``Sasl2Module`` is used with
+`Bind 2 <https://xmpp.org/extensions/xep-0386.html>`__ mechanism.
+
 Events
 ^^^^^^
 
