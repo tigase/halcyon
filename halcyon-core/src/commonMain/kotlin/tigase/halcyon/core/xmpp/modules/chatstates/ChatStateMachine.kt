@@ -36,8 +36,21 @@ data class OwnChatStateChangeEvent(
 	}
 }
 
-class ChatStateMachine(val jid: BareJID, private val eventBus: EventBus, var sendUpdates: Boolean = false) :
-	EventHandler<TickEvent> {
+class ChatStateMachine(
+	/**
+	 * Recipient of chat state notifications.
+	 */
+	val jid: BareJID,
+	/**
+	 * EventBus from Halcyon.
+	 */
+	private val eventBus: EventBus,
+	/**
+	 * if `true` then chat state publishing will be done by `ChatStateModule`. If `false` then client developer is
+	 * responsible to send notification to recipient.
+	 */
+	var sendUpdatesAutomatically: Boolean = false
+) : EventHandler<TickEvent> {
 
 	var currentState: ChatState = ChatState.Inactive
 		private set
@@ -48,10 +61,17 @@ class ChatStateMachine(val jid: BareJID, private val eventBus: EventBus, var sen
 		updateTime = Clock.System.now()
 		if (currentState != newState) {
 			currentState = newState
-			eventBus.fire(OwnChatStateChangeEvent(jid, oldState, newState, sendUpdates && allowedToSendUpdate))
+			eventBus.fire(
+				OwnChatStateChangeEvent(
+					jid, oldState, newState, sendUpdatesAutomatically && allowedToSendUpdate
+				)
+			)
 		}
 	}
 
+	/**
+	 * Calculates new Chat State based on time. Have to be called periodically.
+	 */
 	fun update() {
 		val now = Clock.System.now()
 		when {
@@ -86,14 +106,14 @@ class ChatStateMachine(val jid: BareJID, private val eventBus: EventBus, var sen
 	}
 
 	/**
-	 * User composing an message. Function may be called every key press.
+	 * User composing a message. Function may be called every key press.
 	 */
 	fun composing() {
 		setNewState(ChatState.Composing, true)
 	}
 
 	/**
-	 *
+	 * User send message and stop typing.
 	 */
 	fun sendingMessage() {
 		setNewState(ChatState.Active, false)

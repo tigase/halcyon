@@ -25,6 +25,7 @@ import tigase.halcyon.core.modules.Criteria
 import tigase.halcyon.core.modules.ModulesManager
 import tigase.halcyon.core.modules.XmppModule
 import tigase.halcyon.core.modules.XmppModuleProvider
+import tigase.halcyon.core.requests.RequestBuilder
 import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xml.element
 import tigase.halcyon.core.xmpp.BareJID
@@ -96,6 +97,10 @@ data class ChatStateEvent(val jid: JID, val state: ChatState) : Event(TYPE) {
 @HalcyonConfigDsl
 interface ChatStateModuleConfig
 
+/**
+ * Module is implementing Chat State Notifications ([XEP-0085](https://xmpp.org/extensions/xep-0085.html)).
+ *
+ */
 class ChatStateModule(override val context: Context) : XmppModule, ChatStateModuleConfig {
 //	private val log LoggerFactory.logger("tigase.halcyon.core.xmpp.modules.chatstates.ChatStateModule")
 
@@ -124,12 +129,27 @@ class ChatStateModule(override val context: Context) : XmppModule, ChatStateModu
 		}
 		context.eventBus.register(OwnChatStateChangeEvent) { event ->
 			if (event.sendUpdate) {
-				publishChatState(event.jid, event.state)
+				sendChatState(event.jid, event.state).send()
 			}
 		}
 	}
 
-	fun publishChatState(jid: BareJID, state: ChatState) {
+	/**
+	 * Sends Chat State request.
+	 *
+	 * @param jid recipient of chat state
+	 * @param state Chat State to publish.
+	 */
+	@Deprecated("Will be removed soon.", replaceWith = ReplaceWith("sendChatState(jid, state).send()"))
+	fun publishChatState(jid: BareJID, state: ChatState) = sendChatState(jid, state).send()
+
+	/**
+	 * Prepares Chat State request.
+	 *
+	 * @param jid recipient of chat state
+	 * @param state Chat State to publish.
+	 */
+	fun sendChatState(jid: BareJID, state: ChatState): RequestBuilder<Unit, Message> {
 		val msg = message {
 			to = jid
 			state.xmppValue {
@@ -139,7 +159,7 @@ class ChatStateModule(override val context: Context) : XmppModule, ChatStateModu
 				xmlns = "urn:xmpp:hints"
 			}
 		}
-		context.request.message(msg).send()
+		return context.request.message(msg)
 	}
 
 	override fun process(element: Element) = throw XMPPException(ErrorCondition.FeatureNotImplemented)
