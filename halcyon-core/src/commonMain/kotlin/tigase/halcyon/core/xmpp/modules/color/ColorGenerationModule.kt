@@ -7,6 +7,9 @@ import tigase.halcyon.core.modules.HalcyonModule
 import tigase.halcyon.core.modules.HalcyonModuleProvider
 import kotlin.math.absoluteValue
 
+/**
+ * Color in HSL representation.
+ */
 data class Color(val h: Float, val s: Float, val l: Float)
 
 interface ColorsCache {
@@ -23,22 +26,56 @@ interface ColorsCache {
 @HalcyonConfigDsl
 interface ColorGenerationModuleConfig {
 
+	/**
+	 * Minimum allowed Hue.
+	 */
 	var hueMin: Float
+
+	/**
+	 * Maximum allowed Hue.
+	 */
 	var hueMax: Float
+
+	/**
+	 * Minimum allowed Saturation.
+	 */
 	var saturationMin: Float
+
+	/**
+	 * Maximum allowed Saturation.
+	 */
 	var saturationMax: Float
+
+	/**
+	 * Minimum allowed Lightness.
+	 */
 	var lightnessMin: Float
+
+	/**
+	 * Maximum allowed Lightness.
+	 */
 	var lightnessMax: Float
 
+	/**
+	 * Calculated colors cache.
+	 */
 	var colorsCache: ColorsCache?
 
 }
 
+/**
+ * Module is implementing Consistent Color Generation ([XEP-0392](https://xmpp.org/extensions/xep-0392.html)).
+ *
+ */
 class ColorGenerationModule(override val context: Context) : ColorGeneratorEngine(), HalcyonModule {
 
 	override val type = TYPE
 	override val features = null
 
+	/**
+	 * Module is implementing Consistent Color Generation ([XEP-0392](https://xmpp.org/extensions/xep-0392.html)).
+	 *
+	 */
 	companion object : HalcyonModuleProvider<ColorGenerationModule, ColorGenerationModuleConfig> {
 
 		private val engine: ColorGeneratorEngine = ColorGeneratorEngine()
@@ -60,6 +97,9 @@ class ColorGenerationModule(override val context: Context) : ColorGeneratorEngin
 
 }
 
+/**
+ * No colors cache.
+ */
 class NullColorsCache : ColorsCache {
 
 	override fun store(key: Any, color: Color) {}
@@ -72,6 +112,9 @@ class NullColorsCache : ColorsCache {
 }
 
 
+/**
+ * Default, in-memory colors cache.
+ */
 class InMemoryColorsCache : ColorsCache {
 
 	private val cache = mutableMapOf<Any, Color>()
