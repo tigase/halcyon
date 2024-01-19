@@ -44,8 +44,15 @@ data class StreamErrorEvent(val element: Element, val condition: StreamError, va
 
 @HalcyonConfigDsl
 interface StreamErrorModuleConfig
+
+/**
+ * Stream Error Handler. The module is integrated part of XMPP Core protocol.
+ */
 class StreamErrorModule(override val context: Context) : XmppModule, StreamErrorModuleConfig {
 
+	/**
+	 * Stream Error Handler. The module is integrated part of XMPP Core protocol.
+	 */
 	companion object : XmppModuleProvider<StreamErrorModule, StreamErrorModuleConfig> {
 
 		override val TYPE = "StreamErrorModule"
