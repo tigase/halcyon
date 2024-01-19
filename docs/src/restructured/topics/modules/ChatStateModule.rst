@@ -12,7 +12,7 @@ To install or configure preinstalled Chat State module, call function ``install`
 .. code:: kotlin
 
     import tigase.halcyon.core.builder.createHalcyon
-    tigase.halcyon.core.xmpp.modules.chatstates.ChatStateModule
+    import tigase.halcyon.core.xmpp.modules.chatstates.ChatStateModule
 
     val halcyon = createHalcyon {
         install(ChatStateModule)
