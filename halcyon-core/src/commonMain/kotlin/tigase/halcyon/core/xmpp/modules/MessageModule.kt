@@ -35,6 +35,11 @@ import tigase.halcyon.core.xmpp.modules.pubsub.isPubSubMessage
 import tigase.halcyon.core.xmpp.stanzas.Message
 import tigase.halcyon.core.xmpp.stanzas.wrap
 
+/**
+ * Event raised when Message stanza is received.
+ * @param fromJID JabberID of stanza server.
+ * @param stanza received [Message] stanza
+ */
 data class MessageReceivedEvent(val fromJID: JID?, val stanza: Message) : Event(TYPE) {
 
 	companion object : EventDefinition<MessageReceivedEvent> {
@@ -46,6 +51,9 @@ data class MessageReceivedEvent(val fromJID: JID?, val stanza: Message) : Event(
 @HalcyonConfigDsl
 interface MessageModuleConfig
 
+/**
+ * Incoming Message stanzas handler. The module is integrated part of XMPP Core protocol.
+ */
 class MessageModule(override val context: Context) : XmppModule, MessageModuleConfig {
 
 	private val log = LoggerFactory.logger("tigase.halcyon.core.xmpp.modules.MessageModule")
@@ -55,9 +63,12 @@ class MessageModule(override val context: Context) : XmppModule, MessageModuleCo
 	override val features: Array<String>? = null
 	//	override val criteria = Criterion.name(Message.NAME)
 
+	/**
+	 * Incoming Message stanzas handler. The module is integrated part of XMPP Core protocol.
+	 */
 	companion object : XmppModuleProvider<MessageModule, MessageModuleConfig> {
 
-		override val TYPE = "MessageModule"
+		override val TYPE = "tigase.halcyon.core.xmpp.modules.MessageModule"
 		override fun instance(context: Context): MessageModule = MessageModule(context)
 
 		override fun configure(module: MessageModule, cfg: MessageModuleConfig.() -> Unit) = module.cfg()
