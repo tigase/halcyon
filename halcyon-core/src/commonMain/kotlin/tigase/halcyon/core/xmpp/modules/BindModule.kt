@@ -50,7 +50,7 @@ sealed class BindEvent : Event(TYPE) {
 	 * Bind success.
 	 * @param jid bound JID.
 	 */
-	data class Success(val jid: JID) : BindEvent()
+	data class Success(val jid: JID, val inlineProtocol: Boolean) : BindEvent()
 
 	/**
 	 * Bind failure.
@@ -124,7 +124,7 @@ class BindModule(override val context: AbstractHalcyon) : XmppModule, InlineProt
 		}
 		return context.request.iq(stanza).onSend { state = State.InProgress }.map(this::createBindResult).response {
 			it.onSuccess { success ->
-				bind(success.jid)
+				bind(success.jid, false)
 			}
 			it.onFailure {
 				state = State.Failed
@@ -144,10 +144,10 @@ class BindModule(override val context: AbstractHalcyon) : XmppModule, InlineProt
 		throw XMPPException(ErrorCondition.BadRequest)
 	}
 
-	private fun bind(jid: FullJID) {
+	private fun bind(jid: FullJID, inlineProtocol: Boolean) {
 		state = State.Success
 		context.boundJID = jid
-		context.eventBus.fire(BindEvent.Success(jid))
+		context.eventBus.fire(BindEvent.Success(jid, inlineProtocol))
 	}
 
 	data class BindResult(val jid: FullJID)
@@ -172,7 +172,7 @@ class BindModule(override val context: AbstractHalcyon) : XmppModule, InlineProt
 
 	override fun process(response: InlineResponse) {
 		response.whenExists(InlineProtocolStage.AfterSasl, "bound", BIND2_XMLNS) { boundElement ->
-			bind(response.element.getFirstChild("authorization-identifier")!!.value!!.toFullJID())
+			bind(response.element.getFirstChild("authorization-identifier")!!.value!!.toFullJID(), true)
 
 			InlineResponse(InlineProtocolStage.AfterBind, boundElement).let { response ->
 				context.modules.getModules().filterIsInstance<InlineProtocol>().forEach { consumer ->

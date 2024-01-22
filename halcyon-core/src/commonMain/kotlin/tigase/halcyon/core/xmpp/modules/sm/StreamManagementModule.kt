@@ -43,9 +43,46 @@ import tigase.halcyon.core.xmpp.stanzas.IQ
 import tigase.halcyon.core.xmpp.stanzas.Message
 import tigase.halcyon.core.xmpp.stanzas.Presence
 
+
+/**
+ * Stream Management event.
+ */
+sealed class StreamManagementEvent : Event(TYPE) {
+
+	companion object : EventDefinition<StreamManagementEvent> {
+
+		override val TYPE = "tigase.halcyon.core.xmpp.modules.sm.StreamManagementModule.StreamManagementEvent"
+	}
+
+	/**
+	 * Fired when stream management is enabled.
+	 * @param id generated SM id.
+	 * @param resume `true` is server supports resumption.
+	 * @param mx server's preferred maximum resumption time.
+	 *
+	 */
+	class Enabled(val id: String, val resume: Boolean, val mx: Long?) : StreamManagementEvent()
+
+	/**
+	 * Fired when stream management operation failed.
+	 * @param error error condition.
+	 */
+	class Failed(val error: ErrorCondition) : StreamManagementEvent()
+
+	/**
+	 * Fired when session is resumed.
+	 * @param h sequen ce number of last handled stanza.
+	 * @param prevId Stream Management ID.
+	 */
+	class Resumed(val h: Long, val prevId: String) : StreamManagementEvent()
+}
+
 @HalcyonConfigDsl
 interface StreamManagementModuleConfig
 
+/**
+ * Module is implementing Stream Management ([XEP-0198](https://xmpp.org/extensions/xep-0198.html)).
+ */
 class StreamManagementModule(override val context: Context) : XmppModule, InlineProtocol, StreamManagementModuleConfig {
 
 	@Serializable
@@ -87,6 +124,9 @@ class StreamManagementModule(override val context: Context) : XmppModule, Inline
 
 	}
 
+	/**
+	 * Module is implementing Stream Management ([XEP-0198](https://xmpp.org/extensions/xep-0198.html)).
+	 */
 	companion object : XmppModuleProvider<StreamManagementModule, StreamManagementModuleConfig> {
 
 		const val XMLNS = "urn:xmpp:sm:3"
@@ -102,18 +142,6 @@ class StreamManagementModule(override val context: Context) : XmppModule, Inline
 	}
 
 	var resumptionContext: ResumptionContext by property(Scope.Session) { ResumptionContext() }
-
-	sealed class StreamManagementEvent : Event(TYPE) {
-
-		companion object : EventDefinition<StreamManagementEvent> {
-
-			override val TYPE = "tigase.halcyon.core.xmpp.modules.sm.StreamManagementModule.StreamManagementEvent"
-		}
-
-		class Enabled(val id: String, val resume: Boolean, val mx: Long?) : StreamManagementEvent()
-		class Failed(val error: ErrorCondition) : StreamManagementEvent()
-		class Resumed(val h: Long, val prevId: String) : StreamManagementEvent()
-	}
 
 	override val type = TYPE
 	override val features = arrayOf(XMLNS)
@@ -146,7 +174,7 @@ class StreamManagementModule(override val context: Context) : XmppModule, Inline
 		}
 	}
 
-	private inline fun isElementCounted(element: Element) =
+	private fun isElementCounted(element: Element) =
 		element.xmlns != XMLNS && (element.name == Message.NAME || element.name == IQ.NAME || element.name == Presence.NAME)
 
 	private fun processElementReceived(element: Element) {
@@ -168,6 +196,9 @@ class StreamManagementModule(override val context: Context) : XmppModule, Inline
 		++resumptionContext.outgoingH
 	}
 
+	/**
+	 * Clear the outgoing request queue.
+	 */
 	fun reset() {
 		queue.clear()
 	}
@@ -213,10 +244,6 @@ class StreamManagementModule(override val context: Context) : XmppModule, Inline
 			val left = lh - h
 			markAsDeliveredAndRemoveFromQueue(left)
 		}
-	}
-
-	fun sendAck() {
-		sendAck(false)
 	}
 
 	/**
@@ -269,6 +296,9 @@ class StreamManagementModule(override val context: Context) : XmppModule, Inline
 		context.eventBus.fire(StreamManagementEvent.Resumed(h, id))
 	}
 
+	/**
+	 * Enable stream management.
+	 */
 	fun enable() {
 		context.writer.writeDirectly(element("enable") {
 			xmlns = XMLNS
@@ -287,6 +317,9 @@ class StreamManagementModule(override val context: Context) : XmppModule, Inline
 		}
 	}
 
+	/**
+	 * Send ACK request to server
+	 */
 	fun request() {
 		if (resumptionContext.isAckActive) {
 			log.fine { "Sending ACK request" }
@@ -294,6 +327,9 @@ class StreamManagementModule(override val context: Context) : XmppModule, Inline
 		}
 	}
 
+	/**
+	 * Start session resumption.
+	 */
 	fun resume() {
 		val h = resumptionContext.incomingH
 		val id = resumptionContext.resID ?: throw HalcyonException("Cannot resume session: no resumption ID")
