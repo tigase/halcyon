@@ -36,6 +36,9 @@ import tigase.halcyon.core.xmpp.stanzas.IQ
 import tigase.halcyon.core.xmpp.stanzas.IQType
 import tigase.halcyon.core.xmpp.stanzas.iq
 
+/**
+ * Event fired when resource binding process is finished.
+ */
 sealed class BindEvent : Event(TYPE) {
 
 	companion object : EventDefinition<BindEvent> {
@@ -43,7 +46,16 @@ sealed class BindEvent : Event(TYPE) {
 		override val TYPE = "tigase.halcyon.core.xmpp.modules.BindEvent"
 	}
 
+	/**
+	 * Bind success.
+	 * @param jid bound JID.
+	 */
 	data class Success(val jid: JID) : BindEvent()
+
+	/**
+	 * Bind failure.
+	 * @param error exception object.
+	 */
 	data class Failure(val error: Throwable) : BindEvent()
 
 }
@@ -54,6 +66,9 @@ interface BindModuleConfig {
 	var resource: String?
 }
 
+/**
+ * Resource bind module. The module is integrated part of XMPP Core protocol.
+ */
 class BindModule(override val context: AbstractHalcyon) : XmppModule, InlineProtocol, BindModuleConfig {
 
 	enum class State {
@@ -61,6 +76,9 @@ class BindModule(override val context: AbstractHalcyon) : XmppModule, InlineProt
 		Unknown, InProgress, Success, Failed
 	}
 
+	/**
+	 * Resource bind module. The module is integrated part of XMPP Core protocol.
+	 */
 	companion object : XmppModuleProvider<BindModule, BindModuleConfig> {
 
 		const val BIND2_XMLNS = "urn:xmpp:bind:0"
@@ -81,11 +99,17 @@ class BindModule(override val context: AbstractHalcyon) : XmppModule, InlineProt
 	var boundJID: FullJID? by context::boundJID
 		internal set
 
+	/**
+	 * State of bind process.
+	 */
 	var state: State by propertySimple(Scope.Session, State.Unknown)
 		internal set
 
 	override var resource: String? = null
 
+	/**
+	 * Prepare bind request.
+	 */
 	fun bind(resource: String? = this.resource): RequestBuilder<BindResult, IQ> {
 		val stanza = iq {
 			type = IQType.Set
