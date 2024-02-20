@@ -33,6 +33,9 @@ import tigase.halcyon.core.xmpp.stanzas.IQ
 import tigase.halcyon.core.xmpp.stanzas.IQType
 import tigase.halcyon.core.xmpp.stanzas.wrap
 
+/**
+ * Status of command execution.
+ */
 enum class Status(val xmppValue: String) {
 
 	/**
@@ -51,6 +54,9 @@ enum class Status(val xmppValue: String) {
 	Canceled("canceled")
 }
 
+/**
+ * Command action.
+ */
 enum class Action(val xmppValue: String) {
 
 	/**
@@ -80,10 +86,24 @@ enum class Action(val xmppValue: String) {
 
 }
 
+/**
+ * Note.
+ */
 sealed class Note(val message: String?) {
 
+	/**
+	 * The note is informational only. This is not really an exceptional condition.
+	 */
 	class Info(message: String?) : Note(message)
+
+	/**
+	 * The note indicates a warning. Possibly due to illogical (yet valid) data.
+ 	 */
 	class Warn(message: String?) : Note(message)
+
+	/**
+	 * The note indicates an error. The text should indicate the reason for the error.
+ 	 */
 	class Error(message: String?) : Note(message)
 
 }
@@ -150,6 +170,9 @@ data class AdHocResult(
 	}
 }
 
+/**
+ * Interface for the implementation of custom AdHoc Commands.
+ */
 interface AdHocCommand {
 
 	/**
@@ -211,9 +234,15 @@ interface AdHocResponse {
 
 interface CommandsModuleConfig
 
+/**
+ * Module is implementing Ad-Hoc Commands ([XEP-0050](https://xmpp.org/extensions/xep-0050.html)).
+ */
 class CommandsModule(override val context: Context, private val discoveryModule: DiscoveryModule) : XmppModule,
 	CommandsModuleConfig {
 
+	/**
+	 * Module is implementing Ad-Hoc Commands ([XEP-0050](https://xmpp.org/extensions/xep-0050.html)).
+	 */
 	companion object : XmppModuleProvider<CommandsModule, CommandsModuleConfig> {
 
 		const val XMLNS = "http://jabber.org/protocol/commands"
@@ -297,6 +326,9 @@ class CommandsModule(override val context: Context, private val discoveryModule:
 		discoveryModule.addNodeDetailsProvider(AdHocCommandsNodeDetailsProvider())
 	}
 
+	/**
+	 * Registers custom Ad-Hoc command.
+	 */
 	fun registerAdHocCommand(command: AdHocCommand) {
 		this.registeredCommands[command.node] = command
 	}
@@ -369,14 +401,31 @@ class CommandsModule(override val context: Context, private val discoveryModule:
 
 	}
 
+	/**
+	 * Prepares request to retrieve list of commands provided by entity.
+	 * @param jid JabberID of entity.
+ 	 */
 	fun retrieveCommandList(jid: JID?): RequestBuilder<DiscoveryModule.Items, IQ> {
 		return discoveryModule.items(jid, NODE)
 	}
 
+	/**
+	 * Prepares request to retrieve [Info][DiscoveryModule.Info]) data about command.
+	 * @param jid JabberID of entity.
+	 * @param command Ad-Hoc command name.
+ 	 */
 	fun retrieveCommandInfo(jid: JID?, command: String): RequestBuilder<DiscoveryModule.Info, IQ> {
 		return discoveryModule.info(jid, command)
 	}
 
+	/**
+	 * Prepare request to execute AdHoc command.
+	 * @param jid JabbeID of entity.
+	 * @param command Ad-Hoc Command name.
+	 * @param form Form with data to send.
+	 * @param action Command action.
+	 * @param sessionId Identifier of AdHoc command session.
+	 */
 	fun executeCommand(
 		jid: JID?, command: String, form: Element? = null, action: Action? = Action.Execute, sessionId: String? = null,
 	): RequestBuilder<AdHocResult, IQ> {

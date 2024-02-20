@@ -24,28 +24,80 @@ import tigase.halcyon.core.xmpp.XMPPException
 
 enum class FieldType(val xmppValue: String) {
 
+	/**
+	 * The field enables an entity to gather or provide an either-or choice between two options.
+	 */
 	Bool("boolean"),
+
+	/**
+	 * The field is intended for data description (e.g., human-readable text such as "section" headers) rather than data gathering or provision.
+	 */
 	Fixed("fixed"),
+
+	/**
+	 * The field is not shown to the form-submitting entity, but instead is returned with the form.
+	 */
 	Hidden("hidden"),
+
+	/**
+	 * The field enables an entity to gather or provide multiple Jabber IDs.
+	 */
 	JidMulti("jid-multi"),
+
+	/**
+	 * The field enables an entity to gather or provide a single Jabber ID.
+	 */
 	JidSingle("jid-single"),
+
+	/**
+	 * The field enables an entity to gather or provide one or more options from among many.
+	 */
 	ListMulti("list-multi"),
+
+	/**
+	 * The field enables an entity to gather or provide one option from among many.
+	 */
 	ListSingle("list-single"),
+
+	/**
+	 * The field enables an entity to gather or provide multiple lines of text.
+	 */
 	TextMulti("text-multi"),
+
+	/**
+	 * The field enables an entity to gather or provide a single line or word of text, which shall be obscured in an interface.
+	 */
 	TextPrivate("text-private"),
+
+	/**
+	 * The field enables an entity to gather or provide a single line or word of text, which may be shown in an interface.
+	 */
 	TextSingle("text-single")
 }
 
+/**
+ * Representation of Field.
+ * @param element XML Element which is modified by class.
+ */
 class Field(val element: Element) {
 
+	/**
+	 * Determine if field is marked as required.
+ 	 */
 	var fieldRequired: Boolean
 		get() = element.getFirstChild("required") != null
 		set(value) = setRequiredInternal(value)
 
+	/**
+	 * Field label.
+ 	 */
 	var fieldLabel: String?
 		get() = element.attributes["label"]
 		set(value) = element.setAtt("label", value)
 
+	/**
+	 * Field type.
+ 	 */
 	var fieldType: FieldType?
 		set(value) = element.setAtt("type", value?.xmppValue)
 		get() = element.attributes["type"]?.let {
@@ -55,20 +107,32 @@ class Field(val element: Element) {
 			)
 		}
 
+	/**
+	 * Field description.
+ 	 */
 	var fieldDesc: String?
 		set(value) = element.setChildContent("desc", value)
 		get() = element.getChildContent("desc")
 
+	/**
+	 * Field identifier (field name).
+ 	 */
 	var fieldName: String?
 		get() = element.attributes["var"]
 		set(value) = element.setAtt("var", value)
 
+	/**
+	 * Field list of all `value` of the field.
+ 	 */
 	var fieldValues: List<String>
 		set(value) = setValuesInt(value)
 		get() = element.children.filter { it.name == "value" }
 			.mapNotNull { it.value }
 			.toList()
 
+	/**
+	 * Value of field. If field contains multiple values, all will be joined to single string.
+ 	 */
 	var fieldValue: String?
 		set(value) = setValueInt(value)
 		get() = getValueInt()
@@ -116,6 +180,12 @@ class Field(val element: Element) {
 
 	companion object {
 
+		/**
+		 * Creates Field with given name and type.
+		 * @param varName identifier of field.
+		 * @param type type of field.
+		 * @return Field object.
+ 		 */
 		fun create(varName: String?, type: FieldType? = null): Field {
 			val field = element("field") {
 				varName?.let { attribute("var", it) }
@@ -128,6 +198,9 @@ class Field(val element: Element) {
 
 }
 
+/**
+ * Represents type of form.
+ */
 enum class FormType(val xmppValue: String) {
 
 	/**
@@ -155,6 +228,9 @@ enum class FormType(val xmppValue: String) {
 
 }
 
+/**
+ * Representation of [Data Form](https://xmpp.org/extensions/xep-0004.html)
+ */
 @Serializable(with = JabberDataFormSerializer::class)
 class JabberDataForm(val element: Element) {
 
@@ -168,12 +244,21 @@ class JabberDataForm(val element: Element) {
 
 	}
 
+	/**
+	 * Check if Form has [multiple items](https://xmpp.org/extensions/xep-0004.html#protocol-results) in result.
+ 	 */
 	val multipleItems: Boolean
 		get() = element.getFirstChild("reported") != null
 
+	/**
+	 * Amount of items. `0` if result form does not contain multiple items.
+ 	 */
 	val itemsCount: Int
 		get() = element.getChildren("item").size
 
+	/**
+	 * Type of form.
+ 	 */
 	var type: FormType
 		set(value) = element.attributes.set("type", value.xmppValue)
 		get() = element.attributes["type"]?.let { typeName ->
@@ -183,10 +268,16 @@ class JabberDataForm(val element: Element) {
 			)
 		} ?: throw XMPPException(ErrorCondition.BadRequest, "Empty form type.")
 
+	/**
+	 * Title of form.
+ 	 */
 	var title: String?
 		set(value) = internalSetChildrenValue("title", value)
 		get() = internalGetChildrenValue("title")
 
+	/**
+	 * Description of form.
+ 	 */
 	var description: String?
 		set(value) = internalSetChildrenValue("description", value)
 		get() = internalGetChildrenValue("description")
@@ -206,11 +297,17 @@ class JabberDataForm(val element: Element) {
 		}
 	}
 
+	/**
+	 * Returns list of all fields.
+ 	 */
 	fun getAllFields(): List<Field> {
 		return element.getChildren("field")
 			.map { Field(it) }
 	}
 
+	/**
+	 * Returns field by name or null if such field does not exist.
+ 	 */
 	fun getFieldByVar(varName: String): Field? {
 		val fieldElement = element.getChildren("field")
 			.firstOrNull { field ->
@@ -219,12 +316,23 @@ class JabberDataForm(val element: Element) {
 		return Field(fieldElement)
 	}
 
+	/**
+	 * Add new field to form.
+	 * @param varName field name
+	 * @param type type of field
+	 * @return field object added to form.
+ 	 */
 	fun addField(varName: String?, type: FieldType?): Field {
 		val field = Field.create(varName, type)
 		addField(field)
 		return field
 	}
 
+	/**
+	 * Add new field to form.
+	 * @param field field to be added.
+	 * @return added field.
+ 	 */
 	fun addField(field: Field): Field {
 		if (field.fieldName != null) {
 			element.getChildren("field")
@@ -237,6 +345,10 @@ class JabberDataForm(val element: Element) {
 		return field
 	}
 
+	/**
+	 * Remove given field.
+	 * @param varName Name of field to be removed.
+	 */
 	fun removeField(varName: String) {
 		element.getChildren("field")
 			.filter { field ->
@@ -286,11 +398,18 @@ class JabberDataForm(val element: Element) {
 		}
 	}
 
+	/**
+	 * Returns list of reported columns.
+ 	 */
 	fun getReportedColumns(): List<Field> {
 		return checkNotNull(element.getFirstChild("reported")) { "This is not Multiple Items form." }.getChildren("field")
 			.map { Field(it) }
 	}
 
+	/**
+	 * Sets list of reported columns.
+	 * @param columns list of columns.
+ 	 */
 	fun setReportedColumns(columns: List<Field>) {
 		element.getFirstChild("reported")
 			?.let { r -> element.remove(r) }
@@ -303,6 +422,9 @@ class JabberDataForm(val element: Element) {
 		element.add(reported)
 	}
 
+	/**
+	 * Adds new set of
+ 	 */
 	fun addItem(fields: List<Field>) {
 		val allowedFields = getReportedColumns().map { r -> r.fieldName!! }
 		val fieldNames = fields.map { r -> r.fieldName!! }
