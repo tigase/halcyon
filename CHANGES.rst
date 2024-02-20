@@ -1,5 +1,5 @@
-Release 1.0.0-SNAPSHOT (in development)
-=======================================
+Release 1.0.0 (20-02-2024)
+==========================
 
 Dependencies
 ------------
@@ -11,20 +11,10 @@ Incompatible changes
 
 * Moved ``BouncyCastleTLSProcessor`` to separate module.
 
-Deprecated
-----------
-
-Features added
---------------
-
 Bugs fixed
 ----------
 
 * #82: Add channel binding to SCRAM
-
-Testing
--------
-
 
 Release 1.0.0-a.7 (12-12-2023)
 ===============================
