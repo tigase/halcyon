@@ -1,16 +1,6 @@
 Halcyon
 =======
 
-![](docs/src/asciidoc/images/logo_320.png)
-
-> :warning: **THIS SOFTWARE IS NOT FINISHED YET**:
-> This library is under active development. We cannot ensure API stability.
->
-> You can use it at your own risk.
-
-![TC build](https://tc.tigase.net/app/rest/builds/buildType:(id:Halcyon_BuildArtur)/statusIcon)
-![CI Status](https://github.com/tigase/halcyon/actions/workflows/TEST.yml/badge.svg?branch=master)
-
 # What it is
 
 Halcyon is an [XMPP](https://xmpp.org) client library written in a [Kotlin](https://kotlinlang.org/) programming

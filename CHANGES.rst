@@ -1,3 +1,24 @@
+Release 1.0.1-SNAPSHOT (in development)
+=======================================
+
+Dependencies
+------------
+
+Incompatible changes
+--------------------
+
+Deprecated
+----------
+
+Features added
+--------------
+
+Bugs fixed
+----------
+
+Testing
+-------
+
 Release 1.0.0 (20-02-2024)
 ==========================
 
