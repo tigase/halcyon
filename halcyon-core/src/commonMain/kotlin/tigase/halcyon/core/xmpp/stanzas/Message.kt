@@ -32,7 +32,7 @@ enum class MessageType(val value: String) { Chat("chat"),
 }
 
 @Serializable(with = MessageStanzaSerialzer::class)
-class Message(wrappedElement: Element) : Stanza<MessageType?>(wrappedElement) {
+open class Message(wrappedElement: Element) : Stanza<MessageType?>(wrappedElement) {
 
 	companion object {
 

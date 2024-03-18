@@ -28,6 +28,7 @@ import tigase.halcyon.core.connector.SentXMLElementEvent
 import tigase.halcyon.core.eventbus.Event
 import tigase.halcyon.core.eventbus.EventDefinition
 import tigase.halcyon.core.exceptions.HalcyonException
+import tigase.halcyon.core.logger.Level
 import tigase.halcyon.core.logger.LoggerFactory
 import tigase.halcyon.core.modules.Criterion
 import tigase.halcyon.core.modules.ModulesManager
@@ -238,6 +239,10 @@ class StreamManagementModule(override val context: Context) : XmppModule, Inline
 		var lh = resumptionContext.outgoingH
 
 		log.fine { "Expected h=$lh, received h=$h, queue=${queue.size}" }
+		if(log.isLoggable(Level.FINE)){
+		log.fine { "queue=$queue" }
+		}
+
 
 		if (lh >= h) {
 			lh = resumptionContext.outgoingH

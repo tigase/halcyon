@@ -142,7 +142,7 @@ abstract class AbstractSocketSessionController(final override val halcyon: Abstr
 		if (event.oldState == State.Connected && (event.newState == State.Disconnected || event.newState == State.Disconnecting)) {
 			log.fine { "Checking conditions to force timeout" }
 			val isResumptionAvailable =
-				halcyon.getModule(StreamManagementModule).resumptionContext.isResumptionAvailable()
+				halcyon.getModuleOrNull(StreamManagementModule)?.resumptionContext?.isResumptionAvailable()?:false
 			if (!isResumptionAvailable) {
 				halcyon.requestsManager.timeoutAll()
 			}

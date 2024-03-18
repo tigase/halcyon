@@ -111,6 +111,7 @@ kotlin {
 		named("jvmMain") {
 			dependencies {
 				implementation(deps.minidns)
+				implementation(deps.signal.protocol.java)
 			}
 		}
 		named("jvmTest") {

@@ -9,6 +9,7 @@ krypto = "4.0.9"
 minidns = "1.0.3"
 dokka = "1.8.10"
 bouncycastle = "1.76"
+signalProtocol = "2.8.1"
 
 [libraries]
 
@@ -36,7 +37,10 @@ krypto = { group = "com.soywiz.korlibs.krypto", name = "krypto", version.ref = "
 
 minidns = { group = "org.minidns", name = "minidns-hla", version.ref = "minidns" }
 
-bouncycastle  = { group = "org.bouncycastle", name = "bctls-jdk18on", version.ref = "bouncycastle" }
+bouncycastle = { group = "org.bouncycastle", name = "bctls-jdk18on", version.ref = "bouncycastle" }
+
+signal-protocol-java = { group = "org.whispersystems", name = "signal-protocol-java", version.ref = "signalProtocol" }
+signal-protocol-android = { group = "org.whispersystems", name = "signal-protocol-android", version.ref = "signalProtocol" }
 
 #  = { group = "", name = "", version.ref = "" }
 

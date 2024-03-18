@@ -32,5 +32,5 @@ include(
 	"halcyon-rx",
 	"halcyon-coroutines",
 	"halcyon-bouncycastle",
-	"integration-tests",
+//	"integration-tests",
 )

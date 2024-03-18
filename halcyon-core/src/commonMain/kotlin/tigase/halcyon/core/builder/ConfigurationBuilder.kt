@@ -190,7 +190,7 @@ fun ConfigurationBuilder.installAllModules() {
 	this.install(PubSubModule)
 	this.install(MessageCarbonsModule)
 	this.install(MessageModule)
-	this.install(StreamManagementModule)
+// temporarly disabled	this.install(StreamManagementModule)
 	this.install(SASLModule)
 	this.install(BindModule)
 	this.install(PingModule)
