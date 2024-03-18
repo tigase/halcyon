@@ -19,6 +19,7 @@ package tigase.halcyon.core.modules
 
 import tigase.halcyon.core.xml.Element
 
+@Deprecated("Use StanzaFilter instead")
 interface StanzaInterceptor {
 
     fun afterReceive(element: Element): Element?

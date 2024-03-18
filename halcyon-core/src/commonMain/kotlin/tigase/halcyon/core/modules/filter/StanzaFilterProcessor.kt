@@ -8,7 +8,9 @@ class StanzaFilterProcessor {
 
     private val filters = mutableListOf<StanzaFilter>()
 
-    fun addToChain(filter: StanzaFilter) = filters.add(filter)
+    fun addToChain(filter: StanzaFilter) {
+        filters.add(filter)
+    }
 
 
     fun doFilters(element: Element, result: (Result<Element?>) -> Unit) {

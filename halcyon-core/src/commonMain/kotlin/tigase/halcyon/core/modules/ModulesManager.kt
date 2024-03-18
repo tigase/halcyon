@@ -55,6 +55,7 @@ class ModulesManager {
         outgoingStanzaFilters.doFilters(element, result)
     }
 
+    @Deprecated("Use registerOutgoingFilter() or registerIncomingFilter()")
     fun registerInterceptors(stanzaInterceptors: Array<StanzaInterceptor>) {
         stanzaInterceptors.forEach { interceptor ->
             outgoingStanzaFilters.addToChain(BeforeSendInterceptorFilter(interceptor))
@@ -66,16 +67,11 @@ class ModulesManager {
 
     fun registerIncomingFilter(filter: StanzaFilter) = incomingStanzaFilters.addToChain(filter)
 
-    fun getAvailableFeatures(): Array<String> {
-        val tmp = mutableSetOf<String>()
-
-        modulesByType.values.forEach { xmppModule ->
-            val fs = xmppModule.features
-            if (fs != null) tmp.addAll(fs)
-        }
-
-        return tmp.toTypedArray()
-    }
+    fun getAvailableFeatures(): Array<String> =
+        modulesByType.values
+            .mapNotNull { xmppModule -> xmppModule.features }
+            .flatMap { it.asList() }
+            .toTypedArray()
 
     fun isRegistered(type: String): Boolean = this.modulesByType.containsKey(type)
 

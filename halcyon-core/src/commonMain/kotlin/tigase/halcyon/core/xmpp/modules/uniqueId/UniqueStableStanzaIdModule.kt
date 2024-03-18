@@ -32,52 +32,52 @@ interface UniqueStableStanzaIdModuleConfig
 /**
  * Module is implementing Unique and Stable Stanza IDs ([XEP-0359](https://xmpp.org/extensions/xep-0359.html)).
  */
-class UniqueStableStanzaIdModule(override val context: Context) : XmppModule, StanzaInterceptor,
-	UniqueStableStanzaIdModuleConfig {
+class UniqueStableStanzaIdModule(override val context: Context) : XmppModule,
+    UniqueStableStanzaIdModuleConfig {
 
-	/**
-	 * Module is implementing Unique and Stable Stanza IDs ([XEP-0359](https://xmpp.org/extensions/xep-0359.html)).
-	 */
-	companion object : XmppModuleProvider<UniqueStableStanzaIdModule, UniqueStableStanzaIdModuleConfig> {
+    /**
+     * Module is implementing Unique and Stable Stanza IDs ([XEP-0359](https://xmpp.org/extensions/xep-0359.html)).
+     */
+    companion object : XmppModuleProvider<UniqueStableStanzaIdModule, UniqueStableStanzaIdModuleConfig> {
 
-		const val XMLNS = "urn:xmpp:sid:0"
-		override val TYPE = XMLNS
+        const val XMLNS = "urn:xmpp:sid:0"
+        override val TYPE = XMLNS
 
-		override fun instance(context: Context): UniqueStableStanzaIdModule = UniqueStableStanzaIdModule(context)
+        override fun instance(context: Context): UniqueStableStanzaIdModule = UniqueStableStanzaIdModule(context)
 
-		override fun configure(module: UniqueStableStanzaIdModule, cfg: UniqueStableStanzaIdModuleConfig.() -> Unit) =
-			module.cfg()
+        override fun configure(module: UniqueStableStanzaIdModule, cfg: UniqueStableStanzaIdModuleConfig.() -> Unit) =
+            module.cfg()
 
-		override fun doAfterRegistration(module: UniqueStableStanzaIdModule, moduleManager: ModulesManager) =
-			moduleManager.registerInterceptors(arrayOf(module))
+        override fun doAfterRegistration(module: UniqueStableStanzaIdModule, moduleManager: ModulesManager) =
+            moduleManager.registerOutgoingFilter(createFilter(module::beforeSend))
 
-	}
 
-	override val type = TYPE
-	override val criteria: Criteria? = null
-	override val features = arrayOf(XMLNS)
+    }
 
-	override fun process(element: Element) = throw XMPPException(ErrorCondition.BadRequest)
+    override val type = TYPE
+    override val criteria: Criteria? = null
+    override val features = arrayOf(XMLNS)
 
-	override fun afterReceive(element: Element): Element = element
+    override fun process(element: Element) = throw XMPPException(ErrorCondition.BadRequest)
 
-	override fun beforeSend(element: Element): Element {
-		if (element.name != Message.NAME) return element
-		if (element.attributes["id"] == null) return element
-		if (element.getChildrenNS("origin-id", XMLNS) != null) return element
+    private fun beforeSend(element: Element?, chain: StanzaFilterChain) {
+        if (element?.name == Message.NAME && element.attributes["id"] != null && element.getChildrenNS(
+                "origin-id",
+                XMLNS
+            ) == null
+        ) {
+            element.add(tigase.halcyon.core.xml.element("origin-id") {
+                xmlns = XMLNS
+                attributes["id"] = element.attributes["id"]
+            })
+        }
+        chain.doFilter(element)
+    }
 
-		element.add(tigase.halcyon.core.xml.element("origin-id") {
-			xmlns = XMLNS
-			attributes["id"] = element.attributes["id"]
-		})
-
-		return element
-	}
-
-	fun getStanzaID(element: Element): String? {
-		val jid = context.boundJID?.bareJID ?: return null
-		return element.getStanzaIDBy(jid)
-	}
+    fun getStanzaID(element: Element): String? {
+        val jid = context.boundJID?.bareJID ?: return null
+        return element.getStanzaIDBy(jid)
+    }
 
 }
 
@@ -86,15 +86,15 @@ class UniqueStableStanzaIdModule(override val context: Context) : XmppModule, St
  * @param by JabberID of creator of stanza ID.
  */
 fun Element.getStanzaIDBy(by: BareJID): String? {
-	val stanzaId = this.children.firstOrNull {
-		it.name == "stanza-id" && it.xmlns == UniqueStableStanzaIdModule.XMLNS && it.attributes["by"] == by.toString()
-	} ?: return null
-	return stanzaId.attributes["id"]
+    val stanzaId = this.children.firstOrNull {
+        it.name == "stanza-id" && it.xmlns == UniqueStableStanzaIdModule.XMLNS && it.attributes["by"] == by.toString()
+    } ?: return null
+    return stanzaId.attributes["id"]
 }
 
 /**
  * Returns Origin stanza ID.
  */
 fun Element.getOriginID(): String? =
-	this.getChildrenNS("origin-id", UniqueStableStanzaIdModule.XMLNS)?.attributes?.get("id")
+    this.getChildrenNS("origin-id", UniqueStableStanzaIdModule.XMLNS)?.attributes?.get("id")
 
