@@ -45,6 +45,11 @@ interface OMEMOModuleConfig {
      */
     var autoUpdateIdentityStore: Boolean
 
+    /**
+     * Automatically create OMEMO session when a message needs to be encrypted.
+     */
+    var autoCreateSession: Boolean
+
 }
 
 /**
@@ -104,6 +109,7 @@ class OMEMOModule(
     override lateinit var protocolStore: SignalProtocolStore
     override var sessionStore: OMEMOSessionStore = InMemoryOMEMOSessionStore()
     override var autoUpdateIdentityStore: Boolean = true
+    override var autoCreateSession: Boolean = false
 
     init {
         context.eventBus.register(PubSubItemEvent) {
@@ -345,6 +351,40 @@ class OMEMOModule(
         }
     }
 
+    private fun encryptAndSend(
+        element: Element,
+        chain: StanzaFilterChain,
+        recipient: FullJID,
+        session: OMEMOSession,
+        bodyEl: Element,
+        order: EncryptMessage
+    ) {
+        element.remove(bodyEl)
+
+        val encElement = OMEMOEncryptor.encrypt(session, bodyEl.value ?: "")
+
+        element.add(encElement)
+        element.add(element("store") {
+            xmlns = "urn:xmpp:hints"
+        })
+
+        element.clearControls()
+        chain.doFilter(element)
+    }
+
+    private fun createSessionEncryptAndSend(
+        element: Element,
+        chain: StanzaFilterChain,
+        recipient: FullJID,
+        bodyEl: Element,
+        order: EncryptMessage
+    ) {
+        startSession(recipient.bareJID) {
+            it.onSuccess {
+                encryptAndSend(element, chain, recipient, it, bodyEl, order)
+            }
+        }
+    }
 
     fun beforeSend(element: Element?, chain: StanzaFilterChain) {
         if (element?.name != Message.NAME) {
@@ -358,27 +398,19 @@ class OMEMOModule(
         val session = recipient?.let { sessionStore.getOMEMOSession(it.bareJID) }
         val bodyEl = element.getFirstChild("body")
 
-        if (order == EncryptMessage.Yes && session == null) {
-            throw OMEMOException("Can't encrypt the message that needs to be encrypted.")
-        }
 
-        if (recipient == null || session == null || bodyEl == null || order == EncryptMessage.No) {
+        if (order == EncryptMessage.Yes && session == null && bodyEl != null && recipient != null) {
+            if (autoCreateSession) {
+                createSessionEncryptAndSend(element, chain, recipient, bodyEl, order)
+            } else {
+                throw OMEMOException("Can't encrypt the message that needs to be encrypted.")
+            }
+        } else if (recipient == null || session == null || bodyEl == null || order == EncryptMessage.No) {
             element.clearControls()
             chain.doFilter(element)
-            return
+        } else {
+            encryptAndSend(element, chain, recipient, session, bodyEl, order)
         }
-
-        element.remove(bodyEl)
-
-        val encElement = OMEMOEncryptor.encrypt(session, bodyEl.value ?: "")
-
-        element.add(encElement)
-        element.add(element("store") {
-            xmlns = "urn:xmpp:hints"
-        })
-
-        element.clearControls()
-        chain.doFilter(element)
     }
 
 }
