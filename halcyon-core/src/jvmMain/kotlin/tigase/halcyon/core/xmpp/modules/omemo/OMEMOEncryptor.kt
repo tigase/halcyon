@@ -28,20 +28,20 @@ object OMEMOEncryptor {
 
     private val log = LoggerFactory.logger("tigase.halcyon.core.xmpp.modules.omemo.OMEMOEncryptor")
 
-    const val CIPHER_NAME: String = "AES/GCM/NoPadding"
-    const val ALGORITHM_NAME: String = "AES"
-    const val KEY_SIZE = 128
+   private const val CIPHER_NAME: String = "AES/GCM/NoPadding"
+   private const val ALGORITHM_NAME: String = "AES"
+   private const val KEY_SIZE = 128
 
     private val rnd = SecureRandom()
 
     @Throws(NoSuchAlgorithmException::class)
-    private fun generateKey(): ByteArray {
+     fun generateKey(): ByteArray {
         val generator = KeyGenerator.getInstance(ALGORITHM_NAME)
         generator.init(KEY_SIZE)
         return generator.generateKey().encoded
     }
 
-    private fun generateIV(): ByteArray {
+     fun generateIV(): ByteArray {
         val iv = ByteArray(12)
         rnd.nextBytes(iv)
         return iv
@@ -203,7 +203,6 @@ object OMEMOEncryptor {
 
 
     fun encrypt(session: OMEMOSession, plaintext: String): Element {
-
         val iv = generateIV()
         val keyData = generateKey()
         val secretKey = SecretKeySpec(keyData, ALGORITHM_NAME)
