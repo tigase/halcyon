@@ -1,9 +1,5 @@
 package tigase.halcyon.core.xmpp.modules.omemo
 
-import org.whispersystems.libsignal.SessionBuilder
-import org.whispersystems.libsignal.SessionCipher
-import org.whispersystems.libsignal.SignalProtocolAddress
-import org.whispersystems.libsignal.state.SignalProtocolStore
 import tigase.halcyon.core.xmpp.BareJID
 
 /**

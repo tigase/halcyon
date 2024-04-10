@@ -191,7 +191,7 @@ class SocketConnector(halcyon: Halcyon) : AbstractConnector(halcyon) {
 				if (state == State.Connected) closeStream()
 				state = State.Disconnecting
 				whitespacePingExecutor.stop()
-				usleep(175000)
+				usleep(175000u)
 				if (state != State.Disconnected) {
 					socket?.disconnect()
 				}
@@ -260,7 +260,7 @@ class SocketConnector(halcyon: Halcyon) : AbstractConnector(halcyon) {
 	}
 
 	private fun resolveTarget(completionHandler: (String, Int) -> Unit) {
-		val location = halcyon.getModule<StreamManagementModule>(StreamManagementModule.TYPE).resumptionContext.location
+		val location = halcyon.getModuleOrNull(StreamManagementModule)?.resumptionContext?.location
 		if (location != null) {
 			return completionHandler(location, config.port)
 		}

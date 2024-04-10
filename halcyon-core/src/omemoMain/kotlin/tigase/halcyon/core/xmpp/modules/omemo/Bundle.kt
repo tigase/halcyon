@@ -1,8 +1,5 @@
 package tigase.halcyon.core.xmpp.modules.omemo
 
-import org.whispersystems.libsignal.IdentityKey
-import org.whispersystems.libsignal.ecc.Curve
-import org.whispersystems.libsignal.state.PreKeyBundle
 import tigase.halcyon.core.exceptions.HalcyonException
 import tigase.halcyon.core.fromBase64
 import tigase.halcyon.core.xml.Element
@@ -24,7 +21,9 @@ data class Bundle(
     val signedPreKeySignature: ByteArray,
     val identityKey: ByteArray,
     val preKeys: List<PreKey>
-)
+) {}
+
+expect fun Bundle.getRandomPreKeyBundle(): PreKeyBundle;
 
 /**
  * Converts `<bundle>` element to [Bundle].
@@ -61,16 +60,25 @@ fun Element.toBundleOf(jid: BareJID, deviceId: Int): Bundle {
     )
 }
 
-fun Bundle.getRandomPreKeyBundle(): PreKeyBundle {
-    val preKey = this.preKeys.random()
-    return PreKeyBundle(
-        this.deviceId,
-        this.deviceId,
-        preKey.preKeyId,
-        Curve.decodePoint(preKey.preKeyPublic, 0),
-        this.signedPreKeyId,
-        Curve.decodePoint(this.signedPreKeyPublic, 0),
-        this.signedPreKeySignature,
-        IdentityKey(this.identityKey, 0)
-    )
+expect interface CiphertextMessage {}
+
+expect class IdentityKeyPair {
+//    val publicKey: IdentityKey
+    fun getPublicKey(): IdentityKey
+
+}
+
+expect class SignedPreKeyRecord {
+    fun getId(): Int
+    fun getKeyPair(): ECKeyPair
+    fun getSignature(): ByteArray
+}
+
+expect class ECKeyPair {
+    fun getPublicKey(): ECPublicKey
+}
+
+expect class PreKeyRecord {
+    fun getId(): Int
+    fun getKeyPair(): ECKeyPair
 }

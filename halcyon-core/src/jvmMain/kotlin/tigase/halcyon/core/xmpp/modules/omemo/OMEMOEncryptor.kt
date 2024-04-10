@@ -1,11 +1,10 @@
 package tigase.halcyon.core.xmpp.modules.omemo
 
 import korlibs.crypto.encoding.hex
+import org.whispersystems.curve25519.NoSuchProviderException
 import org.whispersystems.libsignal.*
-import org.whispersystems.libsignal.protocol.CiphertextMessage
 import org.whispersystems.libsignal.protocol.PreKeySignalMessage
 import org.whispersystems.libsignal.protocol.SignalMessage
-import org.whispersystems.libsignal.state.SignalProtocolStore
 import tigase.halcyon.core.exceptions.HalcyonException
 import tigase.halcyon.core.fromBase64
 import tigase.halcyon.core.logger.LoggerFactory
@@ -27,7 +26,7 @@ import javax.crypto.spec.SecretKeySpec
 /**
  * XEP-0454 helper.
  */
-object OMEMOEncryptor {
+actual object OMEMOEncryptor {
 
     private val log = LoggerFactory.logger("tigase.halcyon.core.xmpp.modules.omemo.OMEMOEncryptor")
 
@@ -150,7 +149,7 @@ object OMEMOEncryptor {
         encElement.getFirstChild("header")?.getChildren("key") ?: emptyList()
 
 
-    fun decrypt(store: SignalProtocolStore, session: OMEMOSession, stanza: Message): Message {
+    actual fun decrypt(store: SignalProtocolStore, session: OMEMOSession, stanza: Message): Message {
         try {
             val myAddr = SignalProtocolAddress(session.localJid.toString(), session.localRegistrationId)
             val encElement =
@@ -205,7 +204,7 @@ object OMEMOEncryptor {
     }
 
 
-    fun encrypt(session: OMEMOSession, plaintext: String): Element {
+    actual fun encrypt(session: OMEMOSession, plaintext: String): Element {
         val iv = generateIV()
         val keyData = generateKey()
         val secretKey = SecretKeySpec(keyData, ALGORITHM_NAME)
@@ -229,7 +228,7 @@ object OMEMOEncryptor {
                 "iv" {
                     +iv.toBase64()
                 }
-                session.ciphers.forEach { addr, sessionCipher ->
+                session.ciphers.forEach { (addr, sessionCipher) ->
                     "key" {
                         attributes["rid"] = addr.deviceId.toString()
 
@@ -258,3 +257,5 @@ private fun Message.replaceBody(newBody: String) {
         +newBody
     })
 }
+
+actual typealias CiphertextMessage = org.whispersystems.libsignal.protocol.CiphertextMessage

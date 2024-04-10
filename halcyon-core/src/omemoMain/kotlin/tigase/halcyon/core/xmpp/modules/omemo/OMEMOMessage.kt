@@ -1,6 +1,5 @@
 package tigase.halcyon.core.xmpp.modules.omemo
 
-import org.whispersystems.libsignal.SignalProtocolAddress
 import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xmpp.stanzas.Message
 

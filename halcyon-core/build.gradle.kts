@@ -41,52 +41,72 @@ kotlin {
 			}
 		}
 	}
-//	ios {
-//		// TODO: Before compilation you need to download https://github.com/tigase/openssl-swiftpm/releases/download/1.1.171/OpenSSL.xcframework.zip to "frameworks" directory and unpack this ZIP file.
-//		// TODO: Before compilation it is required to go to OpenSSL.xcframework to each subdirectory and Headers and move all files there to "openssl" subdirectory inside Headers
-//		compilations.getByName("main") {
-//			val frameworkDir = if (System.getenv("SDK_NAME")
-//					?.startsWith("iphoneos") == true
-//			) {
-//				"$rootDir/frameworks/OpenSSL.xcframework/ios-arm64_armv7"
-//			} else {
-//				"$rootDir/frameworks/OpenSSL.xcframework/ios-arm64_i386_x86_64-simulator"
-//			}
-//
-//			val OpenSSL by cinterops.creating {
-//				defFile("src/nativeInterop/cinterop/OpenSSL.def")
-//				includeDirs("$frameworkDir/")
-//				compilerOpts(
-//					"-F$frameworkDir", "-framework", "OpenSSL"
-//				)
-//			}
-//			kotlinOptions.freeCompilerArgs = listOf(
-//				"-include-binary", "$frameworkDir/OpenSSL.framework/OpenSSL"
-//			)
-//			binaries.all {
-//				linkerOpts(
-//					"-F$frameworkDir",
-//					"-framework",
-//					"OpenSSL",
-////					"-rpath",
-////					"@loader_path/Frameworks",
-////					"-rpath",
-////					"@executable_path/Frameworks",
-////					"-rpath", frameworkDir
-//				)
-//			}
-//			binaries.getTest("DEBUG")
-//				.apply {
-//					linkerOpts(
-//						"-rpath", frameworkDir
-//					)
-//				}
-//		}
-//		binaries {
-//			staticLib { }
-//		}
-//		compilations["main"].enableEndorsedLibs = true
-//	}
+	ios() {
+		// TODO: Before compilation you need to download https://github.com/tigase/openssl-swiftpm/releases/download/1.1.171/OpenSSL.xcframework.zip to "frameworks" directory and unpack this ZIP file.
+		// TODO: Before compilation it is required to go to OpenSSL.xcframework to each subdirectory and Headers and move all files there to "openssl" subdirectory inside Headers
+		val frameworkDir = if (System.getenv("SDK_NAME")
+				?.startsWith("iphoneos") == true
+		) {
+			"$rootDir/frameworks/OpenSSL.xcframework/ios-arm64_armv7"
+		} else {
+			"$rootDir/frameworks/OpenSSL.xcframework/ios-arm64_i386_x86_64-simulator"
+		}
+		compilations.getByName("main") {
+			cinterops {
+				val OpenSSL by creating {
+					defFile("src/nativeInterop/cinterop/OpenSSL.def")
+					includeDirs("$frameworkDir/")
+					compilerOpts(
+						"-F$frameworkDir", "-framework", "OpenSSL"
+					)
+				}
+			}
+			kotlinOptions.freeCompilerArgs = listOf("-include-binary", "$frameworkDir/OpenSSL.framework/OpenSSL")
+			binaries.all {
+				linkerOpts(
+					"-F$frameworkDir",
+					"-framework",
+					"OpenSSL",
+//					"-rpath",
+//					"@loader_path/Frameworks",
+//					"-rpath",
+//					"@executable_path/Frameworks",
+//					"-rpath", frameworkDir
+				)
+			}
+		}
+		binaries {
+			staticLib {}
+		}
+	}
+	// Same target as above for iOS but for Arm64 simulator (simulator in AppleSilicon machine)
+	iosSimulatorArm64() {
+		val frameworkDir = "$rootDir/frameworks/OpenSSL.xcframework/ios-arm64_i386_x86_64-simulator"
+		compilations.getByName("main") {
+			cinterops {
+				val OpenSSL by creating {
+					defFile("src/nativeInterop/cinterop/OpenSSL.def")
+					includeDirs("$frameworkDir/")
+					compilerOpts(
+						"-F$frameworkDir", "-framework", "OpenSSL"
+					)
+				}
+			}
+			kotlinOptions.freeCompilerArgs = listOf("-include-binary", "$frameworkDir/OpenSSL.framework/OpenSSL")
+			binaries.all {
+				linkerOpts(
+					"-F$frameworkDir",
+					"-framework",
+					"OpenSSL",
+//					"-rpath",
+//					"@loader_path/Frameworks",
+//					"-rpath",
+//					"@executable_path/Frameworks",
+//					"-rpath", frameworkDir
+				)
+			}
+		}
+	}
 
 	sourceSets {
 		all {
@@ -94,7 +114,7 @@ kotlin {
 				optIn("kotlin.RequiresOptIn")
 			}
 		}
-		named("commonMain") {
+		val commonMain by getting {
 			dependencies {
 				implementation(kotlin("stdlib-common"))
 				implementation(deps.kotlinx.serialization.core)
@@ -102,35 +122,52 @@ kotlin {
 				implementation(deps.krypto)
 			}
 		}
-		named("commonTest") {
+		val commonTest by getting {
 			dependencies {
 				implementation(kotlin("test"))
 				implementation(deps.kotlinx.serialization.json)
 			}
 		}
-		named("jvmMain") {
+		val omemoMain by creating {
+			dependsOn(commonMain)
+		}
+		val omemoTest by creating {
+			dependsOn(commonTest)
+		}
+		val jvmMain by getting {
+			dependsOn(omemoMain)
 			dependencies {
 				implementation(deps.minidns)
 				implementation(deps.signal.protocol.java)
 			}
 		}
-		named("jvmTest") {
+		val jvmTest by getting {
+			dependsOn(omemoTest)
 			dependencies {
 				implementation(kotlin("test-junit"))
 			}
 		}
-		named("jsMain") {
+		val jsMain by getting  {
+			dependsOn(commonMain)
 			dependencies {
 				implementation(kotlin("stdlib-js"))
 			}
 		}
-		named("jsTest") {
+		val jsTest by getting {
+			dependsOn(commonTest)
 			dependencies {
 				implementation(kotlin("test-js"))
 			}
 		}
-//		named("iosMain") { }
-//		named("iosTest") { }
+		val iosMain by getting {
+			dependsOn(omemoMain)
+			dependencies {
+				implementation(deps.kotlinx.datetime)
+			}
+		}
+		val iosSimulatorArm64Main by getting {
+			dependsOn(iosMain)
+		}
 	}
 }
 
@@ -138,31 +175,31 @@ kotlin {
 //	delete("$rootDir/frameworks/OpenSSL.xcframework")
 //}
 //
-//tasks["cinteropOpenSSLIosArm64"].dependsOn("prepareOpenSSL")
-//tasks["cinteropOpenSSLIosX64"].dependsOn("prepareOpenSSL")
-//
-//tasks.register("prepareOpenSSL") {
-//	description = "Downloads and unpack OpenSSL XCFramework."
-//	val zipUrl = "https://github.com/tigase/openssl-swiftpm/releases/download/1.1.171/OpenSSL.xcframework.zip"
-//
-//	fun download(url: String, path: String) = ant.invokeMethod("get", mapOf("src" to url, "dest" to File(path)))
-//
-//	doLast {
-//		if (!File("$rootDir/frameworks/OpenSSL.xcframework.zip").exists()) {
-//			logger.lifecycle("Downloading OpenSSL framework...")
-//			download(
-//				zipUrl, "$rootDir/frameworks/"
-//			)
-//		}
-//		if (!File("$rootDir/frameworks/OpenSSL.xcframework").exists()) {
-//			logger.lifecycle("Unzipping OpenSSL framework...")
-//			copy {
-//				from(zipTree("$rootDir/frameworks/OpenSSL.xcframework.zip"))
-//				into("$rootDir/frameworks/")
-//			}
-//		}
-//	}
-//}
+tasks["cinteropOpenSSLIosArm64"].dependsOn("prepareOpenSSL")
+tasks["cinteropOpenSSLIosX64"].dependsOn("prepareOpenSSL")
+
+tasks.register("prepareOpenSSL") {
+	description = "Downloads and unpack OpenSSL XCFramework."
+	val zipUrl = "https://github.com/tigase/openssl-swiftpm/releases/download/1.1.171/OpenSSL.xcframework.zip"
+
+	fun download(url: String, path: String) = ant.invokeMethod("get", mapOf("src" to url, "dest" to File(path)))
+
+	doLast {
+		if (!File("$rootDir/frameworks/OpenSSL.xcframework.zip").exists()) {
+			logger.lifecycle("Downloading OpenSSL framework...")
+			download(
+				zipUrl, "$rootDir/frameworks/"
+			)
+		}
+		if (!File("$rootDir/frameworks/OpenSSL.xcframework").exists()) {
+			logger.lifecycle("Unzipping OpenSSL framework...")
+			copy {
+				from(zipTree("$rootDir/frameworks/OpenSSL.xcframework.zip"))
+				into("$rootDir/frameworks/")
+			}
+		}
+	}
+}
 
 tasks.withType<org.jetbrains.dokka.gradle.DokkaTask>().configureEach {
 		moduleName.set("Tigase Halcyon")

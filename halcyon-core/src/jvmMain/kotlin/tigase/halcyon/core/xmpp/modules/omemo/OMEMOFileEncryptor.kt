@@ -3,8 +3,8 @@ package tigase.halcyon.core.xmpp.modules.omemo
 import korlibs.crypto.encoding.hexLower
 import tigase.halcyon.core.exceptions.HalcyonException
 import tigase.halcyon.core.logger.LoggerFactory
-import java.io.InputStream
-import java.io.OutputStream
+//import java.io.InputStream
+//import java.io.OutputStream
 import java.security.SecureRandom
 import javax.crypto.Cipher
 import javax.crypto.CipherInputStream
@@ -12,8 +12,10 @@ import javax.crypto.CipherOutputStream
 import javax.crypto.spec.GCMParameterSpec
 import javax.crypto.spec.SecretKeySpec
 
+actual typealias InputStream = java.io.InputStream
+actual typealias OutputStream = java.io.OutputStream
 
-object OMEMOFileEncryptor {
+actual object OMEMOFileEncryptor {
 
     private val log = LoggerFactory.logger("tigase.halcyon.core.xmpp.modules.omemo.OMEMOFileEncryptor")
 
@@ -43,7 +45,7 @@ object OMEMOFileEncryptor {
         else throw HalcyonException("Key is too short.")
     }
 
-    fun cipherOutputStream(keyAndIv: ByteArray, output: OutputStream): OutputStream {
+    actual fun cipherOutputStream(keyAndIv: ByteArray, output: OutputStream): OutputStream {
         val iv = getIv(keyAndIv)
         val keyData = getKey(keyAndIv)
         val secretKey = SecretKeySpec(keyData, ALGORITHM_NAME)
@@ -53,7 +55,7 @@ object OMEMOFileEncryptor {
         return CipherOutputStream(output, cipher)
     }
 
-    fun cipherInputStream(keyAndIv: ByteArray, input: InputStream): InputStream {
+    actual fun cipherInputStream(keyAndIv: ByteArray, input: InputStream): InputStream {
         val iv = getIv(keyAndIv)
         val keyData = getKey(keyAndIv)
         val secretKey = SecretKeySpec(keyData, ALGORITHM_NAME)
@@ -81,13 +83,13 @@ object OMEMOFileEncryptor {
 //        return CipherOutputStream(output, cipher)
 //    }
 
-    fun encrypt(input: InputStream, keyAndIv: ByteArray, output: OutputStream) {
+    actual fun encrypt(input: InputStream, keyAndIv: ByteArray, output: OutputStream) {
         cipherOutputStream(keyAndIv, output).use {
             input.transferTo(it)
         }
     }
 
-    fun decrypt(input: InputStream, keyAndIv: ByteArray, output: OutputStream) {
+    actual fun decrypt(input: InputStream, keyAndIv: ByteArray, output: OutputStream) {
         cipherInputStream(keyAndIv, input).use {
             it.transferTo(output)
         }

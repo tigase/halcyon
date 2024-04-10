@@ -22,7 +22,6 @@ import platform.darwin.*
 import tigase.halcyon.core.logger.Level
 import tigase.halcyon.core.logger.LoggerFactory
 import kotlin.native.concurrent.AtomicReference
-import kotlin.native.concurrent.freeze
 
 class DnsResolver {
 
@@ -30,7 +29,7 @@ class DnsResolver {
 	private var callback: ((Result<List<SrvRecord>>) -> Unit)? = null
 	private var sdRef: DNSServiceRefVar = memScoped { alloc<DNSServiceRefVar>(); }
 	private var results: AtomicReference<List<SrvRecord>> =
-		AtomicReference<List<SrvRecord>>(emptyList<SrvRecord>().freeze())
+		AtomicReference<List<SrvRecord>>(emptyList<SrvRecord>())
 	private val stableRef = StableRef.create(this)
 	private var queue = dispatch_queue_create("dns_resolver_queue", null)
 	private var domain: String = ""
@@ -46,7 +45,7 @@ class DnsResolver {
 		val result = DNSServiceQueryRecord(
 			this.sdRef.ptr,
 			kDNSServiceFlagsReturnIntermediates,
-			kDNSServiceInterfaceIndexAny,
+			kDNSServiceInterfaceIndexAny.toUInt(),
 			"_xmpp-client._tcp." + domain,
 			kDNSServiceType_SRV.toUShort(),
 			kDNSServiceClass_IN.toUShort(), staticCFunction(::QueryRecordCallback),
@@ -65,7 +64,7 @@ class DnsResolver {
 			val readSource = dispatch_source_create(
 				DISPATCH_SOURCE_TYPE_READ,
 				handle = dnsSocket.toULong(),
-				mask = 0,
+				mask = 0u,
 				queue = queue
 			)//dispatch_get_main_queue());
 			val block: () -> Unit = {
@@ -111,7 +110,7 @@ class DnsResolver {
 		var records = ArrayList<SrvRecord>()
 		records += results.value
 		records += record
-		results.value = records.freeze()
+		results.value = records
 	}
 
 	class SrvRecord(val port: UInt, val weight: UInt, val priority: UInt, val target: String) {
@@ -171,16 +170,16 @@ class DnsResolver {
 class DnsException(message: String) : Exception(message = message)
 
 fun QueryRecordCallback(
-	sdRef: DNSServiceRef?,
+	@Suppress("UNUSED_PARAMETER")sdRef: DNSServiceRef?,
 	flags: DNSServiceFlags,
-	interfaceIndex: UInt,
+	@Suppress("UNUSED_PARAMETER")interfaceIndex: UInt,
 	errorCode: DNSServiceErrorType,
-	fullname: CPointer<ByteVarOf<kotlin.Byte>>?,
+	@Suppress("UNUSED_PARAMETER")fullname: CPointer<ByteVarOf<kotlin.Byte>>?,
 	rrtype: UShort,
-	rrclass: UShort,
+	@Suppress("UNUSED_PARAMETER")rrclass: UShort,
 	rdlen: UShort,
 	rdata: COpaquePointer?,
-	ttl: UInt,
+	@Suppress("UNUSED_PARAMETER")ttl: UInt,
 	context: COpaquePointer?,
 ) {
 	val resolver: DnsResolver = context!!.asStableRef<DnsResolver>()

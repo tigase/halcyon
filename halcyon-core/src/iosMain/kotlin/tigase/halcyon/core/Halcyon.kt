@@ -33,7 +33,7 @@ actual class Halcyon actual constructor(configuration: ConfigurationBuilder) : A
 
 	override fun reconnect(immediately: Boolean) {
 		log.finer { "Called reconnect. immediately=$immediately" }
-		if (!immediately) usleep(3000)
+		if (!immediately) usleep(3000u)
 		state = State.Connecting
 		startConnector()
 	}

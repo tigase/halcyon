@@ -1,11 +1,5 @@
 package tigase.halcyon.core.xmpp.modules.omemo
 
-import org.whispersystems.libsignal.IdentityKey
-import org.whispersystems.libsignal.IdentityKeyPair
-import org.whispersystems.libsignal.SignalProtocolAddress
-import org.whispersystems.libsignal.state.PreKeyRecord
-import org.whispersystems.libsignal.state.SignalProtocolStore
-import org.whispersystems.libsignal.state.SignedPreKeyRecord
 import tigase.halcyon.core.Context
 import tigase.halcyon.core.builder.HalcyonConfigDsl
 import tigase.halcyon.core.exceptions.HalcyonException
@@ -79,16 +73,16 @@ class OMEMOModule(
 
         override fun configure(module: OMEMOModule, cfg: OMEMOModuleConfig.() -> Unit) {
             module.cfg()
-            try {
-                module.protocolStore
-            } catch (e: UninitializedPropertyAccessException) {
-                throw HalcyonException("The `store` parameter is required in OMEMOModule configuration.")
-            }
-            try {
-                module.sessionStore
-            } catch (e: UninitializedPropertyAccessException) {
-                throw HalcyonException("The `store` parameter is required in OMEMOModule configuration.")
-            }
+//            try {
+//                module.protocolStore
+//            } catch (e: UninitializedPropertyAccessException) {
+//                throw HalcyonException("The `store` parameter is required in OMEMOModule configuration.")
+//            }
+//            try {
+//                module.sessionStore
+//            } catch (e: UninitializedPropertyAccessException) {
+//                throw HalcyonException("The `store` parameter is required in OMEMOModule configuration.")
+//            }
         }
 
         override fun requiredModules() = listOf(PubSubModule)
@@ -225,8 +219,8 @@ class OMEMOModule(
      */
     fun publishOwnBundle(signedPreKeyId: Int, preKeys: List<Int>): RequestBuilder<PubSubModule.PublishingInfo, IQ> {
         return publishBundle(
-            protocolStore.identityKeyPair,
-            protocolStore.localRegistrationId,
+            protocolStore.getIdentityKeyPair(),
+            protocolStore.getLocalRegistrationId(),
             protocolStore.loadSignedPreKey(signedPreKeyId),
             preKeys.map { protocolStore.loadPreKey(it) }
         )
@@ -255,7 +249,7 @@ class OMEMOModule(
         try {
             val myJid = context.boundJID!!.bareJID
             val ciphers = createCiphers(protocolStore, bundles)
-            val session = OMEMOSession(protocolStore.localRegistrationId, myJid, jid, ciphers.toMutableMap())
+            val session = OMEMOSession(protocolStore.getLocalRegistrationId(), myJid, jid, ciphers.toMutableMap())
             sessionStore.storeOMEMOSession(session)
             return session
         } catch (e: Exception) {
@@ -279,20 +273,20 @@ class OMEMOModule(
         val payload = element("bundle") {
             xmlns = XMLNS
             "signedPreKeyPublic" {
-                attributes["signedPreKeyId"] = signedPreKey.id.toString()
-                +signedPreKey.keyPair.publicKey.serialize().toBase64()
+                attributes["signedPreKeyId"] = signedPreKey.getId().toString()
+                +signedPreKey.getKeyPair().getPublicKey().serialize().toBase64()
             }
             "signedPreKeySignature" {
-                +signedPreKey.signature.toBase64()
+                +signedPreKey.getSignature().toBase64()
             }
             "identityKey" {
-                +identityKeyPair.publicKey.serialize().toBase64()
+                +identityKeyPair.getPublicKey().serialize().toBase64()
             }
             "prekeys" {
                 preKeys.forEach { prekey ->
                     "preKeyPublic" {
-                        attributes["preKeyId"] = prekey.id.toString()
-                        +prekey.keyPair.publicKey.serialize().toBase64()
+                        attributes["preKeyId"] = prekey.getId().toString()
+                        +prekey.getKeyPair().getPublicKey().serialize().toBase64()
                     }
                 }
             }
