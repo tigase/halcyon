@@ -24,6 +24,9 @@ import javax.crypto.NoSuchPaddingException
 import javax.crypto.spec.GCMParameterSpec
 import javax.crypto.spec.SecretKeySpec
 
+/**
+ * XEP-0454 helper.
+ */
 object OMEMOEncryptor {
 
     private val log = LoggerFactory.logger("tigase.halcyon.core.xmpp.modules.omemo.OMEMOEncryptor")
@@ -57,7 +60,7 @@ object OMEMOEncryptor {
     private fun cipherInstance(mode: Int, secretKey: SecretKeySpec, iv: ByteArray): Cipher {
         val cipher = Cipher.getInstance(CIPHER_NAME)
 
-        val ivSpec: AlgorithmParameterSpec = GCMParameterSpec(KEY_SIZE, iv)
+        val ivSpec: AlgorithmParameterSpec = GCMParameterSpec(128, iv)
         cipher.init(mode, secretKey, ivSpec)
         return cipher
     }

@@ -112,7 +112,6 @@ kotlin {
 			dependencies {
 				implementation(deps.minidns)
 				implementation(deps.signal.protocol.java)
-				implementation(deps.bouncycastle)
 			}
 		}
 		named("jvmTest") {
