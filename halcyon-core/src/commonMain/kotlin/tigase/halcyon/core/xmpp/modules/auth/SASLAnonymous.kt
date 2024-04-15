@@ -23,18 +23,32 @@ import tigase.halcyon.core.xml.Element
 
 class SASLAnonymous : SASLMechanism {
 
-	override val name = "ANONYMOUS"
+    companion object : SASLMechanismProvider<SASLAnonymous, Unit> {
+        override val NAME = "ANONYMOUS"
 
-	override fun evaluateChallenge(input: String?, context: Context, config: Configuration, saslContext: SASLContext): String? {
-		saslContext.complete = true
-		return null
-	}
+        override fun instance(): SASLAnonymous = SASLAnonymous()
 
-	override fun isAllowedToUse(
-		context: Context,
-		config: Configuration,
-		saslContext: SASLContext,
-		streamFeatures: Element
-	): Boolean = true
+        override fun configure(mechanism: SASLAnonymous, cfg: Unit.() -> Unit) {}
+
+    }
+
+    override val name = NAME
+
+    override fun evaluateChallenge(
+        input: String?,
+        context: Context,
+        config: Configuration,
+        saslContext: SASLContext
+    ): String? {
+        saslContext.completed()
+        return null
+    }
+
+    override fun isAllowedToUse(
+        context: Context,
+        config: Configuration,
+        saslContext: SASLContext,
+        streamFeatures: Element
+    ): Boolean = true
 
 }

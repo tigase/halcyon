@@ -93,7 +93,6 @@ class ConfigurationBuilder {
 
 	var auth: ConfigItemBuilder<out SaslConfig>? = null
 		set(value) {
-			if (field != null) throw ConfigurationException("Authentication is configured already.")
 			field = value
 		}
 
