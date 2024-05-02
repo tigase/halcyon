@@ -21,8 +21,9 @@ import kotlinx.cinterop.*
 import platform.darwin.*
 import tigase.halcyon.core.logger.Level
 import tigase.halcyon.core.logger.LoggerFactory
-import kotlin.native.concurrent.AtomicReference
+import kotlin.concurrent.AtomicReference
 
+@OptIn(kotlinx.cinterop.ExperimentalForeignApi::class)
 class DnsResolver {
 
 	private val log = LoggerFactory.logger("tigase.halcyon.core.connector.socket.DnsResolver")
@@ -169,6 +170,7 @@ class DnsResolver {
 
 class DnsException(message: String) : Exception(message = message)
 
+@OptIn(kotlinx.cinterop.ExperimentalForeignApi::class)
 fun QueryRecordCallback(
 	@Suppress("UNUSED_PARAMETER")sdRef: DNSServiceRef?,
 	flags: DNSServiceFlags,

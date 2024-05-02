@@ -25,7 +25,7 @@ import tigase.halcyon.core.connector.socket.DnsResolver
 import tigase.halcyon.core.xmpp.modules.auth.SASLEvent
 import tigase.halcyon.core.xmpp.modules.auth.SASLModule
 import tigase.halcyon.core.xmpp.toBareJID
-import kotlin.native.concurrent.AtomicReference
+import kotlin.concurrent.AtomicReference
 import kotlin.native.concurrent.freeze
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -59,7 +59,7 @@ class SocketConnectorTest {
 		}
 //        }
 
-		sleep(1)
+		sleep(1u)
 		assertTrue { !resultsStore.value.isEmpty() }
 	}
 
@@ -80,7 +80,7 @@ class SocketConnectorTest {
 			}
 		}
 		client.connect()
-		sleep(45)
+		sleep(45u)
 		assertEquals(SASLModule.SASLError.NotAuthorized, receivedSaslError)
 		println("connection timeout reached, checking state..")
 		assertNotEquals(AbstractHalcyon.State.Connected, client.state)

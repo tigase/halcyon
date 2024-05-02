@@ -300,6 +300,7 @@ class SocketConnector(halcyon: Halcyon) : AbstractConnector(halcyon) {
 //        }
 	}
 
+	@OptIn(kotlinx.cinterop.ExperimentalForeignApi::class)
 	fun process(data: ByteArray) {
 		log.finest {
 			"Received " + data.toKString()

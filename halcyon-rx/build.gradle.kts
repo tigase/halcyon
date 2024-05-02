@@ -43,7 +43,7 @@ kotlin {
 			}
 		}
 	}
-	ios {}
+	iosArm64 {}
 	iosSimulatorArm64 {}
 	sourceSets {
 		named("commonMain") {

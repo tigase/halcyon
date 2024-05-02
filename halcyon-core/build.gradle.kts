@@ -39,18 +39,13 @@ kotlin {
 					useChromeHeadless()
 				}
 			}
+			binaries.executable()
 		}
 	}
-	ios() {
+	iosArm64() {
 		// TODO: Before compilation you need to download https://github.com/tigase/openssl-swiftpm/releases/download/1.1.171/OpenSSL.xcframework.zip to "frameworks" directory and unpack this ZIP file.
 		// TODO: Before compilation it is required to go to OpenSSL.xcframework to each subdirectory and Headers and move all files there to "openssl" subdirectory inside Headers
-		val frameworkDir = if (System.getenv("SDK_NAME")
-				?.startsWith("iphoneos") == true
-		) {
-			"$rootDir/frameworks/OpenSSL.xcframework/ios-arm64_armv7"
-		} else {
-			"$rootDir/frameworks/OpenSSL.xcframework/ios-arm64_i386_x86_64-simulator"
-		}
+		val frameworkDir = "$rootDir/frameworks/OpenSSL.xcframework/ios-arm64_armv7";
 		compilations.getByName("main") {
 			cinterops {
 				val OpenSSL by creating {
@@ -66,17 +61,9 @@ kotlin {
 				linkerOpts(
 					"-F$frameworkDir",
 					"-framework",
-					"OpenSSL",
-//					"-rpath",
-//					"@loader_path/Frameworks",
-//					"-rpath",
-//					"@executable_path/Frameworks",
-//					"-rpath", frameworkDir
+					"OpenSSL"
 				)
 			}
-		}
-		binaries {
-			staticLib {}
 		}
 	}
 	// Same target as above for iOS but for Arm64 simulator (simulator in AppleSilicon machine)
@@ -97,13 +84,7 @@ kotlin {
 				linkerOpts(
 					"-F$frameworkDir",
 					"-framework",
-					"OpenSSL",
-//					"-rpath",
-//					"@loader_path/Frameworks",
-//					"-rpath",
-//					"@executable_path/Frameworks",
-//					"-rpath", frameworkDir
-				)
+					"OpenSSL")
 			}
 		}
 	}
@@ -159,11 +140,14 @@ kotlin {
 				implementation(kotlin("test-js"))
 			}
 		}
-		val iosMain by getting {
+		val iosMain by creating {
 			dependsOn(omemoMain)
 			dependencies {
 				implementation(deps.kotlinx.datetime)
 			}
+		}
+		val iosArm64Main by getting {
+			dependsOn(iosMain)
 		}
 		val iosSimulatorArm64Main by getting {
 			dependsOn(iosMain)
@@ -176,7 +160,7 @@ kotlin {
 //}
 //
 tasks["cinteropOpenSSLIosArm64"].dependsOn("prepareOpenSSL")
-tasks["cinteropOpenSSLIosX64"].dependsOn("prepareOpenSSL")
+tasks["cinteropOpenSSLIosSimulatorArm64"].dependsOn("prepareOpenSSL")
 
 tasks.register("prepareOpenSSL") {
 	description = "Downloads and unpack OpenSSL XCFramework."

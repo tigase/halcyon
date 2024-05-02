@@ -24,6 +24,7 @@ import platform.Security.*
 import platform.darwin.ByteVar
 import tigase.halcyon.core.logger.LoggerFactory
 
+@OptIn(kotlinx.cinterop.ExperimentalForeignApi::class)
 class SSLEngine(connector: SocketConnector, domain: String) {
 
 	private val log = LoggerFactory.logger("tigase.halcyon.core.connector.socket.SSLEngine")
