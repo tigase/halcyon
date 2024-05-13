@@ -81,8 +81,6 @@ abstract class AbstractHalcyon(configurator: ConfigurationBuilder) : Context, Pa
 
     override val request = RequestBuilderFactory(this)
 
-    private var tickCounter: Long = 0
-
     override val writer: PacketWriter
         get() = this
     final override val modules: ModulesManager = ModulesManager()
@@ -242,10 +240,6 @@ abstract class AbstractHalcyon(configurator: ConfigurationBuilder) : Context, Pa
     }
 
     protected abstract fun createConnector(): AbstractConnector
-
-    protected fun tick() {
-        eventBus.fire(TickEvent(++tickCounter))
-    }
 
     protected fun getConnectorState(): tigase.halcyon.core.connector.State =
         this.connector?.state ?: tigase.halcyon.core.connector.State.Disconnected

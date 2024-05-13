@@ -47,30 +47,11 @@ actual class Halcyon actual constructor(configuration: ConfigurationBuilder) : A
 		startConnector()
 	}
 
-	val timer = Timer("timer", true)
-
 	private val lock = Object()
-
-	private lateinit var tickTask: TimerTask
 
 	init {
 		eventBus.mode = EventBus.Mode.ThreadPerHandler
 //		this.config.connectorConfig = SocketConnectorConfig()
-	}
-
-	override fun onConnecting() {
-		super.onConnecting()
-		tickTask = object : TimerTask() {
-			override fun run() {
-				tick()
-			}
-		}
-		timer.scheduleAtFixedRate(tickTask, 2_000, 2_000)
-	}
-
-	override fun onDisconnecting() {
-		tickTask.cancel()
-		super.onDisconnecting()
 	}
 
 	fun waitForAllResponses() {
