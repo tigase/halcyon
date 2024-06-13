@@ -1,3 +1,6 @@
+> # NOTE: Tigase Halcyon has new home at [tigase.dev/tigase/_libraries/halcyon](https://tigase.dev/tigase/_libraries/halcyon/) - please submit all issues/pull-requests there!
+
+
 Halcyon
 =======
 
