@@ -23,34 +23,40 @@ import tigase.halcyon.core.xmpp.forms.JabberDataForm
 
 interface SaslConfig
 
+interface UserJIDProvider {
+
+    val userJID: BareJID
+
+}
+
 interface DomainProvider {
 
-	val domain: String
+    val domain: String
 
 }
 
 data class Registration(
-	override val domain: String,
-	val formHandler: ((JabberDataForm) -> Unit)?,
-	val formHandlerWithResponse: ((JabberDataForm) -> JabberDataForm)?,
+    override val domain: String,
+    val formHandler: ((JabberDataForm) -> Unit)?,
+    val formHandlerWithResponse: ((JabberDataForm) -> JabberDataForm)?,
 ) : DomainProvider
 
 interface ConnectionConfig
 
 data class Configuration(
-	val sasl: SaslConfig?,
-	val connection: ConnectionConfig,
-	val registration: Registration? = null,
+    val sasl: SaslConfig?,
+    val connection: ConnectionConfig,
+    val registration: Registration? = null,
 )
 
 val Configuration.declaredDomain: String
-	get() = if (this.sasl is DomainProvider) {
-		this.sasl.domain
-	} else if (this.registration != null) {
-		this.registration.domain
-	} else throw HalcyonException("Cannot determine domain.")
+    get() = if (this.sasl is DomainProvider) {
+        this.sasl.domain
+    } else if (this.registration != null) {
+        this.registration.domain
+    } else throw HalcyonException("Cannot determine domain.")
 
 val Configuration.declaredUserJID: BareJID?
-	get() = if (this.sasl is JIDPasswordSaslConfig) {
-		this.sasl.userJID
-	} else null
+    get() = if (this.sasl is UserJIDProvider) {
+        this.sasl.userJID
+    } else null

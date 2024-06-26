@@ -6,9 +6,9 @@ import tigase.halcyon.core.builder.HalcyonConfigDsl
 import tigase.halcyon.core.builder.ConfigurationException
 import tigase.halcyon.core.xmpp.BareJID
 
-interface JIDPasswordSaslConfig : SaslConfig {
+interface JIDPasswordSaslConfig : SaslConfig, UserJIDProvider {
 
-	val userJID: BareJID
+	override val userJID: BareJID
 
 	val passwordCallback: () -> String
 
@@ -19,7 +19,7 @@ data class JIDPasswordAuthConfig(
 	override val userJID: BareJID,
 	override val authcId: String?,
 	override val passwordCallback: () -> String,
-) : JIDPasswordSaslConfig, DomainProvider {
+) : JIDPasswordSaslConfig, DomainProvider, UserJIDProvider {
 
 	override val domain: String
 		get() = userJID.domain
