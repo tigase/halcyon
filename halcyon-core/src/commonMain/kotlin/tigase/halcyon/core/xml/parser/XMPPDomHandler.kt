@@ -52,7 +52,14 @@ class XMPPDomHandler(
 			return true
 		}
 
-		val elemName = tmpName.substringAfter(":")
+		val idx = tmpName.indexOf(':');
+		var elemName = tmpName;
+		if (idx > 0) {
+			val tmpNamePrefix = tmpName.substring(0, idx);
+			if (namespaces.containsKey(tmpNamePrefix)) {
+				elemName = tmpName.substring(idx + 1);
+			}
+		}
 
 		if (elementBuilder != null && elementBuilder!!.onTop && elementBuilder!!.currentElement.name == elemName) {
 			val element = elementBuilder!!.build()

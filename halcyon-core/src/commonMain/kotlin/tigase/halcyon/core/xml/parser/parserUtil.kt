@@ -28,6 +28,7 @@ fun parseXML(data: String): Element {
 
 	if (e != null) throw e!!
 
+	// FIXME: why we are forced to return parsed Element? what if part of the stream will not be contain complete XML?
 	return r ?: throw XmlException("No data")
 }
 

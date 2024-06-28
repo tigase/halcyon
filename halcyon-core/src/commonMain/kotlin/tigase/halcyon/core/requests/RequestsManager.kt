@@ -89,6 +89,7 @@ class RequestsManager {
             it.value.creationTimestamp < maxCreationTimestamp
         }.forEach {
             requests.remove(it.key)
+            // TODO: somehow this causes exception on iOS... is this thread safe??
             if (!it.value.isCompleted) {
                 execute { it.value.markTimeout() }
             }

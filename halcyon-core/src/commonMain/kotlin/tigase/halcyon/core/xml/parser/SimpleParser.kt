@@ -225,7 +225,7 @@ class SimpleParser {
 						if (!handler.endElement(parserState.element_name!!.toString())) {
 							parserState.state = State.ERROR
 							parserState.errorMessage =
-								"Malformed XML: element close found without open for this element: " + parserState.element_name!!
+								"Malformed XML: element close found without open for this element: " + parserState.element_name!!.toString() +" in data: " + data.concatToString(offset, offset + len);
 							continue@LOOP
 						}
 
