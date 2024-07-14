@@ -17,6 +17,7 @@
  */
 package tigase.halcyon.core.xmpp.modules.jingle
 
+import tigase.halcyon.core.logger.LoggerFactory
 import tigase.halcyon.core.xmpp.nextUIDLongs
 import kotlin.jvm.JvmStatic
 
@@ -35,6 +36,8 @@ class SDP(val id: String, val contents: List<Content>, private val bundle: List<
 	}
 
 	companion object {
+
+		val log = LoggerFactory.logger("tigase.halcyon.core.xmpp.modules.jingle.SDP")
 
 		@JvmStatic
 		fun parse(sdp: String, creator: Content.Creator): Pair<SDP, String>? {
@@ -58,10 +61,10 @@ class SDP(val id: String, val contents: List<Content>, private val bundle: List<
 					emptyList()
 				}
 
-				println("got session with id=$id and sid=$sid and bundle=$bundle")
+				log.finest("got session with id=$id and sid=$sid and bundle=$bundle")
 
 				val contents = media.map { Content.parse(it, creator) }
-				println("contents: $contents")
+				log.finest("contents: $contents")
 
 				return Pair(SDP(id, contents, bundle), sid)
 			}
@@ -72,7 +75,8 @@ class SDP(val id: String, val contents: List<Content>, private val bundle: List<
 }
 
 fun Content.Companion.parse(sdp: String, creator: Content.Creator): Content {
-	println("parsing sdp: $sdp")
+	val log = LoggerFactory.logger("tigase.halcyon.core.xmpp.modules.jingle.Content")
+	log.finest("parsing sdp: $sdp")
 
 	val lines = sdp.split("\r\n")
 	val line = lines.get(0)

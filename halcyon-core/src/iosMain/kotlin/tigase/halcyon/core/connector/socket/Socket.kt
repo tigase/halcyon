@@ -131,12 +131,14 @@ class Socket {
 										var read: ssize_t = 0
 										memScoped {
 											do {
-												val data = allocArray<ByteVar>(1024)
-												read = read(fd, data, 1024.convert())
+												val data = allocArray<ByteVar>(2048)
+												read = read(fd, data, 2048.toULong())
 												log.finest("read ${read} bytes from socket " + fd)
-												if (read > 0) {
+												if (read >= 0) {
 													readCallback?.invoke(data.readBytes(read.toInt()))
 												}
+												val socketStatus = fcntl(fd, F_GETFL);
+												log.finest("socket status reported as: " + socketStatus)
 											} while (read > 0)
 										}
 //                            if (read < 0) {

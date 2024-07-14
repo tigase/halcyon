@@ -58,7 +58,7 @@ class DnsResolver {
 				fail()
 				return
 			}
-			println("using dns socket: " + dnsSocket)
+			log.finest("using dns socket: " + dnsSocket)
 
 			val sdRef = this.sdRef
 			val stableRef = this.stableRef
@@ -69,9 +69,9 @@ class DnsResolver {
 				queue = queue
 			)//dispatch_get_main_queue());
 			val block: () -> Unit = {
-				println("processing result..")
+				log.finest("processing result..")
 				val res = DNSServiceProcessResult(sdRef.value)
-				println("result processed: " + res)
+				log.finest("result processed: " + res)
 				if (res != kDNSServiceErr_NoError) {
 					stableRef.get()
 						.fail()

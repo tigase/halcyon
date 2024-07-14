@@ -17,9 +17,9 @@
  */
 package tigase.halcyon.core.xml
 
-import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
+@Serializable(with = ElementSerializer::class)
 interface Element {
 
 	var parent: Element?

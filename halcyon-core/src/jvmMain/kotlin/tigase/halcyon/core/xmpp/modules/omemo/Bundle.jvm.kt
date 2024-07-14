@@ -1,6 +1,5 @@
 package tigase.halcyon.core.xmpp.modules.omemo
 
-import org.whispersystems.libsignal.IdentityKey
 import org.whispersystems.libsignal.ecc.Curve
 
 actual fun Bundle.getRandomPreKeyBundle(): PreKeyBundle {
@@ -42,3 +41,16 @@ actual typealias UntrustedIdentityException = org.whispersystems.libsignal.Untru
 actual typealias InvalidKeyException = org.whispersystems.libsignal.InvalidKeyException;
 
 actual typealias SignalProtocolStore = org.whispersystems.libsignal.state.SignalProtocolStore
+
+actual typealias InvalidKeyIdException = org.whispersystems.libsignal.InvalidKeyIdException
+actual typealias PreKeyStore = org.whispersystems.libsignal.state.PreKeyStore
+
+actual typealias SignedPreKeyStore = org.whispersystems.libsignal.state.SignedPreKeyStore
+
+actual typealias SessionRecord = org.whispersystems.libsignal.state.SessionRecord
+
+actual typealias SessionStore = org.whispersystems.libsignal.state.SessionStore
+
+actual typealias IdentityKeyStore = org.whispersystems.libsignal.state.IdentityKeyStore
+
+actual typealias IdentityKeyStoreDirection = org.whispersystems.libsignal.state.IdentityKeyStore.Direction;

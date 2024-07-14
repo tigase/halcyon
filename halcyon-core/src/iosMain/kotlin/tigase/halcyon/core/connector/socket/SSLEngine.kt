@@ -20,6 +20,7 @@ package tigase.halcyon.core.connector.socket
 import OpenSSL.*
 import kotlinx.cinterop.*
 import platform.CoreFoundation.*
+import platform.Foundation.NSLock
 import platform.Security.*
 import platform.darwin.ByteVar
 import tigase.halcyon.core.logger.LoggerFactory
@@ -61,12 +62,20 @@ class SSLEngine(connector: SocketConnector, domain: String) {
 
 		companion object {
 
+			private val log = LoggerFactory.logger("tigase.halcyon.core.connector.socket.SSLEngine")
+
 			fun from(code: Int, engine: SSLEngine): SSLStatus {
 				if (code == 0) {
 					return ok
 				}
 
 				val status = SSL_get_error(engine.ssl, code)
+				log.finest("SSLEngine got error status: " + status)
+				val err = ERR_get_error();
+				if (err != 0.toULong()) {
+					log.finest("error1: " + err + " - " + ERR_error_string(err, null)?.toKStringFromUtf8())
+					log.finest("error2: " + ERR_reason_error_string(err)?.toKStringFromUtf8())
+				}
 				return when (status) {
 					SSL_ERROR_NONE -> ok
 					SSL_ERROR_WANT_READ -> want_read
@@ -98,13 +107,19 @@ class SSLEngine(connector: SocketConnector, domain: String) {
 		writeBio = BIO_new(BIO_s_mem())
 		SSL_set_bio(ssl, readBio, writeBio)
 		SSL_set_connect_state(ssl)
+		SSL_load_error_strings();
+		ERR_load_CRYPTO_strings();
+		ERR_load_ERR_strings();
 	}
 
 	fun decrypt(data: ByteArray) {
+//		lock.lock()
 		if (BIO_write(readBio, data.toCValues(), data.size) != data.size) {
 			// FIXME: throw error!!
-			log.finest("could not write data to BIO buffer")
+			log.warning("could not write data to BIO buffer")
 		}
+
+		log.finest("SSLEngine decryption state: " + state.name)
 
 		when (state) {
 			State.handshaking -> doHandshaking()
@@ -115,7 +130,9 @@ class SSLEngine(connector: SocketConnector, domain: String) {
 
 	fun encrypt(data: ByteArray) {
 		if (!data.isEmpty()) {
+			awaitingEncryptionLock.lock();
 			awaitingEncryption += data
+			awaitingEncryptionLock.unlock();
 		}
 
 		when (state) {
@@ -155,15 +172,23 @@ class SSLEngine(connector: SocketConnector, domain: String) {
 		var n = 0
 		do {
 			memScoped {
-				val buffer = allocArray<ByteVar>(2048)
-				n = SSL_read(ssl, buffer, 2048)
+				val buffer = allocArray<ByteVar>(4096)
+				log.finest("SSLEngine reading to buffer...")
+				n = SSL_read(ssl, buffer, 4096)
 				if (n > 0) {
-					connector.process(buffer.readBytes(n))
+					val data = buffer.readBytes(n);
+					log.finest("SSLEngine read " + data.size  + " of decrypted data...")
+					//dispatch_async(dataConsumerDispatchQueue) {
+						//println("SSLEngine passing " + data.size  + " bytes to connector...")
+						connector.process(data);
+					//}
 				}
 			}
 		} while (n > 0)
 
-		when (SSLStatus.from(code = n, engine = this)) {
+		val status = SSLStatus.from(code = n, engine = this);
+		log.finest("SSLEngine status code: " + n + ", status: " + status.name);
+		when (status) {
 			SSLStatus.want_write -> writeDataToNetwork()
 			SSLStatus.want_read, SSLStatus.ok -> {}
 			SSLStatus.fail -> {
@@ -173,25 +198,33 @@ class SSLEngine(connector: SocketConnector, domain: String) {
 		}
 	}
 
+//	private val socketWriterDispatchQueue = dispatch_queue_create("socketWriter", null);
+	
 	private fun writeDataToNetwork() {
 		var n = 0
 		do {
 			val waiting = BIO_ctrl_pending(writeBio).toInt()
 			log.finest("sending ${waiting} bytes..")
 			memScoped {
-				val buffer = allocArray<ByteVar>(2048)
+				val buffer = allocArray<ByteVar>(waiting)
 				n = BIO_read(writeBio, buffer, waiting)
 				if (n > 0) {
-					connector.writeDataToSocket(buffer.readBytes(n))
+					val data = buffer.readBytes(n);
+					//dispatch_async(socketWriterDispatchQueue) {
+						connector.writeDataToSocket(data);
+					//}
 				}
 			}
 		} while (n > 0)
 	}
 
 	private var awaitingEncryption: MutableList<ByteArray> = mutableListOf()
+	private val awaitingEncryptionLock = NSLock();
 
 	private fun encryptWaiting() {
+		awaitingEncryptionLock.lock();
 		if (awaitingEncryption.isEmpty()) {
+			awaitingEncryptionLock.unlock();
 			writeDataToNetwork()
 			return
 		}
@@ -224,6 +257,7 @@ class SSLEngine(connector: SocketConnector, domain: String) {
 			}
 		}
 		log.finest("encryption of waiting data finished")
+		awaitingEncryptionLock.unlock();
 	}
 
 	private fun peerCertificateChain(): CFArrayRef? {

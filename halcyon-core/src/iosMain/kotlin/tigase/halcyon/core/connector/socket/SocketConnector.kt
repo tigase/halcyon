@@ -161,6 +161,7 @@ class SocketConnector(halcyon: Halcyon) : AbstractConnector(halcyon) {
 		socket = Socket()
 		resolveTarget { name, port ->
 			socket?.readCallback = { data ->
+				log.finest("read data: " + data.size)
 				this.processSocketData(data)
 			}
 			socket?.stateCallback = { state ->

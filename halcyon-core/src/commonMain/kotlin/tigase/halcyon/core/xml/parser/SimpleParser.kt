@@ -18,6 +18,8 @@
 
 package tigase.halcyon.core.xml.parser
 
+import tigase.halcyon.core.logger.LoggerFactory
+
 /**
  * `SimpleParser` - implementation of *SAX* parser. This is very basic implementation of *XML*
  * parser designed especially to be light and parse *XML* streams like jabber *XML* stream. It is very
@@ -43,6 +45,7 @@ package tigase.halcyon.core.xml.parser
  */
 class SimpleParser {
 
+	private val log = LoggerFactory.logger("tigase.halcyon.core.xml.parser.SimpleParser")
 	var attributesNumberLimit = 50
 
 	/**
@@ -107,6 +110,7 @@ class SimpleParser {
 	}
 
 	fun parse(handler: SimpleHandler, data: CharArray, offset: Int, len: Int) {
+		log.finest { "parsing data: " + data.concatToString() }
 		var parserState = handler.restoreParserState() as ParserState?
 
 		if (parserState == null) {

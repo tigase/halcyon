@@ -12,10 +12,10 @@ import javax.crypto.CipherOutputStream
 import javax.crypto.spec.GCMParameterSpec
 import javax.crypto.spec.SecretKeySpec
 
-actual typealias InputStream = java.io.InputStream
-actual typealias OutputStream = java.io.OutputStream
+typealias InputStream = java.io.InputStream
+typealias OutputStream = java.io.OutputStream
 
-actual object OMEMOFileEncryptor {
+object OMEMOFileEncryptor {
 
     private val log = LoggerFactory.logger("tigase.halcyon.core.xmpp.modules.omemo.OMEMOFileEncryptor")
 
@@ -45,7 +45,7 @@ actual object OMEMOFileEncryptor {
         else throw HalcyonException("Key is too short.")
     }
 
-    actual fun cipherOutputStream(keyAndIv: ByteArray, output: OutputStream): OutputStream {
+    fun cipherOutputStream(keyAndIv: ByteArray, output: OutputStream): OutputStream {
         val iv = getIv(keyAndIv)
         val keyData = getKey(keyAndIv)
         val secretKey = SecretKeySpec(keyData, ALGORITHM_NAME)
@@ -55,7 +55,7 @@ actual object OMEMOFileEncryptor {
         return CipherOutputStream(output, cipher)
     }
 
-    actual fun cipherInputStream(keyAndIv: ByteArray, input: InputStream): InputStream {
+    fun cipherInputStream(keyAndIv: ByteArray, input: InputStream): InputStream {
         val iv = getIv(keyAndIv)
         val keyData = getKey(keyAndIv)
         val secretKey = SecretKeySpec(keyData, ALGORITHM_NAME)
@@ -65,31 +65,13 @@ actual object OMEMOFileEncryptor {
         return CipherInputStream(input, cipher)
     }
 
-//    fun cipherInputStream(keyAndIv: ByteArray, input: InputStream): InputStream {
-//        val iv = getIv(keyAndIv)
-//        val keyData = getKey(keyAndIv)
-//        val cipher: AEADBlockCipher = GCMBlockCipher.newInstance(AESEngine.newInstance())
-//        cipher.init(false, AEADParameters(KeyParameter(keyData), 128, iv))
-//
-//        return CipherInputStream(input, cipher)
-//    }
-//
-//    fun cipherOutputStream(keyAndIv: ByteArray, output: OutputStream): OutputStream {
-//        val iv = getIv(keyAndIv)
-//        val keyData = getKey(keyAndIv)
-//        val cipher: AEADBlockCipher = GCMBlockCipher.newInstance(AESEngine.newInstance())
-//        cipher.init(true, AEADParameters(KeyParameter(keyData), 128, iv))
-//
-//        return CipherOutputStream(output, cipher)
-//    }
-
-    actual fun encrypt(input: InputStream, keyAndIv: ByteArray, output: OutputStream) {
+    fun encrypt(input: InputStream, keyAndIv: ByteArray, output: OutputStream) {
         cipherOutputStream(keyAndIv, output).use {
             input.transferTo(it)
         }
     }
 
-    actual fun decrypt(input: InputStream, keyAndIv: ByteArray, output: OutputStream) {
+    fun decrypt(input: InputStream, keyAndIv: ByteArray, output: OutputStream) {
         cipherInputStream(keyAndIv, input).use {
             it.transferTo(output)
         }

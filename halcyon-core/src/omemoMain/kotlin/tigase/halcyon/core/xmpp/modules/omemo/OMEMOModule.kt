@@ -232,6 +232,7 @@ class OMEMOModule(
      * @param handler session creation result handler.
      */
     fun startSession(jid: BareJID, handler: (Result<OMEMOSession>) -> Unit) {
+        log.finest("retrieving bundles for " + jid.toString() + "...")
         retrieveBundles(listOf(jid, context.boundJID!!.bareJID)) {
             val session = startSession(jid, it)
             if (session != null) handler.invoke(Result.success(session))
@@ -247,12 +248,14 @@ class OMEMOModule(
      */
     fun startSession(jid: BareJID, bundles: List<Bundle>): OMEMOSession? {
         try {
+            log.finest("starting session for jid " + jid.toString() + " with " + bundles.size + "...")
             val myJid = context.boundJID!!.bareJID
             val ciphers = createCiphers(protocolStore, bundles)
             val session = OMEMOSession(protocolStore.getLocalRegistrationId(), myJid, jid, ciphers.toMutableMap())
             sessionStore.storeOMEMOSession(session)
             return session
         } catch (e: Exception) {
+            log.warning("got exception while starting session: " + e.message)
             return null
         }
     }
@@ -373,9 +376,16 @@ class OMEMOModule(
         bodyEl: Element,
         order: EncryptMessage
     ) {
+        log.finest("startig omemo session with " + recipient.bareJID.toString())
         startSession(recipient.bareJID) {
+            print("awaiting omemo session creation....")
             it.onSuccess {
+                log.finest("session created successfully!")
                 encryptAndSend(element, chain, recipient, it, bodyEl, order)
+            }
+            it.onFailure {
+                log.finest("session creation failed!!")
+                it.printStackTrace()
             }
         }
     }

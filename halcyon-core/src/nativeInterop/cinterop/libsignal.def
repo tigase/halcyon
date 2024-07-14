@@ -1,0 +1,5 @@
+language = C
+package = libsignal
+headers = libsignal/session_builder.h libsignal/signal_protocol.h libsignal/key_helper.h libsignal/session_cipher.h libsignal/protocol.h
+compilerOpts.ios_x64 = -I../frameworks/libsignal.xcframework/ios-arm64_86_64-simulator/libsignal.framework/Headers
+compilerOpts.ios_arm64 = -I../frameworks/libsignal.xcframework/ios-arm64/libsignal.framework/Headers
