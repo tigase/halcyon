@@ -1,84 +1,99 @@
 package tigase.halcyon.core.xml
 
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.builtins.MapSerializer
 import kotlinx.serialization.builtins.serializer
-import kotlinx.serialization.descriptors.*
+import kotlinx.serialization.descriptors.SerialDescriptor
+import kotlinx.serialization.descriptors.buildClassSerialDescriptor
+import kotlinx.serialization.descriptors.element
 import kotlinx.serialization.encoding.*
-import kotlinx.serialization.modules.SerializersModule
-import kotlinx.serialization.modules.polymorphic
-import tigase.halcyon.core.xmpp.stanzas.*
 
-val HalcyonSerializerModule = SerializersModule {
-	polymorphic(Element::class) {
-		subclass(ElementImpl::class, ElementImplSerializer)
-		default { ElementSerializer }
-	}
+
+object ElementListSerializer : KSerializer<List<Element>> {
+
+    val listSerializer: KSerializer<List<Element>> = ListSerializer(Element.serializer())
+
+    @OptIn(ExperimentalSerializationApi::class)
+    override val descriptor: SerialDescriptor =
+        SerialDescriptor("children", listSerializer.descriptor)
+
+    override fun deserialize(decoder: Decoder): List<Element> {
+        return decoder.decodeSerializableValue(listSerializer)
+    }
+
+    override fun serialize(encoder: Encoder, value: List<Element>) {
+        encoder.encodeSerializableValue(listSerializer, value)
+    }
 }
 
-object ElementSerializer : ElementSerializerImpl<Element>()
-object ElementImplSerializer : ElementSerializerImpl<ElementImpl>()
+object ElementSerializer : KSerializer<Element> {
+    override val descriptor = buildClassSerialDescriptor("element") {
+        element<String>("name")
+        element<String>("value")
+        element<Map<String, String>>("attrs")
+        element<List<String>>("children")
+    }
 
-object MessageStanzaSerialzer : StanzaSerializer<Message>()
-object IQStanzaSerialzer : StanzaSerializer<IQ>()
-object PresenceStanzaSerialzer : StanzaSerializer<Presence>()
+    override fun deserialize(decoder: Decoder): Element {
+        var name: String? = null
+        var value: String? = null
+        var attrs: Map<String, String>? = null
+        var children: List<Element>? = null
 
-open class StanzaSerializer<T : Stanza<*>> : ElementSerializerImpl<T>() {
+        decoder.decodeStructure(descriptor) {
+            while (true) {
+                when (val index = decodeElementIndex(descriptor)) {
+                    0 -> name = decodeStringElement(descriptor, 0)
+                    1 -> value = decodeStringElement(descriptor, 1)
+                    2 -> attrs = decodeSerializableElement(
+                        descriptor,
+                        2,
+                        MapSerializer(String.serializer(), String.serializer())
+                    )
+                    3 -> children =
+                        decodeSerializableElement(descriptor, 3, ElementListSerializer, children)
 
-	override fun deserialize(decoder: Decoder): T = wrap(super.deserialize(decoder))
+                    CompositeDecoder.DECODE_DONE -> break
+                    else -> error("Unexpected index: $index")
+                }
+            }
+        }
+        requireNotNull(name)
+
+        return ElementImpl(name!!).apply {
+            this.value = value
+            attrs?.let {
+                this.attributes.putAll(it)
+            }
+            children?.let {
+                it.forEach { this.add(it) }
+            }
+        }
+    }
+
+    override fun serialize(encoder: Encoder, value: Element) {
+        encoder.encodeStructure(descriptor) {
+            this.encodeStringElement(descriptor, 0, value.name)
+            value.value?.let { this.encodeStringElement(descriptor, 1, it) }
+            if (value.attributes.isNotEmpty()) {
+                this.encodeSerializableElement(
+                    descriptor,
+                    2,
+                    MapSerializer(String.serializer(), String.serializer()),
+                    value.attributes
+                )
+            }
+            if (value.children.isNotEmpty()) {
+                this.encodeSerializableElement(
+                    descriptor,
+                    3,
+                    ElementListSerializer,
+                    value.children
+                )
+            }
+        }
+    }
 
 }
-
-open class ElementSerializerImpl<T : Element> : KSerializer<T> {
-
-	override val descriptor: SerialDescriptor = buildClassSerialDescriptor(
-		"Element",
-//		PrimitiveSerialDescriptor("name", PrimitiveKind.STRING),
-//		PrimitiveSerialDescriptor("xmlns", PrimitiveKind.STRING),
-//		PrimitiveSerialDescriptor("value", PrimitiveKind.STRING),
-	) {
-		element<String>("name")
-		element<String>("value")
-		element<Map<String, String>>("attrs")
-		element<List<Element>>("children")
-	}
-
-	override fun serialize(encoder: Encoder, value: T) {
-		encoder.encodeStructure(descriptor) {
-			this.encodeStringElement(descriptor, 0, value.name)
-			value.value?.let { this.encodeStringElement(descriptor, 1, it) }
-			if (value.attributes.isNotEmpty()) this.encodeSerializableElement(
-				descriptor, 2, MapSerializer(String.serializer(), String.serializer()), value.attributes
-			)
-			if (value.children.isNotEmpty()) this.encodeSerializableElement(
-				descriptor, 3, ListSerializer(ElementSerializer), value.children as List<Element>
-			)
-		}
-	}
-
-	override fun deserialize(decoder: Decoder): T = decoder.decodeStructure(descriptor) {
-		var name: String? = null
-		var value: String? = null
-		var attrs: Map<String, String>? = null
-		var children: List<Element>? = null
-		while (true) when (val index = decodeElementIndex(descriptor)) {
-			0 -> name = decodeStringElement(descriptor, 0)
-			1 -> value = decodeStringElement(descriptor, 1)
-			2 -> attrs =
-				decodeSerializableElement(descriptor, 2, MapSerializer(String.serializer(), String.serializer()))
-
-			3 -> children = decodeSerializableElement(descriptor, 3, ListSerializer(ElementImplSerializer))
-			CompositeDecoder.DECODE_DONE -> break
-			else -> error("Unexpected index: $index")
-		}
-		ElementImpl(name!!).apply {
-			this.value = value
-			if (attrs != null) this.attributes.putAll(attrs)
-			if (children != null) this.children.addAll(children)
-		} as T
-	}
-}
-
-
-

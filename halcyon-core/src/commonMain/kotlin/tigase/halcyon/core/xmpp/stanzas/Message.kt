@@ -20,41 +20,52 @@ package tigase.halcyon.core.xmpp.stanzas
 import kotlinx.datetime.Instant
 import kotlinx.serialization.Serializable
 import tigase.halcyon.core.parseISO8601
-import tigase.halcyon.core.xml.*
+import tigase.halcyon.core.xml.Element
+import tigase.halcyon.core.xml.MessageStanzaSerializer
+import tigase.halcyon.core.xml.attributeProp
+import tigase.halcyon.core.xml.stringElementProperty
 import tigase.halcyon.core.xmpp.ErrorCondition
 import tigase.halcyon.core.xmpp.XMPPException
 
-enum class MessageType(val value: String) { Chat("chat"),
-	Error("error"),
-	Groupchat("groupchat"),
-	Headline("headline"),
-	Normal("normal")
+@Serializable
+enum class MessageType(val value: String) {
+    Chat("chat"),
+    Error("error"),
+    Groupchat("groupchat"),
+    Headline("headline"),
+    Normal("normal")
 }
 
-@Serializable(with = MessageStanzaSerialzer::class)
+@Serializable(with = MessageStanzaSerializer::class)
 open class Message(wrappedElement: Element) : Stanza<MessageType?>(wrappedElement) {
 
-	companion object {
+    init {
+        require(wrappedElement.name == NAME) { "Message stanza requires element $NAME." }
+    }
 
-		const val NAME = "message"
-	}
+    companion object {
 
-	override var type: MessageType? by attributeProp(valueToString = { v -> v?.value }, stringToValue = { s: String? ->
-		s?.let {
-			MessageType.values()
-				.firstOrNull { te -> te.value == it } ?: throw XMPPException(
-				ErrorCondition.BadRequest, "Unknown stanza type '$it'"
-			)
-		}
-	})
+        const val NAME = "message"
+    }
 
-	var body: String? by stringElementProperty()
+    override var type: MessageType? by attributeProp(
+        valueToString = { v -> v?.value },
+        stringToValue = { s: String? ->
+            s?.let {
+                MessageType.values()
+                    .firstOrNull { te -> te.value == it } ?: throw XMPPException(
+                    ErrorCondition.BadRequest, "Unknown stanza type '$it'"
+                )
+            }
+        })
+
+    var body: String? by stringElementProperty()
 
 }
 
 fun Message.getTimestampOrNull(): Instant? {
-	return this.getChildrenNS("delay", "urn:xmpp:delay")
-		?.let {
-			it.attributes["stamp"]?.let { stamp -> parseISO8601(stamp) }
-		}
+    return this.getChildrenNS("delay", "urn:xmpp:delay")
+        ?.let {
+            it.attributes["stamp"]?.let { stamp -> parseISO8601(stamp) }
+        }
 }

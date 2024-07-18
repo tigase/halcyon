@@ -19,31 +19,36 @@ package tigase.halcyon.core.xmpp.stanzas
 
 import kotlinx.serialization.Serializable
 import tigase.halcyon.core.xml.Element
-import tigase.halcyon.core.xml.IQStanzaSerialzer
-import tigase.halcyon.core.xml.MessageStanzaSerialzer
+import tigase.halcyon.core.xml.IQStanzaSerializer
 import tigase.halcyon.core.xml.attributeProp
 import tigase.halcyon.core.xmpp.ErrorCondition
 import tigase.halcyon.core.xmpp.XMPPException
 
-enum class IQType(val value: String) { Error("error"),
-	Get("get"),
-	Result("result"),
-	Set("set")
+@Serializable
+enum class IQType(val value: String) {
+    Error("error"),
+    Get("get"),
+    Result("result"),
+    Set("set")
 }
 
-@Serializable(with = IQStanzaSerialzer::class)
+@Serializable(with = IQStanzaSerializer::class)
 class IQ(wrappedElement: Element) : Stanza<IQType>(wrappedElement) {
 
-	companion object {
+    init {
+        require(wrappedElement.name == NAME) { "IQ stanza requires element $NAME." }
+    }
 
-		const val NAME = "iq"
-	}
+    companion object {
 
-	override var type: IQType by attributeProp(stringToValue = { v ->
-		v?.let {
-			IQType.values()
-				.firstOrNull { te -> te.value == it }
-		} ?: throw XMPPException(ErrorCondition.BadRequest, "Unknown stanza type '$v'")
-	}, valueToString = { v -> v.value })
+        const val NAME = "iq"
+    }
+
+    override var type: IQType by attributeProp(stringToValue = { v ->
+        v?.let {
+            IQType.values()
+                .firstOrNull { te -> te.value == it }
+        } ?: throw XMPPException(ErrorCondition.BadRequest, "Unknown stanza type '$v'")
+    }, valueToString = { v -> v.value })
 
 }
