@@ -20,6 +20,7 @@ package tigase.halcyon.core.requests
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import tigase.halcyon.core.logger.LoggerFactory
+import tigase.halcyon.core.utils.Lock
 import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xmpp.FullJID
 import tigase.halcyon.core.xmpp.getFromAttr
@@ -32,10 +33,13 @@ class RequestsManager {
     private val executor = tigase.halcyon.core.excutor.Executor()
 
     private val requests = HashMap<String, Request<*, *>>()
+    private val lock = Lock();
 
     fun register(request: Request<*, *>) {
         if (request.stanza.name == IQ.NAME) {
-            requests[key(request.stanza)] = request
+            lock.withLock {
+                requests[key(request.stanza)] = request
+            }
         }
     }
 
@@ -46,13 +50,15 @@ class RequestsManager {
     fun getRequest(response: Element): Request<*, *>? {
         val id = key(response)
 
-        val request = requests[id] ?: return null
+        return lock.withLock {
+            val request = requests[id] ?: return@withLock null
 
-        if (verify(request, response)) {
-            requests.remove(id)
-            return request
-        } else {
-            return null
+            if (verify(request, response)) {
+                requests.remove(id)
+                return@withLock request
+            } else {
+                return@withLock null
+            }
         }
     }
 
@@ -85,10 +91,15 @@ class RequestsManager {
     fun timeoutAll(maxCreationTimestamp: Instant = Instant.DISTANT_FUTURE) {
         log.info { "Timeout all waiting requests" }
 
-        requests.entries.filter {
-            it.value.creationTimestamp < maxCreationTimestamp
-        }.forEach {
-            requests.remove(it.key)
+        val toTimeout = lock.withLock {
+            requests.entries.filter {
+                it.value.creationTimestamp < maxCreationTimestamp
+            };
+        }
+        toTimeout.forEach {
+            lock.withLock {
+                requests.remove(it.key)
+            }
             // TODO: somehow this causes exception on iOS... is this thread safe??
             if (!it.value.isCompleted) {
                 execute { it.value.markTimeout() }
@@ -98,18 +109,22 @@ class RequestsManager {
 
     fun findOutdated() {
         val now = Clock.System.now()
-        val toRemove = requests.entries.filter {
-            it.value.isCompleted || it.value.creationTimestamp + it.value.timeoutDelay <= now
+        val toRemove = lock.withLock {
+            requests.entries.filter {
+                it.value.isCompleted || it.value.creationTimestamp + it.value.timeoutDelay <= now
+            }
         }
         toRemove.forEach { (key, request) ->
-            requests.remove(key)
+            lock.withLock {
+                requests.remove(key)
+            }
             if (request.creationTimestamp + request.timeoutDelay <= now) {
                 execute(request::markTimeout)
             }
         }
     }
 
-    fun getWaitingRequestsSize(): Int = requests.size
-    fun getRequestsIDs(): String = requests.values.map { it.id }.joinToString { it }
+    fun getWaitingRequestsSize(): Int = lock.withLock { requests.size }
+    fun getRequestsIDs(): String = lock.withLock { requests.values.map { it.id }.joinToString { it } }
 
 }
