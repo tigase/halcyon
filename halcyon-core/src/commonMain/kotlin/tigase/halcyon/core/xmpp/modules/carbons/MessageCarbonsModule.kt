@@ -121,9 +121,9 @@ class MessageCarbonsModule(override val context: Context, private val forwardHan
 	private fun processSent(carbon: Element) {
 		val msg = carbon.getChildrenNS("forwarded", FORWARD_XMLNS)?.getChildren(Message.NAME)?.firstOrNull()
 			?.asStanza<Message>() ?: return
-
-		messageModule?.process(msg)
-//		forwardHandler?.invoke(msg)
+		
+		forwardHandler.invoke(msg)
+		//messageModule?.process(msg)
 		context.eventBus.fire(CarbonEvent.Sent(msg.from, msg))
 	}
 

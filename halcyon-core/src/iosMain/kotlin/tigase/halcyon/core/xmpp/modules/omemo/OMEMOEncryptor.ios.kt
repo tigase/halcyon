@@ -27,7 +27,8 @@ actual object OMEMOEncryptor {
         store: SignalProtocolStore,
         session: OMEMOSession
     ): ByteArray? {
-        val iterator = keyElements.filter { it.attributes["rid"]?.toInt() == session.localRegistrationId }.iterator()
+        val localKeys = keyElements.filter { it.attributes["rid"]?.toInt() == session.localRegistrationId };
+        val iterator = localKeys.iterator()
         val sessionCipher =
             session.ciphers[senderAddr] ?: let {
                 SessionCipher(store, senderAddr)
