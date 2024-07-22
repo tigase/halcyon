@@ -21,21 +21,24 @@ import kotlinx.cinterop.*
 import platform.darwin.*
 import tigase.halcyon.core.logger.Level
 import tigase.halcyon.core.logger.LoggerFactory
+import tigase.halcyon.core.utils.Lock
 import kotlin.concurrent.AtomicReference
 
 @OptIn(kotlinx.cinterop.ExperimentalForeignApi::class)
 class DnsResolver {
 
 	private val log = LoggerFactory.logger("tigase.halcyon.core.connector.socket.DnsResolver")
+	private val lock = Lock();
 	private var callback: ((Result<List<SrvRecord>>) -> Unit)? = null
-	private var sdRef: DNSServiceRefVar = memScoped { alloc<DNSServiceRefVar>(); }
+	//private var sdRef: DNSServiceRefVar = memScoped { alloc<DNSServiceRefVar>(); }
 	private var results: AtomicReference<List<SrvRecord>> =
 		AtomicReference<List<SrvRecord>>(emptyList<SrvRecord>())
-	private val stableRef = StableRef.create(this)
+	private var stableRef: StableRef<DnsResolver>? = null;
 	private var queue = dispatch_queue_create("dns_resolver_queue", null)
 	private var domain: String = ""
 
 	fun resolve(domain: String, completionHandler: (Result<List<SrvRecord>>) -> Unit) {
+		stableRef = StableRef.create(this)
 		this.domain = domain
 		this.callback = completionHandler
 		results.value = emptyList()
@@ -43,25 +46,29 @@ class DnsResolver {
 			log.finest("Resolving SRV records for domain ${domain}")
 		}
 		//this.freeze();
-		val result = DNSServiceQueryRecord(
-			this.sdRef.ptr,
-			kDNSServiceFlagsReturnIntermediates,
-			kDNSServiceInterfaceIndexAny.toUInt(),
-			"_xmpp-client._tcp." + domain,
-			kDNSServiceType_SRV.toUShort(),
-			kDNSServiceClass_IN.toUShort(), staticCFunction(::QueryRecordCallback),
-			stableRef.asCPointer()
-		)
+		val (result, sdRef) = memScoped {
+			val sdRef = alloc<DNSServiceRefVar>()
+			val result = DNSServiceQueryRecord(
+				sdRef.ptr,
+				kDNSServiceFlagsReturnIntermediates,
+				kDNSServiceInterfaceIndexAny.toUInt(),
+				"_xmpp-client._tcp." + domain,
+				kDNSServiceType_SRV.toUShort(),
+				kDNSServiceClass_IN.toUShort(), staticCFunction(::QueryRecordCallback),
+				stableRef?.asCPointer()
+			)
+			return@memScoped Pair(result, sdRef.value);
+		}
 		if (result == kDNSServiceErr_NoError) {
-			val dnsSocket = DNSServiceRefSockFD(this.sdRef.value)
+			val dnsSocket = DNSServiceRefSockFD(sdRef)
 			if (dnsSocket == -1) {
-				fail()
+				DNSServiceRefDeallocate(sdRef)
+				failed("could not allocate DNS socket!")
 				return
 			}
 			log.finest("using dns socket: " + dnsSocket)
 
-			val sdRef = this.sdRef
-			val stableRef = this.stableRef
+			//val stableRef = this.stableRef
 			val readSource = dispatch_source_create(
 				DISPATCH_SOURCE_TYPE_READ,
 				handle = dnsSocket.toULong(),
@@ -70,48 +77,57 @@ class DnsResolver {
 			)//dispatch_get_main_queue());
 			val block: () -> Unit = {
 				log.finest("processing result..")
-				val res = DNSServiceProcessResult(sdRef.value)
+				val res = DNSServiceProcessResult(sdRef)
 				log.finest("result processed: " + res)
 				if (res != kDNSServiceErr_NoError) {
-					stableRef.get()
-						.fail()
+					this.failed(res);
+					//stableRef?.get()?.failed(res);
 					//this.fail();
 				}
 			}
 			//block.freeze();
 			dispatch_source_set_event_handler(readSource, block)
 			dispatch_source_set_cancel_handler(readSource) {
-				DNSServiceRefDeallocate(sdRef.value)
+				DNSServiceRefDeallocate(sdRef)
 			}
 			//this.freeze();
 			dispatch_resume(readSource)
 		} else {
-			fail()
+			DNSServiceRefDeallocate(sdRef)
+			failed("DNSServiceQueryRecord returned error: " + result);
 		}
 	}
 
-	private fun fail() {
-		failed()
+	fun failed(errorCode: Int) {
+		failed("DNS resolution error: $errorCode");
 	}
-
-	fun failed() {
-		results.value = emptyList()
-		callback?.invoke(Result.failure(DnsException(message = "DNS resolution failed!")))
-		stableRef.dispose()
+	
+	fun failed(reason: String) {
+		lock.withLock {
+			results.value = emptyList()
+			callback?.invoke(Result.failure(DnsException(message = "DNS resolution failed! Reason: " + reason)))
+			stableRef?.dispose()
+			stableRef = null;
+		}
 	}
 
 	fun succeeded() {
-		val results = this.results.value.sortedBy { it.priority }
-		callback?.invoke(Result.success(results))
-		//callback = null;
-		stableRef.dispose()
+		lock.withLock {
+			val results = this.results.value.sortedBy { it.priority }
+			callback?.invoke(Result.success(results))
+			//callback = null;
+			stableRef?.dispose()
+			stableRef = null;
+		}
 	}
 
 	fun addRecord(record: SrvRecord) {
-		var records = ArrayList<SrvRecord>()
-		records += results.value
-		records += record
-		results.value = records
+		lock.withLock {
+			var records = ArrayList<SrvRecord>()
+			records += results.value
+			records += record
+			results.value = records
+		}
 	}
 
 	class SrvRecord(val port: UInt, val weight: UInt, val priority: UInt, val target: String) {
@@ -194,7 +210,7 @@ fun QueryRecordCallback(
 	when (errorCode) {
 		kDNSServiceErr_NoError -> {
 			if (rrtype != kDNSServiceType_SRV.toUShort()) {
-				resolver.failed()
+				resolver.failed(errorCode)
 				return
 			}
 			rdata?.reinterpret<UInt8Var>()
@@ -213,6 +229,6 @@ fun QueryRecordCallback(
 			return
 		}
 
-		else -> resolver.failed()
+		else -> resolver.failed(errorCode)
 	}
 }

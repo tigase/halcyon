@@ -94,15 +94,15 @@ class RequestsManager {
         val toTimeout = lock.withLock {
             requests.entries.filter {
                 it.value.creationTimestamp < maxCreationTimestamp
-            };
+            }.map { Pair(it.key, it.value) }
         }
-        toTimeout.forEach {
+        toTimeout.forEach { (key,value) ->
             lock.withLock {
-                requests.remove(it.key)
+                requests.remove(key)
             }
             // TODO: somehow this causes exception on iOS... is this thread safe??
-            if (!it.value.isCompleted) {
-                execute { it.value.markTimeout() }
+            if (!value.isCompleted) {
+                execute { value.markTimeout() }
             }
         }
     }
@@ -112,7 +112,7 @@ class RequestsManager {
         val toRemove = lock.withLock {
             requests.entries.filter {
                 it.value.isCompleted || it.value.creationTimestamp + it.value.timeoutDelay <= now
-            }
+            }.map { Pair(it.key, it.value) }
         }
         toRemove.forEach { (key, request) ->
             lock.withLock {
