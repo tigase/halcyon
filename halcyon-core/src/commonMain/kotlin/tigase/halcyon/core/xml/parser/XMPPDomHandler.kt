@@ -178,7 +178,9 @@ class XMPPDomHandler(
 	override fun restoreParserState(): Any? = parserState
 
 	override fun elementCData(cdata: String) {
-		elementBuilder!!.value(cdata)
+		elementBuilder?.value(cdata) ?: if (cdata.isNotBlank()) {
+			log.finest { "Other XML elementCData without element: $cdata" }
+		} else {}
 	}
 
 	override fun saveParserState(state: Any?) {

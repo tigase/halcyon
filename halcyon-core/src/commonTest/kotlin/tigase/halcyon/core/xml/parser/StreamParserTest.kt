@@ -18,10 +18,8 @@
 package tigase.halcyon.core.xml.parser
 
 import tigase.halcyon.core.xml.Element
-import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertNotEquals
-import kotlin.test.fail
+import tigase.halcyon.core.xml.XmlException
+import kotlin.test.*
 
 
 class StreamParserTest {
@@ -129,6 +127,33 @@ class StreamParserTest {
 		println(tmp.getAsString())
 		assertEquals("iq", tmp.name)
 		assertEquals("9", tmp.getChildrenNS("a", "http://jabber.org/protocol/ack")?.value)
+	}
+
+	@Test
+	fun testStreamParserTestWhitespaces() {
+		var e: Throwable? = null;
+		val parser = object : StreamParser() {
+			override fun onParseError(errorMessage: String) {
+				e = XmlException(errorMessage)
+			}
+
+			override fun onNextElement(element: Element) {
+				println("stream element: $element")
+			}
+
+			override fun onStreamClosed() {
+				println("stream closed")
+			}
+
+			override fun onStreamStarted(attrs: Map<String, String>) {
+				println("stream opened")
+			}
+		}
+
+		parser.parse("<stream:stream>\n" +
+				"<iq/>\n" +
+				"</stream:stream>")
+		assertNull(e);
 	}
 
 }
