@@ -18,12 +18,15 @@
 package tigase.halcyon.core
 
 import tigase.halcyon.core.logger.LoggerFactory
+import tigase.halcyon.core.utils.Lock
 
 class InternalDataStore {
 
 	private val log = LoggerFactory.logger("tigase.halcyon.core.SessionObject")
 
 	private val properties: MutableMap<String, Entry> = HashMap()
+
+	private val lock = Lock();
 
 	fun clear() {
 		clear(Int.MAX_VALUE)
@@ -37,19 +40,16 @@ class InternalDataStore {
 		val scopes = Scope.values()
 			.filter { s -> s.ordinal <= ordinal }
 			.toTypedArray()
-		val iterator = this.properties.entries.iterator()
 		log.fine { "Clearing ${scopes.asList()}" }
-		while (iterator.hasNext()) {
-			val entry = iterator.next()
-			if (scopes.contains(entry.value.scope)) {
-				iterator.remove()
-			}
+		lock.withLock {
+			val toRemove = this.properties.entries.filter { scopes.contains(it.value.scope) }.map { it.key };
+			toRemove.onEach { this.properties.remove(it) }
 		}
 	}
 
 	@Suppress("UNCHECKED_CAST")
 	fun <T> getData(scope: Scope?, key: String): T? {
-		val entry = this.properties[key]
+		val entry = lock.withLock { this.properties[key] }
 		return if (entry == null) {
 			null
 		} else if (scope == null || scope == entry.scope) {
@@ -64,10 +64,12 @@ class InternalDataStore {
 	}
 
 	fun setData(scope: Scope, key: String, value: Any?): InternalDataStore {
-		if (value == null) {
-			this.properties.remove(key)
-		} else {
-			this.properties[key] = Entry(scope, value)
+		lock.withLock {
+			if (value == null) {
+				this.properties.remove(key)
+			} else {
+				this.properties[key] = Entry(scope, value)
+			}
 		}
 		return this
 	}
