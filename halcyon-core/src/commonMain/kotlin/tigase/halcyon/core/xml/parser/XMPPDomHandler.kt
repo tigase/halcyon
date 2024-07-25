@@ -20,182 +20,187 @@ package tigase.halcyon.core.xml.parser
 import tigase.halcyon.core.logger.LoggerFactory
 import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xml.ElementBuilder
+import tigase.halcyon.core.xml.XmlException
 
 class XMPPDomHandler(
-	val onNextElement: (Element) -> Unit,
-	val onStreamStarted: (Map<String, String>) -> Unit,
-	val onStreamClosed: () -> Unit,
-	val onParseError: (String) -> Unit,
+    val onNextElement: (Element) -> Unit,
+    val onStreamStarted: (Map<String, String>) -> Unit,
+    val onStreamClosed: () -> Unit,
+    val onParseError: (String) -> Unit,
 ) : SimpleHandler {
 
-	companion object {
+    companion object {
 
-		private val ELEM_STREAM_STREAM = "stream:stream"
+        private val ELEM_STREAM_STREAM = "stream:stream"
 
-	}
+    }
 
-	private val log = LoggerFactory.logger("tigase.halcyon.core.xml.parser.XMPPDomHandler", false)
+    private val log = LoggerFactory.logger("tigase.halcyon.core.xml.parser.XMPPDomHandler", false)
 
-	private val namespaces = HashMap<String, String>()
+    private val namespaces = HashMap<String, String>()
 
-	private var parserState: Any? = null
+    private var parserState: Any? = null
 
-	private var elementBuilder: ElementBuilder? = null
+    private var elementBuilder: ElementBuilder? = null
 
-	override fun endElement(name: String): Boolean {
-		log.finest { "End element name: $name" }
+    override fun endElement(name: String): Boolean {
+        log.finest { "End element name: $name" }
 
-		val tmpName = name
+        val tmpName = name
 
-		if (tmpName == ELEM_STREAM_STREAM) {
-			onStreamClosed.invoke()
-			return true
-		}
+        if (tmpName == ELEM_STREAM_STREAM) {
+            onStreamClosed.invoke()
+            return true
+        }
 
-		val idx = tmpName.indexOf(':');
-		var elemName = tmpName;
+        val idx = tmpName.indexOf(':')
+		var elemName = tmpName
 		if (idx > 0) {
-			val tmpNamePrefix = tmpName.substring(0, idx);
+            val tmpNamePrefix = tmpName.substring(0, idx)
 			if (namespaces.containsKey(tmpNamePrefix)) {
-				elemName = tmpName.substring(idx + 1);
+                elemName = tmpName.substring(idx + 1)
 			}
-		}
+        }
 
-		if (elementBuilder != null && elementBuilder!!.onTop && elementBuilder!!.currentElement.name == elemName) {
-			val element = elementBuilder!!.build()
-			elementBuilder = null
-			onNextElement.invoke(element)
-			return true
-		} else if (elementBuilder != null && elementBuilder!!.currentElement.name == elemName) {
-			elementBuilder!!.up()
-			return true
-		}
+        if (elementBuilder != null && elementBuilder!!.onTop && elementBuilder!!.currentElement.name == elemName) {
+            val element = elementBuilder!!.build()
+            elementBuilder = null
+            onNextElement.invoke(element)
+            return true
+        } else if (elementBuilder != null && elementBuilder!!.currentElement.name == elemName) {
+            elementBuilder!!.up()
+            return true
+        }
 
-		return false
-	}
+        return false
+    }
 
-	override fun startElement(name: String, attrNames: Array<String?>?, attrValues: Array<String?>?) {
-		log.finest {
-			"""Start element name: $name
+    override fun startElement(
+        name: String,
+        attrNames: Array<String?>?,
+        attrValues: Array<String?>?
+    ) {
+        log.finest {
+            """Start element name: $name
 			Element attributes names: ${attrNames?.joinToString { " " }}
 			Element attributes values: ${attrValues?.joinToString { " " }}	
 		""".trimIndent()
-		}
+        }
 
-		// Look for 'xmlns:' declarations:
-		if (attrNames != null) {
-			for (i in attrNames.indices) {
+        // Look for 'xmlns:' declarations:
+        if (attrNames != null) {
+            for (i in attrNames.indices) {
 
-				// Exit the loop as soon as we reach end of attributes set
-				if (attrNames[i] == null) {
-					break
-				}
+                // Exit the loop as soon as we reach end of attributes set
+                if (attrNames[i] == null) {
+                    break
+                }
 
-				if (attrNames[i].toString()
-						.startsWith("xmlns:")
-				) {
+                if (attrNames[i].toString()
+                        .startsWith("xmlns:")
+                ) {
 
-					// TODO should use a StringCache instead of intern() to
-					// avoid potential
-					// DOS by exhausting permgen
-					namespaces.put(
-						attrNames[i]!!.substring("xmlns:".length, attrNames[i]!!.length), attrValues!![i].toString()
-					)
+                    // TODO should use a StringCache instead of intern() to
+                    // avoid potential
+                    // DOS by exhausting permgen
+                    namespaces.put(
+                        attrNames[i]!!.substring("xmlns:".length, attrNames[i]!!.length),
+                        attrValues!![i].toString()
+                    )
 
-					log.finest { "Namespace found: ${attrValues[i].toString()}" }
-				} // end of if (att_name.startsWith("xmlns:"))
-			} // end of for (String att_name : attnames)
-		} // end of if (attr_names != null)
+                    log.finest { "Namespace found: ${attrValues[i].toString()}" }
+                } // end of if (att_name.startsWith("xmlns:"))
+            } // end of for (String att_name : attnames)
+        } // end of if (attr_names != null)
 
-		var tmpName = name
+        var tmpName = name
 
-		if (tmpName == ELEM_STREAM_STREAM) {
-			val attribs = HashMap<String, String>()
+        if (tmpName == ELEM_STREAM_STREAM) {
+            val attribs = HashMap<String, String>()
 
-			if (attrNames != null) {
-				for (i in attrNames.indices) {
-					if (attrNames[i] != null && attrValues!![i] != null) {
-						attribs[attrNames[i].toString()] = attrValues[i].toString()
-					} else {
-						break
-					} // end of else
-				} // end of for (int i = 0; i < attr_names.length; i++)
-			} // end of if (attr_name != null)
+            if (attrNames != null) {
+                for (i in attrNames.indices) {
+                    if (attrNames[i] != null && attrValues!![i] != null) {
+                        attribs[attrNames[i].toString()] = attrValues[i].toString()
+                    } else {
+                        break
+                    } // end of else
+                } // end of for (int i = 0; i < attr_names.length; i++)
+            } // end of if (attr_name != null)
 
-			onStreamStarted(attribs)
+            onStreamStarted(attribs)
 
-			return
-		} // end of if (tmp_name.equals(ELEM_STREAM_STREAM))
+            return
+        } // end of if (tmp_name.equals(ELEM_STREAM_STREAM))
 
-		var new_xmlns: String? = null
-		var prefix: String? = null
-		var tmpNamePrefix: String? = null
-		val idx = tmpName.indexOf(':')
+        var new_xmlns: String? = null
+        var prefix: String? = null
+        var tmpNamePrefix: String? = null
+        val idx = tmpName.indexOf(':')
 
-		if (idx > 0) {
-			tmpNamePrefix = tmpName.substring(0, idx)
+        if (idx > 0) {
+            tmpNamePrefix = tmpName.substring(0, idx)
 
-			log.finest { "Found prefixed element name, prefix: $tmpNamePrefix" }
-		}
+            log.finest { "Found prefixed element name, prefix: $tmpNamePrefix" }
+        }
 
-		if (tmpNamePrefix != null) {
-			for (pref in namespaces.keys) {
-				if (tmpNamePrefix == pref) {
-					new_xmlns = namespaces.get(pref)
-					tmpName = tmpName.substring(pref.length + 1, tmpName.length)
-					prefix = pref
+        if (tmpNamePrefix != null) {
+            for (pref in namespaces.keys) {
+                if (tmpNamePrefix == pref) {
+                    new_xmlns = namespaces.get(pref)
+                    tmpName = tmpName.substring(pref.length + 1, tmpName.length)
+                    prefix = pref
 
-					log.finest { "new_xmlns = $new_xmlns" }
-				} // end of if (tmp_name.startsWith(xmlns))
-			} // end of for (String xmlns: namespaces.keys())
-		}
+                    log.finest { "new_xmlns = $new_xmlns" }
+                } // end of if (tmp_name.startsWith(xmlns))
+            } // end of for (String xmlns: namespaces.keys())
+        }
 
-		val attribs = mutableMapOf<String, String>()
-		if (attrNames != null) {
-			for (i in 0 until attrNames.size) {
-				val k = attrNames[i]
-				val v = attrValues!![i]
-				if (k != null && v != null) attribs[k.toString()] = v.toString()
-			}
-		}
+        val attribs = mutableMapOf<String, String>()
+        if (attrNames != null) {
+            for (i in 0 until attrNames.size) {
+                val k = attrNames[i]
+                val v = attrValues!![i]
+                if (k != null && v != null) attribs[k.toString()] = v.toString()
+            }
+        }
 
-		if (elementBuilder != null) {
-			elementBuilder!!.child(tmpName)
-		} else {
-			elementBuilder = ElementBuilder.create(tmpName)
-		}
+        if (elementBuilder != null) {
+            elementBuilder!!.child(tmpName)
+        } else {
+            elementBuilder = ElementBuilder.create(tmpName)
+        }
 
-		if (new_xmlns != null) {
-			elementBuilder!!.xmlns(new_xmlns)
-			attribs.remove("xmlns:" + prefix!!)
-			log.finest { "new_xmlns assigned: ${elementBuilder!!.currentElement.getAsString()}" }
-		}
+        if (new_xmlns != null) {
+            elementBuilder!!.xmlns(new_xmlns)
+            attribs.remove("xmlns:" + prefix!!)
+            log.finest { "new_xmlns assigned: ${elementBuilder!!.currentElement.getAsString()}" }
+        }
 
-		elementBuilder!!.attributes(attribs)
+        elementBuilder!!.attributes(attribs)
 
-	}
+    }
 
-	override fun restoreParserState(): Any? = parserState
+    override fun restoreParserState(): Any? = parserState
 
-	override fun elementCData(cdata: String) {
-		elementBuilder?.value(cdata) ?: if (cdata.isNotBlank()) {
-			log.finest { "Other XML elementCData without element: $cdata" }
-		} else {}
-	}
+    override fun elementCData(cdata: String) {
+        if (elementBuilder == null && cdata.isBlank()) return
+        elementBuilder?.value(cdata) ?: throw XmlException("Invalid characters between tags.")
+    }
 
-	override fun saveParserState(state: Any?) {
-		this.parserState = state
-	}
+    override fun saveParserState(state: Any?) {
+        this.parserState = state
+    }
 
-	override fun otherXML(other: String) {
-		log.finest { "Other XML content: $other" }
-	}
+    override fun otherXML(other: String) {
+        log.finest { "Other XML content: $other" }
+    }
 
-	override fun error(errorMessage: String) {
-		log.warning { "XML content parse error." }
+    override fun error(errorMessage: String) {
+        log.warning { "XML content parse error." }
 
-		log.fine { errorMessage }
+        log.fine { errorMessage }
 
-		onParseError.invoke(errorMessage)
-	}
+        onParseError.invoke(errorMessage)
+    }
 }
