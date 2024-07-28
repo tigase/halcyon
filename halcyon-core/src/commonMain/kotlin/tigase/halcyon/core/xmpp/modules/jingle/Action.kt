@@ -23,6 +23,7 @@ enum class Action(val value: String) {
 	ContentAdd("content-add"),
 	ContentModify("content-modify"),
 	ContentReject("content-reject"),
+	ContentRemove("content-remove"),
 	DescriptionInfo("description-info"),
 	SecurityInfo("security-info"),
 	SessionAccept("session-accept"),

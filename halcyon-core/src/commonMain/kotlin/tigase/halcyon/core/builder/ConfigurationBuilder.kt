@@ -25,7 +25,6 @@ import tigase.halcyon.core.xmpp.modules.pubsub.PubSubModule
 import tigase.halcyon.core.xmpp.modules.receipts.DeliveryReceiptsModule
 import tigase.halcyon.core.xmpp.modules.roster.RosterModule
 import tigase.halcyon.core.xmpp.modules.serviceFinder.ServiceFinderModule
-import tigase.halcyon.core.xmpp.modules.sm.StreamManagementModule
 import tigase.halcyon.core.xmpp.modules.spam.BlockingCommandModule
 import tigase.halcyon.core.xmpp.modules.uniqueId.UniqueStableStanzaIdModule
 import tigase.halcyon.core.xmpp.modules.vcard.VCardModule
@@ -209,4 +208,5 @@ fun ConfigurationBuilder.installAllModules() {
 	this.install(InBandRegistrationModule)
 	this.install(FileUploadModule)
 	this.install(ServiceFinderModule)
+	this.install(ExternalServiceDiscoveryModule)
 }

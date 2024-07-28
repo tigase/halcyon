@@ -17,20 +17,64 @@
  */
 package tigase.halcyon.core.xmpp.modules.jingle
 
+import kotlinx.datetime.Clock
 import tigase.halcyon.core.logger.LoggerFactory
 import tigase.halcyon.core.xmpp.nextUIDLongs
 import kotlin.jvm.JvmStatic
 
-class SDP(val id: String, val contents: List<Content>, private val bundle: List<String>) {
+enum class SDPDirection {
+	incoming,
+	outgoing
+}
 
-	fun toString(sid: String): String {
+
+class SDP(val id: String, val contents: List<Content>, val bundle: List<String>) {
+
+	enum class StreamType {
+		inactive,
+		sendonly,
+		recvonly,
+		sendrecv;
+
+		companion object {
+			val values = enumValues<StreamType>();
+			val SDP_LINES = run {
+				val result = HashMap<String, StreamType>()
+				for (v in values) {
+					result.put("a=${v.name}", v);
+				}
+				result
+			}
+			fun from(lines: List<String>): StreamType? {
+				return lines.firstOrNull { SDP_LINES.containsKey(it) }?.let { return SDP_LINES[it] }
+			}
+		}
+
+		fun senders(localRole: Content.Creator): Content.Senders = when (this) {
+			inactive -> Content.Senders.none
+			sendrecv -> Content.Senders.both
+			sendonly -> when (localRole) {
+				Content.Creator.initiator -> Content.Senders.initiator
+				Content.Creator.responder -> Content.Senders.responder
+			}
+			recvonly -> when (localRole) {
+				Content.Creator.responder -> Content.Senders.initiator
+				Content.Creator.initiator -> Content.Senders.responder
+			}
+		}
+	}
+
+	constructor(contents: List<Content>, bundle: List<String>) : this("${Clock.System.now().epochSeconds}", contents, bundle) {
+	}
+
+	fun toString(sid: String, localRole: Content.Creator, direction: SDPDirection): String {
 		val lines: MutableList<String> = mutableListOf("v=0", "o=- $sid $id IN IP4 0.0.0.0", "s=-", "t=0 0")
 		if (bundle.isNotEmpty()) {
 			val t = listOf("a=group:BUNDLE")
 			lines += ((t + bundle).joinToString(" "))
 		}
 
-		lines += contents.map { it.toSDP() }
+		lines += contents.map { it.toSDP(localRole, direction) }
 
 		return lines.joinToString("\r\n") + "\r\n"
 	}
@@ -40,7 +84,7 @@ class SDP(val id: String, val contents: List<Content>, private val bundle: List<
 		val log = LoggerFactory.logger("tigase.halcyon.core.xmpp.modules.jingle.SDP")
 
 		@JvmStatic
-		fun parse(sdp: String, creator: Content.Creator): Pair<SDP, String>? {
+		fun parse(sdp: String, creatorProvider: (String) -> Content.Creator, localRole: Content.Creator): Pair<SDP, String>? {
 			val parts = sdp.dropLast(2)
 				.split("\r\nm=")
 			val media = parts.drop(1)
@@ -63,7 +107,7 @@ class SDP(val id: String, val contents: List<Content>, private val bundle: List<
 
 				log.finest("got session with id=$id and sid=$sid and bundle=$bundle")
 
-				val contents = media.map { Content.parse(it, creator) }
+				val contents = media.map { Content.parse(it, creatorProvider, localRole) }
 				log.finest("contents: $contents")
 
 				return Pair(SDP(id, contents, bundle), sid)
@@ -74,7 +118,7 @@ class SDP(val id: String, val contents: List<Content>, private val bundle: List<
 
 }
 
-fun Content.Companion.parse(sdp: String, creator: Content.Creator): Content {
+fun Content.Companion.parse(sdp: String, creatorProvider: (String) -> Content.Creator, localRole: Content.Creator): Content {
 	val log = LoggerFactory.logger("tigase.halcyon.core.xmpp.modules.jingle.Content")
 	log.finest("parsing sdp: $sdp")
 
@@ -95,6 +139,8 @@ fun Content.Companion.parse(sdp: String, creator: Content.Creator): Content {
 		?.drop("a=ice-pwd:".length)
 	val ufrag = lines.firstOrNull { it.startsWith("a=ice-ufrag:") }
 		?.drop("a=ice-ufrag:".length)
+
+	val creator = creatorProvider(name)
 
 	val payloads = line.subList(3, line.size - 1)
 		.map { id ->
@@ -161,6 +207,8 @@ fun Content.Companion.parse(sdp: String, creator: Content.Creator): Content {
 	val rtcpMux = lines.indexOf("a=rtcp-mux") >= 0
 	val description = Description(mediaName, null, payloads, null, encryptions, rtcpMux, ssrcs, ssrcGroups, hdrExts)
 
+	val senders: Content.Senders? = SDP.StreamType.from(lines)?.senders(localRole);
+
 	val candidates = lines.filter { it.startsWith("a=candidate:") }
 		.map { Candidate.parse(it) }
 		.filterNotNull()
@@ -179,10 +227,10 @@ fun Content.Companion.parse(sdp: String, creator: Content.Creator): Content {
 		?.firstOrNull()
 	val transport = Transport(ufrag, pwd, candidates, fingerprint)
 
-	return Content(creator, name, description, listOf(transport))
+	return Content(creator, senders, name, description, listOf(transport))
 }
 
-fun Content.toSDP(): String {
+fun Content.toSDP(localRole: Content.Creator, direction: SDPDirection): String {
 	val lines = mutableListOf<String>()
 	description?.let {
 		lines += "m=${it.media} 1 ${
@@ -212,7 +260,7 @@ fun Content.toSDP(): String {
 			}
 		}
 
-	lines += "a=sendrecv"
+	lines += "a=${(senders ?: Content.Senders.both).streamType(localRole, direction).name}"
 	lines += "a=mid:$name"
 	lines += "a=ice-options:trickle"
 

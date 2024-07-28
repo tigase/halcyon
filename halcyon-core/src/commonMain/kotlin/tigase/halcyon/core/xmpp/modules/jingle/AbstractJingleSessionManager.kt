@@ -18,34 +18,28 @@
 package tigase.halcyon.core.xmpp.modules.jingle
 
 import tigase.halcyon.core.AbstractHalcyon
+import tigase.halcyon.core.Context
 import tigase.halcyon.core.eventbus.Event
 import tigase.halcyon.core.eventbus.EventDefinition
 import tigase.halcyon.core.eventbus.handler
 import tigase.halcyon.core.logger.LoggerFactory
-import tigase.halcyon.core.xmpp.BareJID
-import tigase.halcyon.core.xmpp.JID
-import tigase.halcyon.core.xmpp.bareJID
+import tigase.halcyon.core.utils.Lock
+import tigase.halcyon.core.xmpp.*
 import tigase.halcyon.core.xmpp.modules.presence.ContactChangeStatusEvent
-import tigase.halcyon.core.xmpp.resource
 import tigase.halcyon.core.xmpp.stanzas.PresenceType
 
 abstract class AbstractJingleSessionManager<S : AbstractJingleSession>(
-	name: String, private val sessionFactory: SessionFactory<S>,
+	name: String
 ) : Jingle.SessionManager {
+
+	abstract fun createSession(context: Context, jid: JID, sid: String, role: Content.Creator, initiationType: InitiationType): S
+	abstract fun reportIncomingCall(session: S, media: List<Media>)
 
 	private val log = LoggerFactory.logger(name)
 
 	protected var sessions: List<S> = emptyList()
-
-	private val jingleEventHandler = JingleEvent.handler { event ->
-		when (event.action) {
-			Action.SessionInitiate -> sessionInitiated(event)
-			Action.SessionAccept -> sessionAccepted(event)
-			Action.TransportInfo -> transportInfo(event)
-			Action.SessionTerminate -> sessionTerminated(event)
-			else -> log.warning { "unsupported event: " + event.action.name }
-		}
-	}
+	private val lock = Lock();
+	
 	private val contactChangeStatusEventHandler = handler<ContactChangeStatusEvent> { event ->
 		if (event.lastReceivedPresence.type == PresenceType.Unavailable) {
 			val toClose =
@@ -53,131 +47,122 @@ abstract class AbstractJingleSessionManager<S : AbstractJingleSession>(
 			toClose.forEach { it.terminate(TerminateReason.Success) }
 		}
 	}
-	private val jingleMessageInitiationEvent = JingleMessageInitiationEvent.handler { event ->
-		val account = event.context.boundJID!!.bareJID
-		when (event.action) {
-			is MessageInitiationAction.Propose -> {
-				if (session(account, event.jid, event.action.id) == null) {
-					val session = open(
-						event.context.getModule(JingleModule.TYPE),
-						account,
-						event.jid,
-						event.action.id,
-						Content.Creator.Responder,
-						InitiationType.Message
-					)
-					val media = event.action.descriptions.filter { isDesciptionSupported(it) }.map { it.media }
-					fireIncomingSessionEvent(event.context, session, media)
-				}
-			}
 
-			is MessageInitiationAction.Retract -> sessionTerminated(account, event.jid, event.action.id)
-			is MessageInitiationAction.Accept -> sessionTerminated(account, event.action.id)
-			is MessageInitiationAction.Reject -> sessionTerminated(account, event.jid, event.action.id)
-			is MessageInitiationAction.Proceed -> session(account, event.jid, event.action.id)?.accepted(event.jid)
-		}
-	}
-
-	abstract fun isDesciptionSupported(descrition: MessageInitiationDescription): Boolean
+	abstract fun isDescriptionSupported(descrition: MessageInitiationDescription): Boolean
 
 	fun register(halcyon: AbstractHalcyon) {
-		halcyon.eventBus.register(JingleEvent, this.jingleEventHandler)
 		halcyon.eventBus.register(ContactChangeStatusEvent, this.contactChangeStatusEventHandler)
-		halcyon.eventBus.register(JingleMessageInitiationEvent, this.jingleMessageInitiationEvent)
 	}
 
 	fun unregister(halcyon: AbstractHalcyon) {
-		halcyon.eventBus.unregister(JingleEvent, this.jingleEventHandler)
 		halcyon.eventBus.unregister(ContactChangeStatusEvent, this.contactChangeStatusEventHandler)
-		halcyon.eventBus.unregister(JingleMessageInitiationEvent, this.jingleMessageInitiationEvent)
 	}
 
-	override fun activateSessionSid(account: BareJID, with: JID): String? {
-		return session(account, with, null)?.sid
+	fun session(context: Context, jid: JID, sid: String?): S? {
+		return context.boundJID?.bareJID?.let { account ->
+			session(account, jid, sid);
+		}
 	}
 
 	fun session(account: BareJID, jid: JID, sid: String?): S? =
-		sessions.firstOrNull { it.account == account && (sid == null || it.sid == sid) && (it.jid == jid || (it.jid.resource == null && it.jid.bareJID == jid.bareJID)) }
+		lock.withLock {
+			sessions.firstOrNull { it.account == account && (sid == null || it.sid == sid) && (it.jid == jid || (it.jid.resource == null && it.jid.bareJID == jid.bareJID)) }
+		}
 
 	fun open(
-		jingleModule: JingleModule,
-		account: BareJID,
+		context: Context,
 		jid: JID,
 		sid: String,
 		role: Content.Creator,
 		initiationType: InitiationType,
 	): S {
-		val session = sessionFactory.createSession(this, jingleModule, account, jid, sid, role, initiationType)
-		sessions = sessions + session
-		return session
-	}
-
-	fun close(account: BareJID, jid: JID, sid: String): S? = session(account, jid, sid)?.let { session ->
-		sessions = sessions - session
-		return session
-	}
-
-	fun close(session: S) {
-		close(session.account, session.jid, session.sid)
-	}
-
-	protected fun sessionInitiated(event: JingleEvent) {
-		val account = event.context.boundJID!!.bareJID
-		session(account, event.jid, event.sid)?.accepted(event.contents, event.bundle) ?: run {
-			val session = open(
-				event.context.getModule(JingleModule.TYPE),
-				account,
-				event.jid,
-				event.sid,
-				Content.Creator.Responder,
-				InitiationType.Iq
-			)
-			session.initiated(event.contents, event.bundle)
-			fireIncomingSessionEvent(event.context,
-									 session,
-									 event.contents.map { it.description?.media }.filterNotNull())
+		return lock.withLock {
+			val session = this.createSession(context, jid, sid, role, initiationType);
+			sessions = sessions + session
+			return@withLock session
 		}
 	}
 
-	protected fun sessionAccepted(event: JingleEvent) {
-		val account = event.context.boundJID!!.bareJID
-		session(account, event.jid, event.sid)?.accepted(event.contents, event.bundle)
+	fun close(account: BareJID, jid: JID, sid: String): S? = lock.withLock {
+		return@withLock session(account, jid, sid)?.let { session ->
+			sessions = sessions - session
+			return@let session
+		}
 	}
 
-	protected fun sessionTerminated(event: JingleEvent) {
-		val account = event.context.boundJID!!.bareJID
-		sessionTerminated(account, event.jid, event.sid)
+	fun close(session: AbstractJingleSession) {
+		close(session.account, session.jid, session.sid)
 	}
 
-	protected fun sessionTerminated(account: BareJID, sid: String) {
-		val toTerminate = sessions.filter { it.account == account && it.sid == sid }
-		toTerminate.forEach { it.terminated() }
+	enum class ContentType {
+		audio,
+		video,
+		filetransfer
 	}
 
-	protected fun sessionTerminated(account: BareJID, jid: JID, sid: String) {
-		session(account, jid, sid)?.terminated()
+	enum class Media {
+		audio,
+		video
 	}
 
-	protected fun transportInfo(event: JingleEvent) {
-		val account = event.context.boundJID!!.bareJID
-		session(account, event.jid, event.sid)?.let { session ->
-			for (content in event.contents) {
-				content.transports.flatMap { it.candidates }.forEach { session.addCandidate(it, content.name) }
+	override fun messageInitiation(context: Context, fromJid: JID, action: MessageInitiationAction) {
+		when (action) {
+			is MessageInitiationAction.Propose -> {
+				if (this.session(context, fromJid, action.id) != null) {
+					return;
+				}
+				val session = open(context, fromJid, action.id, Content.Creator.responder, InitiationType.Message);
+				val media = action.descriptions.map { Media.valueOf(it.media) };
+				reportIncomingCall(session, media);
+			}
+			is MessageInitiationAction.Retract -> sessionTerminated(context, fromJid, action.id);
+			is MessageInitiationAction.Accept, is MessageInitiationAction.Reject -> sessionTerminated(context.boundJID!!.bareJID, action.id);
+			is MessageInitiationAction.Proceed -> {
+				val session = session(context, fromJid, action.id) ?: return;
+				session.accepted(fromJid);
 			}
 		}
 	}
 
-	interface SessionFactory<S : AbstractJingleSession> {
+	override fun sessionInitiated(context: Context, jid: JID, sid: String, contents: List<Content>, bundle: List<String>?) {
+		val sdp = SDP(contents, bundle ?: emptyList());
+		val media = sdp.contents.map { it.description?.media?.let {  Media.valueOf(it)} }.filterNotNull()
 
-		fun createSession(
-			jingleSessionManager: AbstractJingleSessionManager<S>,
-			jingleModule: JingleModule,
-			account: BareJID,
-			jid: JID,
-			sid: String,
-			role: Content.Creator,
-			initiationType: InitiationType,
-		): S
+		session(context, jid, sid)?.let { session -> session.initiated(contents, bundle) } ?: {
+			val session = open(context, jid, sid, Content.Creator.responder, InitiationType.Iq);
+			session.initiated(contents, bundle)
+			reportIncomingCall(session, media);
+		}
+	}
+
+	@Throws(XMPPException::class)
+	override fun sessionAccepted(
+		context: Context,
+		jid: JID,
+		sid: String,
+		contents: List<Content>,
+		bundle: List<String>?
+	) {
+		val session = session(context, jid, sid) ?: throw XMPPException(ErrorCondition.ItemNotFound);
+	}
+
+	override fun sessionTerminated(context: Context, jid: JID, sid: String) {
+		session(context, jid, sid)?.terminated()
+	}
+
+	fun sessionTerminated(account: BareJID, sid: String) {
+		val toTerminate = lock.withLock {
+			return@withLock sessions.filter { it.account == account && it.sid == sid }
+		}
+		toTerminate.forEach { it.terminated() }
+	}
+
+	@Throws(XMPPException::class)
+	override fun transportInfo(context: Context, jid: JID, sid: String, contents: List<Content>) {
+		val session = session(context, jid, sid) ?: throw XMPPException(ErrorCondition.ItemNotFound);
+		for (content in contents) {
+			content.transports.flatMap { it.candidates }.forEach { session.addCandidate(it, content.name) }
+		}
 	}
 
 	protected fun fireIncomingSessionEvent(context: AbstractHalcyon, session: S, media: List<String>) {

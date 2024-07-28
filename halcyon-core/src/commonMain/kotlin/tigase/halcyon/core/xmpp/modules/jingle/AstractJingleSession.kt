@@ -18,34 +18,105 @@
 package tigase.halcyon.core.xmpp.modules.jingle
 
 import tigase.halcyon.core.AsyncResult
+import tigase.halcyon.core.Context
+import tigase.halcyon.core.ReflectionModuleManager
+import tigase.halcyon.core.utils.Lock
 import tigase.halcyon.core.xmpp.BareJID
 import tigase.halcyon.core.xmpp.JID
 import tigase.halcyon.core.xmpp.modules.jingle.Jingle.Session.State
-import kotlin.properties.Delegates
 
+@OptIn(ReflectionModuleManager::class)
 abstract class AbstractJingleSession(
-	private val sessionManager: AbstractJingleSessionManager<AbstractJingleSession>,
-	private val jingleModule: JingleModule,
-	override val account: BareJID,
+	private val terminateFunction: (AbstractJingleSession)->Unit,
+	private val context: Context,
 	jid: JID,
 	override val sid: String,
 	val role: Content.Creator,
-	private val initiationType: InitiationType,
+	val initiationType: InitiationType,
 ) : Jingle.Session {
 
-	override var state: State by Delegates.observable(State.Created) { _, _, newValue ->
-		stateChanged(newValue)
-	}
-		protected set
+	final override val account: BareJID
+	private val jingleModule: JingleModule
+	override var state: State = State.Created
+		get() {
+			return lock.withLock {
+				field;
+			}
+		}
+		protected set(value) {
+			lock.withLock {
+				if (field != value) {
+					field = value
+					delegate
+				} else {
+					null
+				}
+			}?.stateChanged(value);
+		}
 	override var jid: JID = jid
 		protected set
 
 	private var remoteContents: List<Content>? = null
 	private var remoteBundles: List<String>? = null
 
-	protected abstract fun stateChanged(state: State)
-	protected abstract fun setRemoteDescription(contents: List<Content>, bundle: List<String>?)
-	abstract fun addCandidate(candidate: Candidate, contentName: String)
+	init {
+		this.account = context.boundJID!!.bareJID;
+		this.jingleModule = context.modules.getModule<JingleModule>()
+	}
+
+	interface Delegate {
+		fun stateChanged(state: State);
+		fun received(action: Action)
+	}
+
+	var delegate: Delegate? = null
+		set(value) {
+			lock.withLock {
+				field = value;
+				value?.let { delegate ->
+					delegate.stateChanged(state)
+					while (!actionsQueue.isEmpty()) {
+						val action = actionsQueue.removeFirst()
+						delegate.received(action);
+					}
+				}
+			}
+		}
+
+	private var actionsQueue: ArrayDeque<Action> = ArrayDeque<Action>()
+
+	sealed class Action: Comparable<Action> {
+		class ContentSet(val sdp: SDP): Action() {}
+		class ContentApply(val contentAction: Jingle.ContentAction, val sdp: SDP): Action() {}
+		class TransportAdd(val candidate: Candidate, val contentName: String): Action() {}
+		class SessionInfo(val infos: List<Jingle.SessionInfo>): Action() {}
+
+		var order: Int = when(this) {
+			is ContentSet -> 0
+			is ContentApply -> 0
+			is TransportAdd -> 1
+			is SessionInfo -> 2                   
+		}
+
+		override fun compareTo(other: Action): Int {
+			val x = this.order;
+			val y = other.order;
+			return if ((x < y)) -1 else (if ((x == y)) 0 else 1)
+		}
+	}
+
+	private fun received(action: Action) {
+		lock.withLock {
+			delegate?.let { it.received(action) } ?: {
+				val idx = actionsQueue.indexOfFirst { it.order > action.order };
+				if (idx < 0) {
+					actionsQueue.add(action)
+				} else {
+					actionsQueue.add(idx, action)
+				}
+			}
+		}
+	}
 
 	fun initiate(contents: List<Content>, bundle: List<String>?, completionHandler: AsyncResult<Unit>) {
 		jingleModule.initiateSession(jid, sid, contents, bundle)
@@ -69,20 +140,45 @@ abstract class AbstractJingleSession(
 			.send()
 	}
 
+	private val lock = Lock();
+	private var contentCreators = HashMap<String, Content.Creator>();
+	fun contentCreator(contentName: String): Content.Creator {
+		return lock.withLock {
+			return@withLock contentCreators.get(contentName) ?: this.role;
+		}
+	}
+
+	private fun updateCreators(contents: List<Content>) {
+		lock.withLock {
+			for (content in contents) {
+				if (!contentCreators.containsKey(content.name)) {
+					contentCreators.put(content.name, content.creator);
+				}
+			}
+		}
+	}
+
 	fun initiated(contents: List<Content>, bundle: List<String>?) {
-		state = State.Initiating
-		remoteContents = contents
-		remoteBundles = bundle
+		lock.withLock {
+			updateCreators(contents);
+			state = State.Initiating
+			remoteContents = contents
+			remoteBundles = bundle
+			received(Action.ContentSet(SDP(contents, bundle ?: emptyList())))
+		}
 	}
 
 	fun accept() {
-		state = State.Accepted
-		remoteContents?.let { contents ->
-			setRemoteDescription(contents, remoteBundles)
-		} ?: jingleModule.sendMessageInitiation(MessageInitiationAction.Proceed(sid), jid)
+		lock.withLock {
+			state = State.Accepted
+			if (initiationType == InitiationType.Message) {
+				jingleModule.sendMessageInitiation(MessageInitiationAction.Proceed(sid), jid)
+			}
+		}
 	}
 
 	fun accept(contents: List<Content>, bundle: List<String>?, completionHandler: AsyncResult<Unit>) {
+		updateCreators(contents);
 		jingleModule.acceptSession(jid, sid, contents, bundle)
 			.response { result ->
 				when {
@@ -95,28 +191,55 @@ abstract class AbstractJingleSession(
 	}
 
 	fun accepted(by: JID) {
-		this.state = State.Accepted
-		this.jid = by
+		lock.withLock {
+			this.state = State.Accepted
+			this.jid = by
+		}
 	}
 
 	fun accepted(contents: List<Content>, bundle: List<String>?) {
-		this.state = State.Accepted
-		remoteContents = contents
-		remoteBundles = bundle
-		setRemoteDescription(contents, bundle)
+		lock.withLock {
+			this.state = State.Accepted
+			remoteContents = contents
+			remoteBundles = bundle
+			received(Action.ContentSet(SDP(contents, bundle ?: emptyList())))
+		}
 	}
 
-	@Suppress("unused")
-	fun decline() {
-		terminate(reason = TerminateReason.Decline)
+	fun sessionInfo(actions: List<Jingle.SessionInfo>) {
+		jingleModule.sessionInfo(jid, sid, actions, creatorProvider = this::contentCreator).send();
+	}
+
+	fun transportInfo(contentName: String, transport: Transport) {
+		val creator = contentCreator(contentName);
+		jingleModule.transportInfo(jid, sid, listOf(Content(creator, null, contentName, null, listOf(transport)))).send()
+	}
+
+	fun contentModified(action: Jingle.ContentAction, contents: List<Content>, bundle: List<String>?) {
+		val sdp = SDP(contents, bundle ?: emptyList());
+		received(Action.ContentApply(action, sdp));
+	}
+
+	fun sessionInfoReceived(info: List<Jingle.SessionInfo>) {
+		received(Action.SessionInfo(info));
+	}
+
+	fun addCandidate(candidate: Candidate, contentName: String) {
+		received(Action.TransportAdd(candidate, contentName));
 	}
 
 	override fun terminate(reason: TerminateReason) {
-		val oldState = state
-		if (oldState == State.Terminated) {
-			return
+		var oldState = State.Terminated;
+		if (!lock.withLock {
+			oldState = state
+			if (oldState == State.Terminated) {
+				return@withLock false;
+			}
+			state = State.Terminated
+			return@withLock true;
+		}) {
+			return;
 		}
-		state = State.Terminated
 		if (initiationType == InitiationType.Iq || oldState == State.Accepted) {
 			jingleModule.terminateSession(jid, sid, reason)
 				.send()
@@ -128,21 +251,23 @@ abstract class AbstractJingleSession(
 	}
 
 	fun terminated() {
-		if (state == State.Terminated) {
-			return
+		if (!lock.withLock {
+				if (state == State.Terminated) {
+					return@withLock false
+				}
+				state = State.Terminated
+				return@withLock true;
+			}
+		) {
+			return;
 		}
-		state = State.Terminated
 		terminateSession()
 	}
 
 	@Suppress("MemberVisibilityCanBePrivate")
 	protected fun terminateSession() {
-		sessionManager.close(this)
+		terminateFunction(this);
+		//sessionManager.close(this)
 	}
-
-	@Suppress("unused")
-	fun sendCandidate(contentName: String, creator: Content.Creator, transport: Transport) {
-		jingleModule.transportInfo(jid, sid, listOf(Content(creator, contentName, null, listOf(transport))))
-			.send()
-	}
+	
 }
