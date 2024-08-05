@@ -28,7 +28,7 @@ import tigase.halcyon.core.xmpp.modules.jingle.Jingle.Session.State
 @OptIn(ReflectionModuleManager::class)
 abstract class AbstractJingleSession(
 	private val terminateFunction: (AbstractJingleSession)->Unit,
-	private val context: Context,
+	context: Context,
 	jid: JID,
 	override val sid: String,
 	val role: Content.Creator,
@@ -37,6 +37,19 @@ abstract class AbstractJingleSession(
 
 	final override val account: BareJID
 	private val jingleModule: JingleModule
+
+	interface StateDelegate {
+		fun stateChanged(state: State);
+	}
+
+	var stateDelegate: StateDelegate? = null
+		set(value) {
+			lock.withLock {
+				field = value
+			}
+			value?.stateChanged(state)
+		}
+
 	override var state: State = State.Created
 		get() {
 			return lock.withLock {
@@ -47,7 +60,7 @@ abstract class AbstractJingleSession(
 			lock.withLock {
 				if (field != value) {
 					field = value
-					delegate
+					stateDelegate
 				} else {
 					null
 				}
@@ -64,17 +77,16 @@ abstract class AbstractJingleSession(
 		this.jingleModule = context.modules.getModule<JingleModule>()
 	}
 
-	interface Delegate {
-		fun stateChanged(state: State);
+
+	interface ActionDelegate {
 		fun received(action: Action)
 	}
 
-	var delegate: Delegate? = null
+	var actionDelegate: ActionDelegate? = null
 		set(value) {
 			lock.withLock {
 				field = value;
 				value?.let { delegate ->
-					delegate.stateChanged(state)
 					while (!actionsQueue.isEmpty()) {
 						val action = actionsQueue.removeFirst()
 						delegate.received(action);
@@ -107,15 +119,18 @@ abstract class AbstractJingleSession(
 
 	private fun received(action: Action) {
 		lock.withLock {
-			delegate?.let { it.received(action) } ?: {
+			if (actionDelegate != null) {
+				actionDelegate
+			} else {
 				val idx = actionsQueue.indexOfFirst { it.order > action.order };
 				if (idx < 0) {
 					actionsQueue.add(action)
 				} else {
 					actionsQueue.add(idx, action)
 				}
+				null
 			}
-		}
+		}?.received(action)
 	}
 
 	fun initiate(contents: List<Content>, bundle: List<String>?, completionHandler: AsyncResult<Unit>) {
@@ -164,15 +179,15 @@ abstract class AbstractJingleSession(
 			state = State.Initiating
 			remoteContents = contents
 			remoteBundles = bundle
-			received(Action.ContentSet(SDP(contents, bundle ?: emptyList())))
 		}
+		received(Action.ContentSet(SDP(contents, bundle ?: emptyList())))
 	}
 
 	fun accept() {
 		lock.withLock {
 			state = State.Accepted
 			if (initiationType == InitiationType.Message) {
-				jingleModule.sendMessageInitiation(MessageInitiationAction.Proceed(sid), jid)
+				jingleModule.sendMessageInitiation(MessageInitiationAction.Proceed(sid), jid).send()
 			}
 		}
 	}
@@ -192,8 +207,8 @@ abstract class AbstractJingleSession(
 
 	fun accepted(by: JID) {
 		lock.withLock {
-			this.state = State.Accepted
 			this.jid = by
+			this.state = State.Accepted
 		}
 	}
 
@@ -202,8 +217,8 @@ abstract class AbstractJingleSession(
 			this.state = State.Accepted
 			remoteContents = contents
 			remoteBundles = bundle
-			received(Action.ContentSet(SDP(contents, bundle ?: emptyList())))
 		}
+		received(Action.ContentSet(SDP(contents, bundle ?: emptyList())))
 	}
 
 	fun sessionInfo(actions: List<Jingle.SessionInfo>) {

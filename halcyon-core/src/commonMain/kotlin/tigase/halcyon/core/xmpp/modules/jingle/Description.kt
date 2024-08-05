@@ -58,6 +58,14 @@ class Description(
 			}
 			ssrcGroups.forEach { addChild(it.toElement()) }
 			ssrcs.forEach { addChild(it.toElement()) }
+			bandwidth?.let {
+				element("bandwidth") {
+					attribute("type", it)
+				}
+			}
+			if (rtcpMux) {
+				element("rtcp-mux");
+			}
 			hdrExts.forEach { addChild(it.toElement()) }
 		}
 	}

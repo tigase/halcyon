@@ -28,7 +28,7 @@ class Candidate(
 	val generation: Int,
 	val id: String,
 	val ip: String,
-	val network: Int,
+	val network: Int?,
 	val port: Int,
 	val priority: Int,
 	val protocolType: ProtocolType,
@@ -39,17 +39,15 @@ class Candidate(
 ) {
 
 	enum class ProtocolType {
-
-		UDP,
-		TCP
+		udp,
+		tcp
 	}
 
 	enum class CandidateType {
-
-		Host,
-		Prlfx,
-		Relay,
-		Srflx
+		host,
+		prlfx,
+		relay,
+		srflx
 	}
 
 	fun toElement(): Element {
@@ -59,7 +57,7 @@ class Candidate(
 			attribute("generation", generation.toString())
 			attribute("id", id)
 			attribute("ip", ip)
-			attribute("network", network.toString())
+			network?.let { attribute("network", it.toString()) }
 			attribute("port", port.toString())
 			attribute("protocol", protocolType.name)
 			attribute("priority", priority.toString())

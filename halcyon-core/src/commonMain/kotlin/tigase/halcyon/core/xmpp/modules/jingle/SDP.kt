@@ -19,12 +19,50 @@ package tigase.halcyon.core.xmpp.modules.jingle
 
 import kotlinx.datetime.Clock
 import tigase.halcyon.core.logger.LoggerFactory
+import tigase.halcyon.core.xml.Element
+import tigase.halcyon.core.xml.element
 import tigase.halcyon.core.xmpp.nextUIDLongs
 import kotlin.jvm.JvmStatic
 
 enum class SDPDirection {
 	incoming,
 	outgoing
+}
+
+object Bundle {
+
+	fun parse(el: Element): List<String>? =
+		if (el.name == "group" && el.xmlns == "urn:xmpp:jingle:apps:grouping:0") {
+			el.getChildren("content").mapNotNull { it.attributes["name"] }.takeIf { it.isNotEmpty() }
+		} else {
+			null
+		}
+
+	fun toElement(bundle: List<String>?, onElement: (Element) -> Unit) {
+		toElementOrNull(bundle)?.let(onElement);
+	}
+
+	fun toElementOrNull(bundle: List<String>?): Element? {
+		 return bundle?.let {
+			 if (bundle.isEmpty()) {
+				 null
+			 } else {
+				 toElement(bundle);
+			 }
+		 }
+	}
+
+	fun toElement(bundle: List<String>): Element {
+		return element("group") {
+			xmlns = "urn:xmpp:jingle:apps:grouping:0"
+			attribute("semantics", "BUNDLE")
+			bundle.forEach { name ->
+				element("content") {
+					attribute("name", name)
+				}
+			}
+		}
+	}
 }
 
 
@@ -99,7 +137,7 @@ class SDP(val id: String, val contents: List<Content>, val bundle: List<String>)
 
 				val groupParts = sessionLines.firstOrNull { it.startsWith("a=group:BUNDLE ") }
 					?.split(" ") ?: listOf("")
-				val bundle = if (groupParts.get(0) == "a=group:BUNDLE ") {
+				val bundle = if (groupParts.get(0) == "a=group:BUNDLE") {
 					groupParts.drop(1)
 				} else {
 					emptyList()
@@ -142,7 +180,7 @@ fun Content.Companion.parse(sdp: String, creatorProvider: (String) -> Content.Cr
 
 	val creator = creatorProvider(name)
 
-	val payloads = line.subList(3, line.size - 1)
+	val payloads = line.subList(3, line.size)
 		.map { id ->
 			Payload
 			var prefix = "a=rtpmap:$id "
@@ -234,8 +272,7 @@ fun Content.toSDP(localRole: Content.Creator, direction: SDPDirection): String {
 	val lines = mutableListOf<String>()
 	description?.let {
 		lines += "m=${it.media} 1 ${
-			if (it.encryption.isEmpty() || transports.filter { it.fingerprint == null }
-					.isNotEmpty()) {
+			if (it.encryption.isEmpty() && transports.map { it.fingerprint == null }.filterNotNull().isEmpty()) {
 				"RTP/AVPF"
 			} else {
 				"RTP/SAVPF"
@@ -287,10 +324,10 @@ fun Content.toSDP(localRole: Content.Creator, direction: SDPDirection): String {
 }
 
 fun Candidate.toSDP(): String {
-	val expType = type ?: Candidate.CandidateType.Host
+	val expType = type ?: Candidate.CandidateType.host
 	var sdp =
 		"a=candidate:$foundation $component ${protocolType.name.uppercase()} $priority $ip $port typ ${expType.name}"
-	if (expType != Candidate.CandidateType.Host) {
+	if (expType != Candidate.CandidateType.host) {
 		relAddr?.let { addr ->
 			relPort?.let { port ->
 				sdp += " raddr $addr rport $port"
@@ -298,7 +335,7 @@ fun Candidate.toSDP(): String {
 		}
 	}
 
-	if (protocolType == Candidate.ProtocolType.TCP) {
+	if (protocolType == Candidate.ProtocolType.tcp) {
 		tcpType?.let { sdp += " tcptype $it" }
 	}
 
@@ -394,7 +431,7 @@ fun HdrExt.Companion.parse(lines: List<String>): List<HdrExt> {
 		.map { HdrExt(it[0], it[1], Description.Senders.Both) }
 }
 
-fun SSRCGroup.toSDP(): String = "a=ssrc-group:$semantics ${sources.joinToString(" ")})"
+fun SSRCGroup.toSDP(): String = "a=ssrc-group:$semantics ${sources.joinToString(" ")}"
 
 fun SSRCGroup.Companion.parse(lines: List<String>): List<SSRCGroup> {
 	val ssrcGroupLines = lines.filter { it.startsWith("a=ssrc-group:") }

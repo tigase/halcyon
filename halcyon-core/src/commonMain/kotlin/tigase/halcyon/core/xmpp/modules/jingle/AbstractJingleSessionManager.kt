@@ -144,6 +144,7 @@ abstract class AbstractJingleSessionManager<S : AbstractJingleSession>(
 		bundle: List<String>?
 	) {
 		val session = session(context, jid, sid) ?: throw XMPPException(ErrorCondition.ItemNotFound);
+		session.accepted(contents, bundle);
 	}
 
 	override fun sessionTerminated(context: Context, jid: JID, sid: String) {

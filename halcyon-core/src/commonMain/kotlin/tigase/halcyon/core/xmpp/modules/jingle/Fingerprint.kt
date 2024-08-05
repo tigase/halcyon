@@ -24,10 +24,9 @@ import kotlin.jvm.JvmStatic
 class Fingerprint(val hash: String, val value: String, val setup: Setup) {
 
 	enum class Setup {
-
-		Actpass,
-		Active,
-		Passive
+		actpass,
+		active,
+		passive
 	}
 
 	fun toElement(): Element {

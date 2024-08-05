@@ -193,9 +193,10 @@ class JingleModule(
 		if (iq.attributes["type"] != "set") {
 			throw XMPPException(ErrorCondition.FeatureNotImplemented, "All messages should be of type 'set'")
 		}
+		val id = iq.attributes["id"];
 
 		val jingle = iq.getChildrenNS("jingle", XMLNS) ?: throw XMPPException(ErrorCondition.BadRequest, "Missing 'jingle' element")
-		val action = Action.fromValue(iq.attributes["action"] ?: "") ?: throw XMPPException(
+		val action = Action.fromValue(jingle.attributes["action"] ?: "") ?: throw XMPPException(
 			ErrorCondition.BadRequest,
 			"Missing or invalid action attribute"
 		)
@@ -206,9 +207,7 @@ class JingleModule(
 		val initiator = (jingle.attributes["initiator"]?.toJID() ?: from) ?: throw XMPPException(ErrorCondition.BadRequest, "Missing 'initiator' attribute");
 
 		val contents = jingle.children.map { Content.parse(it) }.filterNotNull()
-		val bundle =
-			jingle.getChildrenNS("group", "urn:xmpp:jingle:apps:grouping:0")?.children?.filter { it.name == "content" }
-				?.map { it.attributes["name"] }?.filterNotNull()
+		val bundle = jingle.getChildrenNS("group", "urn:xmpp:jingle:apps:grouping:0")?.let(Bundle::parse)
 
 		context.eventBus.fire(JingleEvent(from, action, initiator, sid, contents, bundle))
 
@@ -229,8 +228,9 @@ class JingleModule(
 		}
 		context.request.iq {
 			to = from
+			id(id)
 			type = IQType.Result
-		}
+		}.send()
 	}
 
 	private fun processMessage(message: Element) {
@@ -257,6 +257,7 @@ class JingleModule(
 			}
 		}
 		context.eventBus.fire(JingleMessageInitiationEvent(from, action))
+		sessionManager.messageInitiation(context, from, action);
 	}
 
 	fun sendMessageInitiation(
@@ -270,7 +271,7 @@ class JingleModule(
 			is MessageInitiationAction.Reject -> {
 				if (jid.bareJID != context.boundJID?.bareJID) {
 					sendMessageInitiation(
-						MessageInitiationAction.Accept(action.id), context.boundJID!!.bareJID
+						MessageInitiationAction.Reject(action.id), context.boundJID!!.bareJID
 					).send()
 				}
 			}
@@ -280,12 +281,12 @@ class JingleModule(
 		}
 
 		return context.request.message {
-			addChild(element(action.actionName) {
+			element(action.actionName) {
 				xmlns = "urn:xmpp:jingle-message:0"
 				attribute("id", action.id)
 				if (action is MessageInitiationAction.Propose) action.descriptions.map { it.toElement() }
 					.forEach { addChild(it) }
-			})
+			}
 			type = MessageType.Chat
 			to = jid
 		}
@@ -298,7 +299,7 @@ class JingleModule(
 			to = jid
 			type = IQType.Set
 
-			addChild(element("jingle") {
+			element("jingle") {
 				xmlns = XMLNS
 				attribute("action", Action.SessionInitiate.value)
 				attribute("sid", sid)
@@ -307,18 +308,8 @@ class JingleModule(
 				)
 
 				contents.map { it.toElement() }.forEach { contentEl -> addChild(contentEl) }
-				bundle?.takeIf { it.isNotEmpty() }?.let { bundle ->
-					addChild(element("group") {
-						xmlns = "urn:xmpp:jingle:apps:grouping:0"
-						attribute("semantics", "BUNDLE")
-						bundle.forEach { name ->
-							addChild(element("content") {
-								attribute("name", name)
-							})
-						}
-					})
-				}
-			})
+				Bundle.toElement(bundle, ::addChild)
+			}
 		}.map { }
 	}
 
@@ -329,7 +320,7 @@ class JingleModule(
 			to = jid
 			type = IQType.Set
 
-			addChild(element("jingle") {
+			element("jingle") {
 				xmlns = XMLNS
 				attribute("action", Action.SessionAccept.value)
 				attribute("sid", sid)
@@ -338,18 +329,8 @@ class JingleModule(
 				)
 
 				contents.map { it.toElement() }.forEach { contentEl -> addChild(contentEl) }
-				bundle?.takeIf { it.isNotEmpty() }?.let { bundle ->
-					addChild(element("group") {
-						xmlns = "urn:xmpp:jingle:apps:grouping:0"
-						attribute("semantics", "BUNDLE")
-						bundle.forEach { name ->
-							addChild(element("content") {
-								attribute("name", name)
-							})
-						}
-					})
-				}
-			})
+				Bundle.toElement(bundle, ::addChild)
+			}
 		}.map { }
 	}
 
@@ -358,13 +339,13 @@ class JingleModule(
 			to = jid
 			type = IQType.Set
 
-			addChild(element("jingle") {
+			element("jingle") {
 				xmlns = XMLNS
 				attribute("action", Action.SessionInfo.value)
 				attribute("sid", sid)
 
 				actions.map { it.element(creatorProvider) }.forEach { this.addChild(it) }
-			})
+			}
 		}.map {}
 	}
 
@@ -373,12 +354,12 @@ class JingleModule(
 			to = jid
 			type = IQType.Set
 
-			addChild(element("jingle") {
+			element("jingle") {
 				xmlns = XMLNS
 				attribute("action", Action.SessionTerminate.value)
 				attribute("sid", sid)
 				addChild(reason.toReasonElement())
-			})
+			}
 		}.map { }
 	}
 
@@ -387,13 +368,13 @@ class JingleModule(
 			to = jid
 			type = IQType.Set
 
-			addChild(element("jingle") {
+			element("jingle") {
 				xmlns = XMLNS
-				attribute("action", Action.SessionAccept.value)
+				attribute("action", Action.TransportInfo.value)
 				attribute("sid", sid)
 
 				contents.map { it.toElement() }.forEach { contentEl -> addChild(contentEl) }
-			})
+			}
 		}.map { }
 	}
 
@@ -402,25 +383,15 @@ class JingleModule(
 			to = jid
 			type = IQType.Set
 
-			addChild(element("jingle") {
+			element("jingle") {
 				xmlns = XMLNS
 				attribute("action", action.jingleAction().value)
 				attribute("sid", sid)
 
 				contents.map { it.toElement() }.forEach { contentEl -> addChild(contentEl) }
 
-				bundle?.takeIf { it.isNotEmpty() }?.let {
-					addChild(element("group") {
-						xmlns = "urn:xmpp:jingle:apps:grouping:0"
-						attribute("semantics", "BUNDLE")
-						it.forEach {
-							this.addChild(element("content") {
-								attribute("name", it)
-							})
-						}
-					})
-				}
-			})
+				Bundle.toElement(bundle, ::addChild)
+			}
 		}.map { }
 	}
 }

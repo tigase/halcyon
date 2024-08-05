@@ -28,9 +28,9 @@ class SSRCGroup(val semantics: String, val sources: List<String>) {
 			xmlns = "urn:xmpp:jingle:apps:rtp:ssma:0"
 			attribute("semantics", semantics)
 			sources.forEach {
-				addChild(element("source") {
+				element("source") {
 					attribute("ssrc", it)
-				})
+				}
 			}
 		}
 	}
