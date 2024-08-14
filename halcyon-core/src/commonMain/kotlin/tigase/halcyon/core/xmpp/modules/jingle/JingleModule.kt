@@ -245,6 +245,10 @@ class JingleModule(
 					this.sendMessageInitiation(MessageInitiationAction.Reject(action.id), from).send()
 					return
 				}
+				if (from.bareJID == context.boundJID?.bareJID) {
+					// we do not expect self calling using JMI, direct session initiation should be used, skipping...
+					return;
+				}
 			}
 
 			is MessageInitiationAction.Accept -> {

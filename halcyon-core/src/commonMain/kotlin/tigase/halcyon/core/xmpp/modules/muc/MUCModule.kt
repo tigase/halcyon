@@ -333,6 +333,10 @@ class MUCModule(override val context: Context) : XmppModule, MUCModuleConfig {
     }
 
     private fun processMessage(stanza: Message) {
+        if (stanza.from?.bareJID == context.boundJID?.bareJID) {
+            // this may be a message carbons (sent), then just ignore as we want to process just messages from MUC room
+            return;
+        }
         val room = store.findRoom(stanza.from!!.bareJID) ?: throw XMPPException(ErrorCondition.ServiceUnavailable)
         val nickname = stanza.from?.resource ?: return
 
