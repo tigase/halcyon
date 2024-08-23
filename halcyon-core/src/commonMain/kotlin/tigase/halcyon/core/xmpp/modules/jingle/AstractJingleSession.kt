@@ -230,6 +230,10 @@ abstract class AbstractJingleSession(
 		jingleModule.transportInfo(jid, sid, listOf(Content(creator, null, contentName, null, listOf(transport)))).send()
 	}
 
+	fun contentModify(action: Jingle.ContentAction, contents: List<Content>, bundle: List<String>?) {
+		jingleModule.contentModify(jid, sid, action, contents, bundle).send()
+	}
+
 	fun contentModified(action: Jingle.ContentAction, contents: List<Content>, bundle: List<String>?) {
 		val sdp = SDP(contents, bundle ?: emptyList());
 		received(Action.ContentApply(action, sdp));

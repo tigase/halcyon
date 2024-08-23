@@ -216,7 +216,7 @@ class JingleModule(
 			Action.SessionAccept -> sessionManager.sessionAccepted(this.context, from, sid, contents, bundle);
 			Action.SessionTerminate -> sessionManager.sessionTerminated(this.context, from, sid)
 			Action.TransportInfo -> sessionManager.transportInfo(this.context, from, sid, contents);
-			Action.ContentAccept, Action.ContentModify, Action.ContentRemove -> {
+			Action.ContentAdd, Action.ContentModify, Action.ContentRemove -> {
 				val contentAction = Jingle.ContentAction.from(action) ?: throw XMPPException(ErrorCondition.BadRequest, "Invalid action");
 				sessionManager.contentModified(context, from, sid, contentAction, contents, bundle);
 			}

@@ -105,6 +105,59 @@ class SDP(val id: String, val contents: List<Content>, val bundle: List<String>)
 	constructor(contents: List<Content>, bundle: List<String>) : this("${Clock.System.now().epochSeconds}", contents, bundle) {
 	}
 
+	fun applyDiff(action: Jingle.ContentAction, diff: SDP): SDP {
+		return when (action) {
+			Jingle.ContentAction.Add, Jingle.ContentAction.Accept -> SDP(id, contents + diff.contents, diff.bundle);
+			Jingle.ContentAction.Modify -> {
+				var contents = contents.toMutableList();
+				for (diffed in diff.contents) {
+					val idx = contents.indexOfFirst { it.name == diffed.name };
+					if (idx >= 0) {
+						val newContent = Content(contents[idx].creator, diffed.senders, diffed.name, diffed.description, contents[idx].transports);
+						contents[idx] = newContent;
+					}
+				}
+				SDP(id, contents.toList(), diff.bundle)
+			}
+			Jingle.ContentAction.Remove -> {
+				val removed = diff.contents.map { it.name }.toSet();
+				return SDP(id, contents.filterNot { removed.contains(it.name) }, diff.bundle)
+			}
+		}
+	}
+
+	fun diff(oldSdp: SDP): Map<Jingle.ContentAction,SDP> {
+		val results = mutableMapOf<Jingle.ContentAction,SDP>()
+
+		val oldContentNames = oldSdp.contents.map { it.name }
+		val newContentNames = this.contents.map { it.name }
+
+		oldSdp.contents.filterNot { newContentNames.contains(it.name) }.takeUnless { it.isEmpty() }?.let {
+			results[Jingle.ContentAction.Remove] = SDP(id, it, bundle);
+		}
+
+		contents.filterNot { oldContentNames.contains(it.name) }.takeUnless { it.isEmpty() }?.let {
+			results[Jingle.ContentAction.Add] = SDP(id, it, bundle);
+		}
+
+		fun oldContentByName(name: String): Content? {
+			return oldSdp.contents.filter { it.name == name }.firstOrNull();
+		}
+
+		contents.mapNotNull { newContent ->
+			val oldContent = oldContentByName(newContent.name)?: return@mapNotNull null;
+			if ((oldContent.senders ?: Content.Senders.both) == (newContent.senders
+					?: Content.Senders.both)) {
+				return@mapNotNull null
+			}
+			Content(newContent.creator, newContent.senders, newContent.name, newContent.description?.cloneForModify(), emptyList());
+		}.takeUnless { it.isEmpty() }?.let {
+			results[Jingle.ContentAction.Modify] = SDP(id, it, bundle);
+		}
+
+		return results;
+	}
+
 	fun toString(sid: String, localRole: Content.Creator, direction: SDPDirection): String {
 		val lines: MutableList<String> = mutableListOf("v=0", "o=- $sid $id IN IP4 0.0.0.0", "s=-", "t=0 0")
 		if (bundle.isNotEmpty()) {

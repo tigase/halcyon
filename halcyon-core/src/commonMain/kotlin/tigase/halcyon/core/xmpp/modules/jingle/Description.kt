@@ -40,6 +40,10 @@ class Description(
 		Both
 	}
 
+	fun cloneForModify(): Description {
+		return Description(media, ssrc, emptyList(), null, emptyList(), false, ssrcs, ssrcGroups, emptyList())
+	}
+
 	fun toElement(): Element {
 		return element("description") {
 			xmlns = XMLNS
