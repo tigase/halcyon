@@ -253,8 +253,13 @@ abstract class AbstractHalcyon(configurator: ConfigurationBuilder) : Context, Pa
     }
 
     override fun writeDirectly(stanza: Element) {
-        val c = this.connector ?: throw HalcyonException("Connector is not initialized")
-        if (c.state != tigase.halcyon.core.connector.State.Connected) throw HalcyonException("Connector is not connected ${c.state}")
+        val c = this.connector ?: return run {
+            log.fine {"skipping sending stanza ${stanza}, connector is not initialized!" }
+        }
+        if (c.state != tigase.halcyon.core.connector.State.Connected) {
+            log.fine {"skipping sending stanza ${stanza}, connector is not connected!" }
+            return;
+        }
         modules.processOutgoingFilters(stanza) {
             it.onSuccess { toSend ->
                 if (toSend == null) return@onSuccess
@@ -269,8 +274,15 @@ abstract class AbstractHalcyon(configurator: ConfigurationBuilder) : Context, Pa
     }
 
     override fun write(request: Request<*, *>) {
-        val c = this.connector ?: throw HalcyonException("Connector is not initialized")
-        if (c.state != tigase.halcyon.core.connector.State.Connected) throw HalcyonException("Connector is not connected")
+        val c = this.connector ?: return run {
+            log.fine("Returning remote_server_timeout error, connector is not initialized!")
+            request.markTimeout()
+        }
+        if (c.state != tigase.halcyon.core.connector.State.Connected) {
+            log.fine("Returning remote_server_timeout error, connector is not connected!")
+            request.markTimeout()
+            return;
+        }
         modules.processOutgoingFilters(request.stanza) {
             it.onSuccess { element ->
                 if (element == null) return@onSuccess
