@@ -7,6 +7,7 @@ import tigase.halcyon.core.logger.LoggerFactory
 import tigase.halcyon.core.modules.*
 import tigase.halcyon.core.requests.Request
 import tigase.halcyon.core.requests.RequestBuilder
+import tigase.halcyon.core.requests.XMPPError
 import tigase.halcyon.core.toBase64
 import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xml.element
@@ -34,6 +35,8 @@ interface OMEMOModuleConfig {
      */
     var sessionStore: OMEMOSessionStore
 
+    var bundleStateStorage: BundleStateStorage
+
     /**
      * Update identity store, after receiving updated device list notification.
      */
@@ -44,6 +47,12 @@ interface OMEMOModuleConfig {
      */
     var autoCreateSession: Boolean
 
+}
+
+interface BundleStateStorage {
+    fun currentPreKeyId(): Int;
+    fun updatePreKeyMax(id: Int);
+    fun signedPreKeyId(): Int;
 }
 
 /**
@@ -104,6 +113,7 @@ class OMEMOModule(
     override var sessionStore: OMEMOSessionStore = InMemoryOMEMOSessionStore()
     override var autoUpdateIdentityStore: Boolean = true
     override var autoCreateSession: Boolean = false
+    override lateinit var bundleStateStorage: BundleStateStorage;
 
     init {
         context.eventBus.register(PubSubItemEvent) {
@@ -320,8 +330,11 @@ class OMEMOModule(
 
         getOMEMOSession(senderJid.bareJID, senderId) {
             it.onSuccess {
-                val b = OMEMOEncryptor.decrypt(protocolStore, it, wrap(element))
-                chain.doFilter(b)
+                val result = OMEMOEncryptor.decrypt(protocolStore, it, wrap(element))
+                if (result.second) {
+                    publishBundleIfNeeded();
+                }
+                chain.doFilter(result.first)
             }
             it.onFailure {
                 it.printStackTrace()
@@ -331,6 +344,77 @@ class OMEMOModule(
                 })
                 chain.doFilter(element)
             }
+        }
+    }
+
+    private var bundleRefreshInProgress = false;
+
+    fun publishBundleIfNeeded() {
+        val registrationId = protocolStore.getLocalRegistrationId();
+        if (registrationId == 0 || bundleRefreshInProgress) {
+            return;
+        }
+
+        context.boundJID?.bareJID?.let { jid ->
+            bundleRefreshInProgress = true;
+            pubsubModule.retrieveItem(jid, "$BUNDLES_NODE_PREFIX$registrationId", itemId = "current").response {
+                it.onSuccess {
+                    protocolStore.loadSignedPreKeys()?.mapNotNull { it?.getId() }?.max()?.let { signedPreKeyId ->
+                        val currentKeys =
+                            it.items.firstOrNull()?.content?.getFirstChild("prekeys")?.children?.mapNotNull { it.attributes["preKeyId"]?.toIntOrNull() }
+                                ?: emptyList();
+                        
+                        val validKeys = currentKeys.filter { protocolStore.containsPreKey(it) };
+                        val needKeys = 150 - validKeys.size;
+                        log.fine("publishing new OMEMO bundle with ${needKeys} new keys")
+                        if (needKeys > 0) {
+                            val nextPreKeyId = bundleStateStorage.currentPreKeyId() + 1;
+                            val newKeys = KeyHelper.generatePreKeys(nextPreKeyId, needKeys).map {
+                                protocolStore.storePreKey(it.getId(), it);
+                                it.getId()
+                            };
+                            val preKeysToPublish = (validKeys + newKeys);
+                            bundleStateStorage.updatePreKeyMax(preKeysToPublish.max())
+                            publishOwnBundle(signedPreKeyId, preKeysToPublish).response {
+                                it.onSuccess {
+                                    log.info { "publication of new OMEMO bundle succeeded" }
+                                    bundleRefreshInProgress = false;
+                                }
+                                it.onFailure { ex ->
+                                    log.warning(ex, { "publication of new OMEMO bundle failed, reverting..." })
+                                    newKeys.forEach {
+                                        protocolStore.removePreKey(it);
+                                    }
+                                    bundleStateStorage.updatePreKeyMax(nextPreKeyId - 1)
+                                    bundleRefreshInProgress = false;
+                                }
+                                bundleRefreshInProgress = false;
+                            }.send();
+                        }
+                    }
+                }
+                it.onFailure {
+                    if (it is XMPPError) {
+                       when(it.error) {
+                           ErrorCondition.InternalServerError, ErrorCondition.ItemNotFound -> protocolStore.loadSignedPreKeys()?.mapNotNull { it?.getId() }?.max()?.let { signedPreKeyId ->
+                               val preKeyId = bundleStateStorage.currentPreKeyId();
+                               if (preKeyId > 0) {
+                                   val newKeys = (0..preKeyId).filter { protocolStore.containsPreKey(it) }
+                                   log.fine { "publishing own OMEMO bundle succeeded" }
+                                   publishOwnBundle(signedPreKeyId, newKeys).response {
+                                       bundleRefreshInProgress = false
+                                   }.send();
+                               } else {
+                                   bundleRefreshInProgress = false;
+                               }
+                           }
+                           else -> {
+                               bundleRefreshInProgress = false;
+                           }
+                       }
+                    }
+                }
+            }.send()
         }
     }
 
