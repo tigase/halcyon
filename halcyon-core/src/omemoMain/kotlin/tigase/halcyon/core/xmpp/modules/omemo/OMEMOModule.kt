@@ -128,7 +128,8 @@ class OMEMOModule(
         if (event.pubSubJID != null && event.nodeName == DEVICE_LIST_NODE && event.itemId == CURRENT) {
             processDevicesList(event.pubSubJID, event.content)
         } else if (event.pubSubJID != null && event.nodeName.startsWith(BUNDLES_NODE_PREFIX) && event.itemId == CURRENT) {
-            processBundle(event.pubSubJID, event.nodeName, event.content)
+            val deviceId = event.nodeName.substringAfter(BUNDLES_NODE_PREFIX);
+            processBundle(event.pubSubJID, deviceId, event.content)
         }
     }
 
