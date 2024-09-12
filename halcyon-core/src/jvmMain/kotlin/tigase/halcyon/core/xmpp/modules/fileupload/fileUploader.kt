@@ -4,8 +4,31 @@ import java.io.File
 import java.io.InputStream
 import java.net.HttpURLConnection
 import java.net.URL
+import java.security.cert.X509Certificate
+import javax.net.ssl.*
 
 fun uploadFile(input: InputStream, slot: Slot): Int {
+	val factory = SSLContext.getInstance("SSL");
+	factory.init(null, arrayOf(object : X509TrustManager {
+		override fun checkClientTrusted(chain: Array<out X509Certificate>?, authType: String?) {
+
+		}
+
+		override fun checkServerTrusted(chain: Array<out X509Certificate>?, authType: String?) {
+
+		}
+
+		override fun getAcceptedIssuers(): Array<X509Certificate> {
+			return emptyArray()
+		}
+
+	}), java.security.SecureRandom());
+	HttpsURLConnection.setDefaultSSLSocketFactory(factory.socketFactory);
+	HttpsURLConnection.setDefaultHostnameVerifier(object : HostnameVerifier {
+		override fun verify(hostname: String?, session: SSLSession?): Boolean {
+			return true
+		}
+	})
 	val connection = (URL(slot.putUrl).openConnection()) as HttpURLConnection
 	connection.doOutput = true
 	connection.requestMethod = "PUT"

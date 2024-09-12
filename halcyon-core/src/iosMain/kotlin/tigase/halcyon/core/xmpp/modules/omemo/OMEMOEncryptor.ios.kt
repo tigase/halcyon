@@ -29,10 +29,7 @@ actual object OMEMOEncryptor {
     ): DecryptedKey? {
         val localKeys = keyElements.filter { it.attributes["rid"]?.toInt() == session.localRegistrationId };
         val iterator = localKeys.iterator()
-        val sessionCipher =
-            session.ciphers[senderAddr] ?: let {
-                SessionCipher(store, senderAddr)
-            }
+        val sessionCipher = SessionCipher(store, senderAddr)
         while (iterator.hasNext()) {
             val keyElement = iterator.next()
             val preKey = keyElement.attributes["prekey"] in listOf("1", "true")

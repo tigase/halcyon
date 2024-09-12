@@ -1,6 +1,8 @@
 package tigase.halcyon.core.xmpp.modules.omemo
 
+import tigase.halcyon.core.ClearedEvent
 import tigase.halcyon.core.Context
+import tigase.halcyon.core.Scope
 import tigase.halcyon.core.builder.HalcyonConfigDsl
 import tigase.halcyon.core.exceptions.HalcyonException
 import tigase.halcyon.core.logger.LoggerFactory
@@ -29,12 +31,7 @@ interface OMEMOModuleConfig {
      * Specify a store to keep Signal Protocol data like identities, keys, etc.
      */
     var protocolStore: SignalProtocolStore
-
-    /**
-     * Store for open OMEMO sessions.
-     */
-    var sessionStore: OMEMOSessionStore
-
+    
     var bundleStateStorage: BundleStateStorage
 
     /**
@@ -100,6 +97,8 @@ class OMEMOModule(
 //            moduleManager.registerInterceptors(arrayOf(module))
             moduleManager.registerOutgoingFilter(module.outgoingFilter)
             moduleManager.registerIncomingFilter(module.incomingFilter)
+
+            module.initialize();
         }
 
     }
@@ -110,7 +109,7 @@ class OMEMOModule(
     override val features = arrayOf(XMLNS, "$DEVICE_LIST_NODE+notify")
 
     override lateinit var protocolStore: SignalProtocolStore
-    override var sessionStore: OMEMOSessionStore = InMemoryOMEMOSessionStore()
+//    override var sessionStore: OMEMOSessionStore = InMemoryOMEMOSessionStore()
     override var autoUpdateIdentityStore: Boolean = true
     override var autoCreateSession: Boolean = false
     override lateinit var bundleStateStorage: BundleStateStorage;
@@ -123,6 +122,19 @@ class OMEMOModule(
 
     private val outgoingFilter = createFilter(::beforeSend)
     private val incomingFilter = createFilter(::afterReceive)
+
+    private var devices: MutableMap<BareJID,List<Int>> = mutableMapOf();
+    private var devicesFetchError: MutableMap<BareJID,List<Int>> = mutableMapOf();
+
+    private fun initialize() {
+        context.eventBus.register(ClearedEvent) {
+            if (it.scopes.contains(Scope.Session)) {
+                log.fine { "resetting list of known OMEMO devices" }
+                devices.clear();
+                devicesFetchError.clear();
+            }
+        }
+    }
 
     private fun processPubSubItemPublishedEvent(event: PubSubItemEvent.Published) {
         if (event.pubSubJID != null && event.nodeName == DEVICE_LIST_NODE && event.itemId == CURRENT) {
@@ -143,15 +155,30 @@ class OMEMOModule(
     private fun processDevicesList(jid: JID, content: Element?) {
         val deviceList = content.toDeviceList()
         if (autoUpdateIdentityStore) {
-            deviceList.forEach {
-                val addr = SignalProtocolAddress(jid.toString(), it)
-                log.info { "Retrieving OMEMO keys of $jid:$it" }
-                if (protocolStore.getIdentity(addr) == null) retrieveBundle(jid.bareJID, it).response {
-                    it.onSuccess {
-                        storeBundle(addr, it)
+            if (context.boundJID?.bareJID == jid.bareJID) {
+                val knownSessions = protocolStore.getSubDeviceSessions(jid.bareJID.toString());
+                deviceList.filterNot(knownSessions::contains).forEach { deviceId ->
+                    startSession(jid.bareJID, deviceId) {
+                        it.onFailure {
+                            log.warning(it,{ "starting session for ${jid} with device ${deviceId} failed"})
+                        }
+                        it.onSuccess {
+                            log.info("started session for ${jid} with device ${deviceId} successfully")
+                        }
                     }
-                }.send()
+                }
+            } else {
+                devices[jid.bareJID] = deviceList;
             }
+//            deviceList.forEach {
+//                val addr = SignalProtocolAddress(jid.toString(), it)
+//                log.info { "Retrieving OMEMO keys of $jid:$it" }
+//                if (protocolStore.getIdentity(addr) == null) retrieveBundle(jid.bareJID, it).response {
+//                    it.onSuccess {
+//                        storeBundle(addr, it)
+//                    }
+//                }.send()
+//            }
         }
     }
 
@@ -237,39 +264,52 @@ class OMEMOModule(
         )
     }
 
-    /**
-     * Starts OMEMO session with given JabberID.
-     * @param jid JabberID with which the session will be created.
-     * @param handler session creation result handler.
-     */
-    fun startSession(jid: BareJID, handler: (Result<OMEMOSession>) -> Unit) {
-        log.finest("retrieving bundles for " + jid.toString() + "...")
-        retrieveBundles(listOf(jid, context.boundJID!!.bareJID)) {
-            val session = startSession(jid, it)
-            if (session != null) handler.invoke(Result.success(session))
-            else handler.invoke(Result.failure(HalcyonException("Cannot create OMEMO session")))
+    fun startSession(jid: BareJID, deviceId: Int, handler: (Result<OMEMOSession>) -> Unit) {
+        log.finest("retrieving bundle for " + jid.toString() + ", device id: ${deviceId}...")
+        retrieveBundle(jid, deviceId).response {
+            it.onSuccess {
+                createSession(protocolStore, it);
+            }
+            it.onFailure {
+                devicesFetchError[jid] = (devicesFetchError[jid] ?: emptyList()) + listOf(deviceId);
+                handler(Result.failure(it));
+            }
         }
     }
 
-    /**
-     * Starts OMEMO session with given JabberID.
-     * @param jid JabberID with which the session will be created.
-     * @param bundles list of previously retrieved key bundles of given JabberID.
-     * @return created session or `null`.
-     */
-    fun startSession(jid: BareJID, bundles: List<Bundle>): OMEMOSession? {
-        try {
-            log.finest("starting session for jid " + jid.toString() + " with " + bundles.size + "...")
-            val myJid = context.boundJID!!.bareJID
-            val ciphers = createCiphers(protocolStore, bundles)
-            val session = OMEMOSession(protocolStore.getLocalRegistrationId(), myJid, jid, ciphers.toMutableMap())
-            sessionStore.storeOMEMOSession(session)
-            return session
-        } catch (e: Exception) {
-            log.warning("got exception while starting session: " + e.message)
-            return null
-        }
-    }
+//    /**
+//     * Starts OMEMO session with given JabberID.
+//     * @param jid JabberID with which the session will be created.
+//     * @param handler session creation result handler.
+//     */
+//    fun startSession(jid: BareJID, handler: (Result<OMEMOSession>) -> Unit) {
+//        log.finest("retrieving bundles for " + jid.toString() + "...")
+//        retrieveBundles(listOf(jid, context.boundJID!!.bareJID)) {
+//            val session = startSession(jid, it)
+//            if (session != null) handler.invoke(Result.success(session))
+//            else handler.invoke(Result.failure(HalcyonException("Cannot create OMEMO session")))
+//        }
+//    }
+//
+//    /**
+//     * Starts OMEMO session with given JabberID.
+//     * @param jid JabberID with which the session will be created.
+//     * @param bundles list of previously retrieved key bundles of given JabberID.
+//     * @return created session or `null`.
+//     */
+//    fun startSession(jid: BareJID, bundles: List<Bundle>): OMEMOSession? {
+//        try {
+//            log.finest("starting session for jid " + jid.toString() + " with " + bundles.size + "...")
+//            val myJid = context.boundJID!!.bareJID
+//            val ciphers = createCiphers(protocolStore, bundles)
+//            val session = OMEMOSession(protocolStore.getLocalRegistrationId(), myJid, jid, ciphers.toMutableMap())
+//            sessionStore.storeOMEMOSession(session)
+//            return session
+//        } catch (e: Exception) {
+//            log.warning("got exception while starting session: " + e.message)
+//            return null
+//        }
+//    }
 
     /**
      * Prepare request to publish currently used own key bundle.
@@ -329,23 +369,13 @@ class OMEMOModule(
             return
         }
 
-        getOMEMOSession(senderJid.bareJID, senderId) {
-            it.onSuccess {
-                val result = OMEMOEncryptor.decrypt(protocolStore, it, wrap(element))
-                if (result.second) {
-                    publishBundleIfNeeded();
-                }
-                chain.doFilter(result.first)
-            }
-            it.onFailure {
-                it.printStackTrace()
-                element.remove(encElement)
-                element.add(element("body") {
-                    +"Cannot decrypt message."
-                })
-                chain.doFilter(element)
-            }
+        val localJid = context.boundJID!!.bareJID;
+        val session = OMEMOSession(protocolStore.getLocalRegistrationId(), localJid, senderJid.bareJID, emptyMap<SignalProtocolAddress, SessionCipher>().toMutableMap())
+        val result = OMEMOEncryptor.decrypt(protocolStore, session, wrap(element))
+        if (result.second) {
+            publishBundleIfNeeded();
         }
+        chain.doFilter(result.first)
     }
 
     private var bundleRefreshInProgress = false;
@@ -419,59 +449,130 @@ class OMEMOModule(
         }
     }
 
-    private fun getOMEMOSession(jid: BareJID, senderId: Int, handler: (Result<OMEMOSession>) -> Unit) {
-        val s = sessionStore.getOMEMOSession(jid)
-        if (s != null) {
-            handler(Result.success(s))
-            return
+//    private fun getOMEMOSession(jid: BareJID, senderId: Int, handler: (Result<OMEMOSession>) -> Unit) {
+//        val s = sessionStore.getOMEMOSession(jid)
+//        if (s != null) {
+//            handler(Result.success(s))
+//            return
+//        }
+//        startSession(jid) {
+//            it.onSuccess { s ->
+//                handler(Result.success(s))
+//            }
+//            it.onFailure { handler(Result.failure(HalcyonException("Cannot create session"))) }
+//        }
+//    }
+//
+//    private fun encryptAndSend(
+//        element: Element,
+//        chain: StanzaFilterChain,
+//        recipient: FullJID,
+//        session: OMEMOSession,
+//        bodyEl: Element,
+//        order: EncryptMessage
+//    ) {
+//        element.remove(bodyEl)
+//
+//        val encElement = OMEMOEncryptor.encrypt(session, bodyEl.value ?: "")
+//
+//        element.add(encElement)
+//        element.add(element("store") {
+//            xmlns = "urn:xmpp:hints"
+//        })
+//
+//        element.clearControls()
+//        chain.doFilter(element)
+//    }
+//
+//    private fun createSessionEncryptAndSend(
+//        element: Element,
+//        chain: StanzaFilterChain,
+//        recipient: FullJID,
+//        bodyEl: Element,
+//        order: EncryptMessage
+//    ) {
+//        log.finest("startig omemo session with " + recipient.bareJID.toString())
+//        startSession(recipient.bareJID) {
+//            print("awaiting omemo session creation....")
+//            it.onSuccess {
+//                log.finest("session created successfully!")
+//                encryptAndSend(element, chain, recipient, it, bodyEl, order)
+//            }
+//            it.onFailure {
+//                log.finest("session creation failed!!")
+//                it.printStackTrace()
+//            }
+//        }
+//    }
+
+    private fun activeDevices(jid: BareJID): List<Int> = devices[jid]?.filterNot { devicesFetchError[jid]?.contains(it) ?: false } ?: emptyList();
+
+    private fun ensureSessions(jid: BareJID, deviceIds: List<Int>, callback: (List<SignalProtocolAddress>)->Unit) {
+        val addresses = deviceIds.map { SignalProtocolAddress(jid.toString(), it) }
+        val missingSessions = addresses.filterNot { protocolStore.containsSession(it) };
+        var counter = missingSessions.size;
+        if (counter == 0) {
+            callback(addresses);
+            return;
         }
-        startSession(jid) {
-            it.onSuccess { s ->
-                handler(Result.success(s))
+        val continuation = {
+            counter -= 1;
+            if (counter == 0) {
+                callback(addresses);
             }
-            it.onFailure { handler(Result.failure(HalcyonException("Cannot create session"))) }
+        }
+
+        missingSessions.forEach {
+            startSession(jid, it.getDeviceId()) {
+                continuation();
+            }
         }
     }
 
-    private fun encryptAndSend(
-        element: Element,
-        chain: StanzaFilterChain,
-        recipient: FullJID,
-        session: OMEMOSession,
-        bodyEl: Element,
-        order: EncryptMessage
-    ) {
-        element.remove(bodyEl)
-
-        val encElement = OMEMOEncryptor.encrypt(session, bodyEl.value ?: "")
-
-        element.add(encElement)
-        element.add(element("store") {
-            xmlns = "urn:xmpp:hints"
-        })
-
-        element.clearControls()
-        chain.doFilter(element)
+    fun addresses(jid: BareJID, callback: (List<SignalProtocolAddress>)->Unit) {
+        val devices = activeDevices(jid);
+        if (devices.isNotEmpty()) {
+            // encrypt for known active devices
+            ensureSessions(jid, devices, callback);
+        } else {
+            // we need to discover active devices
+            retrieveDevicesIds(jid).response {
+                it.onSuccess {
+                    this.devices[jid] = it
+                    ensureSessions(jid, it, callback);
+                }
+                it.onFailure {
+                    callback(emptyList())
+                }
+            }
+        }
     }
 
-    private fun createSessionEncryptAndSend(
-        element: Element,
-        chain: StanzaFilterChain,
-        recipient: FullJID,
-        bodyEl: Element,
-        order: EncryptMessage
-    ) {
-        log.finest("startig omemo session with " + recipient.bareJID.toString())
-        startSession(recipient.bareJID) {
-            print("awaiting omemo session creation....")
-            it.onSuccess {
-                log.finest("session created successfully!")
-                encryptAndSend(element, chain, recipient, it, bodyEl, order)
-            }
-            it.onFailure {
-                log.finest("session creation failed!!")
-                it.printStackTrace()
-            }
+    fun encryptAndSend(element: Element, chain: StanzaFilterChain, recipient: FullJID, bodyEl: Element, order: EncryptMessage) {
+        addresses(recipient.bareJID) { addresses ->
+            log.fine("discovered remote addresses: ${addresses}")
+            element.remove(bodyEl)
+
+            val localJid = context.boundJID!!.bareJID;
+            val localAddresses = protocolStore.getSubDeviceSessions(localJid.toString()).map { SignalProtocolAddress(localJid.toString(), it) };
+            log.fine("discovered local addresses: ${localAddresses}")
+            val session = OMEMOSession(
+                protocolStore.getLocalRegistrationId(),
+                localJid,
+                recipient.bareJID,
+                (localAddresses + addresses).associateBy({ k -> k }, { k -> SessionCipher(protocolStore, k) })
+                    .toMutableMap()
+            )
+
+            val encElement = OMEMOEncryptor.encrypt(session, bodyEl.value ?: "")
+
+            element.add(encElement)
+            element.add(element("store") {
+                xmlns = "urn:xmpp:hints"
+            })
+
+            element.clearControls()
+            chain.doFilter(element)
         }
     }
 
@@ -484,21 +585,20 @@ class OMEMOModule(
         val order = element.encryptionOrder()
 
         val recipient = element.getToAttr()
-        val session = recipient?.let { sessionStore.getOMEMOSession(it.bareJID) }
         val bodyEl = element.getFirstChild("body")
 
 
-        if (order == EncryptMessage.Yes && session == null && bodyEl != null && recipient != null) {
-            if (autoCreateSession) {
-                createSessionEncryptAndSend(element, chain, recipient, bodyEl, order)
-            } else {
-                throw OMEMOException("Can't encrypt the message that needs to be encrypted.")
-            }
-        } else if (recipient == null || session == null || bodyEl == null || order == EncryptMessage.No) {
+//        if (order == EncryptMessage.Yes && session == null && bodyEl != null && recipient != null) {
+//            if (autoCreateSession) {
+//                createSessionEncryptAndSend(element, chain, recipient, bodyEl, order)
+//            } else {
+//                throw OMEMOException("Can't encrypt the message that needs to be encrypted.")
+//            }
+        if (recipient == null || bodyEl == null || order == EncryptMessage.No) {
             element.clearControls()
             chain.doFilter(element)
         } else {
-            encryptAndSend(element, chain, recipient, session, bodyEl, order)
+            encryptAndSend(element, chain, recipient, bodyEl, order)
         }
     }
 

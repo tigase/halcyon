@@ -16,6 +16,18 @@ data class OMEMOSession(
     val ciphers: MutableMap<SignalProtocolAddress, SessionCipher>
 )
 
+fun createSession(store: SignalProtocolStore, bundle: Bundle): Result<Unit> {
+    try {
+        val address = SignalProtocolAddress(bundle.jid.toString(), bundle.deviceId)
+        if (!store.containsSession(address)) {
+            SessionBuilder(store, address).process(bundle.getRandomPreKeyBundle())
+        }
+        return Result.success(Unit);
+    } catch (e: Exception) {
+        return Result.failure(e)
+    }
+}
+
 fun createCiphers(store: SignalProtocolStore, bundles: List<Bundle>): Map<SignalProtocolAddress, SessionCipher> {
     return bundles.mapNotNull { bundle ->
         val addr = SignalProtocolAddress(bundle.jid.toString(), bundle.deviceId)
