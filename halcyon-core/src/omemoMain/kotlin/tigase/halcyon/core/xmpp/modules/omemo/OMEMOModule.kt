@@ -167,6 +167,18 @@ class OMEMOModule(
                         }
                     }
                 }
+
+                val localDeviceId = protocolStore.getLocalRegistrationId();
+                if (!deviceList.contains(localDeviceId)) {
+                    publishDeviceList(deviceList + listOf(localDeviceId)).response {
+                        it.onFailure {
+                            log.warning(it, { "failed to publish updated device list" })
+                        }
+                        it.onSuccess {
+                            log.fine("published updated device list successfully")
+                        }
+                    }.send();
+                }
             } else {
                 devices[jid.bareJID] = deviceList;
             }
