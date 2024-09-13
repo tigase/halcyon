@@ -203,8 +203,8 @@ class OMEMOModule(
      * @param jid JabberID
      * @param idFilter item id (`current` by default).
      */
-    fun retrieveDevicesIds(jid: BareJID, idFilter: String? = CURRENT): RequestBuilder<List<Int>, IQ> {
-        return pubsubModule.retrieveItem(jid = jid, node = DEVICE_LIST_NODE, itemId = idFilter).map { resp ->
+    fun retrieveDevicesIds(jid: BareJID, idFilter: String? = null): RequestBuilder<List<Int>, IQ> {
+        return pubsubModule.retrieveItem(jid = jid, node = DEVICE_LIST_NODE, itemId = idFilter, maxItems = if (idFilter != null) { null } else { 1 }).map { resp ->
             resp.items.map { item ->
                 item.content.toDeviceList()
             }.flatten()
@@ -217,8 +217,8 @@ class OMEMOModule(
      * @param bundleId requested bundle identifier.
      */
     fun retrieveBundle(jid: BareJID, bundleId: Int): RequestBuilder<Bundle, IQ> {
-        return pubsubModule.retrieveItem(jid, "$BUNDLES_NODE_PREFIX$bundleId").map {
-            it.items.firstOrNull { it.id == CURRENT }?.content?.toBundleOf(jid, bundleId) ?: throw XMPPException(
+        return pubsubModule.retrieveItem(jid, "$BUNDLES_NODE_PREFIX$bundleId", maxItems = 1).map {
+            it.items.firstOrNull()?.content?.toBundleOf(jid, bundleId) ?: throw XMPPException(
                 ErrorCondition.ItemNotFound,
                 "Bundle $bundleId not found"
             )
@@ -286,7 +286,7 @@ class OMEMOModule(
                 devicesFetchError[jid] = (devicesFetchError[jid] ?: emptyList()) + listOf(deviceId);
                 handler(Result.failure(it));
             }
-        }
+        }.send()
     }
 
 //    /**
@@ -400,7 +400,7 @@ class OMEMOModule(
 
         context.boundJID?.bareJID?.let { jid ->
             bundleRefreshInProgress = true;
-            pubsubModule.retrieveItem(jid, "$BUNDLES_NODE_PREFIX$registrationId", itemId = "current").response {
+            pubsubModule.retrieveItem(jid, "$BUNDLES_NODE_PREFIX$registrationId", maxItems = 1).response {
                 it.onSuccess {
                     protocolStore.loadSignedPreKeys()?.mapNotNull { it?.getId() }?.max()?.let { signedPreKeyId ->
                         val currentKeys =
@@ -556,7 +556,7 @@ class OMEMOModule(
                 it.onFailure {
                     callback(emptyList())
                 }
-            }
+            }.send()
         }
     }
 

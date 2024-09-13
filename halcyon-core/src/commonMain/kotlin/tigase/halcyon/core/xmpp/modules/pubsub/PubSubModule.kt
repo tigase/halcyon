@@ -415,7 +415,7 @@ class PubSubModule(override val context: Context) : XmppModule, PubSubModuleConf
 	 * @return [RetrieveResponse] what contains list of published items.
 	 */
 	fun retrieveItem(
-		jid: JID?, node: String, itemId: String? = null,
+		jid: JID?, node: String, itemId: String? = null, maxItems: Int? = null
 	): RequestBuilder<RetrieveResponse, IQ> {
 		val iq = iq {
 			if (jid != null) to = jid
@@ -424,6 +424,9 @@ class PubSubModule(override val context: Context) : XmppModule, PubSubModuleConf
 				xmlns = XMLNS
 				"items" {
 					attribute("node", node)
+					if (maxItems != null) {
+						attribute("max_items", maxItems.toString());
+					}
 					if (itemId != null) {
 						"item" {
 							attribute("id", itemId)
