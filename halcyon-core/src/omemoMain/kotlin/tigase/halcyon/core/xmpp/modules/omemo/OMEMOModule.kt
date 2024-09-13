@@ -276,14 +276,16 @@ class OMEMOModule(
         )
     }
 
-    fun startSession(jid: BareJID, deviceId: Int, handler: (Result<OMEMOSession>) -> Unit) {
+    fun startSession(jid: BareJID, deviceId: Int, handler: (Result<Unit>) -> Unit) {
         log.finest("retrieving bundle for " + jid.toString() + ", device id: ${deviceId}...")
         retrieveBundle(jid, deviceId).response {
             it.onSuccess {
-                createSession(protocolStore, it);
+                storeBundle(SignalProtocolAddress(jid.toString(), deviceId), it);
+                handler(createSession(protocolStore, it));
             }
             it.onFailure {
                 devicesFetchError[jid] = (devicesFetchError[jid] ?: emptyList()) + listOf(deviceId);
+                log.warning(it, {"failed starting session for $jid, device id: $deviceId" })
                 handler(Result.failure(it));
             }
         }.send()
@@ -520,7 +522,7 @@ class OMEMOModule(
     private fun activeDevices(jid: BareJID): List<Int> = devices[jid]?.filterNot { devicesFetchError[jid]?.contains(it) ?: false } ?: emptyList();
 
     private fun ensureSessions(jid: BareJID, deviceIds: List<Int>, callback: (List<SignalProtocolAddress>)->Unit) {
-        val addresses = deviceIds.map { SignalProtocolAddress(jid.toString(), it) }
+        var addresses = deviceIds.map { SignalProtocolAddress(jid.toString(), it) }.toMutableList();
         val missingSessions = addresses.filterNot { protocolStore.containsSession(it) };
         var counter = missingSessions.size;
         if (counter == 0) {
@@ -534,8 +536,11 @@ class OMEMOModule(
             }
         }
 
-        missingSessions.forEach {
-            startSession(jid, it.getDeviceId()) {
+        missingSessions.forEach { addr ->
+            startSession(jid, addr.getDeviceId()) {
+                if (it.isFailure) {
+                    addresses.remove(addr);
+                }
                 continuation();
             }
         }
