@@ -109,7 +109,7 @@ class RequestBuilder<V, STT : Stanza<*>>(
     private val element: Element,
     private val writeDirectly: Boolean = false,
     @Deprecated("Use onSend() instead.") private val callHandlerOnSent: Boolean = false,
-    private val transform: (value: Any) -> V,
+    private val transform: (value: Any?) -> V,
 ) {
 
     private var requestName: String? = null
@@ -150,10 +150,10 @@ class RequestBuilder<V, STT : Stanza<*>>(
     }
 
     @Suppress("UNCHECKED_CAST")
-    fun <R : Any> map(transform: (value: V) -> R): RequestBuilder<R, STT> {
+    fun <R> map(transform: (value: V) -> R): RequestBuilder<R, STT> {
         check(!writeDirectly) { "Mapping cannot be added to directly writable request." }
         val res =
-            RequestBuilder<R, STT>(halcyon, element, writeDirectly, callHandlerOnSent, transform as (((Any) -> R)))
+            RequestBuilder<R, STT>(halcyon, element, writeDirectly, callHandlerOnSent, transform as (((Any?) -> R)))
         res.errorTransformer = errorTransformer
         res.timeoutDelay = timeoutDelay
         res.resultHandler = null

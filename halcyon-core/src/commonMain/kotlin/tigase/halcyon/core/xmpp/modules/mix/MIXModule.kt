@@ -35,6 +35,9 @@ import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xml.element
 import tigase.halcyon.core.xml.getChildContent
 import tigase.halcyon.core.xmpp.*
+import tigase.halcyon.core.xmpp.forms.FieldType
+import tigase.halcyon.core.xmpp.forms.FormType
+import tigase.halcyon.core.xmpp.forms.JabberDataForm
 import tigase.halcyon.core.xmpp.modules.RSM
 import tigase.halcyon.core.xmpp.modules.mam.ForwardedStanza
 import tigase.halcyon.core.xmpp.modules.mam.MAMModule
@@ -58,7 +61,7 @@ data class MIXMessageEvent(val channel: BareJID, val stanza: Message, val timest
 	}
 }
 
-data class JoinResponse(val jid: JID, val nick: String, val nodes: Array<String>) {
+data class JoinResponse(val jid: JID, val nick: String, val nodes: Array<String>, val participantId: String?) {
 
 	override fun equals(other: Any?): Boolean {
 		if (this === other) return true
@@ -75,6 +78,44 @@ data class JoinResponse(val jid: JID, val nick: String, val nodes: Array<String>
 		result = 31 * result + nodes.contentHashCode()
 		return result
 	}
+}
+
+data class ChannelInfo(val name: String?, val description: String?, val contacts: List<JID>?) {
+
+	companion object {
+
+		fun fromJabberDataForm(form: JabberDataForm): ChannelInfo? {
+			if (form.getFieldByVar("FORM_TYPE")?.fieldValue != MIXModule.XMLNS) {
+				return null;
+			}
+			val name = form.getFieldByVar("Name")?.fieldValue;
+			val description = form.getFieldByVar("Description")?.fieldValue;
+			val contacts = form.getFieldByVar("Contacts")?.fieldValues?.map { it.toJID() };
+
+			return ChannelInfo(name, description, contacts)
+		}
+
+		fun fromElement(element: Element): ChannelInfo? {
+			try {
+				val form = JabberDataForm(element);
+				return fromJabberDataForm(form);
+			} catch (e: Exception) {
+				return null;
+			}
+		}
+	}
+
+	fun toJabberDataForm(): JabberDataForm {
+		val form = JabberDataForm.create(FormType.Form);
+		form.addField("FORM_TYPE", FieldType.Hidden).fieldValue = MIXModule.XMLNS
+		form.addField("Name", FieldType.TextSingle).fieldValue = name
+		form.addField("Description", FieldType.TextSingle).fieldValue = description
+		form.addField("Contact", FieldType.JidMulti).fieldValues = contacts?.map { it.toString() } ?: emptyList()
+		return form;
+	}
+
+	fun toElement(): Element = toJabberDataForm().createSubmitForm();
+	
 }
 
 data class CreateResponse(val jid: BareJID, val name: String)
@@ -226,7 +267,14 @@ class MIXModule(
 			val join = iq.getChildrenNS("client-join", "urn:xmpp:mix:pam:2")!!.getChildrenNS("join", XMLNS)!!
 			val nodes = join.getChildren("subscribe").map { it.attributes["node"]!! }.toTypedArray()
 			val nck = join.getChildren("subscribe").firstOrNull()?.value ?: nick
-			JoinResponse(join.attributes["jid"]!!.toJID(), nck, nodes)
+			var jid = join.attributes["jid"]!!;
+			val parts = jid.split('#');
+			var id: String? = null;
+			if (parts.size > 1) {
+				id = parts[0];
+				jid = parts[1];
+			}
+			JoinResponse(jid.toJID(), nck, nodes, id)
 		}
 	}
 
@@ -260,6 +308,21 @@ class MIXModule(
 			to = channel
 			type = MessageType.Groupchat
 			body = message
+		}
+	}
+
+	fun publishInfo(channel: BareJID, info: ChannelInfo): RequestBuilder<Unit, IQ> {
+		return pubsubModule.publish(channel, node = "urn:xmpp:mix:nodes:info", itemId = null, payload = info.toElement()).map { }
+	}
+
+	fun retrieveInfo(channel: BareJID): RequestBuilder<ChannelInfo?, IQ> {
+		return pubsubModule.retrieveItem(channel, node = "urn:xmpp:mix:nodes:info", maxItems = 1).map {
+			val item = it.items.firstOrNull()?.content;
+			if (item != null) {
+				return@map ChannelInfo.fromElement(item)
+			} else {
+				return@map null
+			}
 		}
 	}
 
