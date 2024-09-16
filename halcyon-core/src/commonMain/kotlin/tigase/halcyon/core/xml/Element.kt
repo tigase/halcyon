@@ -148,15 +148,11 @@ class ElementImpl(override val name: String) : Element {
             builder.append('/')
         }
         builder.append('>')
-        if (deep > 0) {
-            for (element in children) {
-                builder.append(element.getAsString(deep - 1, showValue))
-            }
-        } else if (!children.isEmpty()) {
-            builder.append("...")
+        for (element in children) {
+            builder.append(element.getAsString(deep - 1, true))
         }
         if (value != null) {
-            if (showValue) builder.append(EscapeUtils.escape(value))
+            if (true) builder.append(EscapeUtils.escape(value))
             else builder.append("...")
         }
         if (!(children.isEmpty() && value == null)) {
