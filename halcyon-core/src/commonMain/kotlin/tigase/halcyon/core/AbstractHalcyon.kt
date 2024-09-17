@@ -318,7 +318,7 @@ abstract class AbstractHalcyon(configurator: ConfigurationBuilder) : Context, Pa
 
     protected fun startConnector() {
         if (running) {
-            log.fine { "Starting connector" }
+            log.fine { "Starting connector ($this)" }
 
             stopConnector()
 
@@ -348,9 +348,9 @@ abstract class AbstractHalcyon(configurator: ConfigurationBuilder) : Context, Pa
     }
 
     protected fun waitForDisconnect(connector: AbstractConnector?, handler: () -> Unit) {
-        log.finer { "Waiting for disconnection" }
+        log.finer { "Waiting for disconnection ($this)" }
         if (connector == null) {
-            log.finest { "No connector. Calling handler." }
+            log.finest { "No connector. Calling handler. ($this)" }
             handler.invoke()
         } else {
             var fired = false
@@ -359,7 +359,7 @@ abstract class AbstractHalcyon(configurator: ConfigurationBuilder) : Context, Pa
                     if (!fired && event.newState == tigase.halcyon.core.connector.State.Disconnected) {
                         connector.halcyon.eventBus.unregister(this)
                         fired = true
-                        log.finest { "State changed. Calling handler." }
+                        log.finest { "State changed. Calling handler. ($this)" }
                         handler.invoke()
                     }
                 }
@@ -369,7 +369,7 @@ abstract class AbstractHalcyon(configurator: ConfigurationBuilder) : Context, Pa
                 if (!fired && connector.state == tigase.halcyon.core.connector.State.Disconnected) {
                     connector.halcyon.eventBus.unregister(h)
                     fired = true
-                    log.finest { "State is Disconnected already. Calling handler." }
+                    log.finest { "State is Disconnected already. Calling handler. ($this)" }
                     handler.invoke()
                 }
             } finally {
@@ -395,7 +395,7 @@ abstract class AbstractHalcyon(configurator: ConfigurationBuilder) : Context, Pa
     fun disconnect() {
         try {
             this.running = false
-            log.info { "Disconnecting" }
+            log.info { "Disconnecting: $this" }
 
             modules.getModuleOrNull(StreamManagementModule)?.let { module ->
                 val ackEnabled =
@@ -419,5 +419,9 @@ abstract class AbstractHalcyon(configurator: ConfigurationBuilder) : Context, Pa
         internalDataStore.clear(scope)
         val scopes = Scope.values().filter { s -> s.ordinal <= scope.ordinal }.toTypedArray()
         eventBus.fire(ClearedEvent(scopes))
+    }
+
+    override fun toString(): String {
+        return "AbstractHalcyon(boundJID=$boundJID, state=$state, running=$running)"
     }
 }
