@@ -219,8 +219,16 @@ class MIXModule(
 		return pubsubModule.publish(channel, NODE_ALLOWED, participant.toString()).map { }
 	}
 
+	fun removeFromAllowed(channel: BareJID, participant: BareJID): RequestBuilder<Unit, IQ> {
+		return pubsubModule.deleteItem(channel, NODE_ALLOWED, participant.toString()).map {}
+	}
+
 	fun addToBanned(channel: BareJID, participant: BareJID): RequestBuilder<Unit, IQ> {
 		return pubsubModule.publish(channel, NODE_BANNED, participant.toString()).map { }
+	}
+
+	fun removeFromBanned(channel: BareJID, participant: BareJID): RequestBuilder<Unit, IQ> {
+		return pubsubModule.deleteItem(channel, NODE_BANNED, participant.toString()).map {}
 	}
 
 	fun createInvitation(
