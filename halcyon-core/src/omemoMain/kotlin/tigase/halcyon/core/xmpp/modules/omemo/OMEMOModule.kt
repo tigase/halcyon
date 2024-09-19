@@ -7,13 +7,17 @@ import tigase.halcyon.core.builder.HalcyonConfigDsl
 import tigase.halcyon.core.exceptions.HalcyonException
 import tigase.halcyon.core.logger.LoggerFactory
 import tigase.halcyon.core.modules.*
-import tigase.halcyon.core.requests.Request
+import tigase.halcyon.core.requests.RHandler
 import tigase.halcyon.core.requests.RequestBuilder
 import tigase.halcyon.core.requests.XMPPError
 import tigase.halcyon.core.toBase64
+import tigase.halcyon.core.utils.Lock
 import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xml.element
 import tigase.halcyon.core.xmpp.*
+import tigase.halcyon.core.xmpp.forms.Field
+import tigase.halcyon.core.xmpp.forms.FormType
+import tigase.halcyon.core.xmpp.forms.JabberDataForm
 import tigase.halcyon.core.xmpp.modules.pubsub.PubSubItemEvent
 import tigase.halcyon.core.xmpp.modules.pubsub.PubSubModule
 import tigase.halcyon.core.xmpp.stanzas.IQ
@@ -71,6 +75,10 @@ class OMEMOModule(
         private const val DEVICE_LIST_NODE: String = "$XMLNS.devicelist"
         private const val BUNDLES_NODE_PREFIX: String = "$XMLNS.bundles:"
         private const val CURRENT: String = "current"
+
+        private val PUBSUB_CONFIG_OPEN_ACCESS_MODEL = JabberDataForm.create(FormType.Form).apply {
+            addField("pubsub#access_model", null).fieldValue = "open"
+        }
 
         internal const val ENCRYPTION_ELEMENT = "halcyon:omemo"
 
@@ -204,10 +212,13 @@ class OMEMOModule(
      * @param idFilter item id (`current` by default).
      */
     fun retrieveDevicesIds(jid: BareJID, idFilter: String? = null): RequestBuilder<List<Int>, IQ> {
+        log.fine {"fetching device ids for jid ${jid} on account ${context.boundJID?.bareJID}" }
         return pubsubModule.retrieveItem(jid = jid, node = DEVICE_LIST_NODE, itemId = idFilter, maxItems = if (idFilter != null) { null } else { 1 }).map { resp ->
-            resp.items.map { item ->
+            val value = resp.items.map { item ->
                 item.content.toDeviceList()
             }.flatten()
+            log.fine {"fetched device ids ${value} for jid ${jid} on account ${context.boundJID?.bareJID}" }
+            return@map value;
         }
     }
 
@@ -245,7 +256,8 @@ class OMEMOModule(
      * Prepare request to publish own devices list. It replaces previously published list.
      * @param deviceIds devices list to publish.
      */
-    fun publishDeviceList(deviceIds: List<Int>): RequestBuilder<PubSubModule.PublishingInfo, IQ> {
+    fun publishDeviceList(deviceIds: List<Int>): PublishRequestBuilder<PubSubModule.PublishingInfo> {
+        log.fine { "publishing device list: $deviceIds for account ${context.boundJID?.bareJID}" }
         val payload = element("list") {
             xmlns = XMLNS
             deviceIds.forEach { devId ->
@@ -254,11 +266,12 @@ class OMEMOModule(
                 }
             }
         }
-        return pubsubModule.publish(
+        return publish(
             jid = context.boundJID?.bareJID ?: throw HalcyonException("JID not bound."),
             node = DEVICE_LIST_NODE,
             itemId = CURRENT,
-            payload = payload
+            payload = payload,
+            publishOptions = PUBSUB_CONFIG_OPEN_ACCESS_MODEL
         )
     }
 
@@ -267,7 +280,7 @@ class OMEMOModule(
      * @param signedPreKeyId id of signed pre-key to publish.
      * @param preKeys list of pre-keys identifiers to publish.
      */
-    fun publishOwnBundle(signedPreKeyId: Int, preKeys: List<Int>): RequestBuilder<PubSubModule.PublishingInfo, IQ> {
+    fun publishOwnBundle(signedPreKeyId: Int, preKeys: List<Int>): PublishRequestBuilder<PubSubModule.PublishingInfo> {
         return publishBundle(
             protocolStore.getIdentityKeyPair(),
             protocolStore.getLocalRegistrationId(),
@@ -337,7 +350,7 @@ class OMEMOModule(
         registrationId: Int,
         signedPreKey: SignedPreKeyRecord,
         preKeys: List<PreKeyRecord>
-    ): RequestBuilder<PubSubModule.PublishingInfo, IQ> {
+    ): PublishRequestBuilder<PubSubModule.PublishingInfo> {
         val payload = element("bundle") {
             xmlns = XMLNS
             "signedPreKeyPublic" {
@@ -359,12 +372,122 @@ class OMEMOModule(
                 }
             }
         }
-        return pubsubModule.publish(
+        return publish(
             jid = context.boundJID?.bareJID ?: throw HalcyonException("JID not bound."),
             node = "$BUNDLES_NODE_PREFIX$registrationId",
             itemId = CURRENT,
-            payload = payload
+            payload = payload,
+            publishOptions = PUBSUB_CONFIG_OPEN_ACCESS_MODEL
         )
+    }
+
+    private fun publish(jid: BareJID, node: String, itemId: String?, payload: Element?, publishOptions: JabberDataForm): PublishRequestBuilder<PubSubModule.PublishingInfo> {
+        return PublishRequestBuilder<PubSubModule.PublishingInfo>(
+            pubsubModule.publish(jid = jid, node = node, itemId = itemId, payload = payload, publishOptions = publishOptions)
+        ).errorHandler { e, callback ->
+            when {
+                e is XMPPError && e.error == ErrorCondition.Conflict -> {
+                    adjustNodeConfig(jid, node, publishOptions).response {
+                        it.onFailure {
+                            callback(Result.failure(it))
+                        }
+                        it.onSuccess {
+                            pubsubModule.publish(
+                                jid = jid,
+                                node = node,
+                                itemId = itemId,
+                                payload = payload,
+                                publishOptions = publishOptions
+                            ).response { callback(it) }.send()
+                        }
+                    }.send()
+                }
+                else -> callback(Result.failure(e))
+            }
+        }
+    }
+
+    fun correctNodeConfigIfRequired() {
+        val deviceId = protocolStore.getLocalRegistrationId();
+        if (deviceId == 0) {
+            return;
+        }
+        context.boundJID?.bareJID?.let { jid ->
+            correctNodeConfigIfRequired(jid, DEVICE_LIST_NODE);
+            correctNodeConfigIfRequired(jid, BUNDLES_NODE_PREFIX + deviceId);
+        }
+    }
+
+    fun correctNodeConfigIfRequired(jid: BareJID, node: String) {
+        pubsubModule.retrieveNodeConfig(pubSubJID = jid, node = node).response {
+            it.onSuccess {
+                if (it.getFieldByVar("pubsub#access_model")?.fieldValue == "open") {
+                    // ok, nothing to do..
+                } else {
+                    adjustNodeConfig(jid, node, PUBSUB_CONFIG_OPEN_ACCESS_MODEL).response {
+                        log.fine { "adjusted node configuration for $jid, node $node, result: $it" }
+                    }.send()
+                }
+            }
+        }.send()
+    }
+
+    private fun adjustNodeConfig(jid: BareJID, node: String, requiredOptions: JabberDataForm): RequestBuilder<Unit,IQ> {
+        val x = JabberDataForm.create(FormType.Form);
+        requiredOptions.getAllFields().forEach {
+            x.addField(Field.create(varName = it.fieldName!!, type = it.fieldType).apply {
+                it.fieldValues.let { this.fieldValues = it }
+            })
+        }
+        return pubsubModule.configureNode(pubSubJID = jid, node = node, config = x);
+    }
+    
+    class PublishRequestBuilder<V>(val requestBuilder: RequestBuilder<V,IQ>) {
+
+        private var handlers: MutableList<RHandler<V>> = mutableListOf()
+        private var errorHandler: ((Throwable,(Result<V>)->Unit)->Unit)? = null;
+
+        fun response(handler: RHandler<V>): PublishRequestBuilder<V> {
+            handlers.add(handler)
+            return this;
+        }
+
+        fun errorHandler(errorHandler: (Throwable,(Result<V>)->Unit)->Unit): PublishRequestBuilder<V> {
+            this.errorHandler = errorHandler;
+            return this;
+        }
+
+        fun send() {
+            requestBuilder.response { result ->
+                result.onSuccess {
+                    callHandlers(result);
+                }
+                if (errorHandler != null) {
+                    result.onFailure {
+                        errorHandler!!.invoke(it) {
+                            callHandlers(it);
+                        }
+//                        errorHandler!!.invoke(it).onSuccess {
+//                            it.response { callHandlers(it) }.send();
+//                        }.onFailure {
+//                            callHandlers(Result.failure(it));
+//                        }
+                    }
+                } else {
+                    result.onFailure {
+                        for (handler in handlers) {
+                            callHandlers(result);
+                        }
+                    }
+                }
+            }.send()
+        }
+
+        private fun callHandlers(result: Result<V>) {
+            for (handler in handlers) {
+                handler(result);
+            }
+        }
     }
 
     private fun afterReceive(element: Element?, chain: StanzaFilterChain) {
@@ -384,7 +507,7 @@ class OMEMOModule(
         }
 
         val localJid = context.boundJID!!.bareJID;
-        val session = OMEMOSession(protocolStore.getLocalRegistrationId(), localJid, senderJid.bareJID, emptyMap<SignalProtocolAddress, SessionCipher>().toMutableMap())
+        val session = OMEMOSession(protocolStore.getLocalRegistrationId(), localJid, emptyMap<SignalProtocolAddress, SessionCipher>().toMutableMap())
         val result = OMEMOEncryptor.decrypt(protocolStore, session, wrap(element))
         if (result.second) {
             publishBundleIfNeeded();
@@ -397,6 +520,7 @@ class OMEMOModule(
     fun publishBundleIfNeeded() {
         val registrationId = protocolStore.getLocalRegistrationId();
         if (registrationId == 0 || bundleRefreshInProgress) {
+            log.fine { "skipping checking of OMEMO bundle publication for account ${context.boundJID?.bareJID}, local device id = ${registrationId}, refresh in progress = ${bundleRefreshInProgress}" }
             return;
         }
 
@@ -411,7 +535,7 @@ class OMEMOModule(
                         
                         val validKeys = currentKeys.filter { protocolStore.containsPreKey(it) };
                         val needKeys = 150 - validKeys.size;
-                        log.fine("publishing new OMEMO bundle with ${needKeys} new keys")
+                        log.fine {"publishing new OMEMO bundle with ${needKeys} new keys for account ${jid}" }
                         if (needKeys > 0) {
                             val nextPreKeyId = bundleStateStorage.currentPreKeyId() + 1;
                             val newKeys = KeyHelper.generatePreKeys(nextPreKeyId, needKeys).map {
@@ -422,11 +546,12 @@ class OMEMOModule(
                             bundleStateStorage.updatePreKeyMax(preKeysToPublish.max())
                             publishOwnBundle(signedPreKeyId, preKeysToPublish).response {
                                 it.onSuccess {
-                                    log.info { "publication of new OMEMO bundle succeeded" }
+                                    log.info { "publication of new OMEMO bundle succeeded for account ${jid}" }
+                                    this.addDevice(registrationId)
                                     bundleRefreshInProgress = false;
                                 }
                                 it.onFailure { ex ->
-                                    log.warning(ex, { "publication of new OMEMO bundle failed, reverting..." })
+                                    log.warning(ex, { "publication of new OMEMO bundle failed for account ${jid}, reverting..." })
                                     newKeys.forEach {
                                         protocolStore.removePreKey(it);
                                     }
@@ -435,6 +560,8 @@ class OMEMOModule(
                                 }
                                 bundleRefreshInProgress = false;
                             }.send();
+                        } else {
+                            addDevice(registrationId);
                         }
                     }
                 }
@@ -447,6 +574,7 @@ class OMEMOModule(
                                    val newKeys = (0..preKeyId).filter { protocolStore.containsPreKey(it) }
                                    log.fine { "publishing own OMEMO bundle succeeded" }
                                    publishOwnBundle(signedPreKeyId, newKeys).response {
+                                       this.addDevice(registrationId)
                                        bundleRefreshInProgress = false
                                    }.send();
                                } else {
@@ -524,60 +652,92 @@ class OMEMOModule(
     private fun ensureSessions(jid: BareJID, deviceIds: List<Int>, callback: (List<SignalProtocolAddress>)->Unit) {
         var addresses = deviceIds.map { SignalProtocolAddress(jid.toString(), it) }.toMutableList();
         val missingSessions = addresses.filterNot { protocolStore.containsSession(it) };
+        log.fine { "got missing sessions ${missingSessions} for jid ${jid} at account ${context.boundJID?.bareJID}" }
         var counter = missingSessions.size;
         if (counter == 0) {
             callback(addresses);
             return;
         }
-        val continuation = {
-            counter -= 1;
-            if (counter == 0) {
-                callback(addresses);
-            }
-        }
-
+        
+        val lock = Lock();
         missingSessions.forEach { addr ->
+            log.fine { "starting session for ${addr} at account ${context.boundJID?.bareJID}" }
             startSession(jid, addr.getDeviceId()) {
-                if (it.isFailure) {
-                    addresses.remove(addr);
+                val isReady = lock.withLock {
+                    if (it.isFailure) {
+                        log.fine(it.exceptionOrNull(), { "failed to start session for ${addr} at account ${context.boundJID?.bareJID}" })
+                        addresses.remove(addr);
+                    } else {
+                        log.fine { "started session for ${addr} at account ${context.boundJID?.bareJID}" }
+                    }
+                    counter = -1;
+                    counter == 0
                 }
-                continuation();
+                if (isReady) {
+                    log.fine { "got actvive sessions for addresses ${addresses} for jid ${jid} at account ${context.boundJID?.bareJID}" }
+                    callback(addresses);
+                }
             }
         }
     }
 
+    fun addresses(jids: List<BareJID>, callback: (List<SignalProtocolAddress>) -> Unit) {
+        log.fine {"retrieving addresses for jids ${jids} on account ${context.boundJID?.bareJID}" }
+        val lock = Lock();
+        var allAddresses = mutableListOf<SignalProtocolAddress>()
+        var counter = jids.size;
+        val continuation = { addresses: List<SignalProtocolAddress> ->
+            val isReady = lock.withLock {
+                allAddresses.addAll(addresses);
+                counter -= 1;
+                counter == 0
+            }
+            if (isReady) {
+                log.fine {"retrieved addresses for jids ${jids} on account ${context.boundJID?.bareJID}, result: ${allAddresses}" }
+                callback(allAddresses);
+            }
+        }
+
+        jids.forEach {
+            addresses(it, continuation);
+        }
+    }
+
     fun addresses(jid: BareJID, callback: (List<SignalProtocolAddress>)->Unit) {
+        log.fine { "retrieving addresses for jid $jid on account ${context.boundJID?.bareJID}" }
         val devices = activeDevices(jid);
         if (devices.isNotEmpty()) {
+            log.fine { "got local info about devices for ${jid} on account ${context.boundJID?.bareJID}, result: ${devices}" }
             // encrypt for known active devices
             ensureSessions(jid, devices, callback);
         } else {
             // we need to discover active devices
             retrieveDevicesIds(jid).response {
                 it.onSuccess {
+                    log.fine { "got remote info about devices for ${jid} on account ${context.boundJID?.bareJID}, result: ${it}" }
                     this.devices[jid] = it
                     ensureSessions(jid, it, callback);
                 }
                 it.onFailure {
+                    log.fine(it, { "failed to fetch remote info about devices for ${jid} on account ${context.boundJID?.bareJID}" })
                     callback(emptyList())
                 }
             }.send()
         }
     }
 
-    fun encryptAndSend(element: Element, chain: StanzaFilterChain, recipient: FullJID, bodyEl: Element, order: EncryptMessage) {
-        addresses(recipient.bareJID) { addresses ->
-            log.fine("discovered remote addresses: ${addresses}")
+    fun encryptAndSend(element: Element, chain: StanzaFilterChain, recipients: List<BareJID>, bodyEl: Element, order: EncryptMessage) {
+        addresses(recipients) { addresses ->
+            val localJid = context.boundJID!!.bareJID;
+            log.fine("discovered remote addresses: ${addresses} for account ${localJid} for jid ${element.getToAttr()}")
             element.remove(bodyEl)
 
-            val localJid = context.boundJID!!.bareJID;
             val localAddresses = protocolStore.getSubDeviceSessions(localJid.toString()).map { SignalProtocolAddress(localJid.toString(), it) };
-            log.fine("discovered local addresses: ${localAddresses}")
+            log.fine("discovered local addresses: ${localAddresses} for account ${localJid}")
             val session = OMEMOSession(
                 protocolStore.getLocalRegistrationId(),
                 localJid,
-                recipient.bareJID,
-                (localAddresses + addresses).associateBy({ k -> k }, { k -> SessionCipher(protocolStore, k) })
+                (localAddresses + addresses).distinct().associateBy({ k -> k }, { k -> SessionCipher(protocolStore, k) })
                     .toMutableMap()
             )
 
@@ -600,43 +760,27 @@ class OMEMOModule(
         }
 
         val order = element.encryptionOrder()
-
-        val recipient = element.getToAttr()
+        element.clearControls();
         val bodyEl = element.getFirstChild("body")
-
-
-//        if (order == EncryptMessage.Yes && session == null && bodyEl != null && recipient != null) {
-//            if (autoCreateSession) {
-//                createSessionEncryptAndSend(element, chain, recipient, bodyEl, order)
-//            } else {
-//                throw OMEMOException("Can't encrypt the message that needs to be encrypted.")
-//            }
-        if (recipient == null || bodyEl == null || order == EncryptMessage.No) {
-            element.clearControls()
-            chain.doFilter(element)
+        val recipient = element.getToAttr();
+        if (bodyEl != null && recipient != null) {
+            when(order) {
+                is EncryptMessage.No -> chain.doFilter(element)
+                is EncryptMessage.Yes -> {
+                    val recipients = order.jids.takeUnless { it.isEmpty() }?: listOf(recipient.bareJID)
+                    encryptAndSend(element, chain, recipients, bodyEl, order)
+                }
+            }
         } else {
-            encryptAndSend(element, chain, recipient, bodyEl, order)
+            chain.doFilter(element)
         }
     }
 
 }
 
-enum class EncryptMessage {
-    /**
-     * Message must be encrypted.
-     */
-    Yes,
-
-    /**
-     * Message must NOT be encrypted.
-     */
-    No,
-
-    /**
-     * Message will be encrypted if OMEMO session already exists, or will be sent unencrypted if session doesn't exist.
-     */
-    Auto
-
+sealed interface EncryptMessage {
+    data class Yes(val jids: List<BareJID> = emptyList()): EncryptMessage {}
+    object No: EncryptMessage {}
 }
 
 private fun Element?.toDeviceList(): List<Int> =
@@ -647,34 +791,54 @@ private fun Element?.toDeviceList(): List<Int> =
  * Prepare request to add device to currently published device list.
  * @param deviceId device Id to add.
  */
-fun OMEMOModule.addDevice(deviceId: Int): RequestBuilder<Request<PubSubModule.PublishingInfo, IQ>, IQ> {
+fun OMEMOModule.addDevice(deviceId: Int) {
     val jid = context.boundJID?.bareJID ?: throw HalcyonException("JID not bound.")
-    return retrieveDevicesIds(jid).map { receivedList ->
-        val newList = (receivedList + deviceId).distinct()
-        publishDeviceList(newList).send()
-    }.response {
-        it.onFailure {
-            publishDeviceList(listOf(deviceId)).send()
+    retrieveDevicesIds(jid).response {
+        it.onSuccess { receivedList ->
+            if (!receivedList.contains(deviceId)) {
+                val newList = (receivedList + deviceId).distinct()
+                publishDeviceList(newList).send()
+            }
         }
-    }
+        it.onFailure {
+            if (it is XMPPError && it.error == ErrorCondition.ItemNotFound) {
+                publishDeviceList(listOf(deviceId)).send()
+            }
+        }
+    }.send()
 }
 
 /**
  * Adds encryption order to message.
  * @param value is `true` then message MUST be encrypted before send. if `false` then message will not be encrypted at all
  */
-fun MessageNode.encrypt(value: EncryptMessage = EncryptMessage.Yes) {
+fun MessageNode.encrypt(value: EncryptMessage = EncryptMessage.Yes(emptyList())) {
     this.element.clearControls()
     element(OMEMOModule.ENCRYPTION_ELEMENT) {
-        attributes["encryption"] = value.name
+        attributes["encryption"] = when (value) {
+            is EncryptMessage.Yes -> "yes"
+            is EncryptMessage.No -> "no"
+        }
+        when (value) {
+            is EncryptMessage.Yes -> {
+                for (jid in value.jids) {
+                    element("jid") {
+                        this.value = jid.toString()
+                    }
+                }
+            }
+            is EncryptMessage.No -> {}
+        }
     }
 }
 
 private fun Element.encryptionOrder(): EncryptMessage {
-    val e = this.getFirstChild(OMEMOModule.ENCRYPTION_ELEMENT) ?: return EncryptMessage.Auto
-    return EncryptMessage.valueOf(
-        e.attributes["encryption"] ?: throw HalcyonException("Invalid OMEMO control element.")
-    )
+    val e = this.getFirstChild(OMEMOModule.ENCRYPTION_ELEMENT) ?: return EncryptMessage.No
+    return when (e.attributes["encryption"]) {
+        "yes" -> EncryptMessage.Yes(e.getChildren("jid").mapNotNull { it.value?.toBareJID() })
+        "no" -> EncryptMessage.No
+        else -> throw HalcyonException("Invalid OMEMO control element.")
+    }
 }
 
 private fun Element.clearControls() {

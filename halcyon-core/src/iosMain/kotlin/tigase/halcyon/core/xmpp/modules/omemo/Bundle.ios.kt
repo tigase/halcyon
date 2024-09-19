@@ -11,7 +11,6 @@ import platform.Foundation.NSInputStream
 import platform.Foundation.NSOutputStream
 import tigase.halcyon.core.exceptions.HalcyonException
 import tigase.halcyon.core.logger.LoggerFactory
-import tigase.halcyon.core.xmpp.BareJID
 
 @OptIn(kotlinx.cinterop.ExperimentalForeignApi::class)
 actual fun Bundle.getRandomPreKeyBundle(): PreKeyBundle {
@@ -474,21 +473,6 @@ actual class SignalProtocolAddress actual constructor(val name: String, val devi
     override fun toString(): String {
         return "Address[$name:$deviceId]";
     }
-}
-
-actual class InMemoryOMEMOSessionStore actual constructor(): OMEMOSessionStore {
-
-    private val sessions: MutableMap<BareJID, OMEMOSession> = HashMap<BareJID, OMEMOSession>()
-    override fun getOMEMOSession(jid: BareJID): OMEMOSession? = sessions[jid]
-
-    override fun storeOMEMOSession(omemoSession: OMEMOSession) {
-        sessions[omemoSession.remoteJid] = omemoSession
-    }
-
-    override fun removeOMEMOSession(jid: BareJID) {
-        sessions.remove(jid)
-    }
-
 }
 
 @OptIn(ExperimentalForeignApi::class)

@@ -101,6 +101,7 @@ actual object OMEMOEncryptor {
             return null
         } catch (e: UntrustedIdentityException) {
             return null
+
         }
     }
 
@@ -127,6 +128,7 @@ actual object OMEMOEncryptor {
                 try {
                     return DecryptedKey(sessionCipher.decrypt(msg), true)
                 } catch (e: Exception) {
+                    log.fine(e, { "failed to decrypt prekey ${keyElement.attributes["rid"]} from ${senderAddr}" })
                     if (iterator.hasNext()) {
                         continue
                     }
@@ -137,6 +139,7 @@ actual object OMEMOEncryptor {
                 try {
                     return DecryptedKey(sessionCipher.decrypt(msg), false)
                 } catch (e: Exception) {
+                    log.fine(e, { "failed to decrypt key ${keyElement.attributes["rid"]} from ${senderAddr}" })
                     if (iterator.hasNext()) {
                         continue
                     }

@@ -173,6 +173,38 @@ class PubSubModule(override val context: Context) : XmppModule, PubSubModuleConf
 		return context.request.iq(iq).map {}
 	}
 
+	fun configureNode(pubSubJID: JID, node: String, config: JabberDataForm): RequestBuilder<Unit, IQ> {
+		val iq = iq {
+			type = IQType.Set
+			to = pubSubJID
+			"pubsub" {
+				xmlns = XMLNS_OWNER
+				"configure" {
+					attribute("node", node)
+					addChild(config.createSubmitForm())
+				}
+			}
+		}
+		return context.request.iq(iq).map { }
+	}
+
+	fun retrieveNodeConfig(pubSubJID: JID, node: String): RequestBuilder<JabberDataForm, IQ> {
+		val iq = iq {
+			type = IQType.Get
+			to = pubSubJID
+			"pubsub" {
+				xmlns = XMLNS_OWNER
+				"configure" {
+					attribute("node", node)
+				}
+			}
+		}
+		return context.request.iq(iq).map { element ->
+			val x = element.findChild("iq", "pubsub", "configure", "x")?: throw XMPPException(ErrorCondition.BadRequest);
+			JabberDataForm(x);
+		}
+	}
+
 	/**
 	 * Prepares Subscribe to a node request.
 	 *
@@ -468,11 +500,27 @@ class PubSubModule(override val context: Context) : XmppModule, PubSubModuleConf
 	 * @param node PubSub node name.
 	 * @param itemId ID of publishing item.
 	 * @param payload to publish.
+	 * @param publishOptions options for pubsub node to match
 	 *
 	 * @return [PublishingInfo]
 	 */
 	fun publish(
-		jid: JID?, node: String, itemId: String?, payload: Element? = null,
+		jid: JID?, node: String, itemId: String?, payload: Element? = null, publishOptions: JabberDataForm
+	): RequestBuilder<PublishingInfo, IQ> = publish(jid, node, itemId, payload, publishOptions.createSubmitForm())
+
+	/**
+	 * Prepare [publish item](https://xmpp.org/extensions/xep-0060.html#publisher-publish) request.
+	 *
+	 * @param jid JID of PubSub service.
+	 * @param node PubSub node name.
+	 * @param itemId ID of publishing item.
+	 * @param payload to publish.
+	 * @param publishOptions options for pubsub node to match
+	 *
+	 * @return [PublishingInfo]
+	 */
+	fun publish(
+		jid: JID?, node: String, itemId: String?, payload: Element? = null, publishOptions: Element? = null
 	): RequestBuilder<PublishingInfo, IQ> {
 		val iq = iq {
 			type = IQType.Set
@@ -489,6 +537,11 @@ class PubSubModule(override val context: Context) : XmppModule, PubSubModuleConf
 						}
 						payload?.let {
 							addChild(it)
+						}
+					}
+					publishOptions?.let { options ->
+						element("publish-options") {
+							addChild(options)
 						}
 					}
 				}

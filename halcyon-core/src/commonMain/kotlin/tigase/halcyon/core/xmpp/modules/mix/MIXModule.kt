@@ -41,6 +41,7 @@ import tigase.halcyon.core.xmpp.forms.JabberDataForm
 import tigase.halcyon.core.xmpp.modules.RSM
 import tigase.halcyon.core.xmpp.modules.mam.ForwardedStanza
 import tigase.halcyon.core.xmpp.modules.mam.MAMModule
+import tigase.halcyon.core.xmpp.modules.pubsub.PubSubItemEvent
 import tigase.halcyon.core.xmpp.modules.pubsub.PubSubModule
 import tigase.halcyon.core.xmpp.modules.roster.RosterItemAnnotation
 import tigase.halcyon.core.xmpp.modules.roster.RosterItemAnnotationProcessor
@@ -122,6 +123,18 @@ data class CreateResponse(val jid: BareJID, val name: String)
 
 data class Participant(val id: String, val nick: String?, val jid: BareJID?)
 
+sealed class MixParticipantEvent(val channel: BareJID, val id: String): Event(TYPE) {
+	class Joined(channel: BareJID, id: String, val jid: BareJID?, val nick: String?): MixParticipantEvent(channel, id) {
+		fun participant(): Participant = Participant(id, nick, jid)
+	}
+	class Left(channel: BareJID,id: String): MixParticipantEvent(channel, id) {}
+
+	companion object : EventDefinition<MixParticipantEvent> {
+
+		override val TYPE = "tigase.halcyon.core.xmpp.modules.mix.MixParticipantEventReceived"
+	}
+}
+
 @HalcyonConfigDsl
 interface MIXModuleConfig
 
@@ -159,6 +172,33 @@ class MIXModule(
 	override val criteria: Criteria = Criterion.element(this@MIXModule::checkCriteria)
 	override val type = TYPE
 	override val features = arrayOf(XMLNS)
+
+	init {
+		context.eventBus.register(PubSubItemEvent.TYPE) { event: PubSubItemEvent ->
+			processPubSubEvent(event);
+		}
+	}
+
+	private fun processPubSubEvent(event: PubSubItemEvent) {
+		when (event.nodeName) {
+			NODE_PARTICIPANTS -> processParticipantsEvent(event);
+			else -> {}
+		}
+	}
+
+	private fun processParticipantsEvent(event: PubSubItemEvent) {
+		val channel = event.pubSubJID?.bareJID ?: return;
+		when (event) {
+			is PubSubItemEvent.Published -> {
+				val participant = event.itemId?.let { itemId -> event.content?.let { content -> createParticipant(itemId, content) } } ?: return;
+				context.eventBus.fire(MixParticipantEvent.Joined(channel = channel, jid = participant.jid, id = participant.id, nick = participant.nick))
+			}
+			is PubSubItemEvent.Retracted -> {
+				val id = event.itemId ?: return;
+				context.eventBus.fire(MixParticipantEvent.Left(channel = channel, id = id))
+			}
+		}
+	}
 
 	private fun checkCriteria(message: Element): Boolean {
 		if (message.name != Message.NAME) return false

@@ -32,7 +32,7 @@ import kotlin.time.toDuration
 typealias ResponseStanzaHandler<STT> = (Request<*, STT>, STT?) -> Unit
 
 open class XMPPError(val response: Stanza<*>?, val error: ErrorCondition, val description: String?) :
-    Exception(description)
+    Exception("$error: $description");
 
 typealias RHandler<V> = (Result<V>) -> Unit
 

@@ -12,7 +12,6 @@ import tigase.halcyon.core.xmpp.BareJID
 data class OMEMOSession(
     val localRegistrationId: Int,
     val localJid: BareJID,
-    val remoteJid: BareJID,
     val ciphers: MutableMap<SignalProtocolAddress, SessionCipher>
 )
 
