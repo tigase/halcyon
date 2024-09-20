@@ -71,8 +71,8 @@ class DefaultTLSProcessor(private val socket: Socket, private val config: Socket
 		val factory = getSocketFactory()
 		val s1 = factory.createSocket(socket, config.hostname, socket.port, true) as SSLSocket
 		s1.soTimeout = 0
-		s1.keepAlive = false
 		s1.tcpNoDelay = true
+		extendedSocketOptionsConfigurer?.invoke(s1)
 		s1.useClientMode = true
 		s1.addHandshakeCompletedListener { handshakeCompletedEvent ->
 			log.info { "Handshake completed $handshakeCompletedEvent" }

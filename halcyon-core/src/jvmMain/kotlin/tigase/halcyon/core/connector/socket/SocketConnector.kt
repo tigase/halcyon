@@ -17,6 +17,7 @@
  */
 package tigase.halcyon.core.connector.socket
 
+import jdk.net.ExtendedSocketOptions
 import org.minidns.dnssec.DnssecValidationFailedException
 import tigase.halcyon.core.Halcyon
 import tigase.halcyon.core.configuration.declaredUserJID
@@ -54,6 +55,15 @@ sealed class SocketConnectionErrorEvent : ConnectionErrorEvent() {
 class HostNotFound : HalcyonException()
 
 typealias HostPort = Pair<String, Int>
+
+var extendedSocketOptionsConfigurer: ((Socket)->Unit)? = null;
+
+fun JDK11ExtendedSocketOptionConfigurer(socket: Socket) {
+	socket.setOption(ExtendedSocketOptions.TCP_KEEPIDLE, 60)
+	socket.setOption(ExtendedSocketOptions.TCP_KEEPCOUNT, 3)
+	socket.setOption(ExtendedSocketOptions.TCP_KEEPINTERVAL, 90)
+	socket.keepAlive = true
+}
 
 class SocketConnector(halcyon: Halcyon, val tlsProcesorFactory: TLSProcessorFactory) : AbstractConnector(halcyon),
 	ChannelBindingDataProvider {
@@ -236,8 +246,8 @@ class SocketConnector(halcyon: Halcyon, val tlsProcesorFactory: TLSProcessorFact
 			createSocket { sckt ->
 				this.socket = sckt
 				sckt.soTimeout = 20 * 1000
-				sckt.keepAlive = false
 				sckt.tcpNoDelay = true
+				extendedSocketOptionsConfigurer?.invoke(sckt);
 				log.fine { "Opening socket connection to ${sckt.inetAddress}" }
 				this.worker = SocketWorker(parser).apply {
 					setReaderAndWriter(
