@@ -748,6 +748,10 @@ class OMEMOModule(
                 xmlns = "urn:xmpp:hints"
             })
 
+            element.add(element("body") {
+                value = "[This message is OMEMO encrypted]"
+            })
+
             element.clearControls()
             chain.doFilter(element)
         }
