@@ -23,18 +23,17 @@ import tigase.halcyon.core.Context
 import tigase.halcyon.core.Scope
 import tigase.halcyon.core.TickEvent
 import tigase.halcyon.core.builder.HalcyonConfigDsl
-import tigase.halcyon.core.connector.ReceivedXMLElementEvent
-import tigase.halcyon.core.connector.SentXMLElementEvent
+import tigase.halcyon.core.configuration.declaredUserJID
 import tigase.halcyon.core.eventbus.Event
 import tigase.halcyon.core.eventbus.EventDefinition
 import tigase.halcyon.core.exceptions.HalcyonException
 import tigase.halcyon.core.logger.Level
 import tigase.halcyon.core.logger.LoggerFactory
-import tigase.halcyon.core.modules.Criterion
 import tigase.halcyon.core.modules.ModulesManager
 import tigase.halcyon.core.modules.XmppModule
 import tigase.halcyon.core.modules.XmppModuleProvider
 import tigase.halcyon.core.requests.Request
+import tigase.halcyon.core.utils.Lock
 import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xml.element
 import tigase.halcyon.core.xmpp.ErrorCondition
@@ -43,6 +42,7 @@ import tigase.halcyon.core.xmpp.modules.auth.*
 import tigase.halcyon.core.xmpp.stanzas.IQ
 import tigase.halcyon.core.xmpp.stanzas.Message
 import tigase.halcyon.core.xmpp.stanzas.Presence
+import kotlin.math.max
 
 
 /**
@@ -86,11 +86,19 @@ interface StreamManagementModuleConfig
  */
 class StreamManagementModule(override val context: Context) : XmppModule, InlineProtocol, StreamManagementModuleConfig {
 
+	enum class State {
+		disabled,
+		activating,
+		active,
+		awaitingResumption,
+		resuming
+	}
+	
 	@Serializable
 	class ResumptionContext {
 
-		internal var isActive: Boolean = false
-
+		var state: State = State.disabled
+		
 		var resumptionTime: Long = 0
 			internal set
 
@@ -102,10 +110,7 @@ class StreamManagementModule(override val context: Context) : XmppModule, Inline
 
 		var incomingLastSentH: Long = 0L
 			internal set
-
-		var isAckEnabled: Boolean = false
-			internal set
-
+		
 		var resID: String? = null
 			internal set
 
@@ -116,12 +121,6 @@ class StreamManagementModule(override val context: Context) : XmppModule, Inline
 			internal set
 
 		fun isResumptionAvailable() = resID != null && isResumeEnabled
-
-		/**
-		 * Returns ```true``` if ACK is enabled and currently active.
-		 */
-		val isAckActive: Boolean
-			get() = isAckEnabled && isActive
 
 	}
 
@@ -142,66 +141,116 @@ class StreamManagementModule(override val context: Context) : XmppModule, Inline
 
 	}
 
-	var resumptionContext: ResumptionContext by property(Scope.Session) { ResumptionContext() }
+	private val resumptionContextLock = Lock();
+	private var _resumptionContext: ResumptionContext by property(Scope.Session) { ResumptionContext() }
+
+	fun <V> withResumptionContext(fn: (resumptionContext: ResumptionContext)->V): V {
+		return resumptionContextLock.withLock {
+			fn(_resumptionContext);
+		}
+	};
 
 	override val type = TYPE
 	override val features = arrayOf(XMLNS)
-	override val criteria = Criterion.xmlns(XMLNS)
+	override val criteria = null //Criterion.xmlns(XMLNS)
 
 	private val log = LoggerFactory.logger("tigase.halcyon.core.xmpp.modules.sm.StreamManagementModule")
 
 	private val queue = ArrayList<Any>()
 
+	val isActive: Boolean
+		get() = withResumptionContext { it.state == State.active }
+
+	val resumptionLocation: String?
+		get() = withResumptionContext { it.location }
+
+	fun isResumptionAvailable(): Boolean = withResumptionContext { it.isResumptionAvailable() }
+
 	private fun initialize() {
-		context.eventBus.register(SentXMLElementEvent) { event ->
-			processElementSent(event.element, event.request)
-		}
-		context.eventBus.register(ReceivedXMLElementEvent) { event ->
-			processElementReceived(event.element)
-		}
 		context.eventBus.register(ClearedEvent) {
 			if (it.scopes.contains(Scope.Connection)) {
 				log.fine { "Disabling ACK" }
-				resumptionContext.isActive = false
+				withResumptionContext { resumptionContext ->
+					resumptionContext.state = State.awaitingResumption
+				}
 			}
 		}
 		context.eventBus.register(TickEvent) { onTick() }
 	}
 
 	private fun onTick() {
-		if (resumptionContext.isAckActive) {
+		if (isActive) {
 			if (queue.size > 0) request()
 			sendAck(false)
 		}
 	}
 
 	private fun isElementCounted(element: Element) =
-		element.xmlns != XMLNS && (element.name == Message.NAME || element.name == IQ.NAME || element.name == Presence.NAME)
+		when (element.name) {
+			IQ.NAME, Message.NAME, Presence.NAME -> true
+			else -> false
+		}
 
-	private fun processElementReceived(element: Element) {
-		if (!resumptionContext.isAckActive) return
-		if (!isElementCounted(element)) return
+	/**
+	 * Processes received element and if it is handled (it shouldn't be processed by other modules) it returns true.
+	 */
+	fun processElementReceived(element: Element): Boolean {
+		if (element.xmlns == XMLNS) {
+			process(element)
+			return true;
+		} else {
+			withResumptionContext { resumptionContext ->
+				if (!isActive) return@withResumptionContext
+				if (!isElementCounted(element)) return@withResumptionContext
 
-		++resumptionContext.incomingH
+				++resumptionContext.incomingH
+			}
+			return false
+		}
 	}
 
-	private fun processElementSent(element: Element, request: Request<*, *>?) {
-		if (!resumptionContext.isAckActive) return
-		if (!isElementCounted(element)) return
+	/**
+	 * Processes sending element and if it is queued for confirmation from the server it returns true.
+	 */
+	fun processElementSent(element: Element, request: Request<*, *>?): Boolean = withResumptionContext { resumptionContext ->
+		when(resumptionContext.state) {
+			State.disabled ->  {
+				log.finest { "SMM: for account ${context.config.declaredUserJID}, queuing disabled: ${element.getAsString()}"}
+				if (element.name == "enable" && element.xmlns == XMLNS) {
+					resumptionContext.state = State.activating
+				}
+				return@withResumptionContext false
+			}
+			State.activating, State.active -> {
+				if (!isElementCounted(element)) {
+					log.finest { "SMM: for account ${context.config.declaredUserJID} skipping queuing nonza: ${element.getAsString()}"}
+					return@withResumptionContext false
+				};
 
-		if (request != null) {
-			queue.add(request)
-		} else {
-			queue.add(element)
+				if (request != null) {
+					queue.add(request)
+				} else {
+					queue.add(element)
+				}
+				val newOutgoing = ++resumptionContext.outgoingH
+				log.finest { "SMM: for account ${context.config.declaredUserJID} new value $newOutgoing after queuing: ${element.getAsString()}"}
+				return@withResumptionContext true;
+			}
+			else -> {
+				log.finest { "SMM: for account ${context.config.declaredUserJID}, not queuing in state: ${resumptionContext.state}, ${element.getAsString()}"}
+				return@withResumptionContext false
+			}
 		}
-		++resumptionContext.outgoingH
 	}
 
 	/**
 	 * Clear the outgoing request queue.
 	 */
 	fun reset() {
-		queue.clear()
+		resumptionContextLock.withLock {
+			queue.clear()
+			_resumptionContext = ResumptionContext();
+		}
 	}
 
 	private fun processFailed(element: Element) {
@@ -219,13 +268,12 @@ class StreamManagementModule(override val context: Context) : XmppModule, Inline
 		// server's preferred maximum resumption time
 		val mx = element.attributes["max"]?.toLong() ?: 0
 
-		resumptionContext.let { ctx ->
+		withResumptionContext { ctx ->
 			ctx.resID = id
 			ctx.isResumeEnabled = resume
 			ctx.location = location
 			ctx.resumptionTime = mx
-			ctx.isAckEnabled = true
-			ctx.isActive = true
+			ctx.state = State.active
 		}
 
 		context.eventBus.fire(StreamManagementEvent.Enabled(id, resume, mx))
@@ -236,68 +284,82 @@ class StreamManagementModule(override val context: Context) : XmppModule, Inline
 	 */
 	private fun processAckResponse(element: Element) {
 		val h = element.attributes["h"]?.toLong() ?: 0
-		var lh = resumptionContext.outgoingH
+		withResumptionContext { resumptionContext ->
+			val lh = resumptionContext.outgoingH
 
-		log.fine { "Expected h=$lh, received h=$h, queue=${queue.size}" }
-		if(log.isLoggable(Level.FINE)){
-		log.fine { "queue=$queue" }
-		}
+			log.finest { "SMM: for account ${context.config.declaredUserJID} expected h=$lh, received h=$h, queue=${queue.size}"}
+			if(log.isLoggable(Level.FINE)){
+				log.fine { "queue=$queue" }
+			}
 
+			val left = max(lh - h, 0)
+			removeFromQueue(left)
+		}.forEach(this::markAsAcked)
+	}
 
-		if (lh >= h) {
-			lh = resumptionContext.outgoingH
-			val left = lh - h
-			markAsDeliveredAndRemoveFromQueue(left)
-		}
+	private fun markAsAcked(x: Request<*,*>) {
+		x.markAsSent()
+		log.finest { "Marked as 'delivered to server': $x" }
 	}
 
 	/**
 	 * Process ACK request from server.
 	 */
 	fun sendAck(force: Boolean) {
-		val h = resumptionContext.incomingH
-		val lastH = resumptionContext.incomingLastSentH
+		val h = withResumptionContext { resumptionContext ->
+			val h = resumptionContext.incomingH
+			val lastH = resumptionContext.incomingLastSentH
 
-		if (!force && h == lastH) return
-
-		resumptionContext.incomingLastSentH = h
+			if (!force && h == lastH) {
+				null
+			} else {
+				resumptionContext.incomingLastSentH = h
+				h
+			}
+		} ?: return;
+		
 		context.writer.writeDirectly(element("a") {
 			xmlns = XMLNS
 			attribute("h", h.toString())
 		})
 	}
 
-	private fun markAsDeliveredAndRemoveFromQueue(left: Long) {
-		while (queue.size > left) {
-			val x = queue.get(0)
-			queue.remove(x)
+	private fun removeFromQueue(left: Long): List<Request<*,*>> {
+		var result = mutableListOf<Request<*, *>>();
+		while (left < queue.size) {
+			val x = queue.removeFirst()
 			if (x is Request<*, *>) {
-				x.markAsSent()
-				log.fine { "Marked as 'delivered to server': $x" }
+				result.add(x);
 			}
 		}
+		return result;
 	}
 
 	private fun processResumed(element: Element) {
-		val ctx = resumptionContext
 		val h = element.attributes["h"]?.toLong() ?: 0
 		val id = element.attributes["previd"] ?: ""
 
-		val unacked = mutableListOf<Any>()
-		val lh = ctx.outgoingH
-		val left = lh - h
-		if (left > 0) markAsDeliveredAndRemoveFromQueue(left)
-		ctx.outgoingH = h
-		unacked.addAll(queue)
-		queue.clear()
+		val (sent, unacked) = withResumptionContext { ctx ->
+			val unacked = mutableListOf<Any>()
+			val lh = ctx.outgoingH
+			val left = lh - h
+			val sent = if (left > 0) removeFromQueue(left) else emptyList();
+			ctx.outgoingH = h
+			unacked.addAll(queue)
+			queue.clear()
+			ctx.state = State.active
+			Pair(sent, unacked)
+		}
 
+		sent.forEach(this::markAsAcked)
+		
 		unacked.forEach {
 			when (it) {
 				is Request<*, *> -> context.writer.write(it)
 				is Element -> context.writer.writeDirectly(it)
 			}
 		}
-		ctx.isActive = true
+		
 		context.eventBus.fire(StreamManagementEvent.Resumed(h, id))
 	}
 
@@ -326,7 +388,7 @@ class StreamManagementModule(override val context: Context) : XmppModule, Inline
 	 * Send ACK request to server
 	 */
 	fun request() {
-		if (resumptionContext.isAckActive) {
+		if (isActive) {
 			log.fine { "Sending ACK request" }
 			context.writer.writeDirectly(element("r") { xmlns = XMLNS })
 		}
@@ -336,8 +398,15 @@ class StreamManagementModule(override val context: Context) : XmppModule, Inline
 	 * Start session resumption.
 	 */
 	fun resume() {
-		val h = resumptionContext.incomingH
-		val id = resumptionContext.resID ?: throw HalcyonException("Cannot resume session: no resumption ID")
+		val (h,id) = withResumptionContext { resumptionContext ->
+			val h = resumptionContext.incomingH
+			val id = resumptionContext.resID ?: throw HalcyonException("Cannot resume session: no resumption ID")
+			Pair(h, id)
+		}
+
+		withResumptionContext {
+			it.state = State.resuming
+		}
 
 		context.writer.writeDirectly(element("resume") {
 			xmlns = XMLNS
@@ -349,16 +418,18 @@ class StreamManagementModule(override val context: Context) : XmppModule, Inline
 	override fun featureFor(features: InlineFeatures, stage: InlineProtocolStage): Element? {
 		return when (stage) {
 			InlineProtocolStage.AfterSasl -> {
-				if (resumptionContext.isResumptionAvailable() && features.supports("sm", XMLNS)) {
-					val h = resumptionContext.incomingH
-					val id =
-						resumptionContext.resID ?: throw HalcyonException("Cannot resume session: no resumption ID")
-					element("resume") {
-						xmlns = XMLNS
-						attribute("h", h.toString())
-						attribute("previd", id)
-					}
-				} else null
+				withResumptionContext { resumptionContext ->
+					if (resumptionContext.isResumptionAvailable() && features.supports("sm", XMLNS)) {
+						val h = resumptionContext.incomingH
+						val id =
+							resumptionContext.resID ?: throw HalcyonException("Cannot resume session: no resumption ID")
+						element("resume") {
+							xmlns = XMLNS
+							attribute("h", h.toString())
+							attribute("previd", id)
+						}
+					} else null
+				}
 			}
 
 			InlineProtocolStage.AfterBind -> {

@@ -234,7 +234,7 @@ class SocketConnector(halcyon: Halcyon) : AbstractConnector(halcyon) {
 		when (element.xmlns) {
 			// FIXME: NOT IMPLEMENTED YET!!
 			XMLNS_START_TLS -> processTLSStanza(element)
-			else -> halcyon.eventBus.fire(ReceivedXMLElementEvent(element))
+			else -> handleReceivedElement(element)
 		}
 	}
 
@@ -261,7 +261,7 @@ class SocketConnector(halcyon: Halcyon) : AbstractConnector(halcyon) {
 	}
 
 	private fun resolveTarget(completionHandler: (String, Int) -> Unit) {
-		val location = halcyon.getModuleOrNull(StreamManagementModule)?.resumptionContext?.location
+		val location = halcyon.getModuleOrNull(StreamManagementModule)?.resumptionLocation
 		if (location != null) {
 			return completionHandler(location, config.port)
 		}

@@ -137,7 +137,7 @@ class SocketConnector(halcyon: Halcyon, val tlsProcesorFactory: TLSProcessorFact
 	private fun processReceivedElement(element: Element) {
 		when (element.xmlns) {
 			XMLNS_START_TLS -> processTLSStanza(element)
-			else -> this@SocketConnector.fire(ReceivedXMLElementEvent(element))
+			else -> handleReceivedElement(element)
 		}
 	}
 
@@ -184,7 +184,7 @@ class SocketConnector(halcyon: Halcyon, val tlsProcesorFactory: TLSProcessorFact
 	private fun resolveTarget(completionHandler: (List<HostPort>) -> Unit) {
 		val hosts = mutableListOf<HostPort>()
 
-		val location = halcyon.getModuleOrNull(StreamManagementModule)?.resumptionContext?.location
+		val location = halcyon.getModuleOrNull(StreamManagementModule)?.resumptionLocation
 		if (location != null) {
 			hosts += HostPort(location, config.port)
 			log.fine { "Using host ${location}:${config.port}" }

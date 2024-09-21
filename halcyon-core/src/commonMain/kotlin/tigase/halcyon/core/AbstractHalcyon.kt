@@ -31,6 +31,7 @@ import tigase.halcyon.core.modules.*
 import tigase.halcyon.core.requests.Request
 import tigase.halcyon.core.requests.RequestBuilderFactory
 import tigase.halcyon.core.requests.RequestsManager
+import tigase.halcyon.core.utils.Lock
 import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xml.element
 import tigase.halcyon.core.xmpp.ErrorCondition
@@ -264,7 +265,10 @@ abstract class AbstractHalcyon(configurator: ConfigurationBuilder) : Context, Pa
             it.onSuccess { toSend ->
                 if (toSend == null) return@onSuccess
                 logSendingStanza(toSend)
-                c.send(toSend.getAsString())
+                senderLock.withLock {
+                    getModuleOrNull(StreamManagementModule)?.processElementSent(toSend, null)
+                    c.send(toSend.getAsString())
+                }
                 eventBus.fire(SentXMLElementEvent(toSend, null))
             }
             it.onFailure {
@@ -283,14 +287,16 @@ abstract class AbstractHalcyon(configurator: ConfigurationBuilder) : Context, Pa
             request.markTimeout()
             return;
         }
-        modules.processOutgoingFilters(request.stanza) {
+        modules.processOutgoingFilters(request.stanza) { it ->
             it.onSuccess { element ->
                 if (element == null) return@onSuccess
                 requestsManager.register(request)
                 logSendingStanza(element)
-                c.send(element.getAsString())
-
-                if (getModuleOrNull(StreamManagementModule)?.resumptionContext?.isAckActive != true) {
+                if (!senderLock.withLock {
+                    val smHandled = getModuleOrNull(StreamManagementModule)?.processElementSent(element, request) ?: false;
+                    c.send(element.getAsString())
+                    smHandled
+                }) {
                     request.markAsSent()
                 }
                 eventBus.fire(SentXMLElementEvent(request.stanza, request))
@@ -301,6 +307,8 @@ abstract class AbstractHalcyon(configurator: ConfigurationBuilder) : Context, Pa
 
         }
     }
+
+    private val senderLock = Lock();
 
     protected open fun onConnecting() {}
 
@@ -399,7 +407,7 @@ abstract class AbstractHalcyon(configurator: ConfigurationBuilder) : Context, Pa
 
             modules.getModuleOrNull(StreamManagementModule)?.let { module ->
                 val ackEnabled =
-                    module.resumptionContext.isAckActive
+                    module.isActive
                 if (ackEnabled && getConnectorState() == tigase.halcyon.core.connector.State.Connected) {
                     module.sendAck(true)
                 }

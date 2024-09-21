@@ -61,7 +61,7 @@ class WebSocketConnector(halcyon: Halcyon) : AbstractConnector(halcyon) {
 
 		override fun onNextElement(element: Element) {
 			logReceivedStanza(element)
-			halcyon.eventBus.fire(ReceivedXMLElementEvent(element))
+			handleReceivedElement(element);
 		}
 
 		override fun onStreamClosed() {

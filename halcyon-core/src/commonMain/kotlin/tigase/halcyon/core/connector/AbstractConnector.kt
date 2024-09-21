@@ -19,6 +19,8 @@ package tigase.halcyon.core.connector
 
 import tigase.halcyon.core.AbstractHalcyon
 import tigase.halcyon.core.eventbus.Event
+import tigase.halcyon.core.xml.Element
+import tigase.halcyon.core.xmpp.modules.sm.StreamManagementModule
 
 abstract class AbstractConnector(val halcyon: AbstractHalcyon) {
 
@@ -38,6 +40,13 @@ abstract class AbstractConnector(val halcyon: AbstractHalcyon) {
 	abstract fun start()
 
 	abstract fun stop()
+
+	protected fun handleReceivedElement(element: Element) {
+		if (halcyon.getModuleOrNull(StreamManagementModule)?.processElementReceived(element) == true) {
+			return
+		}
+		fire(ReceivedXMLElementEvent(element))
+	}
 
 	protected fun fire(e: Event) {
 		if (eventsEnabled) halcyon.eventBus.fire(e)

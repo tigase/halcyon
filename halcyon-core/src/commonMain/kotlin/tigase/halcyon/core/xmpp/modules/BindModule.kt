@@ -155,7 +155,7 @@ class BindModule(override val context: AbstractHalcyon) : XmppModule, InlineProt
 	override fun featureFor(features: InlineFeatures, stage: InlineProtocolStage): Element? {
 		return if (stage == InlineProtocolStage.AfterSasl) {
 			val isResumptionAvailable =
-				context.getModuleOrNull(StreamManagementModule)?.resumptionContext?.isResumptionAvailable() ?: false
+				context.getModuleOrNull(StreamManagementModule)?.isResumptionAvailable() ?: false
 
 			if (!isResumptionAvailable) {
 				val bindInlineFeatures = features.subInline("bind", BIND2_XMLNS)
