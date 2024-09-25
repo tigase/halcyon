@@ -106,7 +106,7 @@ class ExternalServiceDiscoveryModule(context: Context): ExternalServiceDiscovery
             }
         }
         return context.request.iq(stanza).map {
-            it.getChildrenNS("serivces", XMLNS)?.children?.map(Service::parse)?.filterNotNull() ?: emptyList()
+            it.getChildrenNS("services", XMLNS)?.children?.map(Service::parse)?.filterNotNull() ?: emptyList()
         }
     }
 
