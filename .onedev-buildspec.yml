@@ -1,4 +1,4 @@
-version: 16
+version: 35
 jobs:
 - name: Push To GitHub
   steps:
@@ -6,12 +6,33 @@ jobs:
     name: push
     remoteUrl: https://github.com/tigase/halcyon.git
     passwordSecret: github-access-token
-    withLfs: false
     force: false
     condition: ALL_PREVIOUS_STEPS_WERE_SUCCESSFUL
   retryCondition: never
   maxRetries: 3
   retryDelay: 30
-  cpuRequirement: 250
-  memoryRequirement: 256
+  timeout: 3600
+- name: Build and publish to maven repo
+  jobExecutor: linux
+  steps:
+  - !CheckoutStep
+    name: checkout
+    cloneCredential: !DefaultCredential {}
+    withLfs: false
+    withSubmodules: false
+    condition: ALL_PREVIOUS_STEPS_WERE_SUCCESSFUL
+  - !CommandStep
+    name: compile and package
+    runInContainer: true
+    image: tigase/devops-1dev-builder-image:latest
+    interpreter: !DefaultInterpreter
+      commands: |
+        pwd
+        ./gradlew clean
+        ./gradlew publishAllPublicationsToMavenRepository -PmavenUsername=@secrets:tigase.internalrepo.username@ -PmavenPassword=@secrets:tigase.internalrepo.password@
+    useTTY: true
+    condition: ALL_PREVIOUS_STEPS_WERE_SUCCESSFUL
+  retryCondition: never
+  maxRetries: 3
+  retryDelay: 30
   timeout: 3600
