@@ -28,8 +28,7 @@ jobs:
     interpreter: !DefaultInterpreter
       commands: |
         pwd
-        ./gradlew clean
-        ./gradlew publishAllPublicationsToMavenRepository -PmavenUsername=@secrets:tigase.internalrepo.username@ -PmavenPassword=@secrets:tigase.internalrepo.password@
+        ./gradlew clean assemble publish -PmavenUsername=@secrets:tigase.internalrepo.username@ -PmavenPassword=@secrets:tigase.internalrepo.password@ --console=plain
     useTTY: true
     condition: ALL_PREVIOUS_STEPS_WERE_SUCCESSFUL
   triggers:
