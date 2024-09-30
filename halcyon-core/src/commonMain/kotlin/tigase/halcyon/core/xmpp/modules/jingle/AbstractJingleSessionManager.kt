@@ -34,6 +34,8 @@ abstract class AbstractJingleSessionManager<S : AbstractJingleSession>(
 
 	abstract fun createSession(context: Context, jid: JID, sid: String, role: Content.Creator, initiationType: InitiationType): S
 	abstract fun reportIncomingCall(session: S, media: List<Media>)
+	open fun reportIncomingCallAction(session: S, action: MessageInitiationAction) {
+	}
 
 	private val log = LoggerFactory.logger(name)
 
@@ -112,13 +114,24 @@ abstract class AbstractJingleSessionManager<S : AbstractJingleSession>(
 					return;
 				}
 				val session = open(context, fromJid, action.id, Content.Creator.responder, InitiationType.Message);
-				val media = action.descriptions.map { Media.valueOf(it.media) };
-				reportIncomingCall(session, media);
+				reportIncomingCall(session, action.media);
+				reportIncomingCallAction(session, action);
 			}
-			is MessageInitiationAction.Retract -> sessionTerminated(context, fromJid, action.id);
-			is MessageInitiationAction.Accept, is MessageInitiationAction.Reject -> sessionTerminated(context.boundJID!!.bareJID, action.id);
+			is MessageInitiationAction.Retract -> {
+				session(context, fromJid, action.id)?.let {
+					reportIncomingCallAction(it, action)
+				}
+				sessionTerminated(context, fromJid, action.id)
+			}
+			is MessageInitiationAction.Accept, is MessageInitiationAction.Reject -> {
+				session(context, fromJid, action.id)?.let {
+					reportIncomingCallAction(it, action)
+				}
+				sessionTerminated(context.boundJID!!.bareJID, action.id)
+			}
 			is MessageInitiationAction.Proceed -> {
 				val session = session(context, fromJid, action.id) ?: return;
+				reportIncomingCallAction(session, action);
 				session.accepted(fromJid);
 			}
 		}

@@ -18,11 +18,14 @@
 package tigase.halcyon.core.xmpp.modules.jingle
 
 import tigase.halcyon.core.xml.Element
+import tigase.halcyon.core.xmpp.modules.jingle.AbstractJingleSessionManager.Media
 
 sealed class MessageInitiationAction(open val id: String, val actionName: String) {
 
 	class Propose(override val id: String, val descriptions: List<MessageInitiationDescription>) :
-		MessageInitiationAction(id, "propose")
+		MessageInitiationAction(id, "propose") {
+			val media = descriptions.map { Media.valueOf(it.media) }
+		}
 
 	class Retract(override val id: String) : MessageInitiationAction(id, "retract")
 
