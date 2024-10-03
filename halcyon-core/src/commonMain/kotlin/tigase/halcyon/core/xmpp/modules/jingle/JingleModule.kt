@@ -288,8 +288,11 @@ class JingleModule(
 			element(action.actionName) {
 				xmlns = "urn:xmpp:jingle-message:0"
 				attribute("id", action.id)
-				if (action is MessageInitiationAction.Propose) action.descriptions.map { it.toElement() }
-					.forEach { addChild(it) }
+				if (action is MessageInitiationAction.Propose) {
+					action.descriptions.map { it.toElement() }
+						.forEach { addChild(it) }
+					action.data?.forEach { addChild(it) }
+				}
 			}
 			type = MessageType.Chat
 			to = jid

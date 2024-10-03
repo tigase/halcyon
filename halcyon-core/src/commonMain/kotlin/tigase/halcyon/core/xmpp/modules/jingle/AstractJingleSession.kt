@@ -21,6 +21,7 @@ import tigase.halcyon.core.AsyncResult
 import tigase.halcyon.core.Context
 import tigase.halcyon.core.ReflectionModuleManager
 import tigase.halcyon.core.utils.Lock
+import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xmpp.BareJID
 import tigase.halcyon.core.xmpp.JID
 import tigase.halcyon.core.xmpp.modules.jingle.Jingle.Session.State
@@ -144,8 +145,8 @@ abstract class AbstractJingleSession(
 			.send()
 	}
 
-	fun initiate(descriptions: List<MessageInitiationDescription>, completionHandler: AsyncResult<Unit>) {
-		jingleModule.sendMessageInitiation(MessageInitiationAction.Propose(sid, descriptions), jid)
+	fun initiate(descriptions: List<MessageInitiationDescription>, data: Set<Element>? = null, completionHandler: AsyncResult<Unit>) {
+		jingleModule.sendMessageInitiation(MessageInitiationAction.Propose(sid, descriptions, data?.toList()), jid)
 			.response { r ->
 				if (r.isFailure) {
 					this.terminate()

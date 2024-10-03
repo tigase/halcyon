@@ -21,8 +21,8 @@ import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xmpp.modules.jingle.AbstractJingleSessionManager.Media
 
 sealed class MessageInitiationAction(open val id: String, val actionName: String) {
-
-	class Propose(override val id: String, val descriptions: List<MessageInitiationDescription>) :
+	
+	class Propose(override val id: String, val descriptions: List<MessageInitiationDescription>, val data: List<Element>? = null) :
 		MessageInitiationAction(id, "propose") {
 			val media = descriptions.map { Media.valueOf(it.media) }
 		}
@@ -41,10 +41,9 @@ sealed class MessageInitiationAction(open val id: String, val actionName: String
 				"accept" -> return Accept(id)
 				"proceed" -> return Proceed(id)
 				"propose" -> {
-					val descriptions = actionEl.children.map { MessageInitiationDescription.parse(it) }
-						.filterNotNull()
+					val descriptions = actionEl.children.mapNotNull { MessageInitiationDescription.parse(it) }
 					if (descriptions.isNotEmpty()) {
-						return Propose(id, descriptions)
+						return Propose(id, descriptions, actionEl.children.filterNot { it.name == "description" })
 					} else {
 						return null
 					}
