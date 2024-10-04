@@ -668,13 +668,14 @@ class OMEMOModule(
                         log.fine(it.exceptionOrNull(), { "failed to start session for ${addr} at account ${context.boundJID?.bareJID}" })
                         addresses.remove(addr);
                     } else {
-                        log.fine { "started session for ${addr} at account ${context.boundJID?.bareJID}" }
+                        log.fine { "started session for ${addr} at account ${context.boundJID?.bareJID}, remaining session counter: ${counter-1}" }
                     }
-                    counter = -1;
+                    counter -= 1;
                     counter == 0
                 }
+                log.fine { "are we ready? isReady: ${isReady} for jid ${jid} at account ${context.boundJID?.bareJID}" }
                 if (isReady) {
-                    log.fine { "got actvive sessions for addresses ${addresses} for jid ${jid} at account ${context.boundJID?.bareJID}" }
+                    log.fine { "got active sessions for addresses ${addresses} for jid ${jid} at account ${context.boundJID?.bareJID}" }
                     callback(addresses);
                 }
             }
