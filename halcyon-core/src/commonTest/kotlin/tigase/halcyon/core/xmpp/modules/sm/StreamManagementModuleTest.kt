@@ -1,7 +1,6 @@
 package tigase.halcyon.core.xmpp.modules.sm
 
 import tigase.DummyHalcyon
-import tigase.halcyon.core.connector.ReceivedXMLElementEvent
 import tigase.halcyon.core.xml.element
 import tigase.halcyon.core.xmpp.modules.auth.SASLModule
 import kotlin.test.Test
@@ -16,15 +15,20 @@ class StreamManagementModuleTest {
 		}
 
 		val smm: StreamManagementModule = halcyon.modules[StreamManagementModule.TYPE]
-		smm.resumptionContext.isAckEnabled = true
-		smm.resumptionContext.isActive = true
+		smm.withResumptionContext { ctx ->
+			ctx.state = StreamManagementModule.State.active
+		}
 
-		assertEquals(0, smm.resumptionContext.incomingH)
-		assertEquals(0, smm.resumptionContext.outgoingH)
+		smm.withResumptionContext { ctx ->
+			assertEquals(0, ctx.incomingH)
+			assertEquals(0, ctx.outgoingH)
+		}
 		halcyon.writeDirectly(element("x") {})
 		halcyon.writeDirectly(element("iq") {})
-		assertEquals(1, smm.resumptionContext.outgoingH)
-		assertEquals(0, smm.resumptionContext.incomingH)
+		smm.withResumptionContext { ctx ->
+			assertEquals(1, ctx.outgoingH)
+			assertEquals(0, ctx.incomingH)
+		}
 		halcyon.writeDirectly(element("iq") {})
 		halcyon.writeDirectly(element("presence") {})
 		halcyon.writeDirectly(element("presence") {})
@@ -36,27 +40,33 @@ class StreamManagementModuleTest {
 		halcyon.writeDirectly(element("stream:features") {})
 		halcyon.writeDirectly(element("features") { xmlns = "http://etherx.jabber.org/streams" })
 		halcyon.writeDirectly(element("a") {})
-		assertEquals(0, smm.resumptionContext.incomingH)
-		assertEquals(7, smm.resumptionContext.outgoingH)
+		smm.withResumptionContext { ctx ->
+			assertEquals(0, ctx.incomingH)
+			assertEquals(7, ctx.outgoingH)
+		}
 
-		halcyon.eventBus.fire(ReceivedXMLElementEvent(element("r") { xmlns = StreamManagementModule.XMLNS }))
-		halcyon.eventBus.fire(ReceivedXMLElementEvent(element("a") { xmlns = StreamManagementModule.XMLNS }))
-		halcyon.eventBus.fire(ReceivedXMLElementEvent(element("challenge") { xmlns = SASLModule.XMLNS }))
-		assertEquals(0, smm.resumptionContext.incomingH)
-		assertEquals(7, smm.resumptionContext.outgoingH)
+		smm.processElementReceived(element("r") { xmlns = StreamManagementModule.XMLNS })
+		smm.processElementReceived(element("a") { xmlns = StreamManagementModule.XMLNS })
+		smm.processElementReceived(element("challenge") { xmlns = SASLModule.XMLNS })
+		smm.withResumptionContext { ctx ->
+			assertEquals(0, ctx.incomingH)
+			assertEquals(7, ctx.outgoingH)
+		}
 
-		halcyon.eventBus.fire(ReceivedXMLElementEvent(element("iq") {}))
-		halcyon.eventBus.fire(ReceivedXMLElementEvent(element("presence") {}))
-		halcyon.eventBus.fire(ReceivedXMLElementEvent(element("presence") {}))
-		halcyon.eventBus.fire(ReceivedXMLElementEvent(element("presence") {}))
-		halcyon.eventBus.fire(ReceivedXMLElementEvent(element("message") {}))
-		halcyon.eventBus.fire(ReceivedXMLElementEvent(element("nothing") {}))
-		halcyon.eventBus.fire(ReceivedXMLElementEvent(element("stream:features") {}))
-		halcyon.eventBus.fire(ReceivedXMLElementEvent(element("features") {
+		smm.processElementReceived(element("iq") {})
+		smm.processElementReceived(element("presence") {})
+		smm.processElementReceived(element("presence") {})
+		smm.processElementReceived(element("presence") {})
+		smm.processElementReceived(element("message") {})
+		smm.processElementReceived(element("nothing") {})
+		smm.processElementReceived(element("stream:features") {})
+		smm.processElementReceived(element("features") {
 			xmlns = "http://etherx.jabber.org/streams"
-		}))
-		assertEquals(5, smm.resumptionContext.incomingH)
-		assertEquals(8, smm.resumptionContext.outgoingH)
+		})
+		smm.withResumptionContext { ctx ->
+			assertEquals(5, ctx.incomingH)
+			assertEquals(7, ctx.outgoingH)
+		}
 
 	}
 
