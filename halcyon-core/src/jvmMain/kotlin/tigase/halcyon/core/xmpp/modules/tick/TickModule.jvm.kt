@@ -21,7 +21,7 @@ class DefaultTickTimer : TickTimer {
             }
         }
         timer = Timer("timer", true).also {
-            it.scheduleAtFixedRate(tickTask, 2_000, 2_000)
+            it.schedule(tickTask, 2_000, 2_000)
         }
     }
 
