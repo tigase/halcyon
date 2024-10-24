@@ -65,38 +65,31 @@ class DefaultTLSProcessor(private val socket: Socket, private val config: Socket
 		return ctx.socketFactory
 	}
 
-	private val lock = Object()
-
 	override fun proceedTLS(callback: TLSCallback) {
 		val factory = getSocketFactory()
-		val s1 = factory.createSocket(socket, config.hostname, socket.port, true) as SSLSocket
-		s1.soTimeout = 0
-		s1.tcpNoDelay = true
-		extendedSocketOptionsConfigurer?.invoke(s1)
-		s1.useClientMode = true
-		s1.addHandshakeCompletedListener { handshakeCompletedEvent ->
+		val sslSocket = factory.createSocket(socket, config.hostname, socket.port, true) as SSLSocket
+		sslSocket.soTimeout = 0
+		sslSocket.tcpNoDelay = true
+		extendedSocketOptionsConfigurer?.invoke(sslSocket)
+		log.info { "Processing TLS, SSLSocket: '${sslSocket}' (${sslSocket.javaClass}) over: ${socket} (${socket.javaClass})" }
+		if (!sslSocket.useClientMode) {
+			// used `.createSocket()` factory method should already result in socket with clientMode set
+			// but just in case it's not and to avoid Android exceptions let's to it like this
+			sslSocket.useClientMode = true
+		}
+		sslSocket.addHandshakeCompletedListener { handshakeCompletedEvent ->
 			log.info { "Handshake completed $handshakeCompletedEvent" }
 			this.peerCertificates = handshakeCompletedEvent.session.peerCertificates
-			this.secured = true
-			synchronized(lock) {
-				lock.notify()
+			if (!config.hostnameVerifier.verify(config.domain, this.peerCertificates!!.first())) {
+				throw SSLHandshakeException(
+					"Certificate hostname doesn't match domain name you want to connect."
+				)
 			}
 		}
-		s1.startHandshake()
-		synchronized(lock) {
-			if (!secured) lock.wait(100)
-		}
-
-		log.info { "Verifying domain name" }
-		if (!config.hostnameVerifier.verify(config.domain, this.peerCertificates!!.first())) {
-			throw SSLHandshakeException(
-				"Certificate hostname doesn't match domain name you want to connect."
-			)
-		}
-
-		callback(s1.inputStream, s1.outputStream)
+		log.fine { "Starting handshake" }
+		sslSocket.startHandshake()
+		callback(sslSocket.inputStream, sslSocket.outputStream)
 	}
-
 }
 
 fun calculateCertificateHash(certificate: X509Certificate): ByteArray? {
