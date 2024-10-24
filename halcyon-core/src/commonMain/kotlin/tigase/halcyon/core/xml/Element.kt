@@ -35,7 +35,7 @@ interface Element {
     fun getChildrenNS(xmlns: String): List<Element>
     fun getChildrenNS(name: String, xmlns: String): Element?
     fun getChildAfter(child: Element): Element?
-    fun getAsString(deep: Int = Int.MAX_VALUE, showValue: Boolean = true): String
+    fun getAsString(): String
     fun findChild(vararg elemPath: String): Element?
     fun getNextSibling(): Element?
     fun remove(child: Element)
@@ -125,7 +125,7 @@ class ElementImpl(override val name: String) : Element {
         }
     }
 
-    override fun getAsString(deep: Int, showValue: Boolean): String {
+    override fun getAsString(): String {
         val builder = StringBuilder()
         builder.append('<')
         builder.append(name)
@@ -149,7 +149,7 @@ class ElementImpl(override val name: String) : Element {
         }
         builder.append('>')
         for (element in children) {
-            builder.append(element.getAsString(deep - 1, true))
+            builder.append(element.getAsString())
         }
         if (value != null) {
             if (true) builder.append(EscapeUtils.escape(value))

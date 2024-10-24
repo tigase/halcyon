@@ -145,7 +145,7 @@ class MAMModule(override val context: Context) : XmppModule, MAMModuleConfig {
 		try {
 			query.publisher?.publish(forwardedStanza)
 		} catch (e: Exception) {
-			log.warning(e) { "Error on calling consumer for ${element.getAsString(deep = 2, showValue = false)}" }
+			log.warning(e) { "Error on calling consumer for ${element.getAsString()}" }
 		}
 		context.eventBus.fire(MAMMessageEvent(wrap(element), queryId, resultId, forwardedStanza))
 	}

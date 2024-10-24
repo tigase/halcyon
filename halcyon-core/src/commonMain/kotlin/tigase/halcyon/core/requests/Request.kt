@@ -217,7 +217,7 @@ class Request<V, STT : Stanza<*>>(
                 append("name='$requestName', ")
             }
             append("stanza=")
-            append(stanza.getAsString(deep = 2, showValue = false))
+            append(stanza.getAsString())
             append(")")
         }
     }

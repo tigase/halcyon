@@ -77,13 +77,13 @@ class SocketConnector(halcyon: Halcyon) : AbstractConnector(halcyon) {
 				log.isLoggable(Level.FINEST) -> log.finest("Received element ${element.getAsString()}")
 				log.isLoggable(Level.FINER) -> log.finer(
 					"Received element ${
-						element.getAsString(deep = 3, showValue = false)
+						element.getAsString()
 					}"
 				)
 
 				log.isLoggable(Level.FINE) -> log.fine(
 					"Received element ${
-						element.getAsString(deep = 2, showValue = false)
+						element.getAsString()
 					}"
 				)
 			}

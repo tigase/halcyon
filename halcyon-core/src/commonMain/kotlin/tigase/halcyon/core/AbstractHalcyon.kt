@@ -150,7 +150,7 @@ abstract class AbstractHalcyon(configurator: ConfigurationBuilder) : Context, Pa
 
                 val modules = modules.getModulesFor(element)
                 if (modules.isEmpty()) {
-                    log.fine { "Unsupported stanza: " + element.getAsString(3, false) }
+                    log.fine { "Unsupported stanza: " + element.getAsString() }
                     sendErrorBack(element, XMPPException(ErrorCondition.FeatureNotImplemented))
                     return@onSuccess
                 }
@@ -161,16 +161,16 @@ abstract class AbstractHalcyon(configurator: ConfigurationBuilder) : Context, Pa
                             it.process(element)
                         }
                     } catch (e: XMPPException) {
-                        log.finest(e) { "Error ${e.condition} during processing stanza ${element.getAsString(showValue = false)}" }
+                        log.finest(e) { "Error ${e.condition} during processing stanza ${element.getAsString()}" }
                         sendErrorBack(element, e)
                     } catch (e: Exception) {
-                        log.finest(e) { "Problem on processing element ${element.getAsString(showValue = false)}" }
+                        log.finest(e) { "Problem on processing element ${element.getAsString()}" }
                         sendErrorBack(element, e)
                     }
                 }
             }
             it.onFailure { e ->
-                log.info(e) { "Problem on processing element ${receivedElement.getAsString(showValue = false)}" }
+                log.info(e) { "Problem on processing element ${receivedElement.getAsString()}" }
                 sendErrorBack(receivedElement, e)
             }
         }
@@ -248,8 +248,8 @@ abstract class AbstractHalcyon(configurator: ConfigurationBuilder) : Context, Pa
     private fun logSendingStanza(element: Element) {
         when {
             log.isLoggable(Level.FINEST) -> log.finest("Sending: ${element.getAsString()}")
-            log.isLoggable(Level.FINER) -> log.finer("Sending: ${element.getAsString(deep = 3, showValue = false)}")
-            log.isLoggable(Level.FINE) -> log.fine("Sending: ${element.getAsString(deep = 2, showValue = false)}")
+            log.isLoggable(Level.FINER) -> log.finer("Sending: ${element.getAsString()}")
+            log.isLoggable(Level.FINE) -> log.fine("Sending: ${element.getAsString()}")
         }
     }
 
