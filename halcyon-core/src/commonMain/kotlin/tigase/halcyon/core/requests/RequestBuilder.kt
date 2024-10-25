@@ -106,7 +106,7 @@ class RequestBuilderFactory(private val context: Context) {
 
 class RequestBuilder<V, STT : Stanza<*>>(
     private val halcyon: Context,
-    private val element: Element,
+    internal val element: Element,
     private val writeDirectly: Boolean = false,
     @Deprecated("Use onSend() instead.") private val callHandlerOnSent: Boolean = false,
     private val transform: (value: Any?) -> V,
@@ -212,6 +212,22 @@ class RequestBuilder<V, STT : Stanza<*>>(
     }
 
 }
+
+fun <V> RequestBuilder<V, Message>.modifyMessage(block: MessageNode.() -> Unit): RequestBuilder<V, Message>  {
+    MessageNode(Message(element)).apply(block)
+    return this;
+}
+
+fun <V> RequestBuilder<V, IQ>.modifyIQ(block: IQNode.() -> Unit): RequestBuilder<V, IQ>  {
+    IQNode(IQ(element)).apply(block)
+    return this;
+}
+
+fun <V> RequestBuilder<V, Presence>.modifyPresence(block: PresenceNode.() -> Unit): RequestBuilder<V, Presence>  {
+    PresenceNode(Presence(element)).apply(block)
+    return this;
+}
+
 
 class ConsumerPublisher<CSR> {
 
