@@ -48,13 +48,13 @@ kotlin {
 			dependencies {
 				implementation(kotlin("stdlib-common"))
 				implementation(project(":halcyon-core"))
-				implementation(deps.kotlinx.coroutines.core)
+				implementation(libs.kotlinx.coroutines.core)
 			}
 		}
 		named("commonTest") {
 			dependencies {
 				implementation(kotlin("test"))
-				implementation(deps.kotlinx.coroutines.test)
+				implementation(libs.kotlinx.coroutines.test)
 			}
 		}
 	}

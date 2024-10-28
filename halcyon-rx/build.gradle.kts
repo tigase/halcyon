@@ -50,13 +50,13 @@ kotlin {
 			dependencies {
 				implementation(kotlin("stdlib-common"))
 				implementation(project(":halcyon-core"))
-				implementation(deps.reactive.reaktive)
+				implementation(libs.reactive.reaktive)
 			}
 		}
 		named("commonTest") {
 			dependencies {
 				implementation(kotlin("test"))
-				implementation(deps.reactive.testing)
+				implementation(libs.reactive.testing)
 			}
 		}
 	}

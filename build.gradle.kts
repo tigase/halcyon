@@ -59,18 +59,16 @@ buildscript {
 		google()
 		mavenCentral()
 		mavenLocal()
-		jcenter()
 	}
 	dependencies {
-		classpath(deps.kotlin.kotlinGradlePlug)
-		classpath(deps.kotlinx.serialization.gradlePlug)
-		classpath(deps.kotlin.dokkaPlug)
+		classpath(libs.kotlin.kotlinGradlePlug)
+		classpath(libs.kotlinx.serialization.gradlePlug)
+		classpath(libs.kotlin.dokkaPlug)
 	}
 }
 
 repositories {
 	mavenCentral()
-	jcenter()
 	gradlePluginPortal()
 }
 
@@ -91,7 +89,6 @@ subprojects {
 		mavenLocal()
 		maven(url = findProperty("tigaseMavenRepoRelease").toString())
 		maven(url = findProperty("tigaseMavenRepoSnapshot").toString())
-		jcenter()
 	}
 	pluginManager.withPlugin("signing") {
 		val secretKey = props["signing.secretKey"]?.toString()

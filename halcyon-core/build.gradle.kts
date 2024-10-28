@@ -131,15 +131,15 @@ kotlin {
 		val commonMain by getting {
 			dependencies {
 				implementation(kotlin("stdlib-common"))
-				implementation(deps.kotlinx.serialization.core)
-				implementation(deps.kotlinx.datetime)
-				implementation(deps.krypto)
+				implementation(libs.kotlinx.serialization.core)
+				implementation(libs.kotlinx.datetime)
+				implementation(libs.krypto)
 			}
 		}
 		val commonTest by getting {
 			dependencies {
 				implementation(kotlin("test"))
-				implementation(deps.kotlinx.serialization.json)
+				implementation(libs.kotlinx.serialization.json)
 			}
 		}
 		val omemoMain by creating {
@@ -151,8 +151,8 @@ kotlin {
 		val jvmMain by getting {
 			dependsOn(omemoMain)
 			dependencies {
-				implementation(deps.minidns)
-				implementation(deps.signal.protocol.java)
+				implementation(libs.minidns)
+				implementation(libs.signal.protocol.java)
 			}
 		}
 		val jvmTest by getting {
@@ -176,7 +176,7 @@ kotlin {
 		val iosMain by creating {
 			dependsOn(omemoMain)
 			dependencies {
-				implementation(deps.kotlinx.datetime)
+				implementation(libs.kotlinx.datetime)
 			}
 		}
 		val iosArm64Main by getting {
