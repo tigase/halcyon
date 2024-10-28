@@ -37,7 +37,7 @@ kotlin {
 			dependencies {
 				implementation(kotlin("stdlib-common"))
 				implementation(project(":halcyon-core"))
-				implementation(deps.bouncycastle)
+				implementation(libs.bouncycastle)
 			}
 		}
 	}
