@@ -13,6 +13,7 @@ jobs:
   retryDelay: 30
   timeout: 3600
 - name: Build and publish to maven repo
+  jobExecutor: linux
   steps:
   - !CheckoutStep
     name: checkout
