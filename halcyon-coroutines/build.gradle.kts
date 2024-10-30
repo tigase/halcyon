@@ -22,7 +22,7 @@ plugins {
 }
 
 kotlin {
-	jvmToolchain(17)
+	jvmToolchain(jdkVersion = libs.versions.java.languageVersion.get().toInt())
 	jvm {
 		withJava()
 		testRuns["test"].executionTask.configure {
