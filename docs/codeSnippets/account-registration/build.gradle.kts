@@ -1,13 +1,10 @@
-val halcyon_version: String by project
-val kotlin_version: String by project
-
 plugins {
 	application
 	kotlin("jvm")
 }
 
 kotlin {
-	jvmToolchain(17)
+	jvmToolchain(jdkVersion = libs.versions.java.languageVersion.get().toInt())
 }
 
 application {
@@ -15,5 +12,5 @@ application {
 }
 
 dependencies {
-	implementation("tigase.halcyon:halcyon-core:$halcyon_version")
+	implementation(libs.halcyon.core)
 }

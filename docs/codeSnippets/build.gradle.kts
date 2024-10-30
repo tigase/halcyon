@@ -1,10 +1,9 @@
 buildscript {
-	val kotlin_version: String by project
 	repositories {
 		mavenCentral()
 	}
 	dependencies {
-		classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version")
+		classpath(libs.kotlin.gradle.plugin)
 	}
 }
 

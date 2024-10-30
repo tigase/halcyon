@@ -1,0 +1,9 @@
+[versions]
+halcyon = "1.0.0-SNAPSHOT"
+java-languageVersion = "17"
+kotlin = "1.8.0"
+
+[libraries]
+halcyon-core = { module = "tigase.halcyon:halcyon-core", version.ref = "halcyon" }
+kotlin-gradle-plugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
+
