@@ -18,9 +18,7 @@ data class OMEMOSession(
 fun createSession(store: SignalProtocolStore, bundle: Bundle): Result<Unit> {
     try {
         val address = SignalProtocolAddress(bundle.jid.toString(), bundle.deviceId)
-        if (!store.containsSession(address)) {
-            SessionBuilder(store, address).process(bundle.getRandomPreKeyBundle())
-        }
+        SessionBuilder(store, address).process(bundle.getRandomPreKeyBundle())
         return Result.success(Unit);
     } catch (e: Exception) {
         return Result.failure(e)

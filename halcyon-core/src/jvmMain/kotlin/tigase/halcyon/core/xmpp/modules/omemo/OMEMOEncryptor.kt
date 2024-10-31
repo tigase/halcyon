@@ -11,6 +11,7 @@ import tigase.halcyon.core.logger.LoggerFactory
 import tigase.halcyon.core.toBase64
 import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xml.element
+import tigase.halcyon.core.xmpp.modules.mix.getMixAnnotation
 import tigase.halcyon.core.xmpp.stanzas.Message
 import tigase.halcyon.core.xmpp.toBareJID
 import java.nio.charset.Charset
@@ -140,6 +141,11 @@ actual object OMEMOEncryptor {
                     return DecryptedKey(sessionCipher.decrypt(msg), false)
                 } catch (e: Exception) {
                     log.fine(e, { "failed to decrypt key ${keyElement.attributes["rid"]} from ${senderAddr}" })
+                    // should we try to heal sessions?
+//                    if (e is InvalidMessageException || e is NoSessionException) {
+//                        // we need to try to recover
+//                        healSession(senderAddr);
+//                    }
                     if (iterator.hasNext()) {
                         continue
                     }
@@ -160,7 +166,8 @@ actual object OMEMOEncryptor {
                 stanza.getChildrenNS("encrypted", OMEMOModule.XMLNS) ?: throw HalcyonException("No enc element")
             val senderId = encElement.getFirstChild("header")?.attributes?.get("sid")?.toInt()
                 ?: throw HalcyonException("No sid attribute element")
-            val senderAddr = SignalProtocolAddress(stanza.attributes["from"]!!.toBareJID().toString(), senderId)
+
+            val senderAddr = SignalProtocolAddress((stanza.getMixAnnotation()?.jid ?: stanza.attributes["from"]!!.toBareJID()).toString(), senderId)
             val iv = encElement.getFirstChild("header")?.getFirstChild("iv")?.value?.fromBase64()
                 ?: throw HalcyonException("No IV element")
             var ciphertext = encElement.getFirstChild("payload")?.value?.fromBase64() ?: ByteArray(0)

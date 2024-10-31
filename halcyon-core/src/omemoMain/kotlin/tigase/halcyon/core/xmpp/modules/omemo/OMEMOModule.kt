@@ -562,6 +562,7 @@ class OMEMOModule(
                             }.send();
                         } else {
                             addDevice(registrationId);
+                            bundleRefreshInProgress = false
                         }
                     }
                 }
