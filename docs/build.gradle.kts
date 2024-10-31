@@ -17,7 +17,7 @@
  */
 
 plugins {
-	id("kr.motd.sphinx") version "2.10.1" apply true
+	alias(libs.plugins.sphinx) apply true
 }
 
 tasks {

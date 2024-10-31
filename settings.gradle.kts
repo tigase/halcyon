@@ -25,3 +25,18 @@ include(
 	"halcyon-bouncycastle",
 //	"integration-tests",
 )
+
+pluginManagement {
+	repositories {
+		gradlePluginPortal()
+		mavenCentral()
+	}
+}
+
+dependencyResolutionManagement {
+	repositories {
+		google()
+		mavenCentral()
+		mavenLocal()
+	}
+}

@@ -16,11 +16,11 @@
 * If not, see http://www.gnu.org/licenses/.
 */
 plugins {
-	kotlin("multiplatform")
+	alias(libs.plugins.multiplatform)
 	`maven-publish`
 	signing
-	kotlin("plugin.serialization")
-	id("org.jetbrains.dokka")
+	alias(libs.plugins.kotlinx.serialization)
+	alias(libs.plugins.jetbrains.dokka)
 }
 
 kotlin {

@@ -20,7 +20,8 @@ import java.util.*
 plugins {
 	`maven-publish`
 	signing
-	id("net.researchgate.release") version "3.0.2"
+	alias(libs.plugins.researchgate.release)
+	alias(libs.plugins.multiplatform).apply(false)
 }
 
 configure<net.researchgate.release.ReleaseExtension> {
@@ -53,24 +54,6 @@ val props = Properties().also { props ->
 }
 
 tasks["afterReleaseBuild"].dependsOn("publish")
-
-buildscript {
-	repositories {
-		google()
-		mavenCentral()
-		mavenLocal()
-	}
-	dependencies {
-		classpath(libs.kotlin.kotlinGradlePlug)
-		classpath(libs.kotlinx.serialization.gradlePlug)
-		classpath(libs.kotlin.dokkaPlug)
-	}
-}
-
-repositories {
-	mavenCentral()
-	gradlePluginPortal()
-}
 
 allprojects {
 	group = "tigase.halcyon"

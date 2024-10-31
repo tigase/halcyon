@@ -16,7 +16,7 @@
  * If not, see http://www.gnu.org/licenses/.
  */
 plugins {
-	kotlin("multiplatform")
+	alias(libs.plugins.multiplatform)
 	`maven-publish`
 	signing
 }
