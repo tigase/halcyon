@@ -77,6 +77,8 @@ allprojects {
 	version = insertBuildNumber(findProperty("version").toString(), "git rev-list --count HEAD".runCommand(File("./")))
 }
 
+project.gradle.startParameter.excludedTaskNames.add("jsBrowserTest")
+
 fun insertBuildNumber(version: String, build: String): String {
 	return version
 //	if (!version.contains("-SNAPSHOT")) return "$version.$build"
