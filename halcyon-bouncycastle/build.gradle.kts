@@ -16,7 +16,7 @@
  * If not, see http://www.gnu.org/licenses/.
  */
 plugins {
-	alias(libs.plugins.multiplatform)
+	id("kotlinMultiplatformConvention")
 	`maven-publish`
 	signing
 	alias(libs.plugins.kotlinx.serialization)
@@ -24,18 +24,10 @@ plugins {
 
 
 kotlin {
-	jvmToolchain(jdkVersion = libs.versions.java.languageVersion.get().toInt())
-	jvm {
-		withJava()
-		testRuns["test"].executionTask.configure {
-			useJUnit()
-		}
-	}
 
 	sourceSets {
 		named("jvmMain") {
 			dependencies {
-				implementation(kotlin("stdlib-common"))
 				implementation(project(":halcyon-core"))
 				implementation(libs.bouncycastle)
 			}
