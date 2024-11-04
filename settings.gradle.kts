@@ -19,14 +19,15 @@ rootProject.name = "halcyon"
 
 include(
 	":docs",
+	":halcyon-bouncycastle",
 	":halcyon-core",
-	"halcyon-rx",
-	"halcyon-coroutines",
-	"halcyon-bouncycastle",
-//	"integration-tests",
+	":halcyon-coroutines",
+	":halcyon-rx",
+//	":integration-tests",
 )
 
 pluginManagement {
+	includeBuild("convention-plugin-multiplatform")
 	repositories {
 		gradlePluginPortal()
 		mavenCentral()

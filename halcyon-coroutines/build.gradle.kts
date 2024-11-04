@@ -16,44 +16,22 @@
  * If not, see http://www.gnu.org/licenses/.
  */
 plugins {
-	alias(libs.plugins.multiplatform)
+	id("kotlinMultiplatformConvention")
 	`maven-publish`
 	signing
 }
 
 kotlin {
-	jvmToolchain(jdkVersion = libs.versions.java.languageVersion.get().toInt())
-	jvm {
-		withJava()
-		testRuns["test"].executionTask.configure {
-			useJUnit()
-		}
-	}
-	js(IR) {
-		browser {
-			commonWebpackConfig {
-//				cssSupport()
-			}
-			testTask {
-				useKarma {
-					useChromeHeadless()
-				}
-			}
-		}
-	}
-	iosArm64 {}
-	iosSimulatorArm64 {}
+
 	sourceSets {
 		named("commonMain") {
 			dependencies {
-				implementation(kotlin("stdlib-common"))
 				implementation(project(":halcyon-core"))
 				implementation(libs.kotlinx.coroutines.core)
 			}
 		}
 		named("commonTest") {
 			dependencies {
-				implementation(kotlin("test"))
 				implementation(libs.kotlinx.coroutines.test)
 			}
 		}
