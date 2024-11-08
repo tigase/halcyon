@@ -16,7 +16,7 @@
 * If not, see http://www.gnu.org/licenses/.
 */
 plugins {
-	id("kotlinMultiplatformConvention")
+	alias(libs.plugins.multiplatform)
 	`maven-publish`
 	signing
 	alias(libs.plugins.kotlinx.serialization)
@@ -24,8 +24,25 @@ plugins {
 }
 
 kotlin {
-
-	iosArm64 {
+	jvmToolchain(jdkVersion = libs.versions.java.languageVersion.get().toInt())
+	jvm {
+		withJava()
+		testRuns["test"].executionTask.configure {
+			useJUnit()
+		}
+	}
+	js(IR) {
+		browser {
+			commonWebpackConfig { }
+			testTask {
+				useKarma {
+					useChromeHeadless()
+				}
+			}
+			binaries.executable()
+		}
+	}
+	iosArm64() {
 		// TODO: Before compilation you need to download https://github.com/tigase/openssl-swiftpm/releases/download/1.1.171/OpenSSL.xcframework.zip to "frameworks" directory and unpack this ZIP file.
 		// TODO: Before compilation it is required to go to OpenSSL.xcframework to each subdirectory and Headers and move all files there to "openssl" subdirectory inside Headers
 		val openSSLFrameworkDir = "$rootDir/frameworks/OpenSSL.xcframework/ios-arm64_armv7";
@@ -66,7 +83,7 @@ kotlin {
 		}
 	}
 	// Same target as above for iOS but for Arm64 simulator (simulator in AppleSilicon machine)
-	iosSimulatorArm64 {
+	iosSimulatorArm64() {
 		val openSSLFrameworkDir = "$rootDir/frameworks/OpenSSL.xcframework/ios-arm64_i386_x86_64-simulator"
 		val libsignalFrameworkDir = "$rootDir/frameworks/libsignal.xcframework/ios-arm64_x86_64-simulator"
 		compilations.getByName("main") {
@@ -106,8 +123,14 @@ kotlin {
 	}
 
 	sourceSets {
+		all {
+			languageSettings {
+				optIn("kotlin.RequiresOptIn")
+			}
+		}
 		val commonMain by getting {
 			dependencies {
+				implementation(kotlin("stdlib-common"))
 				implementation(libs.kotlinx.serialization.core)
 				implementation(libs.kotlinx.datetime)
 				implementation(libs.krypto)
@@ -115,6 +138,7 @@ kotlin {
 		}
 		val commonTest by getting {
 			dependencies {
+				implementation(kotlin("test"))
 				implementation(libs.kotlinx.serialization.json)
 			}
 		}
@@ -133,14 +157,23 @@ kotlin {
 		}
 		val jvmTest by getting {
 			dependsOn(omemoTest)
+			dependencies {
+				implementation(kotlin("test-junit"))
+			}
 		}
 		val jsMain by getting  {
 			dependsOn(commonMain)
+			dependencies {
+				implementation(kotlin("stdlib-js"))
+			}
 		}
 		val jsTest by getting {
 			dependsOn(commonTest)
+			dependencies {
+				implementation(kotlin("test-js"))
+			}
 		}
-		val iosMain by getting {
+		val iosMain by creating {
 			dependsOn(omemoMain)
 			dependencies {
 				implementation(libs.kotlinx.datetime)
