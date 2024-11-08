@@ -41,6 +41,7 @@ import tigase.halcyon.core.xmpp.forms.JabberDataForm
 import tigase.halcyon.core.xmpp.modules.RSM
 import tigase.halcyon.core.xmpp.modules.mam.ForwardedStanza
 import tigase.halcyon.core.xmpp.modules.mam.MAMModule
+import tigase.halcyon.core.xmpp.modules.pubsub.Affiliation
 import tigase.halcyon.core.xmpp.modules.pubsub.PubSubItemEvent
 import tigase.halcyon.core.xmpp.modules.pubsub.PubSubModule
 import tigase.halcyon.core.xmpp.modules.roster.RosterItemAnnotation
@@ -137,6 +138,12 @@ sealed class MixParticipantEvent(val channel: BareJID, val id: String): Event(TY
 
 @HalcyonConfigDsl
 interface MIXModuleConfig
+
+enum class MixPermission {
+	ChangeInfo,
+	ChangeConfig,
+	ChangeAvatar
+}
 
 class MIXModule(
 	override val context: Context,
@@ -282,6 +289,23 @@ class MIXModule(
 			to = invitation.invitee
 			body = message
 			addChild(invitationToElement(invitation, true))
+		}
+	}
+
+	fun retrieveAffiliations(channel: BareJID): RequestBuilder<Set<MixPermission>, IQ>{
+		return pubsubModule.retrieveAffiliations(channel).map {
+			it.mapNotNull {
+				if (it.affiliation == Affiliation.Owner || it.affiliation == Affiliation.Publisher) {
+					when (it.node) {
+						"urn:xmpp:mix:nodes:info" -> MixPermission.ChangeInfo
+						"urn:xmpp:mix:nodes:config" -> MixPermission.ChangeConfig
+						"urn:xmpp:avatar:metadata" -> MixPermission.ChangeAvatar
+						else -> null
+					}
+				} else {
+					null
+				}
+			}.toSet()
 		}
 	}
 
