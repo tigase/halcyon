@@ -34,6 +34,7 @@ jobs:
   triggers:
   - !BranchUpdateTrigger
     branches: master
+  - !PullRequestUpdateTrigger {}
   retryCondition: never
   maxRetries: 3
   retryDelay: 30
