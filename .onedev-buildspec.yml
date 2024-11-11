@@ -34,6 +34,30 @@ jobs:
   triggers:
   - !BranchUpdateTrigger
     branches: master
+  retryCondition: never
+  maxRetries: 3
+  retryDelay: 30
+  timeout: 3600
+- name: Build maven (PR)
+  jobExecutor: linux
+  steps:
+  - !CheckoutStep
+    name: checkout
+    cloneCredential: !DefaultCredential {}
+    withLfs: false
+    withSubmodules: false
+    condition: ALL_PREVIOUS_STEPS_WERE_SUCCESSFUL
+  - !CommandStep
+    name: compile and package
+    runInContainer: true
+    image: tigase/devops-1dev-builder-image:latest
+    interpreter: !DefaultInterpreter
+      commands: |
+        pwd
+        ./gradlew clean build assemble test -x jsBrowserTest --console=plain
+    useTTY: true
+    condition: ALL_PREVIOUS_STEPS_WERE_SUCCESSFUL
+  triggers:
   - !PullRequestUpdateTrigger {}
   retryCondition: never
   maxRetries: 3
