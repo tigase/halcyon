@@ -18,6 +18,10 @@ class DefaultTickTimer : TickTimer {
     val logger = LoggerFactory.logger("DefaultTickTimer")
 
     override fun startTimer(context: Context) {
+        if (timer != null) {
+            logger.finest("Skipping starting new timer, already running, this/run: $this, task: ${tickTask}, timer: ${timer}")
+            return
+        }
         tickTask = object : TimerTask() {
             override fun run() {
                 logger.finest("Firing timer, this/run: $this, task: ${tickTask}, timer: ${timer}")

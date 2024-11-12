@@ -1,6 +1,7 @@
 package tigase.halcyon.core.xmpp.modules.tick
 
 import tigase.halcyon.core.AbstractHalcyon
+import tigase.halcyon.core.AbstractHalcyon.State.*
 import tigase.halcyon.core.Context
 import tigase.halcyon.core.HalcyonStateChangeEvent
 import tigase.halcyon.core.builder.HalcyonConfigDsl
@@ -42,12 +43,20 @@ class TickModule(override val context: Context) : HalcyonModule, TickModuleConfi
     override var tickTimer: TickTimer = createTickTimer()
 
     private fun doOnHalcyonStateChange(event: HalcyonStateChangeEvent) {
-        if (event.newState == AbstractHalcyon.State.Connecting) {
-            log.info("Starting Ticker.")
-            tickTimer.startTimer(context)
-        } else if (event.newState == AbstractHalcyon.State.Disconnecting) {
-            log.info("Stopping Ticker.")
-            tickTimer.stopTimer(context)
+        when (event.newState) {
+            Connecting -> {
+                log.info("Starting Ticker.")
+                tickTimer.startTimer(context)
+            }
+
+            Disconnecting, Disconnected, Stopped -> {
+                log.info("Stopping Ticker.")
+                tickTimer.stopTimer(context)
+            }
+
+            Connected -> {
+                log.info("Halcyon connected.")
+            }
         }
     }
 
