@@ -495,6 +495,23 @@ class OMEMOModule(
             chain.doFilter(element)
             return
         }
+
+        val mamResult = element.getChildrenNS("result", "urn:xmpp:mam:2");
+        if (mamResult != null) {
+            mamResult.getChildren("forwarded").forEach { forwardedEl ->
+                val messageEl = forwardedEl.getFirstChild("message");
+                if (messageEl != null) {
+                    forwardedEl.remove(messageEl);
+                    forwardedEl.add(decodeMessage(messageEl));
+                }
+            }
+            chain.doFilter(element);
+        } else {
+            chain.doFilter(decodeMessage(element));
+        }
+    }
+
+    private fun decodeMessage(element: Element): Element {
         val senderJid = element.getFromAttr()
         val encElement = element.getChildrenNS("encrypted", XMLNS)
         val senderId =
@@ -502,17 +519,20 @@ class OMEMOModule(
                 ?.toInt()
 
         if (senderJid == null || encElement == null || senderId == null) {
-            chain.doFilter(element)
-            return
+            return element;
         }
 
         val localJid = context.boundJID!!.bareJID;
-        val session = OMEMOSession(protocolStore.getLocalRegistrationId(), localJid, emptyMap<SignalProtocolAddress, SessionCipher>().toMutableMap())
+        val session = OMEMOSession(
+            protocolStore.getLocalRegistrationId(),
+            localJid,
+            emptyMap<SignalProtocolAddress, SessionCipher>().toMutableMap()
+        )
         val result = OMEMOEncryptor.decrypt(protocolStore, session, wrap(element))
         if (result.second) {
             publishBundleIfNeeded();
         }
-        chain.doFilter(result.first)
+        return result.first;
     }
 
     private var bundleRefreshInProgress = false;
