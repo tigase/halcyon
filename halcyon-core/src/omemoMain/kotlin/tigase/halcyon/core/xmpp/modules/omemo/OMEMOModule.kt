@@ -668,7 +668,7 @@ class OMEMOModule(
 //        }
 //    }
 
-    private fun activeDevices(jid: BareJID): List<Int> = devices[jid]?.filterNot { devicesFetchError[jid]?.contains(it) ?: false } ?: emptyList();
+    fun activeDevices(jid: BareJID): List<Int> = devices[jid]?.filterNot { devicesFetchError[jid]?.contains(it) ?: false } ?: emptyList();
 
     private fun ensureSessions(jid: BareJID, deviceIds: List<Int>, callback: (List<SignalProtocolAddress>)->Unit) {
         var addresses = deviceIds.map { SignalProtocolAddress(jid.toString(), it) }.toMutableList();
