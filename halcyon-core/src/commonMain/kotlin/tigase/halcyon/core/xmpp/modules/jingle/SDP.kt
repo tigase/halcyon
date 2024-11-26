@@ -469,7 +469,7 @@ fun Payload.toSDP(): List<String> {
 	}
 	lines += rtcpFeedbacks.map {
 		val type = it.type
-		it.subtype?.let { "a=rtcp-fb:$id $type $it)" } ?: "a=rtcp-fb:$id $type"
+		it.subtype?.let { subtype -> "a=rtcp-fb:$id $type $subtype" } ?: "a=rtcp-fb:$id $type"
 	}
 	return lines
 }
