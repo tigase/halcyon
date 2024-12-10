@@ -19,12 +19,12 @@ class DefaultTickTimer : TickTimer {
 
     override fun startTimer(context: Context) {
         if (timer != null) {
-            logger.finest("Skipping starting new timer, already running, this/run: $this, task: ${tickTask}, timer: ${timer}")
+//            logger.finest("Skipping starting new timer, already running, this/run: $this, task: ${tickTask}, timer: ${timer}")
             return
         }
         tickTask = object : TimerTask() {
             override fun run() {
-                logger.finest("Firing timer, this/run: $this, task: ${tickTask}, timer: ${timer}")
+//                logger.finest("Firing timer, this/run: $this, task: ${tickTask}, timer: ${timer}")
                 tick(context)
             }
         }
@@ -35,15 +35,12 @@ class DefaultTickTimer : TickTimer {
     }
 
     override fun stopTimer(context: Context) {
-        logger.finest("Stopping timer [1], task: ${tickTask}, timer: ${timer}")
+        logger.finest("Stopping timer, task: ${tickTask}, timer: ${timer}")
         tickTask?.cancel()
-        logger.finest("Stopping timer [2], task: ${tickTask}, timer: ${timer}")
         tickTask = null
         timer?.purge()
         timer?.cancel()
-        logger.finest("Stopping timer [3], task: ${tickTask}, timer: ${timer}")
         timer = null
-        logger.finest("Stopping timer [4], task: ${tickTask}, timer: ${timer}")
     }
 
     private fun tick(context: Context) {
