@@ -127,12 +127,19 @@ data class Participant(val id: String, val nick: String?, val jid: BareJID?)
 sealed class MixParticipantEvent(val channel: BareJID, val id: String): Event(TYPE) {
 	class Joined(channel: BareJID, id: String, val jid: BareJID?, val nick: String?): MixParticipantEvent(channel, id) {
 		fun participant(): Participant = Participant(id, nick, jid)
+		override fun toString(): String {
+			return "Joined(jid=$jid, nick=$nick)"
+		}
 	}
 	class Left(channel: BareJID,id: String): MixParticipantEvent(channel, id) {}
 
 	companion object : EventDefinition<MixParticipantEvent> {
 
 		override val TYPE = "tigase.halcyon.core.xmpp.modules.mix.MixParticipantEventReceived"
+	}
+
+	override fun toString(): String {
+		return "MixParticipantEvent(channel=$channel, id='$id')"
 	}
 }
 
