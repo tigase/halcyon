@@ -430,6 +430,6 @@ abstract class AbstractHalcyon(configurator: ConfigurationBuilder) : Context, Pa
     }
 
     override fun toString(): String {
-        return "AbstractHalcyon(boundJID=$boundJID, state=$state, running=$running)"
+        return "AbstractHalcyon(boundJID=$boundJID, state=$state, running=$running, hash=${this.hashCode()})"
     }
 }
