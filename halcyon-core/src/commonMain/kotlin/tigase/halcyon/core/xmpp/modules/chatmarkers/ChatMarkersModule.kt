@@ -247,6 +247,10 @@ sealed class ChatMarker(
 	 * Message has been displayed to a user in a active chat and not in a system notification
 	 */
 	class Displayed(originId: String, sender: JID) : ChatMarker(ChatMarkersModule.Marker.Displayed, originId, sender)
+
+	override fun toString(): String {
+		return "ChatMarker(sender=$sender, marker=$marker, originId='$originId')"
+	}
 }
 
 /**
