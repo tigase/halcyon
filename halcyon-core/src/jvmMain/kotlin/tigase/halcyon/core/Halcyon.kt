@@ -28,7 +28,6 @@ import tigase.halcyon.core.exceptions.AuthenticationException
 import tigase.halcyon.core.exceptions.HalcyonException
 import tigase.halcyon.core.logger.LoggerFactory
 import tigase.halcyon.core.xmpp.modules.auth.SASLEvent
-import java.util.*
 
 actual class Halcyon actual constructor(configuration: ConfigurationBuilder) : AbstractHalcyon(configuration) {
 
@@ -41,10 +40,18 @@ actual class Halcyon actual constructor(configuration: ConfigurationBuilder) : A
 	}
 
 	override fun reconnect(immediately: Boolean) {
-		log.finer { "Called reconnect. immediately=$immediately" }
-		if (!immediately) Thread.sleep(3000)
-		state = State.Connecting
-		startConnector()
+		if (!running) {
+			log.finer { "Called reconnect. immediately=$immediately, skipping reconnection as running is false!" }
+		} else {
+			log.finer { "Called reconnect. immediately=$immediately" }
+			try {
+				if (!immediately) Thread.sleep(3000)
+				state = State.Connecting
+				startConnector()
+			} catch (ex: HalcyonException) {
+				disconnect();
+			}
+		}
 	}
 
 	private val lock = Object()
