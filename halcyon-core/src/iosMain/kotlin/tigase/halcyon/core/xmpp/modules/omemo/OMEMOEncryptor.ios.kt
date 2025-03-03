@@ -7,7 +7,6 @@ import platform.Foundation.NSInputStream
 import platform.Foundation.NSOutputStream
 import platform.Security.SecRandomCopyBytes
 import platform.Security.kSecRandomDefault
-import tigase.halcyon.core.exceptions.HalcyonException
 import tigase.halcyon.core.fromBase64
 import tigase.halcyon.core.logger.LoggerFactory
 import tigase.halcyon.core.toBase64
@@ -26,7 +25,8 @@ actual object OMEMOEncryptor {
         keyElements: List<Element>,
         senderAddr: SignalProtocolAddress,
         store: SignalProtocolStore,
-        session: OMEMOSession
+        session: OMEMOSession,
+        healSession: (SignalProtocolAddress) -> Unit
     ): DecryptedKey? {
         val localKeys = keyElements.filter { it.attributes["rid"]?.toInt() == session.localRegistrationId };
         val iterator = localKeys.iterator()
@@ -41,16 +41,19 @@ actual object OMEMOEncryptor {
                 return DecryptedKey(sessionCipher.decrypt(data = encryptedKey, isPreKey = preKey), preKey);
             } catch (e: Exception) {
                 // should we try to heal sessions?
-//                    if (e is InvalidMessageException || e is NoSessionException) {
-//                        // we need to try to recover
-//                        healSession(senderAddr);
-//                    }
+                if (e is SignalException) {
+                    when (e.error) {
+                        // we need to try to recover
+                        SignalError.invalidMessage, SignalError.noSession, SignalError.noSession -> healSession(senderAddr)
+                        else -> {}
+                    }
+                }
                 log.warning(e, { "failed to decrypt key for " + sessionCipher.address + ", store = " + sessionCipher.store + ", error: " + e.cause })
                 e.printStackTrace();
                 if (iterator.hasNext()) {
                     continue
                 }
-                throw OMEMOException("Cannot decrypt OMEMO message.", e)
+                throw e
             }
         }
         return null
@@ -64,54 +67,59 @@ actual object OMEMOEncryptor {
     actual fun decrypt(
         store: SignalProtocolStore,
         session: OMEMOSession,
-        stanza: Message
-    ): Pair<Message,Boolean> {
+        stanza: Message,
+        healSession: (SignalProtocolAddress)->Unit
+    ): OMEMOMessage {
+        var hasCipherText = false
         try {
             val myAddr = SignalProtocolAddress(session.localJid.toString(), session.localRegistrationId)
             val encElement =
-                stanza.getChildrenNS("encrypted", OMEMOModule.XMLNS) ?: throw HalcyonException("No enc element")
+                stanza.getChildrenNS("encrypted", OMEMOModule.XMLNS) ?: throw OMEMOException.NoEncryptedElement()
+            val ciphertext = encElement.getFirstChild("payload")?.value?.fromBase64()?.also {
+                hasCipherText = true
+            }
             val senderId = encElement.getFirstChild("header")?.attributes?.get("sid")?.toInt()
-                ?: throw HalcyonException("No sid attribute element")
+                ?: throw OMEMOException.NoSidAttribute()
             val senderAddr = SignalProtocolAddress((stanza.getMixAnnotation()?.jid ?: stanza.attributes["from"]!!.toBareJID()).toString(), senderId)
             val iv = encElement.getFirstChild("header")?.getFirstChild("iv")?.value?.fromBase64()
-                ?: throw HalcyonException("No IV element")
-            var ciphertext = encElement.getFirstChild("payload")?.value?.fromBase64() ?: ByteArray(0)
+                ?: throw OMEMOException.NoIV()
 
             // extracting inner key
-            var decryptedKey = try {
-                retrieveKey(findKeyElements(encElement), senderAddr, store, session)
-            } catch (e: OMEMOException) {
-                log.warning(e) { "Cannot retrieve key" }
-                stanza.replaceBody("Cannot decrypt message.")
-                return OMEMOMessage.Error(stanza, OMEMOErrorCondition.CannotDecrypt) to false
-            }
+            var decryptedKey =
+                retrieveKey(findKeyElements(encElement), senderAddr, store, session, healSession)
+                    ?: throw OMEMOException.DeviceKeyNotFoundException();
 
-            if (decryptedKey == null) {
-                stanza.replaceBody("Message is not encrypted for this device.")
-                return OMEMOMessage.Error(stanza, OMEMOErrorCondition.DeviceKeyNotFound) to false
-            }
+            ciphertext?.let { ciphertext ->
+                val key = decryptedKey.key;
+                if (key.size < 32) {
+                    throw OMEMOException.InvalidKeyLengthException();
+                }
 
-            var key = decryptedKey.key;
-
-            if (key.size >= 32) {
                 val authtaglength = key.size - 16
                 val newCipherText = ciphertext.copyOf().plus(key.copyOfRange(16, 16 + authtaglength));
                 val newKey = key.copyOfRange(0, 16);
 
-                ciphertext = newCipherText
-                key = newKey
+                val result = engine.decrypt(iv, key, ciphertext, null);
+                
+                val decryptedBody =(result?.decodeToString()) ?: "Cannot decrypt message.";
+                stanza.replaceBody(decryptedBody)
             }
 
-            val result = engine.decrypt(iv, key, ciphertext, null);
-
-            val decryptedBody = (result?.decodeToString()) ?: "Cannot decrypt message.";
-            stanza.replaceBody(decryptedBody)
-
-            return OMEMOMessage.Decrypted(stanza, senderAddr, store.getIdentity(senderAddr)!!.publicKey.serialize().hex) to decryptedKey.isPreKey;
+            return OMEMOMessage.Decrypted(stanza, senderAddr, store.getIdentity(senderAddr)!!.publicKey.serialize().hex, decryptedKey.isPreKey);
         } catch (e: Exception) {
-            log.warning(e) { "Cannot decrypt message" }
-            stanza.replaceBody("Cannot decrypt message.")
-            return OMEMOMessage.Error(stanza, OMEMOErrorCondition.CannotDecrypt) to false
+            log.warning(e) { "Cannot decrypt message: ${stanza.getAsString()}" }
+            val condition = when (e) {
+                is OMEMOException -> e.condition
+                is SignalException -> when (e.error) {
+                    SignalError.duplicateMessage -> OMEMOErrorCondition.DuplicateMessage
+                    else -> OMEMOErrorCondition.CannotDecrypt
+                }
+                else -> OMEMOErrorCondition.CannotDecrypt
+            }
+            if (hasCipherText) {
+                stanza.replaceBody(condition.message())
+            }
+            return OMEMOMessage.Error(stanza, condition)
         }
     }
     
@@ -132,7 +140,7 @@ actual object OMEMOEncryptor {
 
     actual fun encrypt(
         session: OMEMOSession,
-        plaintext: String
+        plaintext: String?
     ): Element {
         log.finest("encrypting message started...");
         log.finest("generating IV...")
@@ -141,9 +149,11 @@ actual object OMEMOEncryptor {
         val keyData = generateKey()
 
         log.finest("encrypting with AES...")
-        val encrypted = engine.encrypt(iv, keyData, plaintext.encodeToByteArray());
-        log.finest("encrypted with AES and got " + encrypted.data.size + " bytes")
-        val authtagPlusInnerKey = keyData.plus(encrypted.tag);
+        val encrypted = plaintext?.let { engine.encrypt(iv, keyData, it.encodeToByteArray()) }?.also {
+            log.finest("encrypted with AES and got " + it.data.size + " bytes")
+        }
+
+        val authtagPlusInnerKey = encrypted?.let { keyData.plus(it.tag) } ?: keyData
 
         return element("encrypted") {
             xmlns = OMEMOModule.XMLNS
@@ -167,9 +177,11 @@ actual object OMEMOEncryptor {
                     }
                 }
             }
-            
-            "payload" {
-                +encrypted.data.toBase64()
+
+            encrypted?.let { encrypted ->
+                "payload" {
+                    +encrypted.data.toBase64()
+                }
             }
         }
     }

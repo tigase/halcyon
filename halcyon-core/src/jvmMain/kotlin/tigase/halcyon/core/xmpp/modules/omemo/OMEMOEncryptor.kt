@@ -112,7 +112,8 @@ actual object OMEMOEncryptor {
         keyElements: List<Element>,
         senderAddr: SignalProtocolAddress,
         store: SignalProtocolStore,
-        session: OMEMOSession
+        session: OMEMOSession,
+        healSession: (SignalProtocolAddress)->Unit
     ): DecryptedKey? {
         val iterator = keyElements.filter { it.attributes["rid"]?.toInt() == session.localRegistrationId }.iterator()
         val sessionCipher =
@@ -133,7 +134,7 @@ actual object OMEMOEncryptor {
                     if (iterator.hasNext()) {
                         continue
                     }
-                    throw OMEMOException("Cannot decrypt OMEMO message.", e)
+                    throw e;
                 }
             } else {
                 val msg = SignalMessage(encryptedKey)
@@ -142,14 +143,14 @@ actual object OMEMOEncryptor {
                 } catch (e: Exception) {
                     log.fine(e, { "failed to decrypt key ${keyElement.attributes["rid"]} from ${senderAddr}" })
                     // should we try to heal sessions?
-//                    if (e is InvalidMessageException || e is NoSessionException) {
-//                        // we need to try to recover
-//                        healSession(senderAddr);
-//                    }
+                    if (e is InvalidMessageException || e is NoSessionException || e is InvalidKeyIdException) {
+                        // we need to try to recover
+                        healSession(senderAddr);
+                    }
                     if (iterator.hasNext()) {
                         continue
                     }
-                    throw OMEMOException("Cannot decrypt OMEMO message.", e)
+                    throw e;
                 }
             }
         }
@@ -159,35 +160,31 @@ actual object OMEMOEncryptor {
     private fun findKeyElements(encElement: Element): List<Element> =
         encElement.getFirstChild("header")?.getChildren("key") ?: emptyList()
     
-    actual fun decrypt(store: SignalProtocolStore, session: OMEMOSession, stanza: Message): Pair<Message,Boolean> {
+    actual fun decrypt(store: SignalProtocolStore, session: OMEMOSession, stanza: Message, healSession: (SignalProtocolAddress) -> Unit): OMEMOMessage {
+        var hasCipherText = false
         try {
             val myAddr = SignalProtocolAddress(session.localJid.toString(), session.localRegistrationId)
             val encElement =
-                stanza.getChildrenNS("encrypted", OMEMOModule.XMLNS) ?: throw HalcyonException("No enc element")
+                stanza.getChildrenNS("encrypted", OMEMOModule.XMLNS) ?: throw OMEMOException.NoEncryptedElement()
+            val ciphertext = encElement.getFirstChild("payload")?.value?.fromBase64()?.also {
+                hasCipherText = true
+            }
             val senderId = encElement.getFirstChild("header")?.attributes?.get("sid")?.toInt()
-                ?: throw HalcyonException("No sid attribute element")
+                ?: throw OMEMOException.NoSidAttribute();
 
             val senderAddr = SignalProtocolAddress((stanza.getMixAnnotation()?.jid ?: stanza.attributes["from"]!!.toBareJID()).toString(), senderId)
             val iv = encElement.getFirstChild("header")?.getFirstChild("iv")?.value?.fromBase64()
-                ?: throw HalcyonException("No IV element")
-            var ciphertext = encElement.getFirstChild("payload")?.value?.fromBase64() ?: ByteArray(0)
-
+                ?: throw OMEMOException.NoIV()
             // extracting inner key
-            val decryptedKey = try {
-                retrieveKey(findKeyElements(encElement), senderAddr, store, session)
-            } catch (e: OMEMOException) {
-                log.warning(e) { "Cannot retrieve key" }
-                stanza.replaceBody("Cannot decrypt message.")
-                return OMEMOMessage.Error(stanza, OMEMOErrorCondition.CannotDecrypt) to false
-            }
+            val decryptedKey = retrieveKey(findKeyElements(encElement), senderAddr, store, session, healSession)
+                ?: throw OMEMOException.DeviceKeyNotFoundException();
 
-            if (decryptedKey == null) {
-                stanza.replaceBody("Message is not encrypted for this device.")
-                return OMEMOMessage.Error(stanza, OMEMOErrorCondition.DeviceKeyNotFound) to false
-            }
+            ciphertext?.let { ciphertext ->
+                val key = decryptedKey.key;
+                if (key.size < 32) {
+                    throw OMEMOException.InvalidKeyLengthException();
+                }
 
-            var key = decryptedKey.key;
-            if (key.size >= 32) {
                 val authtaglength = key.size - 16
                 val newCipherText = ByteArray(key.size - 16 + ciphertext.size)
                 val newKey = ByteArray(16)
@@ -196,41 +193,46 @@ actual object OMEMOEncryptor {
                 System.arraycopy(key, 16, newCipherText, ciphertext.size, authtaglength)
                 System.arraycopy(key, 0, newKey, 0, newKey.size)
 
-                ciphertext = newCipherText
-                key = newKey
+                val keySpec = SecretKeySpec(newKey, ALGORITHM_NAME)
+                val cipher = cipherInstance(Cipher.DECRYPT_MODE, keySpec, iv)
+                val plain = cipher.doFinal(newCipherText)
+
+                val decryptedBody = plain.toString(Charset.defaultCharset())
+                stanza.replaceBody(decryptedBody)
             }
 
-            val keySpec = SecretKeySpec(key, ALGORITHM_NAME)
-            val cipher = cipherInstance(Cipher.DECRYPT_MODE, keySpec, iv)
-            val plain = cipher.doFinal(ciphertext)
-
-            val decryptedBody = plain.toString(Charset.defaultCharset())
-            stanza.replaceBody(decryptedBody)
-
-            return OMEMOMessage.Decrypted(stanza, senderAddr, store.getIdentity(senderAddr).publicKey.serialize().hex) to decryptedKey.isPreKey;
-        } catch (e: Exception) {
-            log.warning(e) { "Cannot decrypt message" }
-            stanza.replaceBody("Cannot decrypt message.")
-            return OMEMOMessage.Error(stanza, OMEMOErrorCondition.CannotDecrypt) to false;
+            return OMEMOMessage.Decrypted(stanza, senderAddr, store.getIdentity(senderAddr).publicKey.serialize().hex, decryptedKey.isPreKey)
+        } catch (e: Throwable) {
+            log.warning(e) { "Cannot decrypt message: ${stanza.getAsString()}" }
+            val condition = when (e) {
+                is OMEMOException -> e.condition
+                is DuplicateMessageException -> OMEMOErrorCondition.DuplicateMessage
+                else -> OMEMOErrorCondition.CannotDecrypt
+            }
+            if (hasCipherText) {
+                stanza.replaceBody(condition.message())
+            }
+            return OMEMOMessage.Error(stanza, condition)
         }
     }
 
 
-    actual fun encrypt(session: OMEMOSession, plaintext: String): Element {
+    actual fun encrypt(session: OMEMOSession, plaintext: String?): Element {
         val iv = generateIV()
         val keyData = generateKey()
         val secretKey = SecretKeySpec(keyData, ALGORITHM_NAME)
-        val cipher: Cipher = cipherInstance(Cipher.ENCRYPT_MODE, secretKey, iv)
-
-        var ciphertext = cipher.doFinal(plaintext.toByteArray())
-
-        val authtagPlusInnerKey = ByteArray(16 + 16)
-        val encData = ByteArray(ciphertext.size - 16)
-        System.arraycopy(ciphertext, 0, encData, 0, encData.size)
-        System.arraycopy(ciphertext, encData.size, authtagPlusInnerKey, 16, 16)
-        System.arraycopy(keyData, 0, authtagPlusInnerKey, 0, keyData.size)
-        ciphertext = encData
-
+        val (payload: ByteArray?, combinedKey: ByteArray) = plaintext?.let {
+            val cipher: Cipher = cipherInstance(Cipher.ENCRYPT_MODE, secretKey, iv)
+            var ciphertext = cipher.doFinal(plaintext.toByteArray())
+            val authtagPlusInnerKey = ByteArray(16 + 16)
+            val encData = ByteArray(ciphertext.size - 16)
+            System.arraycopy(ciphertext, 0, encData, 0, encData.size)
+            System.arraycopy(ciphertext, encData.size, authtagPlusInnerKey, 16, 16)
+            System.arraycopy(keyData, 0, authtagPlusInnerKey, 0, keyData.size)
+            Pair(encData, authtagPlusInnerKey)
+        } ?: run {
+            Pair(null, keyData)
+        }
 
         return element("encrypted") {
             xmlns = OMEMOModule.XMLNS
@@ -244,7 +246,7 @@ actual object OMEMOEncryptor {
                     "key" {
                         attributes["rid"] = addr.deviceId.toString()
 
-                        val m = sessionCipher.encrypt(authtagPlusInnerKey)
+                        val m = sessionCipher.encrypt(combinedKey)
                         if (m.type == CiphertextMessage.PREKEY_TYPE) {
                             attributes["prekey"] = "true"
                         }
@@ -255,8 +257,10 @@ actual object OMEMOEncryptor {
 
             }
 
-            "payload" {
-                +ciphertext.toBase64()
+            payload?.let { payload ->
+                "payload" {
+                    +payload.toBase64()
+                }
             }
         }
     }

@@ -50,6 +50,17 @@ data class MAMMessageEvent(
 	}
 }
 
+data class MAMQueryFinished(
+	val queryId: String,
+	val complete: Boolean
+) : Event(TYPE) {
+
+	companion object : EventDefinition<MAMQueryFinished> {
+
+		override val TYPE = "tigase.halcyon.core.xmpp.modules.mam.MAMQueryFinished"
+	}
+}
+
 class ForwardedStanza<TYPE : Stanza<*>>(val resultId: String, private val element: Element) : Element by element {
 
 	val timestamp: Instant? by lazy(this::getXmppDelay)
@@ -187,7 +198,9 @@ class MAMModule(override val context: Context) : XmppModule, MAMModuleConfig {
 
 		val builder =
 			RequestConsumerBuilder<ForwardedStanza<Message>, IQ, IQ>(context, stanza) { it as IQ }.map { element ->
-				createResponse(element, q)
+				val fin = createResponse(element, q)
+				queryFinished(q, fin);
+				fin
 			}
 		q.publisher = builder.publisher
 
@@ -201,6 +214,10 @@ class MAMModule(override val context: Context) : XmppModule, MAMModuleConfig {
 		return Fin(
 			complete = fin?.attributes?.get("complete").toBool(), rsm = rsm
 		)
+	}
+
+	private fun queryFinished(q: RegisteredQuery, fin: Fin) {
+		context.eventBus.fire(MAMQueryFinished(queryId = q.queryId, fin.complete))
 	}
 
 	private fun String?.toBool(): Boolean {

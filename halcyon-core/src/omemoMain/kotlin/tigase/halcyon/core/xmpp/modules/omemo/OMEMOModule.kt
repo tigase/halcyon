@@ -18,12 +18,12 @@ import tigase.halcyon.core.xmpp.*
 import tigase.halcyon.core.xmpp.forms.Field
 import tigase.halcyon.core.xmpp.forms.FormType
 import tigase.halcyon.core.xmpp.forms.JabberDataForm
+import tigase.halcyon.core.xmpp.modules.mam.MAMModule
+import tigase.halcyon.core.xmpp.modules.mam.MAMQueryFinished
 import tigase.halcyon.core.xmpp.modules.pubsub.PubSubItemEvent
 import tigase.halcyon.core.xmpp.modules.pubsub.PubSubModule
-import tigase.halcyon.core.xmpp.stanzas.IQ
-import tigase.halcyon.core.xmpp.stanzas.Message
-import tigase.halcyon.core.xmpp.stanzas.MessageNode
-import tigase.halcyon.core.xmpp.stanzas.wrap
+import tigase.halcyon.core.xmpp.modules.uniqueId.getStanzaIDBy
+import tigase.halcyon.core.xmpp.stanzas.*
 
 @HalcyonConfigDsl
 /**
@@ -34,7 +34,7 @@ interface OMEMOModuleConfig {
     /**
      * Specify a store to keep Signal Protocol data like identities, keys, etc.
      */
-    var protocolStore: SignalProtocolStore
+    var protocolStore: SignalProtocolStoreFlushable
     
     var bundleStateStorage: BundleStateStorage
 
@@ -62,6 +62,7 @@ interface BundleStateStorage {
 class OMEMOModule(
     override val context: Context,
     private val pubsubModule: PubSubModule,
+    private var mamModule: MAMModule
 ) : HalcyonModule, OMEMOModuleConfig {
 
     /**
@@ -83,7 +84,7 @@ class OMEMOModule(
         internal const val ENCRYPTION_ELEMENT = "halcyon:omemo"
 
         override fun instance(context: Context): OMEMOModule =
-            OMEMOModule(context, pubsubModule = context.modules.getModule(PubSubModule))
+            OMEMOModule(context, pubsubModule = context.modules.getModule(PubSubModule), mamModule = context.modules.getModule(MAMModule))
 
         override fun configure(module: OMEMOModule, cfg: OMEMOModuleConfig.() -> Unit) {
             module.cfg()
@@ -116,7 +117,7 @@ class OMEMOModule(
     override val type = TYPE
     override val features = arrayOf(XMLNS, "$DEVICE_LIST_NODE+notify")
 
-    override lateinit var protocolStore: SignalProtocolStore
+    override lateinit var protocolStore: SignalProtocolStoreFlushable
 //    override var sessionStore: OMEMOSessionStore = InMemoryOMEMOSessionStore()
     override var autoUpdateIdentityStore: Boolean = true
     override var autoCreateSession: Boolean = false
@@ -142,6 +143,11 @@ class OMEMOModule(
                 devicesFetchError.clear();
             }
         }
+        context.eventBus.register(MAMQueryFinished) {
+            if (it.complete) {
+                processPostponed()
+            }
+        }
     }
 
     private fun processPubSubItemPublishedEvent(event: PubSubItemEvent.Published) {
@@ -156,8 +162,6 @@ class OMEMOModule(
     private fun processBundle(jid: JID, bundleId: String, content: Element?) {
         val bundle = content?.toBundleOf(jid.bareJID, bundleId.toInt()) ?: return
         storeBundle(SignalProtocolAddress(bundle.jid.toString(), bundle.deviceId), bundle)
-//        println("!!! RECEIVED BUNDLE from $jid | $bundleId | ${content!!.getAsString()}")
-//        TODO("Not yet implemented")
     }
 
     private fun processDevicesList(jid: JID, content: Element?) {
@@ -502,16 +506,16 @@ class OMEMOModule(
                 val messageEl = forwardedEl.getFirstChild("message");
                 if (messageEl != null) {
                     forwardedEl.remove(messageEl);
-                    forwardedEl.add(decodeMessage(messageEl));
+                    forwardedEl.add(decodeMessage(messageEl, true));
                 }
             }
             chain.doFilter(element);
         } else {
-            chain.doFilter(decodeMessage(element));
+            chain.doFilter(decodeMessage(element, false));
         }
     }
 
-    private fun decodeMessage(element: Element): Element {
+    private fun decodeMessage(element: Element, postpone: Boolean): Element {
         val senderJid = element.getFromAttr()
         val encElement = element.getChildrenNS("encrypted", XMLNS)
         val senderId =
@@ -528,11 +532,81 @@ class OMEMOModule(
             localJid,
             emptyMap<SignalProtocolAddress, SessionCipher>().toMutableMap()
         )
-        val result = OMEMOEncryptor.decrypt(protocolStore, session, wrap(element))
-        if (result.second) {
-            publishBundleIfNeeded();
+        val result = OMEMOEncryptor.decrypt(protocolStore, session, wrap(element), healSession = { address ->
+            val hasStableId = context.boundJID?.bareJID?.let { element.getStanzaIDBy(it) } != null;
+            if (hasStableId) {
+                if (postpone) {
+                    log.fine { "postponing healing session $address" }
+                    postponedHealing.add(address)
+                } else {
+                    healSession(address)
+                }
+            }
+        })
+        when (result) {
+            is OMEMOMessage.Decrypted ->
+                if (result.wasPrekey) {
+                    postPreKeyMessageHandling(result.senderAddress, postpone)
+                }
+            is OMEMOMessage.Error -> {
+                log.warning { "OMEMO decryption failure: ${result.condition}" }
+            }
         }
-        return result.first;
+        return result;
+    }
+
+    private var postponedCompletion = HashSet<SignalProtocolAddress>();
+    private var postponedHealing = HashSet<SignalProtocolAddress>();
+
+    private fun postPreKeyMessageHandling(address: SignalProtocolAddress, postpone: Boolean) {
+        if (postpone) {
+            log.fine { "postponing completing session $address" }
+            postponedCompletion.add(address)
+        } else {
+            if ((protocolStore as? PreKeyStoreFlushable)?.flushDeletedPreKeys() != false) {
+                publishBundleIfNeeded();
+            }
+            completeSession(address)
+        }
+    }
+
+    private fun processPostponed() {
+        log.fine { "processing postponed session completions: ${postponedCompletion.size}" }
+        if (!postponedCompletion.isEmpty()) {
+            if ((protocolStore as? PreKeyStoreFlushable)?.flushDeletedPreKeys() != false) {
+                publishBundleIfNeeded();
+            }
+
+            for (address in postponedCompletion) {
+                completeSession(address)
+            }
+            postponedCompletion.clear();
+        }
+        log.fine { "processing postponed session healing completions: ${postponedHealing.size}" }
+        for (address in postponedHealing) {
+            healSession(address)
+        }
+        postponedHealing.clear()
+    }
+
+    private fun healSession(address: SignalProtocolAddress) {
+        log.fine { "healing session $address..." }
+        startSession(address.getName().toBareJID(), address.getDeviceId(), handler = {
+            when (it) {
+                Result.success(Unit) -> completeSession(address);
+            }
+        })
+    }
+
+    private fun completeSession(address: SignalProtocolAddress) {
+        log.fine { "completing session $address..." }
+        val element = message {
+            to = address.getName().toBareJID()
+            type = MessageType.Chat
+        }
+        encrypt(element, listOf(address), null) { encrypted ->
+            context.request.message(element).send()
+        }
     }
 
     private var bundleRefreshInProgress = false;
@@ -669,11 +743,11 @@ class OMEMOModule(
 //    }
 
     fun activeDevices(jid: BareJID): List<Int> = devices[jid]?.filterNot { devicesFetchError[jid]?.contains(it) ?: false } ?: emptyList();
-
-    private fun ensureSessions(jid: BareJID, deviceIds: List<Int>, callback: (List<SignalProtocolAddress>)->Unit) {
-        var addresses = deviceIds.map { SignalProtocolAddress(jid.toString(), it) }.toMutableList();
+    
+    private fun ensureSessions(addresses: List<SignalProtocolAddress>, callback: (List<SignalProtocolAddress>)->Unit) {
+        var results = addresses.toMutableList();
         val missingSessions = addresses.filterNot { protocolStore.containsSession(it) };
-        log.fine { "got missing sessions ${missingSessions} for jid ${jid} at account ${context.boundJID?.bareJID}" }
+        log.fine { "got missing sessions ${missingSessions} for jid ${addresses.firstOrNull()?.getName()} at account ${context.boundJID?.bareJID}" }
         var counter = missingSessions.size;
         if (counter == 0) {
             callback(addresses);
@@ -683,11 +757,12 @@ class OMEMOModule(
         val lock = Lock();
         missingSessions.forEach { addr ->
             log.fine { "starting session for ${addr} at account ${context.boundJID?.bareJID}" }
+            val jid = addr.getName().toBareJID();
             startSession(jid, addr.getDeviceId()) {
                 val isReady = lock.withLock {
                     if (it.isFailure) {
                         log.fine(it.exceptionOrNull(), { "failed to start session for ${addr} at account ${context.boundJID?.bareJID}" })
-                        addresses.remove(addr);
+                        results.remove(addr);
                     } else {
                         log.fine { "started session for ${addr} at account ${context.boundJID?.bareJID}, remaining session counter: ${counter-1}" }
                     }
@@ -696,8 +771,8 @@ class OMEMOModule(
                 }
                 log.fine { "are we ready? isReady: ${isReady} for jid ${jid} at account ${context.boundJID?.bareJID}" }
                 if (isReady) {
-                    log.fine { "got active sessions for addresses ${addresses} for jid ${jid} at account ${context.boundJID?.bareJID}" }
-                    callback(addresses);
+                    log.fine { "got active sessions for addresses ${results} for jid ${jid} at account ${context.boundJID?.bareJID}" }
+                    callback(results);
                 }
             }
         }
@@ -731,14 +806,14 @@ class OMEMOModule(
         if (devices.isNotEmpty()) {
             log.fine { "got local info about devices for ${jid} on account ${context.boundJID?.bareJID}, result: ${devices}" }
             // encrypt for known active devices
-            ensureSessions(jid, devices, callback);
+            callback(devices.map { SignalProtocolAddress(jid.toString(), it) })
         } else {
             // we need to discover active devices
             retrieveDevicesIds(jid).response {
                 it.onSuccess {
                     log.fine { "got remote info about devices for ${jid} on account ${context.boundJID?.bareJID}, result: ${it}" }
                     this.devices[jid] = it
-                    ensureSessions(jid, it, callback);
+                    callback(it.map { SignalProtocolAddress(jid.toString(), it) })
                 }
                 it.onFailure {
                     log.fine(it, { "failed to fetch remote info about devices for ${jid} on account ${context.boundJID?.bareJID}" })
@@ -747,37 +822,50 @@ class OMEMOModule(
             }.send()
         }
     }
-
+    
     fun encryptAndSend(element: Element, chain: StanzaFilterChain, recipients: List<BareJID>, bodyEl: Element, order: EncryptMessage) {
         addresses(recipients) { addresses ->
             val localJid = context.boundJID!!.bareJID;
             log.fine("discovered remote addresses: ${addresses} for account ${localJid} for jid ${element.getToAttr()}")
-            element.remove(bodyEl)
 
             val localAddresses = protocolStore.getSubDeviceSessions(localJid.toString()).map { SignalProtocolAddress(localJid.toString(), it) };
             log.fine("discovered local addresses: ${localAddresses} for account ${localJid}")
+            element.remove(bodyEl)
+
+            encrypt(element, localAddresses + addresses, bodyEl.value) { encryptedMessage ->
+                chain.doFilter(encryptedMessage);
+            }
+        }
+    }
+
+    fun encrypt(element: Element, addresses: List<SignalProtocolAddress>, body: String?, callback: (Element) -> Unit) {
+        ensureSessions(addresses) { addresses ->
+            val localJid = context.boundJID!!.bareJID;
             val session = OMEMOSession(
                 protocolStore.getLocalRegistrationId(),
                 localJid,
-                (localAddresses + addresses).distinct().associateBy({ k -> k }, { k -> SessionCipher(protocolStore, k) })
+                addresses.distinct().associateBy({ k -> k }, { k -> SessionCipher(protocolStore, k) })
                     .toMutableMap()
             )
 
-            val encElement = OMEMOEncryptor.encrypt(session, bodyEl.value ?: "")
+            val encElement = OMEMOEncryptor.encrypt(session, body)
 
             element.add(encElement)
             element.add(element("store") {
                 xmlns = "urn:xmpp:hints"
             })
 
-            element.add(element("body") {
-                value = "[This message is OMEMO encrypted]"
-            })
+            if (body != null) {
+                element.add(element("body") {
+                    value = "[This message is OMEMO encrypted]"
+                })
+            }
 
             element.clearControls()
-            chain.doFilter(element)
+            callback(element)
         }
     }
+
 
     fun beforeSend(element: Element?, chain: StanzaFilterChain) {
         if (element?.name != Message.NAME) {

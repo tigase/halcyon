@@ -103,6 +103,10 @@ expect interface PreKeyStore {
     fun removePreKey(preKeyId: Int)
 }
 
+interface PreKeyStoreFlushable: PreKeyStore {
+    fun flushDeletedPreKeys(): Boolean
+}
+
 expect interface SignedPreKeyStore {
 
     @Throws(InvalidKeyIdException::class)
@@ -152,3 +156,4 @@ expect interface IdentityKeyStore {
     fun getIdentity(address: SignalProtocolAddress): IdentityKey?
 }
 
+interface SignalProtocolStoreFlushable : SignalProtocolStore, PreKeyStoreFlushable {}
