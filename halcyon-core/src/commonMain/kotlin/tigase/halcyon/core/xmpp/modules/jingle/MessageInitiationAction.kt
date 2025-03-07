@@ -32,6 +32,7 @@ sealed class MessageInitiationAction(open val id: String, val actionName: String
 	class Accept(override val id: String) : MessageInitiationAction(id, "accept")
 	class Proceed(override val id: String) : MessageInitiationAction(id, "proceed")
 	class Reject(override val id: String) : MessageInitiationAction(id, "reject")
+	class Ringing(override val id: String) : MessageInitiationAction(id, "ringing")
 
 	companion object {
 
@@ -48,7 +49,7 @@ sealed class MessageInitiationAction(open val id: String, val actionName: String
 						return null
 					}
 				}
-
+			 	"ringing" -> return Ringing(id)
 				"retract" -> return Retract(id)
 				"reject" -> return Reject(id)
 				else -> return null

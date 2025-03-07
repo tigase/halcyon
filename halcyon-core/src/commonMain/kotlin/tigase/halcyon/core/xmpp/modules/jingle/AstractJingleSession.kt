@@ -24,6 +24,7 @@ import tigase.halcyon.core.utils.Lock
 import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xmpp.BareJID
 import tigase.halcyon.core.xmpp.JID
+import tigase.halcyon.core.xmpp.bareJID
 import tigase.halcyon.core.xmpp.modules.jingle.Jingle.Session.State
 
 @OptIn(ReflectionModuleManager::class)
@@ -146,7 +147,7 @@ abstract class AbstractJingleSession(
 	}
 
 	fun initiate(descriptions: List<MessageInitiationDescription>, data: Set<Element>? = null, completionHandler: AsyncResult<Unit>) {
-		jingleModule.sendMessageInitiation(MessageInitiationAction.Propose(sid, descriptions, data?.toList()), jid)
+		jingleModule.sendMessageInitiation(MessageInitiationAction.Propose(sid, descriptions, data?.toList()), jid.bareJID)
 			.response { r ->
 				if (r.isFailure) {
 					this.terminate()
@@ -154,6 +155,12 @@ abstract class AbstractJingleSession(
 				completionHandler(r)
 			}
 			.send()
+	}
+
+	fun startedRinging() {
+		jingleModule.sendMessageInitiation(MessageInitiationAction.Ringing(sid), jid.bareJID).response { r ->
+			// nothing to do, but catching all errors...
+		}.send()
 	}
 
 	private val lock = Lock();
@@ -188,7 +195,7 @@ abstract class AbstractJingleSession(
 		lock.withLock {
 			state = State.Accepted
 			if (initiationType == InitiationType.Message) {
-				jingleModule.sendMessageInitiation(MessageInitiationAction.Proceed(sid), jid).send()
+				jingleModule.sendMessageInitiation(MessageInitiationAction.Proceed(sid), jid.bareJID).send()
 			}
 		}
 	}
@@ -264,7 +271,7 @@ abstract class AbstractJingleSession(
 			jingleModule.terminateSession(jid, sid, reason)
 				.send()
 		} else {
-			jingleModule.sendMessageInitiation(MessageInitiationAction.Reject(sid), jid)
+			jingleModule.sendMessageInitiation(MessageInitiationAction.Reject(sid), jid.bareJID)
 				.send()
 		}
 		terminateSession()

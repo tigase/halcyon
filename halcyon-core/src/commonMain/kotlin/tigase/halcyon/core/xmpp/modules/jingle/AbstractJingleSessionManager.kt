@@ -117,6 +117,11 @@ abstract class AbstractJingleSessionManager<S : AbstractJingleSession>(
 				reportIncomingCall(session, action.media);
 				reportIncomingCallAction(session, action);
 			}
+			is MessageInitiationAction.Ringing -> {
+				session(context, fromJid, action.id)?.let {
+					reportIncomingCallAction(it, action);
+				}
+			}
 			is MessageInitiationAction.Retract -> {
 				session(context, fromJid, action.id)?.let {
 					reportIncomingCallAction(it, action)

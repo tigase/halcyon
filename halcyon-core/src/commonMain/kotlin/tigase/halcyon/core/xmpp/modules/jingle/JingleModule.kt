@@ -242,7 +242,7 @@ class JingleModule(
 		when (action) {
 			is MessageInitiationAction.Propose -> {
 				if (action.descriptions.none { features.contains(it.xmlns) }) {
-					this.sendMessageInitiation(MessageInitiationAction.Reject(action.id), from).send()
+					this.sendMessageInitiation(MessageInitiationAction.Reject(action.id), from.bareJID).send()
 					return
 				}
 				if (from.bareJID == context.boundJID?.bareJID) {
@@ -265,7 +265,7 @@ class JingleModule(
 	}
 
 	fun sendMessageInitiation(
-		action: MessageInitiationAction, jid: JID,
+		action: MessageInitiationAction, jid: BareJID,
 	): RequestBuilder<Unit, Message> {
 		when (action) {
 			is MessageInitiationAction.Proceed -> sendMessageInitiation(
@@ -273,7 +273,7 @@ class JingleModule(
 			).send()
 
 			is MessageInitiationAction.Reject -> {
-				if (jid.bareJID != context.boundJID?.bareJID) {
+				if (jid != context.boundJID?.bareJID) {
 					sendMessageInitiation(
 						MessageInitiationAction.Reject(action.id), context.boundJID!!.bareJID
 					).send()
@@ -293,6 +293,9 @@ class JingleModule(
 						.forEach { addChild(it) }
 					action.data?.forEach { addChild(it) }
 				}
+			}
+			element("store") {
+				xmlns = "urn:xmpp:hints"
 			}
 			type = MessageType.Chat
 			to = jid
