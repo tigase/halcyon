@@ -33,9 +33,7 @@ abstract class AbstractJingleSessionManager<S : AbstractJingleSession>(
 ) : Jingle.SessionManager {
 
 	abstract fun createSession(context: Context, jid: JID, sid: String, role: Content.Creator, initiationType: InitiationType): S
-	abstract fun reportIncomingCall(session: S, media: List<Media>)
-	open fun reportIncomingCallAction(session: S, action: MessageInitiationAction) {
-	}
+	abstract fun reportIncomingCallAction(session: S, action: MessageInitiationAction)
 
 	private val log = LoggerFactory.logger(name)
 
@@ -46,7 +44,7 @@ abstract class AbstractJingleSessionManager<S : AbstractJingleSession>(
 		if (event.lastReceivedPresence.type == PresenceType.Unavailable) {
 			val toClose =
 				sessions.filter { it.jid == event.presence.from && it.account == event.context.boundJID?.bareJID }
-			toClose.forEach { it.terminate(TerminateReason.Success) }
+			toClose.forEach { it.terminate(TerminateReason.Gone) }
 		}
 	}
 
@@ -114,7 +112,6 @@ abstract class AbstractJingleSessionManager<S : AbstractJingleSession>(
 					return;
 				}
 				val session = open(context, fromJid, action.id, Content.Creator.responder, InitiationType.Message);
-				reportIncomingCall(session, action.media);
 				reportIncomingCallAction(session, action);
 			}
 			is MessageInitiationAction.Ringing -> {
@@ -126,18 +123,30 @@ abstract class AbstractJingleSessionManager<S : AbstractJingleSession>(
 				session(context, fromJid, action.id)?.let {
 					reportIncomingCallAction(it, action)
 				}
-				sessionTerminated(context, fromJid, action.id)
+				sessionTerminated(context, fromJid, action.id, TerminateReason.Cancel)
 			}
-			is MessageInitiationAction.Accept, is MessageInitiationAction.Reject -> {
+			is MessageInitiationAction.Accept -> {
 				session(context, fromJid, action.id)?.let {
 					reportIncomingCallAction(it, action)
 				}
-				sessionTerminated(context.boundJID!!.bareJID, action.id)
+				sessionTerminated(context.boundJID!!.bareJID, action.id, null);
+			}
+			is MessageInitiationAction.Reject -> {
+				session(context, fromJid, action.id)?.let {
+					reportIncomingCallAction(it, action)
+				}
+				sessionTerminated(context.boundJID!!.bareJID, action.id, TerminateReason.Decline)
 			}
 			is MessageInitiationAction.Proceed -> {
 				val session = session(context, fromJid, action.id) ?: return;
 				reportIncomingCallAction(session, action);
 				session.accepted(fromJid);
+			}
+			is MessageInitiationAction.Finish -> {
+				session(context, fromJid, action.id)?.let {
+					reportIncomingCallAction(it, action)
+				}
+				sessionTerminated(context.boundJID!!.bareJID, action.id, action.reason)
 			}
 		}
 	}
@@ -155,7 +164,14 @@ abstract class AbstractJingleSessionManager<S : AbstractJingleSession>(
 			log.finest("creating an initiating session for jid: ${jid}, sid: $sid, sdp: $media, bundle: $bundle")
 			val session = open(context, jid, sid, Content.Creator.responder, InitiationType.Iq);
 			session.initiated(contents, bundle)
-			reportIncomingCall(session, media);
+			reportIncomingCallAction(
+				session,
+				MessageInitiationAction.Propose(
+					sid,
+					media.map { MessageInitiationDescription("urn:xmpp:jingle:apps:rtp:1", it.name) },
+					null
+				)
+			);
 		}
 	}
 
@@ -171,15 +187,15 @@ abstract class AbstractJingleSessionManager<S : AbstractJingleSession>(
 		session.accepted(contents, bundle);
 	}
 
-	override fun sessionTerminated(context: Context, jid: JID, sid: String) {
-		session(context, jid, sid)?.terminated()
+	override fun sessionTerminated(context: Context, jid: JID, sid: String, reason: TerminateReason?) {
+		session(context, jid, sid)?.terminated(reason)
 	}
 
-	fun sessionTerminated(account: BareJID, sid: String) {
+	fun sessionTerminated(account: BareJID, sid: String, reason: TerminateReason?) {
 		val toTerminate = lock.withLock {
 			return@withLock sessions.filter { it.account == account && it.sid == sid }
 		}
-		toTerminate.forEach { it.terminated() }
+		toTerminate.forEach { it.terminated(reason) }
 	}
 
 	@Throws(XMPPException::class)

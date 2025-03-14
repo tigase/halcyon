@@ -42,11 +42,19 @@ enum class TerminateReason(val value: String) {
 
 	fun toElement(): Element = element(value) {}
 	fun toReasonElement(): Element = element("reason") {
+		xmlns = JingleModule.XMLNS
 		addChild(toElement())
 	}
 
 	companion object {
 
-		fun fromValue(value: String) = values().find { it.value == value }
+		fun fromReasonElement(element: Element): TerminateReason? {
+			if (element.name == "reason") {
+				return element.children.filter { it.name != "text" }.firstNotNullOfOrNull { fromValue(it.name) }
+            }
+			return null;
+		}
+		
+		fun fromValue(value: String) = entries.find { it.value == value }
 	}
 }

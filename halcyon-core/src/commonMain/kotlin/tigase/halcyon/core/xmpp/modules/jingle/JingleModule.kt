@@ -61,17 +61,19 @@ class Jingle {
 
 	interface Session {
 
-		enum class State {
-
-			Created, Initiating, Accepted, Terminated
+		sealed class State {
+			object Created : State()
+			object Initiating : State()
+			object Accepted : State()
+			data class Terminated(val reason: TerminateReason?) : State()
 		}
-
+		
 		val account: BareJID
 		val jid: JID
 		val sid: String
 		val state: State
 
-		fun terminate(reason: TerminateReason = TerminateReason.Success)
+		fun terminate(reason: TerminateReason?)
 	}
 
 	interface SessionManager {
@@ -81,7 +83,7 @@ class Jingle {
 		@Throws(XMPPException::class)
 		fun sessionAccepted(context: Context, jid: JID, sid: String, contents: List<Content>, bundle: List<String>?)
 
-		fun sessionTerminated(context: Context, jid: JID, sid: String)
+		fun sessionTerminated(context: Context, jid: JID, sid: String, reason: TerminateReason?)
 
 		@Throws(XMPPException::class)
 		fun transportInfo(context: Context, jid: JID, sid: String, contents: List<Content>)
@@ -214,7 +216,9 @@ class JingleModule(
 		when (action) {
 			Action.SessionInitiate -> sessionManager.sessionInitiated(this.context, from, sid, contents, bundle);
 			Action.SessionAccept -> sessionManager.sessionAccepted(this.context, from, sid, contents, bundle);
-			Action.SessionTerminate -> sessionManager.sessionTerminated(this.context, from, sid)
+			Action.SessionTerminate -> {
+				sessionManager.sessionTerminated(this.context, from, sid, jingle.getFirstChild("reason")?.let { TerminateReason.fromReasonElement(it) })
+			}
 			Action.TransportInfo -> sessionManager.transportInfo(this.context, from, sid, contents);
 			Action.ContentAdd, Action.ContentModify, Action.ContentRemove -> {
 				val contentAction = Jingle.ContentAction.from(action) ?: throw XMPPException(ErrorCondition.BadRequest, "Invalid action");
@@ -242,7 +246,7 @@ class JingleModule(
 		when (action) {
 			is MessageInitiationAction.Propose -> {
 				if (action.descriptions.none { features.contains(it.xmlns) }) {
-					this.sendMessageInitiation(MessageInitiationAction.Reject(action.id), from.bareJID).send()
+					this.sendMessageInitiation(MessageInitiationAction.Reject(action.id, TerminateReason.UnsupportedApplications), from.bareJID).send()
 					return
 				}
 				if (from.bareJID == context.boundJID?.bareJID) {
@@ -275,7 +279,7 @@ class JingleModule(
 			is MessageInitiationAction.Reject -> {
 				if (jid != context.boundJID?.bareJID) {
 					sendMessageInitiation(
-						MessageInitiationAction.Reject(action.id), context.boundJID!!.bareJID
+						MessageInitiationAction.Reject(action.id, action.reason), context.boundJID!!.bareJID
 					).send()
 				}
 			}
@@ -359,7 +363,7 @@ class JingleModule(
 		}.map {}
 	}
 
-	fun terminateSession(jid: JID, sid: String, reason: TerminateReason): RequestBuilder<Unit, IQ> {
+	fun terminateSession(jid: JID, sid: String, reason: TerminateReason?): RequestBuilder<Unit, IQ> {
 		return context.request.iq {
 			to = jid
 			type = IQType.Set
@@ -368,7 +372,9 @@ class JingleModule(
 				xmlns = XMLNS
 				attribute("action", Action.SessionTerminate.value)
 				attribute("sid", sid)
-				addChild(reason.toReasonElement())
+				reason?.let {
+					addChild(it.toReasonElement())
+				}
 			}
 		}.map { }
 	}

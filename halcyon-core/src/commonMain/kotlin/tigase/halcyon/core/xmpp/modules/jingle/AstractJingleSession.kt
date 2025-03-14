@@ -139,7 +139,7 @@ abstract class AbstractJingleSession(
 		jingleModule.initiateSession(jid, sid, contents, bundle)
 			.response { r ->
 				if (r.isFailure) {
-					this.terminate()
+					this.terminate(TerminateReason.GeneralError)
 				}
 				completionHandler(r)
 			}
@@ -150,7 +150,7 @@ abstract class AbstractJingleSession(
 		jingleModule.sendMessageInitiation(MessageInitiationAction.Propose(sid, descriptions, data?.toList()), jid.bareJID)
 			.response { r ->
 				if (r.isFailure) {
-					this.terminate()
+					this.terminate(TerminateReason.GeneralError)
 				}
 				completionHandler(r)
 			}
@@ -206,7 +206,7 @@ abstract class AbstractJingleSession(
 			.response { result ->
 				when {
 					result.isSuccess -> state = State.Accepted
-					result.isFailure -> terminate()
+					result.isFailure -> terminate(TerminateReason.GeneralError)
 				}
 				completionHandler(result)
 			}
@@ -255,34 +255,53 @@ abstract class AbstractJingleSession(
 		received(Action.TransportAdd(candidate, contentName));
 	}
 
-	override fun terminate(reason: TerminateReason) {
-		var oldState = State.Terminated;
+	override fun terminate(reason: TerminateReason?) {
+		var oldState: Jingle.Session.State = State.Terminated(reason);
 		if (!lock.withLock {
 			oldState = state
-			if (oldState == State.Terminated) {
+			if (oldState is State.Terminated) {
 				return@withLock false;
 			}
-			state = State.Terminated
+			state = State.Terminated(reason)
 			return@withLock true;
 		}) {
 			return;
 		}
-		if (initiationType == InitiationType.Iq || oldState == State.Accepted) {
-			jingleModule.terminateSession(jid, sid, reason)
-				.send()
-		} else {
-			jingleModule.sendMessageInitiation(MessageInitiationAction.Reject(sid), jid.bareJID)
-				.send()
+
+		when (initiationType) {
+			InitiationType.Iq -> jingleModule.terminateSession(jid, sid, reason)
+				.send();
+			InitiationType.Message -> {
+				if (oldState != State.Created) {
+					jingleModule.terminateSession(jid, sid, reason)
+						.send()
+				}
+				if (oldState == State.Created) {
+					when (role) {
+						Content.Creator.initiator -> {
+							jingleModule.sendMessageInitiation(MessageInitiationAction.Retract(sid, reason), jid.bareJID)
+								.send()
+						}
+						Content.Creator.responder -> {
+							jingleModule.sendMessageInitiation(MessageInitiationAction.Reject(sid, reason), jid.bareJID)
+								.send()
+						}
+					}
+				} else {
+					jingleModule.sendMessageInitiation(MessageInitiationAction.Finish(sid, reason), jid.bareJID)
+						.send()
+				}
+			}
 		}
 		terminateSession()
 	}
 
-	fun terminated() {
+	fun terminated(reason: TerminateReason?) {
 		if (!lock.withLock {
-				if (state == State.Terminated) {
+				if (state is State.Terminated) {
 					return@withLock false
 				}
-				state = State.Terminated
+				state = State.Terminated(reason)
 				return@withLock true;
 			}
 		) {
