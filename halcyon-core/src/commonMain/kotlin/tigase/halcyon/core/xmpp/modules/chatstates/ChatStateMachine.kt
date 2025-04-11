@@ -24,6 +24,7 @@ import tigase.halcyon.core.eventbus.EventBus
 import tigase.halcyon.core.eventbus.EventDefinition
 import tigase.halcyon.core.eventbus.EventHandler
 import tigase.halcyon.core.xmpp.BareJID
+import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
 data class OwnChatStateChangeEvent(
@@ -49,8 +50,11 @@ class ChatStateMachine(
 	 * if `true` then chat state publishing will be done by `ChatStateModule`. If `false` then client developer is
 	 * responsible to send notification to recipient.
 	 */
-	var sendUpdatesAutomatically: Boolean = false
-) : EventHandler<TickEvent> {
+	var sendUpdatesAutomatically: Boolean = false,
+	val pausedTimeout: Duration = 3.seconds,
+	val inactiveTimeout: Duration = 7.seconds,
+	val goneTimeout: Duration? = null
+) : EventHandler<TickEvent> {                               
 
 	var currentState: ChatState = ChatState.Inactive
 		private set
@@ -75,9 +79,10 @@ class ChatStateMachine(
 	fun update() {
 		val now = Clock.System.now()
 		when {
-			currentState == ChatState.Active && updateTime < now - 120.seconds -> ChatState.Inactive
-			currentState == ChatState.Inactive && updateTime < now - 600.seconds -> ChatState.Gone
-			currentState == ChatState.Composing && updateTime < now - 30.seconds -> ChatState.Paused
+			currentState == ChatState.Active && updateTime < now - inactiveTimeout -> ChatState.Inactive
+			currentState == ChatState.Composing && updateTime < now - pausedTimeout -> ChatState.Paused
+			currentState == ChatState.Paused && updateTime < now - inactiveTimeout -> ChatState.Inactive
+			currentState == ChatState.Inactive && goneTimeout != null && updateTime < now - goneTimeout -> ChatState.Gone
 			else -> null
 		}?.let { calculatedState ->
 			setNewState(calculatedState, true)
