@@ -29,7 +29,7 @@ class DefaultTickTimer : TickTimer {
             }
         }
         timer = Timer("timer", true).also {
-            it.schedule(tickTask, 2_000, 2_000)
+            it.schedule(tickTask, 1_000, 1_000)
         }
         logger.finest("Started timer, task: ${tickTask}, timer: ${timer}")
     }
