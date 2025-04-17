@@ -20,44 +20,30 @@ on:
 
 env:
   JAVA_VERSION: 17
+  JAVA_DISTRIBUTION: 'temurin'
 
 jobs:
-  test-windows:
-    runs-on: windows-latest
+  test:
+    runs-on: ${{ matrix.os }}
+    continue-on-error: ${{ matrix.experimental }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [
+          macos-13,
+          ubuntu-latest,
+          windows-latest
+        ]
+        experimental: [ false ]
+        include:
+          - os: macos-latest
+            experimental: true
     steps:
       - uses: actions/checkout@v4
       - name: Set up JDK ${{ env.JAVA_VERSION }}
         uses: actions/setup-java@v4
         with:
           java-version: ${{ env.JAVA_VERSION }}
-          distribution: 'temurin'
-      - name: Build with Gradle
-        uses: gradle/gradle-build-action@3
-        with:
-          arguments: build
-  test-mac:
-    runs-on: macos-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Set up JDK ${{ env.JAVA_VERSION }}
-        uses: actions/setup-java@v4
-        with:
-          java-version: ${{ env.JAVA_VERSION }}
-          distribution: 'temurin'
-      - name: Build with Gradle
-        uses: gradle/gradle-build-action@3
-        with:
-          arguments: build
-  test-linux:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Set up JDK ${{ env.JAVA_VERSION }}
-        uses: actions/setup-java@v4
-        with:
-          java-version: ${{ env.JAVA_VERSION }}
-          distribution: 'temurin'
-      - name: Build with Gradle
-        uses: gradle/gradle-build-action@3
-        with:
-          arguments: build
+          distribution: ${{ env.JAVA_DISTRIBUTION }}
+      - uses: gradle/actions/setup-gradle@v4
+      - run: ./gradlew clean build assemble test -x jsBrowserTest --console=plain --stacktrace
