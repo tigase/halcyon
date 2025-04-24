@@ -125,9 +125,12 @@ abstract class AbstractHalcyon(configurator: ConfigurationBuilder) : Context, Pa
 
     private fun processControllerErrorEvent(event: SessionController.SessionControllerEvents) {
         if (event is SessionController.SessionControllerEvents.ErrorReconnect && (this.autoReconnect || event.force)) {
-            state = State.Disconnected
-            stopConnector {
-                reconnect(event.immediately)
+            if (state != State.Stopped && running) {
+                state = State.Disconnected
+                // why would it stay in "Disconnected" state? possibly issue with "running" being set to false, or "reconnect()" method not being called at all...
+                stopConnector {
+                    reconnect(event.immediately)
+                }
             }
         } else {
             disconnect()
@@ -343,8 +346,8 @@ abstract class AbstractHalcyon(configurator: ConfigurationBuilder) : Context, Pa
     protected fun stopConnector(doAfterDisconnected: (() -> Unit)? = null) {
         if (connector != null || sessionController != null) {
             log.fine { "Stopping connector${if (doAfterDisconnected != null) " (with action after disconnect)" else ""}" }
-            if (doAfterDisconnected != null) connector?.let {
-                waitForDisconnect(it, doAfterDisconnected)
+            if (doAfterDisconnected != null) {
+                waitForDisconnect(connector, doAfterDisconnected)
             }
             if (!running) {
                 sessionController?.stop()
@@ -352,6 +355,9 @@ abstract class AbstractHalcyon(configurator: ConfigurationBuilder) : Context, Pa
             }
             connector?.stop()
             connector = null
+        } else {
+            // if there is no connector and sessionController then most likely connector is already stopped
+            doAfterDisconnected?.let { it() }
         }
     }
 
@@ -362,26 +368,22 @@ abstract class AbstractHalcyon(configurator: ConfigurationBuilder) : Context, Pa
             handler.invoke()
         } else {
             var fired = false
-            val h: EventHandler<ConnectorStateChangeEvent> = object : EventHandler<ConnectorStateChangeEvent> {
-                override fun onEvent(event: ConnectorStateChangeEvent) {
-                    if (!fired && event.newState == tigase.halcyon.core.connector.State.Disconnected) {
-                        connector.halcyon.eventBus.unregister(this)
-                        fired = true
-                        log.finest { "State changed. Calling handler. ($this)" }
-                        handler.invoke()
-                    }
-                }
-            }
-            try {
-                connector.halcyon.eventBus.register(ConnectorStateChangeEvent, h)
-                if (!fired && connector.state == tigase.halcyon.core.connector.State.Disconnected) {
-                    connector.halcyon.eventBus.unregister(h)
+            val awaitHandler: (EventHandler<ConnectorStateChangeEvent>, tigase.halcyon.core.connector.State, String)->Unit = { eventHandler, newState, message ->
+                val result = !fired && newState == tigase.halcyon.core.connector.State.Disconnected;
+                if (result) {
+                    connector.halcyon.eventBus.unregister(eventHandler)
                     fired = true
-                    log.finest { "State is Disconnected already. Calling handler. ($this)" }
+                    log.finest { message}
                     handler.invoke()
                 }
-            } finally {
             }
+            val h: EventHandler<ConnectorStateChangeEvent> = object : EventHandler<ConnectorStateChangeEvent> {
+                override fun onEvent(event: ConnectorStateChangeEvent) {
+                    awaitHandler(this, event.newState, "State changed. Calling handler. ($this)");
+                }
+            }
+            connector.halcyon.eventBus.register(ConnectorStateChangeEvent, h)
+            awaitHandler(h, connector.state, "State is Disconnected already. Calling handler. ($this)");
         }
     }
 
