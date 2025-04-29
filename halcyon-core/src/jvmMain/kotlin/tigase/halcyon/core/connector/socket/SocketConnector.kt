@@ -220,21 +220,22 @@ class SocketConnector(halcyon: Halcyon, val tlsProcesorFactory: TLSProcessorFact
 		}
 	}
 
-	private fun createSocket(completionHandler: (Socket) -> Unit) {
+	private fun createSocket(completionHandler: (Result<Socket>) -> Unit) {
 		resolveTarget { hosts ->
 			hosts.forEach { hp ->
 				try {
 					log.fine { "Opening connection to ${hp.first}:${hp.second}" }
 					val s = Socket(hp.first, hp.second)
-					completionHandler(s)
+					completionHandler(Result.success(s))
 					return@resolveTarget
 				} catch (e: Throwable) {
 					log.fine { "Host ${hp.first}:${hp.second} is unreachable." }
 				}
 			}
-			throw HostNotFound()
+			completionHandler(Result.failure(HostNotFound()))
 		}
 	}
+
 
 	override fun start() {
 		started = true
@@ -243,33 +244,51 @@ class SocketConnector(halcyon: Halcyon, val tlsProcesorFactory: TLSProcessorFact
 		val userJid = halcyon.config.declaredUserJID
 		val domain = (halcyon.config.connection as SocketConnectorConfig).domain
 		try {
-			createSocket { sckt ->
-				this.socket = sckt
-				sckt.soTimeout = 20 * 1000
-				sckt.tcpNoDelay = true
-				extendedSocketOptionsConfigurer?.invoke(sckt);
-				log.fine { "Opening socket connection to ${sckt.inetAddress}" }
-				this.worker = SocketWorker(parser).apply {
-					setReaderAndWriter(
-						InputStreamReader(sckt.getInputStream()), OutputStreamWriter(sckt.getOutputStream())
-					)
-				}.apply {
-					onError = { exception -> onWorkerException(exception) }
+			createSocket { result ->
+				result.onFailure { e ->
+					state = State.Disconnected
+					when (e) {
+						is HostNotFound -> fire(SocketConnectionErrorEvent.HostNotFount())
+						else -> {
+							fire(createSocketConnectionErrorEvent(e))
+							eventsEnabled = false
+						}
+					}
 				}
-				this.tlsProcesor = tlsProcesorFactory.create(sckt, config)
-				worker?.start() ?: throw HalcyonException("Socket Worker not created properly.")
-				val sb = buildString {
-					append("<stream:stream xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams' ")
-					append("version='1.0' ")
-					if (userJid != null) append("from='$userJid' ")
-					append("to='${domain}'")
-					append(">")
+				result.onSuccess { sckt ->
+					try {
+						this.socket = sckt
+						sckt.soTimeout = 20 * 1000
+						sckt.tcpNoDelay = true
+						extendedSocketOptionsConfigurer?.invoke(sckt);
+						log.fine { "Opening socket connection to ${sckt.inetAddress}" }
+						this.worker = SocketWorker(parser).apply {
+							setReaderAndWriter(
+								InputStreamReader(sckt.getInputStream()), OutputStreamWriter(sckt.getOutputStream())
+							)
+						}.apply {
+							onError = { exception -> onWorkerException(exception) }
+						}
+						this.tlsProcesor = tlsProcesorFactory.create(sckt, config)
+						worker?.start() ?: throw HalcyonException("Socket Worker not created properly.")
+						val sb = buildString {
+							append("<stream:stream xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams' ")
+							append("version='1.0' ")
+							if (userJid != null) append("from='$userJid' ")
+							append("to='${domain}'")
+							append(">")
 
+						}
+						send(sb)
+
+						state = State.Connected
+						whitespacePingExecutor.start()
+					} catch (e: Exception) {
+						state = State.Disconnected
+						fire(createSocketConnectionErrorEvent(e))
+						eventsEnabled = false
+					}
 				}
-				send(sb)
-
-				state = State.Connected
-				whitespacePingExecutor.start()
 			}
 		} catch (e: HostNotFound) {
 			state = State.Disconnected

@@ -28,10 +28,16 @@ import tigase.halcyon.core.exceptions.AuthenticationException
 import tigase.halcyon.core.exceptions.HalcyonException
 import tigase.halcyon.core.logger.LoggerFactory
 import tigase.halcyon.core.xmpp.modules.auth.SASLEvent
+import java.util.*
+import kotlin.concurrent.timerTask
+import kotlin.time.Duration.Companion.seconds
+import kotlin.time.DurationUnit
 
 actual class Halcyon actual constructor(configuration: ConfigurationBuilder) : AbstractHalcyon(configuration) {
 
 	private val log = LoggerFactory.logger("tigase.halcyon.core.Halcyon")
+
+	private var connectionTimer: Timer? = null
 
 	override fun createConnector(): AbstractConnector {
 		val tlsProcessorFactory = (config.connection as SocketConnectorConfig).tlsProcessorFactory
@@ -58,6 +64,23 @@ actual class Halcyon actual constructor(configuration: ConfigurationBuilder) : A
 
 	init {
 		eventBus.mode = EventBus.Mode.ThreadPerHandler
+		eventBus.register<HalcyonStateChangeEvent>() {
+			if (it.newState == State.Connecting) {
+				connectionTimer?.cancel();
+				connectionTimer = Timer().also {
+					it.schedule(timerTask {
+						// we need to break connection as it takes too long
+						if (state == State.Connecting) {
+							log.warning { "connection timeout reached, reconnecting..." }
+							disconnect()
+						}
+					}, 120.seconds.toLong(DurationUnit.MILLISECONDS))
+				}
+			} else {
+				connectionTimer?.cancel();
+				connectionTimer = null;
+			}
+		}
 //		this.config.connectorConfig = SocketConnectorConfig()
 	}
 

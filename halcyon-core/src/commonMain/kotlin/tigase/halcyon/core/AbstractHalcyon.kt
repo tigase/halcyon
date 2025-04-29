@@ -392,8 +392,9 @@ abstract class AbstractHalcyon(configurator: ConfigurationBuilder) : Context, Pa
         this.running = true
         log.info { "Connecting" }
         state = State.Connecting
-        onConnecting()
         try {
+            // make sure that if that throws an exception we will catch it
+            onConnecting()
             startConnector()
         } catch (e: Exception) {
             requestsManager.timeoutAll()
