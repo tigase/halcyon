@@ -64,7 +64,7 @@ actual class Halcyon actual constructor(configuration: ConfigurationBuilder) : A
 
 	init {
 		eventBus.mode = EventBus.Mode.ThreadPerHandler
-		eventBus.register<HalcyonStateChangeEvent>() {
+		eventBus.register<HalcyonStateChangeEvent>(HalcyonStateChangeEvent) {
 			if (it.newState == State.Connecting) {
 				connectionTimer?.cancel();
 				connectionTimer = Timer().also {
