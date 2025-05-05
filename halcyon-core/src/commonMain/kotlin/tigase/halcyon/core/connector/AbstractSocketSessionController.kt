@@ -192,6 +192,7 @@ abstract class AbstractSocketSessionController(final override val halcyon: Abstr
 	}
 
 	protected open fun processStreamError(event: StreamErrorEvent) {
+		log.fine("Processing stream error: $event")
 		halcyon.clear(Scope.Connection)
 		when (event.errorElement.name) {
 			else -> halcyon.eventBus.fire(SessionController.SessionControllerEvents.ErrorReconnect("Stream error: ${event.condition}"))

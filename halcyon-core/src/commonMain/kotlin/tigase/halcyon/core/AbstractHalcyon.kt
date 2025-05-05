@@ -89,11 +89,19 @@ abstract class AbstractHalcyon(configurator: ConfigurationBuilder) : Context, Pa
     val requestsManager: RequestsManager = RequestsManager()
     private val executor = tigase.halcyon.core.excutor.Executor()
     override val config: Configuration
+    private val lock = Lock()
     var state = State.Stopped
+        get() = lock.withLock { field }
         internal set(value) {
-            val old = field
-            field = value
-            if (old != field) eventBus.fire(HalcyonStateChangeEvent(old, field))
+            val old = lock.withLock {
+                val old = field
+                field = value
+                old
+            }
+
+            log.fine("Changing state $old to $value for $boundJID")
+
+            if (old != value) eventBus.fire(HalcyonStateChangeEvent(old, value))
         }
 
     init {
@@ -124,11 +132,13 @@ abstract class AbstractHalcyon(configurator: ConfigurationBuilder) : Context, Pa
     }
 
     private fun processControllerErrorEvent(event: SessionController.SessionControllerEvents) {
+        log.fine("Processing controller error: $event, autoReconnect = $autoReconnect")
         if (event is SessionController.SessionControllerEvents.ErrorReconnect && (this.autoReconnect || event.force)) {
             if (state != State.Stopped && running) {
                 state = State.Disconnected
                 // why would it stay in "Disconnected" state? possibly issue with "running" being set to false, or "reconnect()" method not being called at all...
                 stopConnector {
+                    log.fine("connection stopped, trying to reconnect.. ${event.immediately}")
                     reconnect(event.immediately)
                 }
             }

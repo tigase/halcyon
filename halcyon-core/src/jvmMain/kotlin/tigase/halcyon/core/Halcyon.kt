@@ -47,14 +47,15 @@ actual class Halcyon actual constructor(configuration: ConfigurationBuilder) : A
 
 	override fun reconnect(immediately: Boolean) {
 		if (!running) {
-			log.finer { "Called reconnect. immediately=$immediately, skipping reconnection as running is false!" }
+			log.fine { "Called reconnect. immediately=$immediately, skipping reconnection as running is false!" }
 		} else {
-			log.finer { "Called reconnect. immediately=$immediately" }
+			log.fine { "Called reconnect. immediately=$immediately" }
 			try {
 				if (!immediately) Thread.sleep(3000)
 				state = State.Connecting
 				startConnector()
 			} catch (ex: HalcyonException) {
+				log.fine(ex) { "Failed to reconnect to halcyon" }
 				disconnect();
 			}
 		}

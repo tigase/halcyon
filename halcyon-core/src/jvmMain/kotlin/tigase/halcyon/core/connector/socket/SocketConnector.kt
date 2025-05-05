@@ -302,13 +302,13 @@ class SocketConnector(halcyon: Halcyon, val tlsProcesorFactory: TLSProcessorFact
 
 	private fun onWorkerException(cause: Exception) {
 		cause.printStackTrace()
-		fire(createSocketConnectionErrorEvent(cause))
 		state = when (state) {
 			State.Connecting -> State.Disconnected
 			State.Connected -> State.Disconnecting
 			State.Disconnecting -> State.Disconnected
 			State.Disconnected -> State.Disconnected
 		}
+		fire(createSocketConnectionErrorEvent(cause))
 		if (state == State.Disconnected) eventsEnabled = false
 	}
 
