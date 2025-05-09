@@ -24,6 +24,10 @@ plugins {
 	alias(libs.plugins.multiplatform).apply(false)
 }
 
+allprojects {
+	apply(from = "$rootDir/ktlint.gradle")
+}
+
 configure<net.researchgate.release.ReleaseExtension> {
 	ignoredSnapshotDependencies.set(listOf("net.researchgate:gradle-release"))
 
