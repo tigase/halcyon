@@ -4,5 +4,5 @@ data class SrvRecord(val target: String, val port: UInt, val weight: UInt, val p
 
 interface DnsResolver {
 
-	fun resolve(domain: String, completionHandler: (Result<List<SrvRecord>>) -> Unit)
+    fun resolve(domain: String, completionHandler: (Result<List<SrvRecord>>) -> Unit)
 }

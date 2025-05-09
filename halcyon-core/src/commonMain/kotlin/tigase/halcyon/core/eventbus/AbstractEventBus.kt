@@ -22,9 +22,8 @@ import tigase.halcyon.core.AbstractHalcyon
 
 abstract class AbstractEventBus(val context: AbstractHalcyon) : NoContextEventBus() {
 
-	override fun updateBeforeFire(event: Event) {
-		event.eventTime = Clock.System.now()
-		event.context = context
-	}
-
+    override fun updateBeforeFire(event: Event) {
+        event.eventTime = Clock.System.now()
+        event.context = context
+    }
 }

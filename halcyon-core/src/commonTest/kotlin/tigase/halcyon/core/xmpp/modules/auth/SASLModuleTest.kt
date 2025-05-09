@@ -1,13 +1,13 @@
 package tigase.halcyon.core.xmpp.modules.auth
 
-import tigase.DummyHalcyon
-import tigase.halcyon.core.builder.createConfiguration
-import tigase.halcyon.core.xml.element
-import tigase.halcyon.core.xmpp.toBareJID
 import kotlin.test.Test
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
+import tigase.DummyHalcyon
+import tigase.halcyon.core.builder.createConfiguration
+import tigase.halcyon.core.xml.element
+import tigase.halcyon.core.xmpp.toBareJID
 
 class SASLModuleTest {
 
@@ -24,15 +24,17 @@ class SASLModuleTest {
                 "mechanism" { +"PLAIN" }
             }
         }
-        val halcyon = DummyHalcyon(createConfiguration {
-            auth {
-                userJID = "user01@example.com".toBareJID()
-                authenticationName = "differentusername"
-                password { "secret" }
+        val halcyon = DummyHalcyon(
+            createConfiguration {
+                auth {
+                    userJID = "user01@example.com".toBareJID()
+                    authenticationName = "differentusername"
+                    password { "secret" }
+                }
+                install(SASLModule) {}
+                install(SASL2Module) {}
             }
-            install(SASLModule) {}
-            install(SASL2Module) {}
-        })
+        )
         assertNotNull(halcyon.getModuleOrNull(SASLModule)) { module ->
             assertTrue { module.isAllowed(features) }
         }
@@ -54,21 +56,23 @@ class SASLModuleTest {
                 "mechanism" { +"PLAIN" }
             }
         }
-        val halcyon = DummyHalcyon(createConfiguration {
-            auth {
-                userJID = "user01@example.com".toBareJID()
-                authenticationName = "differentusername"
-                password { "secret" }
-            }
-            install(SASLModule) {
-                mechanisms(clear = true) {
+        val halcyon = DummyHalcyon(
+            createConfiguration {
+                auth {
+                    userJID = "user01@example.com".toBareJID()
+                    authenticationName = "differentusername"
+                    password { "secret" }
+                }
+                install(SASLModule) {
+                    mechanisms(clear = true) {
+                    }
+                }
+                install(SASL2Module) {
+                    mechanisms(clear = true) {
+                    }
                 }
             }
-            install(SASL2Module) {
-                mechanisms(clear = true) {
-                }
-            }
-        })
+        )
         assertNotNull(halcyon.getModuleOrNull(SASLModule)) { module ->
             assertFalse { module.isAllowed(features) }
         }
@@ -90,26 +94,27 @@ class SASLModuleTest {
                 "mechanism" { +"PLAIN" }
             }
         }
-        val halcyon = DummyHalcyon(createConfiguration {
-            auth {
-                userJID = "user01@example.com".toBareJID()
-                authenticationName = "differentusername"
-                password { "secret" }
-            }
-            install(SASLModule) {
-                mechanisms(clear = true) {
-                    install(SASLScramSHA1)
-                    install(SASLPlain)
+        val halcyon = DummyHalcyon(
+            createConfiguration {
+                auth {
+                    userJID = "user01@example.com".toBareJID()
+                    authenticationName = "differentusername"
+                    password { "secret" }
+                }
+                install(SASLModule) {
+                    mechanisms(clear = true) {
+                        install(SASLScramSHA1)
+                        install(SASLPlain)
+                    }
+                }
+                install(SASL2Module) {
+                    mechanisms(clear = true) {
+                        install(SASLPlain)
+                        install(SASLScramSHA1)
+                    }
                 }
             }
-            install(SASL2Module) {
-                mechanisms(clear = true) {
-                    install(SASLPlain)
-                    install(SASLScramSHA1)
-                }
-            }
-
-        })
+        )
         assertNotNull(halcyon.getModuleOrNull(SASLModule)) { module ->
             assertTrue { module.isAllowed(features) }
         }
@@ -130,24 +135,25 @@ class SASLModuleTest {
                 "mechanism" { +"PLAIN" }
             }
         }
-        val halcyon = DummyHalcyon(createConfiguration {
-            auth {
-                userJID = "user01@example.com".toBareJID()
-                authenticationName = "differentusername"
-                password { "secret" }
-            }
-            install(SASLModule) {
-                mechanisms(clear = true) {
-                    install(SASLScramSHA256)
+        val halcyon = DummyHalcyon(
+            createConfiguration {
+                auth {
+                    userJID = "user01@example.com".toBareJID()
+                    authenticationName = "differentusername"
+                    password { "secret" }
+                }
+                install(SASLModule) {
+                    mechanisms(clear = true) {
+                        install(SASLScramSHA256)
+                    }
+                }
+                install(SASL2Module) {
+                    mechanisms(clear = true) {
+                        install(SASLScramSHA256)
+                    }
                 }
             }
-            install(SASL2Module) {
-                mechanisms(clear = true) {
-                    install(SASLScramSHA256)
-                }
-            }
-
-        })
+        )
         assertNotNull(halcyon.getModuleOrNull(SASLModule)) { module ->
             assertFalse { module.isAllowed(features) }
         }
@@ -155,6 +161,4 @@ class SASLModuleTest {
             assertFalse { module.isAllowed(features) }
         }
     }
-
-
 }

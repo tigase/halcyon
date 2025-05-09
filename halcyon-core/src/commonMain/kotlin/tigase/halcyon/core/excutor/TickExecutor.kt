@@ -17,37 +17,38 @@
  */
 package tigase.halcyon.core.excutor
 
+import kotlin.time.Duration
 import kotlinx.datetime.Instant
 import tigase.halcyon.core.TickEvent
 import tigase.halcyon.core.eventbus.AbstractEventBus
 import tigase.halcyon.core.eventbus.handler
-import kotlin.time.Duration
 
 class TickExecutor(
-	private val eventBus: AbstractEventBus, val minimalTime: Duration, private val runnable: () -> Unit,
+    private val eventBus: AbstractEventBus,
+    val minimalTime: Duration,
+    private val runnable: () -> Unit
 ) {
 
-	private val handler = TickEvent.handler(::onTick)
+    private val handler = TickEvent.handler(::onTick)
 
-	init {
-		start()
-	}
+    init {
+        start()
+    }
 
-	private var lastCallTime = Instant.DISTANT_PAST
+    private var lastCallTime = Instant.DISTANT_PAST
 
-	private fun onTick(event: TickEvent) {
-		if (lastCallTime + minimalTime <= event.eventTime) {
-			lastCallTime = event.eventTime
-			runnable.invoke()
-		}
-	}
+    private fun onTick(event: TickEvent) {
+        if (lastCallTime + minimalTime <= event.eventTime) {
+            lastCallTime = event.eventTime
+            runnable.invoke()
+        }
+    }
 
-	fun start() {
-		eventBus.register(TickEvent, handler)
-	}
+    fun start() {
+        eventBus.register(TickEvent, handler)
+    }
 
-	fun stop() {
-		eventBus.unregister(TickEvent, handler)
-	}
-
+    fun stop() {
+        eventBus.unregister(TickEvent, handler)
+    }
 }

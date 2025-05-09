@@ -19,22 +19,30 @@ fun createSession(store: SignalProtocolStore, bundle: Bundle): Result<Unit> {
     try {
         val address = SignalProtocolAddress(bundle.jid.toString(), bundle.deviceId)
         SessionBuilder(store, address).process(bundle.getRandomPreKeyBundle())
-        return Result.success(Unit);
+        return Result.success(Unit)
     } catch (e: Exception) {
         return Result.failure(e)
     }
 }
 
-fun createCiphers(store: SignalProtocolStore, bundles: List<Bundle>): Map<SignalProtocolAddress, SessionCipher> {
-    return bundles.mapNotNull { bundle ->
-        val addr = SignalProtocolAddress(bundle.jid.toString(), bundle.deviceId)
-        val cipher = buildCipher(store, addr, bundle)
-        if (cipher == null) null else
-            addr to cipher
-    }.toMap()
-}
+fun createCiphers(
+    store: SignalProtocolStore,
+    bundles: List<Bundle>
+): Map<SignalProtocolAddress, SessionCipher> = bundles.mapNotNull { bundle ->
+    val addr = SignalProtocolAddress(bundle.jid.toString(), bundle.deviceId)
+    val cipher = buildCipher(store, addr, bundle)
+    if (cipher == null) {
+        null
+    } else {
+        addr to cipher
+    }
+}.toMap()
 
-fun buildCipher(store: SignalProtocolStore, address: SignalProtocolAddress, bundle: Bundle): SessionCipher? {
+fun buildCipher(
+    store: SignalProtocolStore,
+    address: SignalProtocolAddress,
+    bundle: Bundle
+): SessionCipher? {
     try {
         if (!store.containsSession(address)) {
             val sessionBuilder = SessionBuilder(store, address)

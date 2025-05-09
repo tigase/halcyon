@@ -21,10 +21,11 @@ import tigase.halcyon.core.xmpp.modules.auth.SASLModule
 
 open class HalcyonException : RuntimeException {
 
-	constructor() : super()
-	constructor(message: String?) : super(message)
-	constructor(message: String?, cause: Throwable?) : super(message, cause)
-	constructor(cause: Throwable?) : super(cause)
+    constructor() : super()
+    constructor(message: String?) : super(message)
+    constructor(message: String?, cause: Throwable?) : super(message, cause)
+    constructor(cause: Throwable?) : super(cause)
 }
 
-class AuthenticationException(val error: SASLModule.SASLError, message: String?) : HalcyonException(message)
+class AuthenticationException(val error: SASLModule.SASLError, message: String?) :
+    HalcyonException(message)

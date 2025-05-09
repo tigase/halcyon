@@ -4,9 +4,13 @@ import tigase.halcyon.core.configuration.ConnectionConfig
 import tigase.halcyon.core.connector.WebSocketConnectorConfig
 
 actual fun defaultConnectionConfiguration(
-	accountBuilder: ConfigurationBuilder,
-	defaultDomain: String,
+    accountBuilder: ConfigurationBuilder,
+    defaultDomain: String
 ): ConnectionConfig {
-	val d = defaultDomain
-	return WebSocketConnectorConfig(domain = defaultDomain, webSocketUrl = null, allowUnsecureConnection = false)
+    val d = defaultDomain
+    return WebSocketConnectorConfig(
+        domain = defaultDomain,
+        webSocketUrl = null,
+        allowUnsecureConnection = false
+    )
 }

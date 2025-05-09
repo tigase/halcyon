@@ -23,25 +23,26 @@ import tigase.halcyon.core.eventbus.EventDefinition
 
 interface SessionController {
 
-	val halcyon: AbstractHalcyon
+    val halcyon: AbstractHalcyon
 
-	sealed class SessionControllerEvents : Event(TYPE) {
+    sealed class SessionControllerEvents : Event(TYPE) {
 
-		companion object : EventDefinition<SessionControllerEvents> {
+        companion object : EventDefinition<SessionControllerEvents> {
 
-			override val TYPE = "tigase.halcyon.core.connector.SessionController.SessionControllerEvents"
-		}
+            override val TYPE = "tigase.halcyon.core.connector.SessionController.SessionControllerEvents"
+        }
 
-		data class ErrorStop(val message: String) : SessionControllerEvents()
-		data class ErrorReconnect(
-			val message: String, val immediately: Boolean = false, val force: Boolean = false,
-		) : SessionControllerEvents()
+        data class ErrorStop(val message: String) : SessionControllerEvents()
+        data class ErrorReconnect(
+            val message: String,
+            val immediately: Boolean = false,
+            val force: Boolean = false
+        ) : SessionControllerEvents()
 
-		class Successful : SessionControllerEvents()
-	}
+        class Successful : SessionControllerEvents()
+    }
 
-	fun start()
+    fun start()
 
-	fun stop()
-
+    fun stop()
 }

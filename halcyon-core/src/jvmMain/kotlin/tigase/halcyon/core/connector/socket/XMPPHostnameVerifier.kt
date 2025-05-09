@@ -4,6 +4,5 @@ import java.security.cert.Certificate
 
 interface XMPPHostnameVerifier {
 
-	fun verify(domainName: String, certificate: Certificate): Boolean
-
+    fun verify(domainName: String, certificate: Certificate): Boolean
 }

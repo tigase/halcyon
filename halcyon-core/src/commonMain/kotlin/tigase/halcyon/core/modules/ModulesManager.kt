@@ -17,12 +17,12 @@
  */
 package tigase.halcyon.core.modules
 
+import kotlin.reflect.KClass
 import tigase.halcyon.core.ReflectionModuleManager
 import tigase.halcyon.core.builder.ConfigurationException
 import tigase.halcyon.core.logger.LoggerFactory
 import tigase.halcyon.core.modules.filter.StanzaFilterProcessor
 import tigase.halcyon.core.xml.Element
-import kotlin.reflect.KClass
 
 class ModulesManager {
 
@@ -41,7 +41,12 @@ class ModulesManager {
 
     fun register(module: HalcyonModule) {
         log.fine { "Registering module '${module.type}'" }
-        if (modulesByType.containsKey(module.type)) throw ConfigurationException("Module '${module.type}' is installed already.")
+        if (modulesByType.containsKey(
+                module.type
+            )
+        ) {
+            throw ConfigurationException("Module '${module.type}' is installed already.")
+        }
         modulesByType[module.type] = module
         modulesByClass[module::class] = module
         if (module is XmppModule) modulesOrdered.add(module)
@@ -67,11 +72,10 @@ class ModulesManager {
 
     fun registerIncomingFilter(filter: StanzaFilter) = incomingStanzaFilters.addToChain(filter)
 
-    fun getAvailableFeatures(): Array<String> =
-        modulesByType.values
-            .mapNotNull { xmppModule -> xmppModule.features }
-            .flatMap { it.asList() }
-            .toTypedArray()
+    fun getAvailableFeatures(): Array<String> = modulesByType.values
+        .mapNotNull { xmppModule -> xmppModule.features }
+        .flatMap { it.asList() }
+        .toTypedArray()
 
     fun isRegistered(type: String): Boolean = this.modulesByType.containsKey(type)
 
@@ -83,47 +87,44 @@ class ModulesManager {
 
     fun getModules(): Collection<HalcyonModule> = this.modulesByType.values.toList()
 
-    fun getModulesFor(element: Element): Array<XmppModule> {
-        return modulesOrdered.filter { xmppModule ->
-            (xmppModule.criteria != null && xmppModule.criteria!!.match(element))
-        }.toTypedArray()
-    }
+    fun getModulesFor(element: Element): Array<XmppModule> = modulesOrdered.filter { xmppModule ->
+        (xmppModule.criteria != null && xmppModule.criteria!!.match(element))
+    }.toTypedArray()
 
     @Suppress("UNCHECKED_CAST")
     fun <T : HalcyonModule> getModule(type: String): T {
-        val module = this.modulesByType[type] ?: throw throw NullPointerException("Module '$type' not registered!")
+        val module =
+            this.modulesByType[type]
+                ?: throw throw NullPointerException("Module '$type' not registered!")
         return module as T
     }
 
     @ReflectionModuleManager
     @Suppress("UNCHECKED_CAST")
     fun <T : HalcyonModule> getModule(cls: KClass<T>): T {
-        val module = this.modulesByClass[cls] ?: throw throw NullPointerException("Module not registered!")
+        val module =
+            this.modulesByClass[cls] ?: throw throw NullPointerException("Module not registered!")
         return module as T
     }
 
     @Suppress("UNCHECKED_CAST")
-    fun <T : HalcyonModule> getModuleOrNull(type: String): T? {
-        return this.modulesByType[type] as T?
-    }
+    fun <T : HalcyonModule> getModuleOrNull(type: String): T? = this.modulesByType[type] as T?
 
     @ReflectionModuleManager
     @Suppress("UNCHECKED_CAST")
-    fun <T : HalcyonModule> getModuleOrNull(cls: KClass<T>): T? {
-        return this.modulesByClass[cls] as T?
-    }
+    fun <T : HalcyonModule> getModuleOrNull(cls: KClass<T>): T? = this.modulesByClass[cls] as T?
 
     @ReflectionModuleManager
     inline fun <reified T : HalcyonModule> getModule(): T = getModule(T::class)
 
     operator fun <T : HalcyonModule> get(type: String): T = getModule(type)
 
-    fun <T : HalcyonModule> getModule(provider: HalcyonModuleProvider<T, out Any>): T = getModule(provider.TYPE)
+    fun <T : HalcyonModule> getModule(provider: HalcyonModuleProvider<T, out Any>): T =
+        getModule(provider.TYPE)
 
     @ReflectionModuleManager
     operator fun <T : HalcyonModule> get(cls: KClass<T>): T = getModule(cls)
 
     fun <T : HalcyonModule> getModuleOrNull(provider: HalcyonModuleProvider<T, out Any>): T? =
         getModuleOrNull(provider.TYPE)
-
 }

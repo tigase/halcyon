@@ -1,13 +1,13 @@
 package tigase.halcyon.core.modules.filter
 
-import tigase.halcyon.core.modules.StanzaFilter
-import tigase.halcyon.core.modules.StanzaFilterChain
-import tigase.halcyon.core.xml.Element
-import tigase.halcyon.core.xml.element
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.fail
+import tigase.halcyon.core.modules.StanzaFilter
+import tigase.halcyon.core.modules.StanzaFilterChain
+import tigase.halcyon.core.xml.Element
+import tigase.halcyon.core.xml.element
 
 class StanzaFilterProcessorTest {
 
@@ -64,7 +64,6 @@ class StanzaFilterProcessorTest {
             }
         }
     }
-
 }
 
 object Filter1 : StanzaFilter {
@@ -89,7 +88,6 @@ object Filter3 : StanzaFilter {
 }
 
 object FilterFail : StanzaFilter {
-    override fun doFilter(element: Element?, chain: StanzaFilterChain) {
+    override fun doFilter(element: Element?, chain: StanzaFilterChain): Unit =
         throw RuntimeException("Fail")
-    }
 }

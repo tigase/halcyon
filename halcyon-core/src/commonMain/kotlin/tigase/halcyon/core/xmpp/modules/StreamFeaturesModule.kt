@@ -28,10 +28,10 @@ import tigase.halcyon.core.xml.Element
 
 data class StreamFeaturesEvent(val features: Element) : Event(TYPE) {
 
-	companion object : EventDefinition<StreamFeaturesEvent> {
+    companion object : EventDefinition<StreamFeaturesEvent> {
 
-		override val TYPE = "tigase.halcyon.core.xmpp.modules.StreamFeaturesEvent"
-	}
+        override val TYPE = "tigase.halcyon.core.xmpp.modules.StreamFeaturesEvent"
+    }
 }
 
 @HalcyonConfigDsl
@@ -42,47 +42,54 @@ interface StreamFeaturesModuleConfig
  *
  * Module keeps information about set of features provided by current XMPP stream.
  */
-class StreamFeaturesModule(override val context: Context) : XmppModule, StreamFeaturesModuleConfig {
+class StreamFeaturesModule(override val context: Context) :
+    XmppModule,
+    StreamFeaturesModuleConfig {
 
-	companion object : XmppModuleProvider<StreamFeaturesModule, StreamFeaturesModuleConfig> {
+    companion object : XmppModuleProvider<StreamFeaturesModule, StreamFeaturesModuleConfig> {
 
-		override val TYPE = "StreamFeaturesModule"
-		override fun instance(context: Context): StreamFeaturesModule = StreamFeaturesModule(context)
+        override val TYPE = "StreamFeaturesModule"
+        override fun instance(context: Context): StreamFeaturesModule =
+            StreamFeaturesModule(context)
 
-		override fun configure(module: StreamFeaturesModule, cfg: StreamFeaturesModuleConfig.() -> Unit) = module.cfg()
-	}
+        override fun configure(
+            module: StreamFeaturesModule,
+            cfg: StreamFeaturesModuleConfig.() -> Unit
+        ) = module.cfg()
+    }
 
-	override val type = TYPE
-	override val criteria = tigase.halcyon.core.modules.Criterion.and(
-		tigase.halcyon.core.modules.Criterion.name("features"),
-		tigase.halcyon.core.modules.Criterion.xmlns("http://etherx.jabber.org/streams")
-	)
+    override val type = TYPE
+    override val criteria = tigase.halcyon.core.modules.Criterion.and(
+        tigase.halcyon.core.modules.Criterion.name("features"),
+        tigase.halcyon.core.modules.Criterion.xmlns("http://etherx.jabber.org/streams")
+    )
 
-	/**
-	 * Keeps whole received `<stream:features>` element.
-	 */
-	var streamFeatures: Element? by propertySimple(Scope.Stream, null)
-		private set
+    /**
+     * Keeps whole received `<stream:features>` element.
+     */
+    var streamFeatures: Element? by propertySimple(Scope.Stream, null)
+        private set
 
-	override val features: Array<String>? = null
+    override val features: Array<String>? = null
 
-	/**
-	 * Returns `true` if feature with given name and xmlns exists in stream features element.
-	 * @param name stream feature name
-	 * @param xmlns stream feature xmlns
-	 */
-	fun isFeatureAvailable(name: String, xmlns: String): Boolean = streamFeatures?.getChildrenNS(name, xmlns) != null
+    /**
+     * Returns `true` if feature with given name and xmlns exists in stream features element.
+     * @param name stream feature name
+     * @param xmlns stream feature xmlns
+     */
+    fun isFeatureAvailable(name: String, xmlns: String): Boolean =
+        streamFeatures?.getChildrenNS(name, xmlns) != null
 
-	/**
-	 * Returns feature element or `null` if doesn't exist.
-	 * @param name stream feature name
-	 * @param xmlns stream feature xmlns
-	 */
-	fun getFeatureOrNull(name: String, xmlns: String): Element? = streamFeatures?.getChildrenNS(name, xmlns)
+    /**
+     * Returns feature element or `null` if doesn't exist.
+     * @param name stream feature name
+     * @param xmlns stream feature xmlns
+     */
+    fun getFeatureOrNull(name: String, xmlns: String): Element? =
+        streamFeatures?.getChildrenNS(name, xmlns)
 
-
-	override fun process(element: Element) {
-		streamFeatures = element
-		context.eventBus.fire(StreamFeaturesEvent(element))
-	}
+    override fun process(element: Element) {
+        streamFeatures = element
+        context.eventBus.fire(StreamFeaturesEvent(element))
+    }
 }

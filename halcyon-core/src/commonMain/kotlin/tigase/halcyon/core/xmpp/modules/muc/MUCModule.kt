@@ -41,7 +41,9 @@ import tigase.halcyon.core.xmpp.stanzas.*
  */
 enum class State {
 
-    NotJoined, RequestSent, Joined
+    NotJoined,
+    RequestSent,
+    Joined
 }
 
 /**
@@ -66,7 +68,6 @@ class Occupant(pr: Presence) {
      */
     val affiliation: Affiliation
         get() = MucUserExt.createUserExt(presence)?.affiliation ?: Affiliation.None
-
 }
 
 /**
@@ -83,7 +84,7 @@ open class Room(
     var nickname: String,
     var password: String?,
     var state: State = State.NotJoined,
-    var lastMessageTimestamp: Instant? = null,
+    var lastMessageTimestamp: Instant? = null
 ) {
 
     internal val occupants = mutableMapOf<String, Occupant>()
@@ -92,7 +93,6 @@ open class Room(
      * Returns all occupants of room.
      */
     fun occupants(): Map<String, Occupant> = occupants
-
 }
 
 /**
@@ -123,7 +123,11 @@ interface MUCStore {
  * @param direct `true` if it is direct invitation.
  */
 data class Invitation(
-    val roomjid: BareJID, val sender: JID, val password: String?, val reason: String?, val direct: Boolean,
+    val roomjid: BareJID,
+    val sender: JID,
+    val password: String?,
+    val reason: String?,
+    val direct: Boolean
 )
 
 /**
@@ -150,7 +154,12 @@ sealed class MucEvents : Event(TYPE) {
  * @param nickname nickname of occupant
  * @param role role of occupant.
  */
-data class RoomAffiliation(val jid: JID?, val affiliation: Affiliation, val nickname: String?, val role: Role?)
+data class RoomAffiliation(
+    val jid: JID?,
+    val affiliation: Affiliation,
+    val nickname: String?,
+    val role: Role?
+)
 
 /**
  * Events related to MUC Room.
@@ -171,7 +180,8 @@ sealed class MucRoomEvents(val room: Room) : Event(TYPE) {
     /**
      * Server not accepted join request.
      */
-    class JoinError(room: Room, val presence: Presence, val condition: ErrorCondition) : MucRoomEvents(room)
+    class JoinError(room: Room, val presence: Presence, val condition: ErrorCondition) :
+        MucRoomEvents(room)
 
     /**
      * Event informs that room you joined is just created (by join request).
@@ -181,24 +191,28 @@ sealed class MucRoomEvents(val room: Room) : Event(TYPE) {
     /**
      * Informs that new occupant joined to room.
      */
-    class OccupantCame(room: Room, val presence: Presence, val nickname: String) : MucRoomEvents(room)
+    class OccupantCame(room: Room, val presence: Presence, val nickname: String) :
+        MucRoomEvents(room)
 
     /**
      * Informs that occupant leaves the room.
      */
-    class OccupantLeave(room: Room, val presence: Presence, val nickname: String) : MucRoomEvents(room)
+    class OccupantLeave(room: Room, val presence: Presence, val nickname: String) :
+        MucRoomEvents(room)
 
     /**
      * Informs that occupant updated his presence.
      */
-    class OccupantChangedPresence(room: Room, val presence: Presence, val nickname: String) : MucRoomEvents(room)
+    class OccupantChangedPresence(room: Room, val presence: Presence, val nickname: String) :
+        MucRoomEvents(room)
 
     // message related events
 
     /**
      * Event fired when group chat message from room is received.
      */
-    class ReceivedMessage(room: Room, val nickname: String?, val message: Message) : MucRoomEvents(room)
+    class ReceivedMessage(room: Room, val nickname: String?, val message: Message) :
+        MucRoomEvents(room)
 
     companion object : EventDefinition<MucRoomEvents> {
 
@@ -231,9 +245,10 @@ class MucUserExt(private val element: Element) {
         _statuses.addAll(extractStatuses())
     }
 
-    private fun extractStatuses(): List<Int> {
-        return element.getChildren("status").map { element -> element.attributes["code"]?.toInt() ?: 0 }.toList()
-    }
+    private fun extractStatuses(): List<Int> = element.getChildren("status").map { element ->
+        element.attributes["code"]?.toInt()
+            ?: 0
+    }.toList()
 
     companion object {
 
@@ -241,9 +256,7 @@ class MucUserExt(private val element: Element) {
             val x = presence.getChildrenNS("x", "${MUCModule.XMLNS}#user") ?: return null
             return MucUserExt(x)
         }
-
     }
-
 }
 
 /**
@@ -261,7 +274,9 @@ interface MUCModuleConfig {
  * Module is implementing Multi-User Chat ([XEP-0045](https://xmpp.org/extensions/xep-0045.html)).
  *
  */
-class MUCModule(override val context: Context) : XmppModule, MUCModuleConfig {
+class MUCModule(override val context: Context) :
+    XmppModule,
+    MUCModuleConfig {
 
     /**
      * Module is implementing Multi-User Chat ([XEP-0045](https://xmpp.org/extensions/xep-0045.html)).
@@ -274,24 +289,29 @@ class MUCModule(override val context: Context) : XmppModule, MUCModuleConfig {
         override fun instance(context: Context): MUCModule = MUCModule(context)
 
         override fun configure(module: MUCModule, cfg: MUCModuleConfig.() -> Unit) = module.cfg()
-
     }
 
-//	private val log = LoggerFactory.logger("tigase.halcyon.core.xmpp.modules.muc.MUCModule")
+// 	private val log = LoggerFactory.logger("tigase.halcyon.core.xmpp.modules.muc.MUCModule")
 
     override val type = TYPE
-    override val criteria: Criteria = Criterion.element { element -> calculateAction(element) != Action.Skip }
+    override val criteria: Criteria = Criterion.element { element ->
+        calculateAction(element) !=
+            Action.Skip
+    }
     override val features: Array<String>? = null
 
     private enum class Action {
 
-        Skip, MediatedInvitationDecline, MediatedInvitation, DirectInvitation, Message, Presence
+        Skip,
+        MediatedInvitationDecline,
+        MediatedInvitation,
+        DirectInvitation,
+        Message,
+        Presence
     }
 
     override var store: MUCStore = DefaultMUCStore()
-    private fun isFromKnownMUCRoom(jid: BareJID): Boolean {
-        return store.findRoom(jid) != null
-    }
+    private fun isFromKnownMUCRoom(jid: BareJID): Boolean = store.findRoom(jid) != null
 
     private fun calculateAction(element: Element, checkRoomStore: Boolean = true): Action {
         if (element.isMixMessage()) return Action.Skip
@@ -299,15 +319,29 @@ class MUCModule(override val context: Context) : XmppModule, MUCModuleConfig {
         if (element.name == Message.NAME) {
             val type = element.attributes["type"]
             if (type == MessageType.Error.value) {
-                return if (!checkRoomStore || isFromKnownMUCRoom(from)) Action.Message else Action.Skip
+                return if (!checkRoomStore ||
+                    isFromKnownMUCRoom(from)
+                ) {
+                    Action.Message
+                } else {
+                    Action.Skip
+                }
             } else if (type == MessageType.Groupchat.value) {
                 return Action.Message
             }
 
             for (x in element.getChildren("x")) {
                 if (x.xmlns == "jabber:x:conference") return Action.DirectInvitation
-                if (x.xmlns == "$XMLNS#user" && x.getFirstChild("invite") != null) return Action.MediatedInvitation
-                if (x.xmlns == "$XMLNS#user" && x.getFirstChild("decline") != null) return Action.MediatedInvitationDecline
+                if (x.xmlns == "$XMLNS#user" &&
+                    x.getFirstChild("invite") != null
+                ) {
+                    return Action.MediatedInvitation
+                }
+                if (x.xmlns == "$XMLNS#user" &&
+                    x.getFirstChild("decline") != null
+                ) {
+                    return Action.MediatedInvitationDecline
+                }
             }
         }
         if (element.name == Presence.NAME) {
@@ -335,9 +369,11 @@ class MUCModule(override val context: Context) : XmppModule, MUCModuleConfig {
     private fun processMessage(stanza: Message) {
         if (stanza.from?.bareJID == context.boundJID?.bareJID) {
             // this may be a message carbons (sent), then just ignore as we want to process just messages from MUC room
-            return;
+            return
         }
-        val room = store.findRoom(stanza.from!!.bareJID) ?: throw XMPPException(ErrorCondition.ServiceUnavailable)
+        val room =
+            store.findRoom(stanza.from!!.bareJID)
+                ?: throw XMPPException(ErrorCondition.ServiceUnavailable)
         val nickname = stanza.from?.resource ?: return
 
         if (stanza.type != MessageType.Error) {
@@ -346,14 +382,18 @@ class MUCModule(override val context: Context) : XmppModule, MUCModuleConfig {
     }
 
     private fun processPresence(stanza: Presence) {
-        val room = store.findRoom(stanza.from!!.bareJID) ?: throw XMPPException(ErrorCondition.ServiceUnavailable)
+        val room =
+            store.findRoom(stanza.from!!.bareJID)
+                ?: throw XMPPException(ErrorCondition.ServiceUnavailable)
         val nickname = stanza.from!!.resource
 
         if (stanza.type == PresenceType.Error && room.state != State.Joined && nickname == null) {
             room.state = State.NotJoined
             context.eventBus.fire(
                 MucRoomEvents.JoinError(
-                    room, stanza, stanza.getErrorConditionOrNull() ?: ErrorCondition.UndefinedCondition
+                    room,
+                    stanza,
+                    stanza.getErrorConditionOrNull() ?: ErrorCondition.UndefinedCondition
                 )
             )
         }
@@ -372,7 +412,8 @@ class MUCModule(override val context: Context) : XmppModule, MUCModuleConfig {
         // TODO kicked out from room
         // TODO occupant nickname change
 
-        val selfPresence = (mucExt != null && mucExt.statuses.contains(110)) || nickname == room.nickname
+        val selfPresence =
+            (mucExt != null && mucExt.statuses.contains(110)) || nickname == room.nickname
 
         if (room.state == State.Joined && selfPresence) {
             // you leave room
@@ -384,7 +425,9 @@ class MUCModule(override val context: Context) : XmppModule, MUCModuleConfig {
             room.state = State.Joined
             room.occupants[nickname] = occupant
             context.eventBus.fire(MucRoomEvents.YouJoined(room, stanza, nickname))
-        } else if ((presenceOld == null || presenceOld.type == PresenceType.Unavailable) && stanza.type == null) {
+        } else if ((presenceOld == null || presenceOld.type == PresenceType.Unavailable) &&
+            stanza.type == null
+        ) {
             // other occupant came
             room.occupants[nickname] = occupant
             context.eventBus.fire(MucRoomEvents.OccupantCame(room, stanza, nickname))
@@ -398,7 +441,11 @@ class MUCModule(override val context: Context) : XmppModule, MUCModuleConfig {
             context.eventBus.fire(MucRoomEvents.OccupantChangedPresence(room, stanza, nickname))
         }
 
-        if (mucExt != null && mucExt.statuses.contains(201)) context.eventBus.fire(MucRoomEvents.Created(room))
+        if (mucExt != null &&
+            mucExt.statuses.contains(201)
+        ) {
+            context.eventBus.fire(MucRoomEvents.Created(room))
+        }
     }
 
     private fun processInvitationDeclinedMessage(stanza: Message) {
@@ -407,29 +454,43 @@ class MUCModule(override val context: Context) : XmppModule, MUCModuleConfig {
 
     private fun processMediatedInvitationMessage(stanza: Message) {
         val roomJid = stanza.from?.bareJID ?: throw XMPPException(ErrorCondition.BadRequest)
-        val invite = stanza.getChildrenNS("x", "$XMLNS#user")?.getFirstChild("invite") ?: throw XMPPException(
-            ErrorCondition.BadRequest
-        )
-        val sender = invite.attributes["from"]?.toJID() ?: throw XMPPException(ErrorCondition.BadRequest)
+        val invite =
+            stanza.getChildrenNS("x", "$XMLNS#user")?.getFirstChild("invite")
+                ?: throw XMPPException(
+                    ErrorCondition.BadRequest
+                )
+        val sender =
+            invite.attributes["from"]?.toJID() ?: throw XMPPException(ErrorCondition.BadRequest)
         val reason = invite.getFirstChild("reason")?.value
         val password = stanza.getChildrenNS("x", "$XMLNS#user")?.getFirstChild("password")?.value
-        context.eventBus.fire(MucEvents.InvitationReceived(Invitation(roomJid, sender, password, reason, false)))
+        context.eventBus.fire(
+            MucEvents.InvitationReceived(Invitation(roomJid, sender, password, reason, false))
+        )
     }
 
     private fun processDirectInvitationMessage(stanza: Message) {
-        val invite = stanza.getChildrenNS("x", "jabber:x:conference") ?: throw XMPPException(ErrorCondition.BadRequest)
+        val invite =
+            stanza.getChildrenNS("x", "jabber:x:conference")
+                ?: throw XMPPException(ErrorCondition.BadRequest)
         val sender = stanza.from ?: throw XMPPException(ErrorCondition.BadRequest)
-        val roomJid = invite.attributes["jid"]?.toBareJID() ?: throw XMPPException(ErrorCondition.BadRequest)
+        val roomJid =
+            invite.attributes["jid"]?.toBareJID() ?: throw XMPPException(ErrorCondition.BadRequest)
         val password = invite.attributes["password"]
         val reason = invite.attributes["reason"]
-        context.eventBus.fire(MucEvents.InvitationReceived(Invitation(roomJid, sender, password, reason, true)))
+        context.eventBus.fire(
+            MucEvents.InvitationReceived(Invitation(roomJid, sender, password, reason, true))
+        )
     }
 
     /**
      * Builds join request to MUC Room.
      * @parami
      */
-    fun join(roomJID: BareJID, nickname: String, password: String? = null): RequestBuilder<Unit, Presence> {
+    fun join(
+        roomJID: BareJID,
+        nickname: String,
+        password: String? = null
+    ): RequestBuilder<Unit, Presence> {
         val room = store.findRoom(roomJID) ?: store.createRoom(roomJID, nickname)
         room.password = password
         return context.request.presence {
@@ -453,11 +514,9 @@ class MUCModule(override val context: Context) : XmppModule, MUCModuleConfig {
     /**
      * Builds request to leaves MUC Room.
      */
-    fun leave(room: Room): RequestBuilder<Unit, Presence> {
-        return context.request.presence {
-            to = room.roomJID.copy(resource = room.nickname)
-            type = PresenceType.Unavailable
-        }
+    fun leave(room: Room): RequestBuilder<Unit, Presence> = context.request.presence {
+        to = room.roomJID.copy(resource = room.nickname)
+        type = PresenceType.Unavailable
     }
 
     /**
@@ -475,35 +534,41 @@ class MUCModule(override val context: Context) : XmppModule, MUCModuleConfig {
     /**
      * Builds mediated invitation request.
      */
-    fun invite(room: Room, invitedJid: BareJID, reason: String? = null): RequestBuilder<Unit, Message> =
-        context.request.message {
-            to = room.roomJID
-            "x" {
-                xmlns = "$XMLNS#user"
-                "invite" {
-                    attributes["to"] = invitedJid.toString()
-                    if (reason != null) "reason" { +reason }
-                }
+    fun invite(
+        room: Room,
+        invitedJid: BareJID,
+        reason: String? = null
+    ): RequestBuilder<Unit, Message> = context.request.message {
+        to = room.roomJID
+        "x" {
+            xmlns = "$XMLNS#user"
+            "invite" {
+                attributes["to"] = invitedJid.toString()
+                if (reason != null) "reason" { +reason }
             }
         }
+    }
 
     /**
      * Builds direct invitation request.
      */
-    fun inviteDirectly(room: Room, invitedJid: BareJID, reason: String? = null): RequestBuilder<Unit, Message> =
-        context.request.message {
-            to = invitedJid
-            "x" {
-                xmlns = "jabber:x:conference"
-                attributes["jid"] = room.roomJID.toString()
-                reason?.let {
-                    attributes["reason"] = reason
-                }
-                room.password?.let {
-                    attributes["password"] = it
-                }
+    fun inviteDirectly(
+        room: Room,
+        invitedJid: BareJID,
+        reason: String? = null
+    ): RequestBuilder<Unit, Message> = context.request.message {
+        to = invitedJid
+        "x" {
+            xmlns = "jabber:x:conference"
+            attributes["jid"] = room.roomJID.toString()
+            reason?.let {
+                attributes["reason"] = reason
+            }
+            room.password?.let {
+                attributes["password"] = it
             }
         }
+    }
 
     /**
      * Builds retrieve room configuration request. In response it returns data form with configuration.
@@ -523,31 +588,35 @@ class MUCModule(override val context: Context) : XmppModule, MUCModuleConfig {
     /**
      * Builds update room configuration request.
      */
-    fun updateRoomConfig(room: Room, form: JabberDataForm): RequestBuilder<Unit, IQ> = context.request.iq {
-        to = room.roomJID
-        type = IQType.Set
-        "query" {
-            xmlns = "$XMLNS#owner"
-            addChild(form.createSubmitForm())
-        }
-    }.map { }
+    fun updateRoomConfig(room: Room, form: JabberDataForm): RequestBuilder<Unit, IQ> =
+        context.request.iq {
+            to = room.roomJID
+            type = IQType.Set
+            "query" {
+                xmlns = "$XMLNS#owner"
+                addChild(form.createSubmitForm())
+            }
+        }.map { }
 
     /**
      * Builds group chat message request.
      */
-    fun message(room: Room, messageBody: String): RequestBuilder<Unit, Message> {
-        return context.request.message {
+    fun message(room: Room, messageBody: String): RequestBuilder<Unit, Message> =
+        context.request.message {
             to = room.roomJID
             type = MessageType.Groupchat
             body = messageBody
         }
-    }
 
     /**
      * Builds decline request for received invitation.
      */
     fun decline(invitation: Invitation, reason: String? = null): RequestBuilder<Unit, Message> {
-        if (invitation.direct) throw HalcyonException("Direct invitation should be silently ignored.")
+        if (invitation.direct) {
+            throw HalcyonException(
+                "Direct invitation should be silently ignored."
+            )
+        }
         return context.request.message {
             to = invitation.roomjid
             "x" {
@@ -563,76 +632,81 @@ class MUCModule(override val context: Context) : XmppModule, MUCModuleConfig {
     /**
      * Builds join request to MUC Room based on received invitation.
      */
-    fun accept(invitation: Invitation, nickname: String): RequestBuilder<Unit, Presence> {
-        return join(invitation.roomjid, nickname, invitation.password)
-    }
+    fun accept(invitation: Invitation, nickname: String): RequestBuilder<Unit, Presence> =
+        join(invitation.roomjid, nickname, invitation.password)
 
     /**
      * Builds request for retrieve affiliations list from MUC room. In response it returns collection of RoomAffiliation.
      */
-    fun retrieveAffiliations(room: Room, filter: Affiliation? = null): RequestBuilder<Collection<RoomAffiliation>, IQ> =
-        context.request.iq {
-            to = room.roomJID
-            type = IQType.Get
-            "query" {
-                xmlns = "$XMLNS#admin"
-                filter?.let {
-                    "item" {
-                        attributes["affiliation"] = filter.xmppValue
-                    }
+    fun retrieveAffiliations(
+        room: Room,
+        filter: Affiliation? = null
+    ): RequestBuilder<Collection<RoomAffiliation>, IQ> = context.request.iq {
+        to = room.roomJID
+        type = IQType.Get
+        "query" {
+            xmlns = "$XMLNS#admin"
+            filter?.let {
+                "item" {
+                    attributes["affiliation"] = filter.xmppValue
                 }
-            }
-        }.map { iq ->
-            val q = iq.getChildrenNS("query", "$XMLNS#admin") ?: throw XMPPException(ErrorCondition.BadRequest)
-            q.getChildren("item").map {
-                val aff = it.attributes["affiliation"]?.let { aff ->
-                    Affiliation.values().first { it.xmppValue == aff }
-                } ?: Affiliation.None
-                val jid = it.attributes["jid"]?.toJID()
-                val nickname = it.attributes["nick"]
-                val role = it.attributes["role"]?.let { rl ->
-                    Role.values().first { it.xmppValue == rl }
-                }
-                RoomAffiliation(jid, aff, nickname, role)
             }
         }
+    }.map { iq ->
+        val q =
+            iq.getChildrenNS("query", "$XMLNS#admin")
+                ?: throw XMPPException(ErrorCondition.BadRequest)
+        q.getChildren("item").map {
+            val aff = it.attributes["affiliation"]?.let { aff ->
+                Affiliation.values().first { it.xmppValue == aff }
+            } ?: Affiliation.None
+            val jid = it.attributes["jid"]?.toJID()
+            val nickname = it.attributes["nick"]
+            val role = it.attributes["role"]?.let { rl ->
+                Role.values().first { it.xmppValue == rl }
+            }
+            RoomAffiliation(jid, aff, nickname, role)
+        }
+    }
 
     /**
      * Builds request for update affiliations list.
      */
-    fun updateAffiliations(room: Room, affiliations: Collection<RoomAffiliation>): RequestBuilder<Unit, IQ> =
-        context.request.iq {
-            to = room.roomJID
-            type = IQType.Set
-            "query" {
-                xmlns = "$XMLNS#admin"
-                affiliations.forEach { a ->
-                    "item" {
-                        attributes["affiliation"] = a.affiliation.xmppValue
-                        a.jid?.let { attributes["jid"] = it.toString() }
-                        a.role?.let { attributes["role"] = it.xmppValue }
-                    }
+    fun updateAffiliations(
+        room: Room,
+        affiliations: Collection<RoomAffiliation>
+    ): RequestBuilder<Unit, IQ> = context.request.iq {
+        to = room.roomJID
+        type = IQType.Set
+        "query" {
+            xmlns = "$XMLNS#admin"
+            affiliations.forEach { a ->
+                "item" {
+                    attributes["affiliation"] = a.affiliation.xmppValue
+                    a.jid?.let { attributes["jid"] = it.toString() }
+                    a.role?.let { attributes["role"] = it.xmppValue }
                 }
             }
-        }.map { }
+        }
+    }.map { }
 
     /**
      * Builds request for set room subject.
      */
-    fun updateRoomSubject(room: Room, subject: String?): RequestBuilder<Unit, Message> = context.request.message {
-        to = room.roomJID
-        type = MessageType.Groupchat
-        "subject" {
-            if (subject != null) {
-                +subject
+    fun updateRoomSubject(room: Room, subject: String?): RequestBuilder<Unit, Message> =
+        context.request.message {
+            to = room.roomJID
+            type = MessageType.Groupchat
+            "subject" {
+                if (subject != null) {
+                    +subject
+                }
             }
         }
-    }
 
     /**
      * Builds request from self ping.
      */
     fun ping(room: Room): RequestBuilder<PingModule.Pong, IQ> =
         context.modules.get<PingModule>(PingModule.TYPE).ping(FullJID(room.roomJID, room.nickname))
-
 }

@@ -20,8 +20,8 @@ package tigase.halcyon.core.modules
 import tigase.halcyon.core.Context
 
 abstract class AbstractXmppModule(
-	override val context: Context,
-	final override val type: String,
-	final override val features: Array<String>,
-	final override val criteria: Criteria? = null,
+    override val context: Context,
+    final override val type: String,
+    final override val features: Array<String>,
+    final override val criteria: Criteria? = null
 ) : XmppModule

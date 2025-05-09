@@ -15,7 +15,10 @@ abstract class AbstractSASLScramPlus(
 ) : AbstractSASLScram(name, hashAlgorithm) {
 
     private fun checkAvailability(
-        context: Context, data: SCRAMData, type: BindType, bindingData: (Context) -> ByteArray?
+        context: Context,
+        data: SCRAMData,
+        type: BindType,
+        bindingData: (Context) -> ByteArray?
     ): Pair<BindType, ByteArray>? {
         data.bindTypesSupportedByServer?.let {
             if (!it.contains(type)) return null
@@ -26,26 +29,39 @@ abstract class AbstractSASLScramPlus(
     }
 
     override fun prepareChannelBindingData(
-        context: Context, config: Configuration, saslContext: SASLContext
+        context: Context,
+        config: Configuration,
+        saslContext: SASLContext
     ): Pair<BindType, ByteArray> {
         val data = scramData(saslContext)
 
         checkAvailability(context, data, BindType.TlsUnique, tlsUniqueProvider)?.let { return it }
-        checkAvailability(context, data, BindType.TlsExporter, tlsExporterProvider)?.let { return it }
-        checkAvailability(context, data, BindType.TlsServerEndPoint, serverEndpointProvider)?.let { return it }
+        checkAvailability(context, data, BindType.TlsExporter, tlsExporterProvider)?.let {
+            return it
+        }
+        checkAvailability(context, data, BindType.TlsServerEndPoint, serverEndpointProvider)?.let {
+            return it
+        }
 
         return super.prepareChannelBindingData(context, config, saslContext)
     }
 
     private fun allowedChannelBindingTypes(streamFeatures: Element): List<BindType>? {
-        val names = streamFeatures.getChildrenNS("sasl-channel-binding", "urn:xmpp:sasl-cb:0")?.children?.filter {
-            it.name == "channel-binding"
-        }?.mapNotNull { it.attributes["type"] } ?: return null
+        val names =
+            streamFeatures.getChildrenNS(
+                "sasl-channel-binding",
+                "urn:xmpp:sasl-cb:0"
+            )?.children?.filter {
+                it.name == "channel-binding"
+            }?.mapNotNull { it.attributes["type"] } ?: return null
         return names.mapNotNull { tp -> BindType.values().find { it.xmlValue == tp } }
     }
 
     override fun isAllowedToUse(
-        context: Context, config: Configuration, saslContext: SASLContext, streamFeatures: Element
+        context: Context,
+        config: Configuration,
+        saslContext: SASLContext,
+        streamFeatures: Element
     ): Boolean {
         val c = (context as AbstractHalcyon).connector ?: return false
         if (c !is ChannelBindingDataProvider || !c.isConnectionSecure()) return false
@@ -59,7 +75,6 @@ abstract class AbstractSASLScramPlus(
 
         return super.isAllowedToUse(context, config, saslContext, streamFeatures)
     }
-
 }
 
 private fun retrieveTlsUnique(context: Context): ByteArray? {

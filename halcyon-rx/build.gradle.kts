@@ -16,26 +16,25 @@
  * If not, see http://www.gnu.org/licenses/.
  */
 plugins {
-	id("kotlinMultiplatformConvention")
-	`maven-publish`
-	signing
-	alias(libs.plugins.kotlinx.serialization)
+    id("kotlinMultiplatformConvention")
+    `maven-publish`
+    signing
+    alias(libs.plugins.kotlinx.serialization)
 }
-
 
 kotlin {
 
-	sourceSets {
-		named("commonMain") {
-			dependencies {
-				implementation(project(":halcyon-core"))
-				implementation(libs.reactive.reaktive)
-			}
-		}
-		named("commonTest") {
-			dependencies {
-				implementation(libs.reactive.testing)
-			}
-		}
-	}
+    sourceSets {
+        named("commonMain") {
+            dependencies {
+                implementation(project(":halcyon-core"))
+                implementation(libs.reactive.reaktive)
+            }
+        }
+        named("commonTest") {
+            dependencies {
+                implementation(libs.reactive.testing)
+            }
+        }
+    }
 }

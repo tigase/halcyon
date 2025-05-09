@@ -17,13 +17,13 @@
  */
 package tigase.halcyon.core.xmpp.modules.vcard
 
+import kotlin.test.*
 import tigase.halcyon.core.xml.element
 import tigase.halcyon.core.xml.parser.parseXML
-import kotlin.test.*
 
 class VCardTest {
 
-	val sample = """
+    val sample = """
 		<vcard xmlns="urn:ietf:params:xml:ns:vcard-4.0">
     <fn>
         <text>Samantha Mizzi</text>
@@ -145,190 +145,196 @@ class VCardTest {
         <text>America/Chicago</text>
     </tz>
 </vcard>
-	""".trimIndent()
+    """.trimIndent()
 
-	@Test
-	fun testBDay() {
-		val vCard = VCard(parseXML(sample))
-		assertFalse(vCard.isEmpty())
-		assertEquals("1966-08-06", vCard.birthday)
-	}
+    @Test
+    fun testBDay() {
+        val vCard = VCard(parseXML(sample))
+        assertFalse(vCard.isEmpty())
+        assertEquals("1966-08-06", vCard.birthday)
+    }
 
-	@Test
-	fun testTimeZone() {
-		val vCard = VCard(parseXML(sample))
-		assertFalse(vCard.isEmpty())
-		assertEquals("America/Chicago", vCard.timeZone)
-	}
+    @Test
+    fun testTimeZone() {
+        val vCard = VCard(parseXML(sample))
+        assertFalse(vCard.isEmpty())
+        assertEquals("America/Chicago", vCard.timeZone)
+    }
 
-	@Test
-	fun testEmails() {
-		val vCard = VCard(parseXML(sample))
-		assertFalse(vCard.isEmpty())
+    @Test
+    fun testEmails() {
+        val vCard = VCard(parseXML(sample))
+        assertFalse(vCard.isEmpty())
 
-		assertNotNull(vCard.emails)[0].let { email ->
-			assertEquals(1, email.parameters.types.size)
-			assertTrue(email.parameters.types.contains("work"))
-			assertEquals("psaintan@cisco.com", email.text)
-		}
-		assertNotNull(vCard.emails)[1].let { email ->
-			assertEquals(1, email.parameters.types.size)
-			assertTrue(email.parameters.types.contains("home"))
-			assertEquals("stpeter@jabber.org", email.text)
-		}
-	}
+        assertNotNull(vCard.emails)[0].let { email ->
+            assertEquals(1, email.parameters.types.size)
+            assertTrue(email.parameters.types.contains("work"))
+            assertEquals("psaintan@cisco.com", email.text)
+        }
+        assertNotNull(vCard.emails)[1].let { email ->
+            assertEquals(1, email.parameters.types.size)
+            assertTrue(email.parameters.types.contains("home"))
+            assertEquals("stpeter@jabber.org", email.text)
+        }
+    }
 
-	@Test
-	fun testAddress() {
-		val vCard = VCard(parseXML(sample))
-		assertFalse(vCard.isEmpty())
+    @Test
+    fun testAddress() {
+        val vCard = VCard(parseXML(sample))
+        assertFalse(vCard.isEmpty())
 
-		assertEquals(2, vCard.addresses.size)
-		assertNotNull(vCard.addresses)[0].let { adr ->
-			assertEquals("USA", adr.country)
-			assertEquals("80202", adr.code)
-			assertEquals("CO", adr.region)
-			assertEquals("Denver", adr.locality)
-			assertEquals("1899 Wynkoop Street", adr.street)
-			assertEquals("Suite 600", adr.ext)
-			assertEquals(1, adr.parameters.pref)
-			assertEquals(2, adr.parameters.types.size)
-			assertTrue(adr.parameters.types.contains("work"))
-			assertTrue(adr.parameters.types.contains("voice"))
-		}
-		assertNotNull(vCard.addresses)[1].let { adr ->
-			assertEquals("USA", adr.country)
-			assertEquals("80138", adr.code)
-			assertEquals("CO", adr.region)
-			assertEquals("Parker", adr.locality)
-			assertNull(adr.street)
-			assertNull(adr.ext)
-			assertNull(adr.parameters.pref)
-			assertEquals(1, adr.parameters.types.size)
-			assertTrue(adr.parameters.types.contains("home"))
-		}
+        assertEquals(2, vCard.addresses.size)
+        assertNotNull(vCard.addresses)[0].let { adr ->
+            assertEquals("USA", adr.country)
+            assertEquals("80202", adr.code)
+            assertEquals("CO", adr.region)
+            assertEquals("Denver", adr.locality)
+            assertEquals("1899 Wynkoop Street", adr.street)
+            assertEquals("Suite 600", adr.ext)
+            assertEquals(1, adr.parameters.pref)
+            assertEquals(2, adr.parameters.types.size)
+            assertTrue(adr.parameters.types.contains("work"))
+            assertTrue(adr.parameters.types.contains("voice"))
+        }
+        assertNotNull(vCard.addresses)[1].let { adr ->
+            assertEquals("USA", adr.country)
+            assertEquals("80138", adr.code)
+            assertEquals("CO", adr.region)
+            assertEquals("Parker", adr.locality)
+            assertNull(adr.street)
+            assertNull(adr.ext)
+            assertNull(adr.parameters.pref)
+            assertEquals(1, adr.parameters.types.size)
+            assertTrue(adr.parameters.types.contains("home"))
+        }
+    }
 
-	}
+    @Test
+    fun testProperties() {
+        val vCard = VCard(parseXML(sample))
+        assertFalse(vCard.isEmpty())
 
-	@Test
-	fun testProperties() {
-		val vCard = VCard(parseXML(sample))
-		assertFalse(vCard.isEmpty())
+        println(vCard.element.getAsString())
 
-		println(vCard.element.getAsString())
+        assertEquals("Samantha Mizzi", vCard.formattedName)
+        vCard.formattedName = "Genowefa"
+        assertEquals("Genowefa", vCard.formattedName)
 
-		assertEquals("Samantha Mizzi", vCard.formattedName)
-		vCard.formattedName = "Genowefa"
-		assertEquals("Genowefa", vCard.formattedName)
+        assertEquals("Mizzi", vCard.structuredName?.surname)
+        assertEquals("Samantha", vCard.structuredName?.given)
+        assertNull(vCard.structuredName?.additional)
 
-		assertEquals("Mizzi", vCard.structuredName?.surname)
-		assertEquals("Samantha", vCard.structuredName?.given)
-		assertNull(vCard.structuredName?.additional)
+        assertNotNull(vCard.photos).let { photos ->
+            assertEquals(2, photos.size)
+            assertTrue(photos[0] is Photo.PhotoUri)
+            assertTrue(photos[1] is Photo.PhotoData)
 
-		assertNotNull(vCard.photos).let { photos ->
-			assertEquals(2, photos.size)
-			assertTrue(photos[0] is Photo.PhotoUri)
-			assertTrue(photos[1] is Photo.PhotoData)
+            assertEquals("http://stpeter.im/images/stpeter_oscon.jpg", photos[0].uri)
 
-			assertEquals("http://stpeter.im/images/stpeter_oscon.jpg", photos[0].uri)
+            assertEquals("image/png", (photos[1] as Photo.PhotoData).imageType)
+            assertEquals(
+                "iVBORw0KGgoAAAANSUhEUgAAAGAAAABgCAYAAADimHc4AAAMI2lDQ1BJQ0MgUHJvZmlsZQAASImVVwdUk8kWnr+kktACoUg",
+                (photos[1] as Photo.PhotoData).data
+            )
+        }
 
-			assertEquals("image/png", (photos[1] as Photo.PhotoData).imageType)
-			assertEquals(
-				"iVBORw0KGgoAAAANSUhEUgAAAGAAAABgCAYAAADimHc4AAAMI2lDQ1BJQ0MgUHJvZmlsZQAASImVVwdUk8kWnr+kktACoUg",
-				(photos[1] as Photo.PhotoData).data
-			)
-		}
+        val org = vCard.organizations
+        assertEquals(2, org.count())
 
-		val org = vCard.organizations
-		assertEquals(2, org.count())
+        assertEquals("Cisco", org.get(0).name)
+        assertEquals("Tigase", org.get(1).name)
+        assertEquals(2, org.get(1).parameters.pref)
 
-		assertEquals("Cisco", org.get(0).name)
-		assertEquals("Tigase", org.get(1).name)
-		assertEquals(2, org.get(1).parameters.pref)
+        org.get(0).name = "Test"
+        assertEquals("Test", vCard.element.findChild("vcard", "org", "text")?.value)
 
-		org.get(0).name = "Test"
-		assertEquals("Test", vCard.element.findChild("vcard", "org", "text")?.value)
+        val tel = vCard.telephones.first()
+        assertEquals("tel:+1-418-262-6501", tel.uri)
+        assertTrue(tel.parameters.types.contains("cell"))
 
-		val tel = vCard.telephones.first()
-		assertEquals("tel:+1-418-262-6501", tel.uri)
-		assertTrue(tel.parameters.types.contains("cell"))
+        tel.parameters.types = listOf("1", "2", "3")
 
-		tel.parameters.types = listOf("1", "2", "3")
+        assertFalse(tel.parameters.types.contains("cell"))
+        assertTrue(tel.parameters.types.contains("1"))
+        assertTrue(tel.parameters.types.contains("2"))
+        assertTrue(tel.parameters.types.contains("3"))
 
-		assertFalse(tel.parameters.types.contains("cell"))
-		assertTrue(tel.parameters.types.contains("1"))
-		assertTrue(tel.parameters.types.contains("2"))
-		assertTrue(tel.parameters.types.contains("3"))
+        tel.parameters.types = emptyList()
+        tel.parameters.pref = null
 
-		tel.parameters.types = emptyList()
-		tel.parameters.pref = null
+        println(tel.element.getAsString())
+    }
 
-		println(tel.element.getAsString())
+    @Test
+    fun testEmptyVCard() {
+        val vCard = VCard(
+            element("vcard") {
+                xmlns = VCardModule.XMLNS
+            }
+        ).apply {
+            formattedName = "Genowefa"
+            nickname = ""
+            structuredName = StructuredName().apply {
+                additional = ""
+            }
+            organizations = listOf(Organization().apply { })
+        }
+        println(vCard.element.getAsString())
+        assertEquals(1, vCard.element.children.size)
+        assertEquals("fn", vCard.element.children[0].name)
+    }
 
-	}
+    @Test
+    fun testFormattedName() {
+        val vCard = VCard(
+            element("vcard") {
+                xmlns = VCardModule.XMLNS
+            }
+        )
+        vCard.formattedName = "Genowefa"
+        assertEquals("Genowefa", vCard.formattedName)
+    }
 
-	@Test
-	fun testEmptyVCard() {
-		val vCard = VCard(element("vcard") {
-			xmlns = VCardModule.XMLNS
-		}).apply {
-			formattedName = "Genowefa"
-			nickname = ""
-			structuredName = StructuredName().apply {
-				additional = ""
-			}
-			organizations = listOf(Organization().apply { })
-		}
-		println(vCard.element.getAsString())
-		assertEquals(1, vCard.element.children.size)
-		assertEquals("fn", vCard.element.children[0].name)
-	}
+    @Test
+    fun testOrg() {
+        val vCard = VCard(
+            element("vcard") {
+                xmlns = VCardModule.XMLNS
+            }
+        )
 
-	@Test
-	fun testFormattedName() {
-		val vCard = VCard(element("vcard") {
-			xmlns = VCardModule.XMLNS
-		})
-		vCard.formattedName = "Genowefa"
-		assertEquals("Genowefa", vCard.formattedName)
-	}
+        val o1 = Organization()
+        o1.name = "o1"
+        o1.parameters.pref = 4
 
-	@Test
-	fun testOrg() {
-		val vCard = VCard(element("vcard") {
-			xmlns = VCardModule.XMLNS
-		})
+        vCard.organizations = listOf(o1)
 
-		val o1 = Organization()
-		o1.name = "o1"
-		o1.parameters.pref = 4
+        println(o1.element.getAsString())
 
-		vCard.organizations = listOf(o1)
+        assertEquals("o1", vCard.element.findChild("vcard", "org", "text")?.value)
+        assertEquals(
+            "4",
+            vCard.element.findChild("vcard", "org", "parameters", "pref", "integer")?.value
+        )
 
-		println(o1.element.getAsString())
+        vCard.organizations = listOf()
+        assertNull(vCard.element.findChild("vcard", "org", "text")?.value)
+    }
 
-		assertEquals("o1", vCard.element.findChild("vcard", "org", "text")?.value)
-		assertEquals("4", vCard.element.findChild("vcard", "org", "parameters", "pref", "integer")?.value)
+    @Test
+    fun testStructuredName() {
+        val vCard = VCard(
+            element("vcard") {
+                xmlns = VCardModule.XMLNS
+            }
+        )
 
-		vCard.organizations = listOf()
-		assertNull(vCard.element.findChild("vcard", "org", "text")?.value)
+        val sn = StructuredName()
+        sn.surname = "Saint-Andre"
+        sn.given = "Peter"
+        vCard.structuredName = sn
 
-	}
-
-	@Test
-	fun testStructuredName() {
-		val vCard = VCard(element("vcard") {
-			xmlns = VCardModule.XMLNS
-		})
-
-		val sn = StructuredName()
-		sn.surname = "Saint-Andre"
-		sn.given = "Peter"
-		vCard.structuredName = sn
-
-		assertEquals("Saint-Andre", vCard.element.findChild("vcard", "n", "surname")?.value)
-		assertEquals("Peter", vCard.element.findChild("vcard", "n", "given")?.value)
-
-	}
-
+        assertEquals("Saint-Andre", vCard.element.findChild("vcard", "n", "surname")?.value)
+        assertEquals("Peter", vCard.element.findChild("vcard", "n", "given")?.value)
+    }
 }

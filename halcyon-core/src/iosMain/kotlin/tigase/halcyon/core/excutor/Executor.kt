@@ -19,7 +19,7 @@ package tigase.halcyon.core.excutor
 
 actual class Executor {
 
-	actual fun execute(runnable: () -> Unit) {
-		runnable.invoke()
-	}
+    actual fun execute(runnable: () -> Unit) {
+        runnable.invoke()
+    }
 }

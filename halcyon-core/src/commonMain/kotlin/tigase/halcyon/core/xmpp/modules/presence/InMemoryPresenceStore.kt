@@ -24,23 +24,18 @@ import tigase.halcyon.core.xmpp.stanzas.Presence
 
 class InMemoryPresenceStore : PresenceStore {
 
-	private val presences = mutableMapOf<JID, Presence>()
+    private val presences = mutableMapOf<JID, Presence>()
 
-	override fun setPresence(stanza: Presence) {
-		val jid = stanza.from ?: return
-		presences[jid] = stanza
-	}
+    override fun setPresence(stanza: Presence) {
+        val jid = stanza.from ?: return
+        presences[jid] = stanza
+    }
 
-	override fun getPresence(jid: JID): Presence? {
-		return presences[jid]
-	}
+    override fun getPresence(jid: JID): Presence? = presences[jid]
 
-	override fun removePresence(jid: JID): Presence? {
-		return presences.remove(jid)
-	}
+    override fun removePresence(jid: JID): Presence? = presences.remove(jid)
 
-	override fun getPresences(jid: BareJID): List<Presence> {
-		return presences.values.filter { presence -> presence.from?.bareJID == jid }
-	}
-
+    override fun getPresences(jid: BareJID): List<Presence> = presences.values.filter { presence ->
+        presence.from?.bareJID == jid
+    }
 }

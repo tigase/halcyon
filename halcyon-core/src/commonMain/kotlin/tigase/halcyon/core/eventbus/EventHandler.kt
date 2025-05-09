@@ -19,6 +19,5 @@ package tigase.halcyon.core.eventbus
 
 interface EventHandler<in T : Event> {
 
-	fun onEvent(event: T)
-
+    fun onEvent(event: T)
 }

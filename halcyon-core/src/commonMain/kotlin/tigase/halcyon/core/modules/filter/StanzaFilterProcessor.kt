@@ -12,10 +12,11 @@ class StanzaFilterProcessor {
         filters.add(filter)
     }
 
-
     fun doFilters(element: Element, result: (Result<Element?>) -> Unit) {
         try {
-            if (filters.isEmpty()) doQuiet { result(Result.success(element)) } else {
+            if (filters.isEmpty()) {
+                doQuiet { result(Result.success(element)) }
+            } else {
                 val executor = StanzaFilterExecutor(element, filters, result)
                 executor.doFilter(element)
             }
@@ -23,7 +24,6 @@ class StanzaFilterProcessor {
             doQuiet { result(Result.failure(e)) }
         }
     }
-
 }
 
 private class StanzaFilterExecutor(
@@ -36,15 +36,15 @@ private class StanzaFilterExecutor(
 
     private var active = true
 
-
     override fun doFilter(element: Element?) {
-        if (index >= filters.size) doQuiet { result(Result.success(element)) } else {
+        if (index >= filters.size) {
+            doQuiet { result(Result.success(element)) }
+        } else {
             val currentIndex = index++
             val filter = filters[currentIndex]
             filter.doFilter(element, this)
         }
     }
-
 }
 
 private fun doQuiet(h: () -> Unit) {
@@ -53,5 +53,3 @@ private fun doQuiet(h: () -> Unit) {
     } catch (_: Throwable) {
     }
 }
-
-

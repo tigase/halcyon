@@ -23,8 +23,8 @@ import tigase.halcyon.core.xml.Element
 
 data class ReceivedStreamFeaturesEvent(val features: List<Element>) : Event(TYPE) {
 
-	companion object : EventDefinition<ReceivedStreamFeaturesEvent> {
+    companion object : EventDefinition<ReceivedStreamFeaturesEvent> {
 
-		override val TYPE = "tigase.halcyon.core.xmpp.ReceivedStreamFeaturesEvent"
-	}
+        override val TYPE = "tigase.halcyon.core.xmpp.ReceivedStreamFeaturesEvent"
+    }
 }

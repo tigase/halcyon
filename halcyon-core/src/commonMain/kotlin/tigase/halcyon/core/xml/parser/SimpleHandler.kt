@@ -19,18 +19,17 @@ package tigase.halcyon.core.xml.parser
 
 interface SimpleHandler {
 
-	fun error(errorMessage: String)
+    fun error(errorMessage: String)
 
-	fun startElement(name: String, attrNames: Array<String?>?, attrValues: Array<String?>?)
+    fun startElement(name: String, attrNames: Array<String?>?, attrValues: Array<String?>?)
 
-	fun elementCData(cdata: String)
+    fun elementCData(cdata: String)
 
-	fun endElement(name: String): Boolean
+    fun endElement(name: String): Boolean
 
-	fun otherXML(other: String)
+    fun otherXML(other: String)
 
-	fun saveParserState(state: Any?)
+    fun saveParserState(state: Any?)
 
-	fun restoreParserState(): Any?
-
+    fun restoreParserState(): Any?
 }

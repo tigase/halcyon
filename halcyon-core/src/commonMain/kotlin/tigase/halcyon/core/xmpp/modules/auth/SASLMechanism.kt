@@ -34,7 +34,12 @@ interface SASLMechanism {
      *
      * @return calculated response
      */
-    fun evaluateChallenge(input: String?, context: Context, config: Configuration, saslContext: SASLContext): String?
+    fun evaluateChallenge(
+        input: String?,
+        context: Context,
+        config: Configuration,
+        saslContext: SASLContext
+    ): String?
 
     /**
      * This method is used to check if mechanism can be used with current
@@ -65,7 +70,6 @@ interface SASLMechanism {
      * Mechanism name.
      */
     val name: String
-
 }
 
 interface SASLMechanismProvider<out M : SASLMechanism, C : Any> {
@@ -75,7 +79,6 @@ interface SASLMechanismProvider<out M : SASLMechanism, C : Any> {
     fun instance(): M
 
     fun configure(mechanism: @UnsafeVariance M, cfg: C.() -> Unit)
-
 }
 
 fun SASLMechanismProvider<SASLMechanism, Any>.createInstance(cfg: Any.() -> Unit): SASLMechanism {

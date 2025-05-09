@@ -54,18 +54,17 @@ open class Message(wrappedElement: Element) : Stanza<MessageType?>(wrappedElemen
             s?.let {
                 MessageType.values()
                     .firstOrNull { te -> te.value == it } ?: throw XMPPException(
-                    ErrorCondition.BadRequest, "Unknown stanza type '$it'"
+                    ErrorCondition.BadRequest,
+                    "Unknown stanza type '$it'"
                 )
             }
-        })
+        }
+    )
 
     var body: String? by stringElementProperty()
-
 }
 
-fun Message.getTimestampOrNull(): Instant? {
-    return this.getChildrenNS("delay", "urn:xmpp:delay")
-        ?.let {
-            it.attributes["stamp"]?.let { stamp -> parseISO8601(stamp) }
-        }
-}
+fun Message.getTimestampOrNull(): Instant? = this.getChildrenNS("delay", "urn:xmpp:delay")
+    ?.let {
+        it.attributes["stamp"]?.let { stamp -> parseISO8601(stamp) }
+    }

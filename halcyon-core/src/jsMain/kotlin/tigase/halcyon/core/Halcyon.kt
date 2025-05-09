@@ -21,11 +21,11 @@ import kotlinx.browser.window
 import tigase.halcyon.core.builder.ConfigurationBuilder
 import tigase.halcyon.core.connector.WebSocketConnector
 
-actual class Halcyon actual constructor(configuration: ConfigurationBuilder) : AbstractHalcyon(configuration) {
+actual class Halcyon actual constructor(configuration: ConfigurationBuilder) :
+    AbstractHalcyon(configuration) {
 
-    override fun createConnector(): tigase.halcyon.core.connector.AbstractConnector {
-        return WebSocketConnector(this)
-    }
+    override fun createConnector(): tigase.halcyon.core.connector.AbstractConnector =
+        WebSocketConnector(this)
 
     override fun reconnect(immediately: Boolean) {
         if (immediately) {
@@ -38,5 +38,4 @@ actual class Halcyon actual constructor(configuration: ConfigurationBuilder) : A
             }, 3000)
         }
     }
-
 }

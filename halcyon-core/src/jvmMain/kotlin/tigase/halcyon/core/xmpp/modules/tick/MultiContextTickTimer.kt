@@ -1,8 +1,8 @@
 package tigase.halcyon.core.xmpp.modules.tick
 
+import java.util.*
 import tigase.halcyon.core.Context
 import tigase.halcyon.core.TickEvent
-import java.util.*
 
 class MultiContextTickTimer : TickTimer {
 
@@ -53,5 +53,4 @@ class MultiContextTickTimer : TickTimer {
             context.eventBus.fire(TickEvent(tickCounter))
         }
     }
-
 }

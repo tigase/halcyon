@@ -17,6 +17,10 @@
  */
 package tigase.halcyon.core
 
+import java.util.*
+import kotlin.concurrent.timerTask
+import kotlin.time.Duration.Companion.seconds
+import kotlin.time.DurationUnit
 import tigase.halcyon.core.builder.ConfigurationBuilder
 import tigase.halcyon.core.connector.AbstractConnector
 import tigase.halcyon.core.connector.socket.SocketConnector
@@ -28,98 +32,104 @@ import tigase.halcyon.core.exceptions.AuthenticationException
 import tigase.halcyon.core.exceptions.HalcyonException
 import tigase.halcyon.core.logger.LoggerFactory
 import tigase.halcyon.core.xmpp.modules.auth.SASLEvent
-import java.util.*
-import kotlin.concurrent.timerTask
-import kotlin.time.Duration.Companion.seconds
-import kotlin.time.DurationUnit
 
-actual class Halcyon actual constructor(configuration: ConfigurationBuilder) : AbstractHalcyon(configuration) {
+actual class Halcyon actual constructor(configuration: ConfigurationBuilder) :
+    AbstractHalcyon(configuration) {
 
-	private val log = LoggerFactory.logger("tigase.halcyon.core.Halcyon")
+    private val log = LoggerFactory.logger("tigase.halcyon.core.Halcyon")
 
-	private var connectionTimer: Timer? = null
+    private var connectionTimer: Timer? = null
 
-	override fun createConnector(): AbstractConnector {
-		val tlsProcessorFactory = (config.connection as SocketConnectorConfig).tlsProcessorFactory
-		log.fine("Selected TLS Processor: ${tlsProcessorFactory.NAME}")
-		return SocketConnector(this, tlsProcessorFactory)
-	}
+    override fun createConnector(): AbstractConnector {
+        val tlsProcessorFactory = (config.connection as SocketConnectorConfig).tlsProcessorFactory
+        log.fine("Selected TLS Processor: ${tlsProcessorFactory.NAME}")
+        return SocketConnector(this, tlsProcessorFactory)
+    }
 
-	override fun reconnect(immediately: Boolean) {
-		if (!running) {
-			log.fine { "Called reconnect. immediately=$immediately, skipping reconnection as running is false!" }
-		} else {
-			log.fine { "Called reconnect. immediately=$immediately" }
-			try {
-				if (!immediately) Thread.sleep(3000)
-				state = State.Connecting
-				startConnector()
-			} catch (ex: HalcyonException) {
-				log.fine(ex) { "Failed to reconnect to halcyon" }
-				disconnect();
-			}
-		}
-	}
+    override fun reconnect(immediately: Boolean) {
+        if (!running) {
+            log.fine {
+                "Called reconnect. immediately=$immediately, skipping reconnection as running is false!"
+            }
+        } else {
+            log.fine { "Called reconnect. immediately=$immediately" }
+            try {
+                if (!immediately) Thread.sleep(3000)
+                state = State.Connecting
+                startConnector()
+            } catch (ex: HalcyonException) {
+                log.fine(ex) { "Failed to reconnect to halcyon" }
+                disconnect()
+            }
+        }
+    }
 
-	private val lock = Object()
+    private val lock = Object()
 
-	init {
-		eventBus.mode = EventBus.Mode.ThreadPerHandler
-		eventBus.register<HalcyonStateChangeEvent>(HalcyonStateChangeEvent) {
-			if (it.newState == State.Connecting) {
-				connectionTimer?.cancel();
-				connectionTimer = Timer().also {
-					it.schedule(timerTask {
-						// we need to break connection as it takes too long
-						if (state == State.Connecting) {
-							log.warning { "connection timeout reached, reconnecting..." }
-							disconnect()
-						}
-					}, 120.seconds.toLong(DurationUnit.MILLISECONDS))
-				}
-			} else {
-				connectionTimer?.cancel();
-				connectionTimer = null;
-			}
-		}
-//		this.config.connectorConfig = SocketConnectorConfig()
-	}
+    init {
+        eventBus.mode = EventBus.Mode.ThreadPerHandler
+        eventBus.register<HalcyonStateChangeEvent>(HalcyonStateChangeEvent) {
+            if (it.newState == State.Connecting) {
+                connectionTimer?.cancel()
+                connectionTimer = Timer().also {
+                    it.schedule(
+                        timerTask {
+                            // we need to break connection as it takes too long
+                            if (state == State.Connecting) {
+                                log.warning { "connection timeout reached, reconnecting..." }
+                                disconnect()
+                            }
+                        },
+                        120.seconds.toLong(DurationUnit.MILLISECONDS)
+                    )
+                }
+            } else {
+                connectionTimer?.cancel()
+                connectionTimer = null
+            }
+        }
+// 		this.config.connectorConfig = SocketConnectorConfig()
+    }
 
-	fun waitForAllResponses() {
-		while (requestsManager.getWaitingRequestsSize() > 0) {
-			synchronized(lock) {
-				lock.wait(100)
-			}
-		}
-	}
+    fun waitForAllResponses() {
+        while (requestsManager.getWaitingRequestsSize() > 0) {
+            synchronized(lock) {
+                lock.wait(100)
+            }
+        }
+    }
 
-	fun connectAndWait() {
-		var exceptionToThrow: Throwable? = null
-		val handler = object : EventHandler<Event> {
-			override fun onEvent(event: Event) {
-				if (event is SASLEvent.SASLError) {
-					exceptionToThrow = AuthenticationException(event.error, event.description ?: "Authentication error")
-				} else if (event is HalcyonStateChangeEvent) {
-					if (event.newState == State.Connected || event.newState == State.Stopped) {
-						synchronized(lock) {
-							lock.notify()
-						}
-					}
-				}
-			}
-		}
-		try {
-			eventBus.register(handler = handler)
-			super.connect()
-			synchronized(lock) {
-				lock.wait(30000)
-			}
-			exceptionToThrow?.let { throw it }
-			if (state != State.Connected && state != State.Stopped) {
-				throw HalcyonException("Cannot connect to XMPP server.")
-			}
-		} finally {
-			eventBus.unregister(handler)
-		}
-	}
+    fun connectAndWait() {
+        var exceptionToThrow: Throwable? = null
+        val handler = object : EventHandler<Event> {
+            override fun onEvent(event: Event) {
+                if (event is SASLEvent.SASLError) {
+                    exceptionToThrow =
+                        AuthenticationException(
+                            event.error,
+                            event.description ?: "Authentication error"
+                        )
+                } else if (event is HalcyonStateChangeEvent) {
+                    if (event.newState == State.Connected || event.newState == State.Stopped) {
+                        synchronized(lock) {
+                            lock.notify()
+                        }
+                    }
+                }
+            }
+        }
+        try {
+            eventBus.register(handler = handler)
+            super.connect()
+            synchronized(lock) {
+                lock.wait(30000)
+            }
+            exceptionToThrow?.let { throw it }
+            if (state != State.Connected && state != State.Stopped) {
+                throw HalcyonException("Cannot connect to XMPP server.")
+            }
+        } finally {
+            eventBus.unregister(handler)
+        }
+    }
 }

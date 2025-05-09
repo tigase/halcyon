@@ -34,12 +34,16 @@ import tigase.halcyon.core.xmpp.StreamError
  * @property condition parsed stream error enum to easy check kind of error.
  * @property errorElement error condition element.
  */
-data class StreamErrorEvent(val element: Element, val condition: StreamError, val errorElement: Element) : Event(TYPE) {
+data class StreamErrorEvent(
+    val element: Element,
+    val condition: StreamError,
+    val errorElement: Element
+) : Event(TYPE) {
 
-	companion object : EventDefinition<StreamErrorEvent> {
+    companion object : EventDefinition<StreamErrorEvent> {
 
-		override val TYPE = "tigase.halcyon.core.xmpp.modules.StreamErrorEvent"
-	}
+        override val TYPE = "tigase.halcyon.core.xmpp.modules.StreamErrorEvent"
+    }
 }
 
 @HalcyonConfigDsl
@@ -48,40 +52,44 @@ interface StreamErrorModuleConfig
 /**
  * Stream Error Handler. The module is integrated part of XMPP Core protocol.
  */
-class StreamErrorModule(override val context: Context) : XmppModule, StreamErrorModuleConfig {
+class StreamErrorModule(override val context: Context) :
+    XmppModule,
+    StreamErrorModuleConfig {
 
-	/**
-	 * Stream Error Handler. The module is integrated part of XMPP Core protocol.
-	 */
-	companion object : XmppModuleProvider<StreamErrorModule, StreamErrorModuleConfig> {
+    /**
+     * Stream Error Handler. The module is integrated part of XMPP Core protocol.
+     */
+    companion object : XmppModuleProvider<StreamErrorModule, StreamErrorModuleConfig> {
 
-		override val TYPE = "StreamErrorModule"
-		override fun instance(context: Context): StreamErrorModule = StreamErrorModule(context)
+        override val TYPE = "StreamErrorModule"
+        override fun instance(context: Context): StreamErrorModule = StreamErrorModule(context)
 
-		override fun configure(module: StreamErrorModule, cfg: StreamErrorModuleConfig.() -> Unit) = module.cfg()
+        override fun configure(module: StreamErrorModule, cfg: StreamErrorModuleConfig.() -> Unit) =
+            module.cfg()
 
-		const val XMLNS = "urn:ietf:params:xml:ns:xmpp-streams"
-	}
+        const val XMLNS = "urn:ietf:params:xml:ns:xmpp-streams"
+    }
 
-	override val type = TYPE
-	override val criteria = Criterion.and(
-		Criterion.name("error"), Criterion.xmlns("http://etherx.jabber.org/streams")
-	)
-	override val features: Array<String>? = null
+    override val type = TYPE
+    override val criteria = Criterion.and(
+        Criterion.name("error"),
+        Criterion.xmlns("http://etherx.jabber.org/streams")
+    )
+    override val features: Array<String>? = null
 
-	private fun getByElementName(name: String): StreamError {
-		for (e in StreamError.values()) {
-			if (e.elementName == name) {
-				return e
-			}
-		}
-		return StreamError.UNKNOWN_STREAM_ERROR
-	}
+    private fun getByElementName(name: String): StreamError {
+        for (e in StreamError.values()) {
+            if (e.elementName == name) {
+                return e
+            }
+        }
+        return StreamError.UNKNOWN_STREAM_ERROR
+    }
 
-	override fun process(element: Element) {
-		val c = element.getChildrenNS(XMLNS).first()
-		val e = getByElementName(c.name)
+    override fun process(element: Element) {
+        val c = element.getChildrenNS(XMLNS).first()
+        val e = getByElementName(c.name)
 
-		context.eventBus.fire(StreamErrorEvent(element, e, c))
-	}
+        context.eventBus.fire(StreamErrorEvent(element, e, c))
+    }
 }

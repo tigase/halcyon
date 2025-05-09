@@ -9,9 +9,8 @@ import tigase.halcyon.core.xmpp.BareJID
  * Pre-key data.
  */
 data class PreKey(val preKeyId: Int, val preKeyPublic: ByteArray) {
-    override fun toString(): String {
-        return "PreKey(preKeyId=$preKeyId, preKeyPublic=${preKeyPublic.contentToString()})"
-    }
+    override fun toString(): String =
+        "PreKey(preKeyId=$preKeyId, preKeyPublic=${preKeyPublic.contentToString()})"
 }
 
 /**
@@ -26,12 +25,11 @@ data class Bundle(
     val identityKey: ByteArray,
     val preKeys: List<PreKey>
 ) {
-    override fun toString(): String {
-        return "Bundle(jid=$jid, deviceId=$deviceId, signedPreKeyId=$signedPreKeyId, signedPreKeyPublic=${signedPreKeyPublic.contentToString()}, signedPreKeySignature=${signedPreKeySignature.contentToString()}, identityKey=${identityKey.contentToString()}, preKeys=$preKeys)"
-    }
+    override fun toString(): String =
+        "Bundle(jid=$jid, deviceId=$deviceId, signedPreKeyId=$signedPreKeyId, signedPreKeyPublic=${signedPreKeyPublic.contentToString()}, signedPreKeySignature=${signedPreKeySignature.contentToString()}, identityKey=${identityKey.contentToString()}, preKeys=$preKeys)"
 }
 
-expect fun Bundle.getRandomPreKeyBundle(): PreKeyBundle;
+expect fun Bundle.getRandomPreKeyBundle(): PreKeyBundle
 
 /**
  * Converts `<bundle>` element to [Bundle].
@@ -39,7 +37,11 @@ expect fun Bundle.getRandomPreKeyBundle(): PreKeyBundle;
  * @param deviceId device id of bundle publisher.
  */
 fun Element.toBundleOf(jid: BareJID, deviceId: Int): Bundle {
-    if (this.name != "bundle" || this.xmlns != OMEMOModule.XMLNS) throw HalcyonException("Not a bundle element.")
+    if (this.name != "bundle" ||
+        this.xmlns != OMEMOModule.XMLNS
+    ) {
+        throw HalcyonException("Not a bundle element.")
+    }
     val signedPreKeyId = this.getFirstChild("signedPreKeyPublic")?.attributes?.get("signedPreKeyId")
         ?: throw HalcyonException("Incomplete bundle: signedPreKeyId not found")
     val signedPreKeyPublic = this.getFirstChild("signedPreKeyPublic")?.value
@@ -53,7 +55,9 @@ fun Element.toBundleOf(jid: BareJID, deviceId: Int): Bundle {
         ?.getChildren("preKeyPublic")
         ?.map {
             PreKey(
-                it.attributes["preKeyId"]?.toInt() ?: throw HalcyonException("Invalid preKeyPublic"),
+                it.attributes["preKeyId"]?.toInt() ?: throw HalcyonException(
+                    "Invalid preKeyPublic"
+                ),
                 it.value?.fromBase64() ?: throw HalcyonException("Invalid preKeyPublic")
             )
         } ?: emptyList()
@@ -68,7 +72,7 @@ fun Element.toBundleOf(jid: BareJID, deviceId: Int): Bundle {
     )
 }
 
-expect interface CiphertextMessage {}
+expect interface CiphertextMessage
 
 expect class IdentityKeyPair(data: ByteArray) {
 //    val publicKey: IdentityKey
@@ -93,7 +97,7 @@ expect class PreKeyRecord(data: ByteArray) {
     fun serialize(): ByteArray
 }
 
-expect class InvalidKeyIdException(message: String): Exception {}
+expect class InvalidKeyIdException(message: String) : Exception
 
 expect interface PreKeyStore {
     @Throws(InvalidKeyIdException::class)
@@ -103,7 +107,7 @@ expect interface PreKeyStore {
     fun removePreKey(preKeyId: Int)
 }
 
-interface PreKeyStoreFlushable: PreKeyStore {
+interface PreKeyStoreFlushable : PreKeyStore {
     fun flushDeletedPreKeys(): Boolean
 }
 
@@ -136,10 +140,10 @@ expect interface SessionStore {
     fun deleteAllSessions(name: String)
 }
 
-expect enum class IdentityKeyStoreDirection {}
+expect enum class IdentityKeyStoreDirection
 
 expect interface IdentityKeyStore {
-    
+
     fun getIdentityKeyPair(): IdentityKeyPair
 
     fun getLocalRegistrationId(): Int
@@ -152,8 +156,9 @@ expect interface IdentityKeyStore {
         direction: IdentityKeyStoreDirection
     ): Boolean
 
-
     fun getIdentity(address: SignalProtocolAddress): IdentityKey?
 }
 
-interface SignalProtocolStoreFlushable : SignalProtocolStore, PreKeyStoreFlushable {}
+interface SignalProtocolStoreFlushable :
+    SignalProtocolStore,
+    PreKeyStoreFlushable

@@ -50,5 +50,4 @@ class IQ(wrappedElement: Element) : Stanza<IQType>(wrappedElement) {
                 .firstOrNull { te -> te.value == it }
         } ?: throw XMPPException(ErrorCondition.BadRequest, "Unknown stanza type '$v'")
     }, valueToString = { v -> v.value })
-
 }

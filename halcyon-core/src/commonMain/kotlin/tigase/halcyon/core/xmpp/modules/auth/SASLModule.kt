@@ -46,11 +46,11 @@ interface SASLModuleConfig {
      *
      */
     fun mechanisms(clear: Boolean = false, init: MechanismsConfiguration.() -> Unit)
-
 }
 
-
-class SASLModule(override val context: Context) : XmppModule, SASLModuleConfig {
+class SASLModule(override val context: Context) :
+    XmppModule,
+    SASLModuleConfig {
 
     enum class SASLError(val elementName: String) {
 
@@ -99,7 +99,8 @@ class SASLModule(override val context: Context) : XmppModule, SASLModuleConfig {
          * case of an unknown username); sent in reply to a &lt;response/&gt
          * element or an &lt;auth/&gt element with initial response data.
          */
-        NotAuthorized("not-authorized"), ServerNotTrusted("server-not-trusted"),
+        NotAuthorized("not-authorized"),
+        ServerNotTrusted("server-not-trusted"),
 
         /**
          * The authentication failed because of a temporary error condition
@@ -112,9 +113,10 @@ class SASLModule(override val context: Context) : XmppModule, SASLModuleConfig {
 
         companion object {
 
-            fun valueByElementName(elementName: String): SASLError? {
-                return values().firstOrNull { saslError -> saslError.elementName == elementName }
-            }
+            fun valueByElementName(elementName: String): SASLError? =
+                values().firstOrNull { saslError ->
+                    saslError.elementName == elementName
+                }
         }
     }
 
@@ -193,13 +195,12 @@ class SASLModule(override val context: Context) : XmppModule, SASLModuleConfig {
         engine.evaluateFailure(saslError, errorText)
     }
 
-    private fun allowedMechanisms(streamFeatures: Element): List<String> {
-        return streamFeatures.getChildrenNS("mechanisms", XMLNS)?.children?.filter {
+    private fun allowedMechanisms(streamFeatures: Element): List<String> =
+        streamFeatures.getChildrenNS("mechanisms", XMLNS)?.children?.filter {
             it.name == "mechanism"
         }?.mapNotNull { it.value } ?: emptyList()
-    }
 
-    fun isAllowed(streamFeatures: Element): Boolean =
-        context.config.sasl != null && enabled && engine.checkMechanisms(allowedMechanisms(streamFeatures))
-
+    fun isAllowed(streamFeatures: Element): Boolean = context.config.sasl != null &&
+        enabled &&
+        engine.checkMechanisms(allowedMechanisms(streamFeatures))
 }

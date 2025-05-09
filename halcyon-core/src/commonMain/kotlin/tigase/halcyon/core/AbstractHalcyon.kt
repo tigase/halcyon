@@ -42,8 +42,10 @@ import tigase.halcyon.core.xmpp.modules.sm.StreamManagementModule
 import tigase.halcyon.core.xmpp.stanzas.IQ
 import tigase.halcyon.core.xmpp.stanzas.IQType
 
-data class HalcyonStateChangeEvent(val oldState: AbstractHalcyon.State, val newState: AbstractHalcyon.State) :
-    Event(TYPE) {
+data class HalcyonStateChangeEvent(
+    val oldState: AbstractHalcyon.State,
+    val newState: AbstractHalcyon.State
+) : Event(TYPE) {
 
     companion object : EventDefinition<HalcyonStateChangeEvent> {
 
@@ -60,7 +62,9 @@ data class TickEvent(val counter: Long) : Event(TYPE) {
 }
 
 @Suppress("LeakingThis")
-abstract class AbstractHalcyon(configurator: ConfigurationBuilder) : Context, PacketWriter {
+abstract class AbstractHalcyon(configurator: ConfigurationBuilder) :
+    Context,
+    PacketWriter {
 
     var running: Boolean = false
         private set
@@ -69,7 +73,11 @@ abstract class AbstractHalcyon(configurator: ConfigurationBuilder) : Context, Pa
 
     enum class State {
 
-        Connecting, Connected, Disconnecting, Disconnected, Stopped
+        Connecting,
+        Connected,
+        Disconnecting,
+        Disconnected,
+        Stopped
     }
 
     internal var connector: AbstractConnector? = null
@@ -133,7 +141,9 @@ abstract class AbstractHalcyon(configurator: ConfigurationBuilder) : Context, Pa
 
     private fun processControllerErrorEvent(event: SessionController.SessionControllerEvents) {
         log.fine("Processing controller error: $event, autoReconnect = $autoReconnect")
-        if (event is SessionController.SessionControllerEvents.ErrorReconnect && (this.autoReconnect || event.force)) {
+        if (event is SessionController.SessionControllerEvents.ErrorReconnect &&
+            (this.autoReconnect || event.force)
+        ) {
             if (state != State.Stopped && running) {
                 state = State.Disconnected
                 // why would it stay in "Disconnected" state? possibly issue with "running" being set to false, or "reconnect()" method not being called at all...
@@ -158,8 +168,17 @@ abstract class AbstractHalcyon(configurator: ConfigurationBuilder) : Context, Pa
             it.onSuccess { element ->
                 if (element == null) return@onSuccess
                 val handled = requestsManager.findAndExecute(element)
-                if (element.name == IQ.NAME && (handled || (element.attributes["type"] == IQType.Result.value || element.attributes["type"] == IQType.Error.value))) return@onSuccess
-
+                if (element.name == IQ.NAME &&
+                    (
+                        handled ||
+                            (
+                                element.attributes["type"] == IQType.Result.value ||
+                                    element.attributes["type"] == IQType.Error.value
+                                )
+                        )
+                ) {
+                    return@onSuccess
+                }
 
                 val modules = modules.getModulesFor(element)
                 if (modules.isEmpty()) {
@@ -174,7 +193,9 @@ abstract class AbstractHalcyon(configurator: ConfigurationBuilder) : Context, Pa
                             it.process(element)
                         }
                     } catch (e: XMPPException) {
-                        log.finest(e) { "Error ${e.condition} during processing stanza ${element.getAsString()}" }
+                        log.finest(e) {
+                            "Error ${e.condition} during processing stanza ${element.getAsString()}"
+                        }
                         sendErrorBack(element, e)
                     } catch (e: Exception) {
                         log.finest(e) { "Problem on processing element ${element.getAsString()}" }
@@ -197,7 +218,11 @@ abstract class AbstractHalcyon(configurator: ConfigurationBuilder) : Context, Pa
         }
     }
 
-    private fun createError(element: Element, errorCondition: ErrorCondition, msg: String?): Element {
+    private fun createError(
+        element: Element,
+        errorCondition: ErrorCondition,
+        msg: String?
+    ): Element {
         val resp = element(element.name) {
             attribute("type", "error")
             element.attributes["id"]?.apply {
@@ -243,11 +268,13 @@ abstract class AbstractHalcyon(configurator: ConfigurationBuilder) : Context, Pa
             }
 
             else -> {
-                writeDirectly(element("stream:error") {
-                    "unsupported-stanza-type" {
-                        xmlns = "urn:ietf:params:xml:ns:xmpp-streams"
+                writeDirectly(
+                    element("stream:error") {
+                        "unsupported-stanza-type" {
+                            xmlns = "urn:ietf:params:xml:ns:xmpp-streams"
+                        }
                     }
-                })
+                )
                 connector?.stop()
             }
         }
@@ -268,11 +295,11 @@ abstract class AbstractHalcyon(configurator: ConfigurationBuilder) : Context, Pa
 
     override fun writeDirectly(stanza: Element) {
         val c = this.connector ?: return run {
-            log.fine {"skipping sending stanza ${stanza}, connector is not initialized!" }
+            log.fine { "skipping sending stanza $stanza, connector is not initialized!" }
         }
         if (c.state != tigase.halcyon.core.connector.State.Connected) {
-            log.fine {"skipping sending stanza ${stanza}, connector is not connected!" }
-            return;
+            log.fine { "skipping sending stanza $stanza, connector is not connected!" }
+            return
         }
         modules.processOutgoingFilters(stanza) {
             it.onSuccess { toSend ->
@@ -298,7 +325,7 @@ abstract class AbstractHalcyon(configurator: ConfigurationBuilder) : Context, Pa
         if (c.state != tigase.halcyon.core.connector.State.Connected) {
             log.fine("Returning remote_server_timeout error, connector is not connected!")
             request.markTimeout()
-            return;
+            return
         }
         modules.processOutgoingFilters(request.stanza) { it ->
             it.onSuccess { element ->
@@ -306,10 +333,15 @@ abstract class AbstractHalcyon(configurator: ConfigurationBuilder) : Context, Pa
                 requestsManager.register(request)
                 logSendingStanza(element)
                 if (!senderLock.withLock {
-                    val smHandled = getModuleOrNull(StreamManagementModule)?.processElementSent(element, request) ?: false;
-                    c.send(element.getAsString())
-                    smHandled
-                }) {
+                        val smHandled =
+                            getModuleOrNull(
+                                StreamManagementModule
+                            )?.processElementSent(element, request)
+                                ?: false
+                        c.send(element.getAsString())
+                        smHandled
+                    }
+                ) {
                     request.markAsSent()
                 }
                 eventBus.fire(SentXMLElementEvent(request.stanza, request))
@@ -317,18 +349,18 @@ abstract class AbstractHalcyon(configurator: ConfigurationBuilder) : Context, Pa
             it.onFailure {
                 log.warning(it) { "Problem on filtering stanza $request" }
             }
-
         }
     }
 
-    private val senderLock = Lock();
+    private val senderLock = Lock()
 
     protected open fun onConnecting() {}
 
     protected open fun onDisconnecting() {}
 
     fun <T : HalcyonModule> getModule(type: String): T = modules.getModule(type)
-    fun <T : HalcyonModule> getModule(provider: HalcyonModuleProvider<T, out Any>): T = modules.getModule(provider.TYPE)
+    fun <T : HalcyonModule> getModule(provider: HalcyonModuleProvider<T, out Any>): T =
+        modules.getModule(provider.TYPE)
 
     fun <T : HalcyonModule> getModuleOrNull(type: String): T? = modules.getModuleOrNull(type)
     fun <T : HalcyonModule> getModuleOrNull(provider: HalcyonModuleProvider<T, out Any>): T? =
@@ -350,12 +382,16 @@ abstract class AbstractHalcyon(configurator: ConfigurationBuilder) : Context, Pa
 
             sessionController!!.start()
             connector!!.start()
-        } else throw HalcyonException("Client is not running")
+        } else {
+            throw HalcyonException("Client is not running")
+        }
     }
 
     protected fun stopConnector(doAfterDisconnected: (() -> Unit)? = null) {
         if (connector != null || sessionController != null) {
-            log.fine { "Stopping connector${if (doAfterDisconnected != null) " (with action after disconnect)" else ""}" }
+            log.fine {
+                "Stopping connector${if (doAfterDisconnected != null) " (with action after disconnect)" else ""}"
+            }
             if (doAfterDisconnected != null) {
                 waitForDisconnect(connector, doAfterDisconnected)
             }
@@ -378,22 +414,30 @@ abstract class AbstractHalcyon(configurator: ConfigurationBuilder) : Context, Pa
             handler.invoke()
         } else {
             var fired = false
-            val awaitHandler: (EventHandler<ConnectorStateChangeEvent>, tigase.halcyon.core.connector.State, String)->Unit = { eventHandler, newState, message ->
-                val result = !fired && newState == tigase.halcyon.core.connector.State.Disconnected;
+            val awaitHandler: (
+                EventHandler<ConnectorStateChangeEvent>,
+                tigase.halcyon.core.connector.State,
+                String
+            ) -> Unit = { eventHandler, newState, message ->
+                val result = !fired && newState == tigase.halcyon.core.connector.State.Disconnected
                 if (result) {
                     connector.halcyon.eventBus.unregister(eventHandler)
                     fired = true
-                    log.finest { message}
+                    log.finest { message }
                     handler.invoke()
                 }
             }
             val h: EventHandler<ConnectorStateChangeEvent> = object : EventHandler<ConnectorStateChangeEvent> {
                 override fun onEvent(event: ConnectorStateChangeEvent) {
-                    awaitHandler(this, event.newState, "State changed. Calling handler. ($this)");
+                    awaitHandler(this, event.newState, "State changed. Calling handler. ($this)")
                 }
             }
             connector.halcyon.eventBus.register(ConnectorStateChangeEvent, h)
-            awaitHandler(h, connector.state, "State is Disconnected already. Calling handler. ($this)");
+            awaitHandler(
+                h,
+                connector.state,
+                "State is Disconnected already. Calling handler. ($this)"
+            )
         }
     }
 
@@ -421,7 +465,9 @@ abstract class AbstractHalcyon(configurator: ConfigurationBuilder) : Context, Pa
             modules.getModuleOrNull(StreamManagementModule)?.let { module ->
                 val ackEnabled =
                     module.isActive
-                if (ackEnabled && getConnectorState() == tigase.halcyon.core.connector.State.Connected) {
+                if (ackEnabled &&
+                    getConnectorState() == tigase.halcyon.core.connector.State.Connected
+                ) {
                     module.sendAck(true)
                 }
             }
@@ -442,7 +488,6 @@ abstract class AbstractHalcyon(configurator: ConfigurationBuilder) : Context, Pa
         eventBus.fire(ClearedEvent(scopes))
     }
 
-    override fun toString(): String {
-        return "AbstractHalcyon(boundJID=$boundJID, state=$state, running=$running, hash=${this.hashCode()})"
-    }
+    override fun toString(): String =
+        "AbstractHalcyon(boundJID=$boundJID, state=$state, running=$running, hash=${this.hashCode()})"
 }

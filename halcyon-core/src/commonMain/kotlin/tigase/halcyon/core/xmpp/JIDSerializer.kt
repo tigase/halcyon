@@ -7,27 +7,28 @@ import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 
-
 object FullJIDSerializer : KSerializer<FullJID> {
 
-	override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("JID", PrimitiveKind.STRING)
+    override val descriptor: SerialDescriptor =
+        PrimitiveSerialDescriptor("JID", PrimitiveKind.STRING)
 
-	override fun serialize(encoder: Encoder, value: FullJID) {
-		val string = value.toString()
-		encoder.encodeString(string)
-	}
+    override fun serialize(encoder: Encoder, value: FullJID) {
+        val string = value.toString()
+        encoder.encodeString(string)
+    }
 
-	override fun deserialize(decoder: Decoder): FullJID = decoder.decodeString().toFullJID()
+    override fun deserialize(decoder: Decoder): FullJID = decoder.decodeString().toFullJID()
 }
 
 object BareJIDSerializer : KSerializer<BareJID> {
 
-	override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("BareJID", PrimitiveKind.STRING)
+    override val descriptor: SerialDescriptor =
+        PrimitiveSerialDescriptor("BareJID", PrimitiveKind.STRING)
 
-	override fun serialize(encoder: Encoder, value: BareJID) {
-		val string = value.toString()
-		encoder.encodeString(string)
-	}
+    override fun serialize(encoder: Encoder, value: BareJID) {
+        val string = value.toString()
+        encoder.encodeString(string)
+    }
 
-	override fun deserialize(decoder: Decoder): BareJID = decoder.decodeString().toBareJID()
+    override fun deserialize(decoder: Decoder): BareJID = decoder.decodeString().toBareJID()
 }

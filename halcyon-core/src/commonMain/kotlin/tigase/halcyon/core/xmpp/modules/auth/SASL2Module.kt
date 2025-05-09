@@ -19,7 +19,8 @@ import tigase.halcyon.core.xmpp.modules.discovery.DiscoveryModule
 @HalcyonConfigDsl
 interface SASL2ModuleConfig : SASLModuleConfig
 
-class SASL2Module(override val context: Context, private val discoveryModule: DiscoveryModule) : XmppModule,
+class SASL2Module(override val context: Context, private val discoveryModule: DiscoveryModule) :
+    XmppModule,
     SASL2ModuleConfig {
 
     private val log = LoggerFactory.logger("tigase.halcyon.core.xmpp.modules.auth.SASL2Module")
@@ -28,13 +29,13 @@ class SASL2Module(override val context: Context, private val discoveryModule: Di
 
         const val XMLNS = "urn:xmpp:sasl:2"
         override val TYPE = "tigase.halcyon.core.xmpp.modules.auth.SASL2Module"
-        override fun configure(module: SASL2Module, cfg: SASL2ModuleConfig.() -> Unit) = module.cfg()
+        override fun configure(module: SASL2Module, cfg: SASL2ModuleConfig.() -> Unit) =
+            module.cfg()
 
         override fun instance(context: Context): SASL2Module =
             SASL2Module(context, discoveryModule = context.modules.getModule(DiscoveryModule))
 
         override fun requiredModules() = listOf(DiscoveryModule)
-
     }
 
     override val type = TYPE
@@ -48,7 +49,6 @@ class SASL2Module(override val context: Context, private val discoveryModule: Di
     private val engine = SASLEngine(context)
 
     override var enabled: Boolean = true
-
 
     override fun mechanisms(clear: Boolean, init: MechanismsConfiguration.() -> Unit) {
         if (clear) engine.removeAllMechanisms()
@@ -106,7 +106,11 @@ class SASL2Module(override val context: Context, private val discoveryModule: Di
             }
         } catch (e: Throwable) {
             log.log(Level.SEVERE, "Error during inline processing: ${e.message}", e)
-            context.eventBus.fire(SessionController.SessionControllerEvents.ErrorStop("Error during inline processing: ${e.message}"))
+            context.eventBus.fire(
+                SessionController.SessionControllerEvents.ErrorStop(
+                    "Error during inline processing: ${e.message}"
+                )
+            )
         }
     }
 
@@ -132,13 +136,12 @@ class SASL2Module(override val context: Context, private val discoveryModule: Di
         context.writer.writeDirectly(authElement)
     }
 
-    private fun allowedMechanisms(streamFeatures: Element): List<String> {
-        return streamFeatures.getChildrenNS("authentication", XMLNS)?.children?.filter {
+    private fun allowedMechanisms(streamFeatures: Element): List<String> =
+        streamFeatures.getChildrenNS("authentication", XMLNS)?.children?.filter {
             it.name == "mechanism"
         }?.mapNotNull { it.value } ?: emptyList()
-    }
 
-    fun isAllowed(streamFeatures: Element): Boolean =
-        context.config.sasl != null && enabled && engine.checkMechanisms(allowedMechanisms(streamFeatures))
-
+    fun isAllowed(streamFeatures: Element): Boolean = context.config.sasl != null &&
+        enabled &&
+        engine.checkMechanisms(allowedMechanisms(streamFeatures))
 }

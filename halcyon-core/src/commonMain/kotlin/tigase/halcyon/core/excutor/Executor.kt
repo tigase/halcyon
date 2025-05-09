@@ -19,6 +19,5 @@ package tigase.halcyon.core.excutor
 
 expect class Executor() {
 
-	fun execute(runnable: () -> Unit)
-
+    fun execute(runnable: () -> Unit)
 }

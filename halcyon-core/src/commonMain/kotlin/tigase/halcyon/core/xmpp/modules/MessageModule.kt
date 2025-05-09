@@ -42,10 +42,10 @@ import tigase.halcyon.core.xmpp.stanzas.wrap
  */
 data class MessageReceivedEvent(val fromJID: JID?, val stanza: Message) : Event(TYPE) {
 
-	companion object : EventDefinition<MessageReceivedEvent> {
+    companion object : EventDefinition<MessageReceivedEvent> {
 
-		override val TYPE = "tigase.halcyon.core.xmpp.modules.MessageReceivedEvent"
-	}
+        override val TYPE = "tigase.halcyon.core.xmpp.modules.MessageReceivedEvent"
+    }
 }
 
 @HalcyonConfigDsl
@@ -54,36 +54,37 @@ interface MessageModuleConfig
 /**
  * Incoming Message stanzas handler. The module is integrated part of XMPP Core protocol.
  */
-class MessageModule(override val context: Context) : XmppModule, MessageModuleConfig {
+class MessageModule(override val context: Context) :
+    XmppModule,
+    MessageModuleConfig {
 
-	private val log = LoggerFactory.logger("tigase.halcyon.core.xmpp.modules.MessageModule")
+    private val log = LoggerFactory.logger("tigase.halcyon.core.xmpp.modules.MessageModule")
 
-	override val type = TYPE
-	override val criteria: Criteria = Criterion.element(this@MessageModule::isMessage)
-	override val features: Array<String>? = null
-	//	override val criteria = Criterion.name(Message.NAME)
+    override val type = TYPE
+    override val criteria: Criteria = Criterion.element(this@MessageModule::isMessage)
+    override val features: Array<String>? = null
+    // 	override val criteria = Criterion.name(Message.NAME)
 
-	/**
-	 * Incoming Message stanzas handler. The module is integrated part of XMPP Core protocol.
-	 */
-	companion object : XmppModuleProvider<MessageModule, MessageModuleConfig> {
+    /**
+     * Incoming Message stanzas handler. The module is integrated part of XMPP Core protocol.
+     */
+    companion object : XmppModuleProvider<MessageModule, MessageModuleConfig> {
 
-		override val TYPE = "tigase.halcyon.core.xmpp.modules.MessageModule"
-		override fun instance(context: Context): MessageModule = MessageModule(context)
+        override val TYPE = "tigase.halcyon.core.xmpp.modules.MessageModule"
+        override fun instance(context: Context): MessageModule = MessageModule(context)
 
-		override fun configure(module: MessageModule, cfg: MessageModuleConfig.() -> Unit) = module.cfg()
-	}
+        override fun configure(module: MessageModule, cfg: MessageModuleConfig.() -> Unit) =
+            module.cfg()
+    }
 
-	private fun isMessage(message: Element): Boolean = when {
-		context.modules.isRegistered(MIXModule.TYPE) && message.isMixMessage() -> false
-		context.modules.isRegistered(PubSubModule.TYPE) && message.isPubSubMessage() -> false
-		else -> message.name == Message.NAME
-	}
+    private fun isMessage(message: Element): Boolean = when {
+        context.modules.isRegistered(MIXModule.TYPE) && message.isMixMessage() -> false
+        context.modules.isRegistered(PubSubModule.TYPE) && message.isPubSubMessage() -> false
+        else -> message.name == Message.NAME
+    }
 
-	override fun process(element: Element) {
-		val msg: Message = wrap(element)
-		context.eventBus.fire(MessageReceivedEvent(msg.from, msg))
-	}
-
+    override fun process(element: Element) {
+        val msg: Message = wrap(element)
+        context.eventBus.fire(MessageReceivedEvent(msg.from, msg))
+    }
 }
-

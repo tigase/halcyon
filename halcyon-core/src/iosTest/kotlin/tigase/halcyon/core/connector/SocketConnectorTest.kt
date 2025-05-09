@@ -17,6 +17,12 @@
  */
 package tigase.halcyon.core.connector
 
+import kotlin.concurrent.AtomicReference
+import kotlin.native.concurrent.freeze
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertNotEquals
+import kotlin.test.assertTrue
 import platform.posix.sleep
 import tigase.halcyon.core.AbstractHalcyon
 import tigase.halcyon.core.Halcyon
@@ -25,64 +31,60 @@ import tigase.halcyon.core.connector.socket.DnsResolver
 import tigase.halcyon.core.xmpp.modules.auth.SASLEvent
 import tigase.halcyon.core.xmpp.modules.auth.SASLModule
 import tigase.halcyon.core.xmpp.toBareJID
-import kotlin.concurrent.AtomicReference
-import kotlin.native.concurrent.freeze
-import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertNotEquals
-import kotlin.test.assertTrue
 
 class SocketConnectorTest {
 
-	@Test
-	fun testDnsResolver() {
+    @Test
+    fun testDnsResolver() {
 //        val worker = Worker.start();
-		val resultsStore = AtomicReference<List<DnsResolver.SrvRecord>>(emptyList())
+        val resultsStore = AtomicReference<List<DnsResolver.SrvRecord>>(emptyList())
 //        worker.execute(TransferMode.SAFE, {}) {
-		val dnsResolver = DnsResolver()
-		println("testing SRV resolution for domain tigase.org...")
-		dnsResolver.resolve("tigase.org") { result ->
-			result.onSuccess { records ->
-				println("got results:")
-				records.forEach {
-					println("port: " + it.port + ", target: " + it.target)
-				}
-				println("done")
-				var results = emptyList<DnsResolver.SrvRecord>()
-				results += records
-				resultsStore.value = results.freeze()
-			}
-				.onFailure { ex ->
-					println("got exception:")
-					ex.printStackTrace()
-				}
-		}
+        val dnsResolver = DnsResolver()
+        println("testing SRV resolution for domain tigase.org...")
+        dnsResolver.resolve("tigase.org") { result ->
+            result.onSuccess { records ->
+                println("got results:")
+                records.forEach {
+                    println("port: " + it.port + ", target: " + it.target)
+                }
+                println("done")
+                var results = emptyList<DnsResolver.SrvRecord>()
+                results += records
+                resultsStore.value = results.freeze()
+            }
+                .onFailure { ex ->
+                    println("got exception:")
+                    ex.printStackTrace()
+                }
+        }
 //        }
 
-		sleep(1u)
-		assertTrue { !resultsStore.value.isEmpty() }
-	}
+        sleep(1u)
+        assertTrue { !resultsStore.value.isEmpty() }
+    }
 
-	@Test
-	fun testConnector() {
-		val client = Halcyon(createConfiguration {
-			auth {
-				userJID = "testuser@tigase.org".toBareJID()
-				password { "testuserpassword" }
-			}
-		})
+    @Test
+    fun testConnector() {
+        val client = Halcyon(
+            createConfiguration {
+                auth {
+                    userJID = "testuser@tigase.org".toBareJID()
+                    password { "testuserpassword" }
+                }
+            }
+        )
 
-		var receivedSaslError: SASLModule.SASLError? = null
+        var receivedSaslError: SASLModule.SASLError? = null
 
-		client.eventBus.register<SASLEvent>(SASLEvent.TYPE) {
-			if (it is SASLEvent.SASLError) {
-				receivedSaslError = it.error
-			}
-		}
-		client.connect()
-		sleep(45u)
-		assertEquals(SASLModule.SASLError.NotAuthorized, receivedSaslError)
-		println("connection timeout reached, checking state..")
-		assertNotEquals(AbstractHalcyon.State.Connected, client.state)
-	}
+        client.eventBus.register<SASLEvent>(SASLEvent.TYPE) {
+            if (it is SASLEvent.SASLError) {
+                receivedSaslError = it.error
+            }
+        }
+        client.connect()
+        sleep(45u)
+        assertEquals(SASLModule.SASLError.NotAuthorized, receivedSaslError)
+        println("connection timeout reached, checking state..")
+        assertNotEquals(AbstractHalcyon.State.Connected, client.state)
+    }
 }

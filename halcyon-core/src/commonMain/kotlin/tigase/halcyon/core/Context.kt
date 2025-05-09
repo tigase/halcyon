@@ -26,17 +26,17 @@ import tigase.halcyon.core.xmpp.modules.auth.SASLContext
 
 interface Context {
 
-	val eventBus: EventBus
+    val eventBus: EventBus
 
-	val config: Configuration
+    val config: Configuration
 
-	val writer: PacketWriter
+    val writer: PacketWriter
 
-	val modules: ModulesManager
+    val modules: ModulesManager
 
-	val request: RequestBuilderFactory
+    val request: RequestBuilderFactory
 
-	val authContext: SASLContext
+    val authContext: SASLContext
 
-	val boundJID: FullJID?
+    val boundJID: FullJID?
 }

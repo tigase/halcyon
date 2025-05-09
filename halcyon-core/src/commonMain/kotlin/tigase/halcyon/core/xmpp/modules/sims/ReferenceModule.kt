@@ -28,18 +28,21 @@ import tigase.halcyon.core.xmpp.XMPPException
 @HalcyonConfigDsl
 interface ReferenceModuleConfig
 
-class ReferenceModule(context: Context) : ReferenceModuleConfig, AbstractXmppModule(context, TYPE, arrayOf(XMLNS)) {
+class ReferenceModule(context: Context) :
+    AbstractXmppModule(context, TYPE, arrayOf(XMLNS)),
+    ReferenceModuleConfig {
 
-	companion object : XmppModuleProvider<ReferenceModule, ReferenceModuleConfig> {
+    companion object : XmppModuleProvider<ReferenceModule, ReferenceModuleConfig> {
 
-		const val XMLNS = "urn:xmpp:reference:0"
-		override val TYPE = XMLNS
+        const val XMLNS = "urn:xmpp:reference:0"
+        override val TYPE = XMLNS
 
-		override fun instance(context: Context): ReferenceModule = ReferenceModule(context)
+        override fun instance(context: Context): ReferenceModule = ReferenceModule(context)
 
-		override fun configure(module: ReferenceModule, cfg: ReferenceModuleConfig.() -> Unit) = module.cfg()
-	}
+        override fun configure(module: ReferenceModule, cfg: ReferenceModuleConfig.() -> Unit) =
+            module.cfg()
+    }
 
-	override fun process(element: Element) = throw XMPPException(ErrorCondition.FeatureNotImplemented)
-
+    override fun process(element: Element) =
+        throw XMPPException(ErrorCondition.FeatureNotImplemented)
 }

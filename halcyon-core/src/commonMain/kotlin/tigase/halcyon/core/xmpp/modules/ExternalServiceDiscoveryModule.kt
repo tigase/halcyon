@@ -40,14 +40,23 @@ interface ExternalServiceDiscoveryModuleConfig
  * Module is implementing External Service Discovery ([XEP-0215](https://xmpp.org/extensions/xep-0215.html)).
  *
  */
-class ExternalServiceDiscoveryModule(context: Context): ExternalServiceDiscoveryModuleConfig, AbstractXmppIQModule(
-    context, TYPE, emptyArray(), Criterion.chain()
-) {
+class ExternalServiceDiscoveryModule(context: Context) :
+    AbstractXmppIQModule(
+        context,
+        TYPE,
+        emptyArray(),
+        Criterion.chain()
+    ),
+    ExternalServiceDiscoveryModuleConfig {
     companion object : XmppModuleProvider<ExternalServiceDiscoveryModule, ExternalServiceDiscoveryModuleConfig> {
-        val XMLNS = "urn:xmpp:extdisco:2";
-        override val TYPE = XMLNS;
-        override fun configure(module: ExternalServiceDiscoveryModule, cfg: ExternalServiceDiscoveryModuleConfig.() -> Unit) = module.cfg()
-        override fun instance(context: Context): ExternalServiceDiscoveryModule = ExternalServiceDiscoveryModule(context)
+        val XMLNS = "urn:xmpp:extdisco:2"
+        override val TYPE = XMLNS
+        override fun configure(
+            module: ExternalServiceDiscoveryModule,
+            cfg: ExternalServiceDiscoveryModuleConfig.() -> Unit
+        ) = module.cfg()
+        override fun instance(context: Context): ExternalServiceDiscoveryModule =
+            ExternalServiceDiscoveryModule(context)
     }
 
     data class Service(
@@ -63,20 +72,22 @@ class ExternalServiceDiscoveryModule(context: Context): ExternalServiceDiscovery
     ) {
 
         enum class Transport {
-            tcp, udp
+            tcp,
+            udp
         }
 
         companion object {
             fun parse(el: Element): Service? {
-                if (el.name != "service") return null;
+                if (el.name != "service") return null
                 val type = el.attributes["type"] ?: return null
                 val host = el.attributes["host"] ?: return null
                 val name = el.attributes["name"]
                 val port = el.attributes["port"]?.toInt()
                 val transport = el.attributes["transport"]?.lowercase()?.let(Transport::valueOf)
                 val username = el.attributes["username"]
-                val password = el.attributes["password"];
-                val restricted = el.attributes["restricted"]?.let { v -> v == "1" || v == "true" } ?: false
+                val password = el.attributes["password"]
+                val restricted =
+                    el.attributes["restricted"]?.let { v -> v == "1" || v == "true" } ?: false
 
                 return Service(
                     type = type,
@@ -91,7 +102,6 @@ class ExternalServiceDiscoveryModule(context: Context): ExternalServiceDiscovery
                 )
             }
         }
-
     }
 
     fun discover(jid: JID? = null, type: String?): RequestBuilder<List<Service>, IQ> {
@@ -106,13 +116,13 @@ class ExternalServiceDiscoveryModule(context: Context): ExternalServiceDiscovery
             }
         }
         return context.request.iq(stanza).map {
-            it.getChildrenNS("services", XMLNS)?.children?.map(Service::parse)?.filterNotNull() ?: emptyList()
+            it.getChildrenNS("services", XMLNS)?.children?.map(Service::parse)?.filterNotNull()
+                ?: emptyList()
         }
     }
 
-
     override fun processGet(element: IQ) {
-       // nothing to do...
+        // nothing to do...
     }
 
     override fun processSet(element: IQ) {

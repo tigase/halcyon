@@ -33,7 +33,7 @@ class RequestsManager {
     private val executor = tigase.halcyon.core.excutor.Executor()
 
     private val requests = HashMap<String, Request<*, *>>()
-    private val lock = Lock();
+    private val lock = Lock()
 
     fun register(request: Request<*, *>) {
         if (request.stanza.name == IQ.NAME) {
@@ -66,8 +66,14 @@ class RequestsManager {
         val jid = response.getFromAttr()
         val bareBoundJID = boundJID?.bareJID
 
-        if (jid == entry.jid) return true
-        else if (entry.jid == null && bareBoundJID != null && jid?.bareJID == bareBoundJID) return true
+        if (jid == entry.jid) {
+            return true
+        } else if (entry.jid == null &&
+            bareBoundJID != null &&
+            jid?.bareJID == bareBoundJID
+        ) {
+            return true
+        }
 
         return false
     }
@@ -96,7 +102,7 @@ class RequestsManager {
                 it.value.creationTimestamp < maxCreationTimestamp
             }.map { Pair(it.key, it.value) }
         }
-        toTimeout.forEach { (key,value) ->
+        toTimeout.forEach { (key, value) ->
             lock.withLock {
                 requests.remove(key)
             }
@@ -125,6 +131,7 @@ class RequestsManager {
     }
 
     fun getWaitingRequestsSize(): Int = lock.withLock { requests.size }
-    fun getRequestsIDs(): String = lock.withLock { requests.values.map { it.id }.joinToString { it } }
-
+    fun getRequestsIDs(): String = lock.withLock {
+        requests.values.map { it.id }.joinToString { it }
+    }
 }

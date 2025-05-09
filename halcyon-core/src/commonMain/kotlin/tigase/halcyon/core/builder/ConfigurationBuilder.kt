@@ -34,50 +34,51 @@ annotation class HalcyonConfigDsl
 
 interface ConfigItemBuilder<T> {
 
-	fun build(root: ConfigurationBuilder): T
-
+    fun build(root: ConfigurationBuilder): T
 }
 
 interface ConnectionConfigItemBuilder<T> {
 
-	fun build(root: ConfigurationBuilder, defaultDomain: String?): T
-
+    fun build(root: ConfigurationBuilder, defaultDomain: String?): T
 }
 
 class ConfigurationException : HalcyonException {
 
-	constructor() : super()
-	constructor(message: String?) : super(message)
-	constructor(message: String?, cause: Throwable?) : super(message, cause)
-	constructor(cause: Throwable?) : super(cause)
+    constructor() : super()
+    constructor(message: String?) : super(message)
+    constructor(message: String?, cause: Throwable?) : super(message, cause)
+    constructor(cause: Throwable?) : super(cause)
 }
 
 @HalcyonConfigDsl
 class RegistrationBuilder : ConfigItemBuilder<Registration> {
 
-	var domain: String? = null
+    var domain: String? = null
 
-	private var formHandler: ((JabberDataForm) -> Unit)? = null
+    private var formHandler: ((JabberDataForm) -> Unit)? = null
 
-	private var formHandlerWithResponse: ((JabberDataForm) -> JabberDataForm)? = null
+    private var formHandlerWithResponse: ((JabberDataForm) -> JabberDataForm)? = null
 
-	fun registrationFormHandler(handler: (JabberDataForm) -> Unit) {
-		this.formHandler = handler
-	}
+    fun registrationFormHandler(handler: (JabberDataForm) -> Unit) {
+        this.formHandler = handler
+    }
 
-	fun registrationHandler(handler: (JabberDataForm) -> JabberDataForm) {
-		this.formHandlerWithResponse = handler
-	}
+    fun registrationHandler(handler: (JabberDataForm) -> JabberDataForm) {
+        this.formHandlerWithResponse = handler
+    }
 
-	override fun build(root: ConfigurationBuilder): Registration {
-		if (formHandler == null && formHandlerWithResponse == null) throw ConfigurationException("At least one registration form handler must be declared.")
-		return Registration(
-			domain = domain ?: throw ConfigurationException("Domain not specified."),
-			formHandler = formHandler,
-			formHandlerWithResponse = formHandlerWithResponse
-		)
-	}
-
+    override fun build(root: ConfigurationBuilder): Registration {
+        if (formHandler == null &&
+            formHandlerWithResponse == null
+        ) {
+            throw ConfigurationException("At least one registration form handler must be declared.")
+        }
+        return Registration(
+            domain = domain ?: throw ConfigurationException("Domain not specified."),
+            formHandler = formHandler,
+            formHandlerWithResponse = formHandlerWithResponse
+        )
+    }
 }
 
 /**
@@ -88,125 +89,137 @@ class RegistrationBuilder : ConfigItemBuilder<Registration> {
 @HalcyonConfigDsl
 class ConfigurationBuilder {
 
-	internal val modulesConfigBuilder = ModulesConfigBuilder()
+    internal val modulesConfigBuilder = ModulesConfigBuilder()
 
-	var auth: ConfigItemBuilder<out SaslConfig>? = null
-		set(value) {
-			field = value
-		}
+    var auth: ConfigItemBuilder<out SaslConfig>? = null
+        set(value) {
+            field = value
+        }
 
-	var connection: (ConnectionConfigItemBuilder<out ConnectionConfig>)? = null
-		internal set
+    var connection: (ConnectionConfigItemBuilder<out ConnectionConfig>)? = null
+        internal set
 
-	var registration: RegistrationBuilder? = null
-		private set
+    var registration: RegistrationBuilder? = null
+        private set
 
-	/**
-	 * Sets the authentication configuration for the account.
-	 */
-	fun auth(init: JIDPasswordAuthConfigBuilder.() -> Unit) {
-		val n = JIDPasswordAuthConfigBuilder()
-		n.init()
-		this.auth = n
-	}
+    /**
+     * Sets the authentication configuration for the account.
+     */
+    fun auth(init: JIDPasswordAuthConfigBuilder.() -> Unit) {
+        val n = JIDPasswordAuthConfigBuilder()
+        n.init()
+        this.auth = n
+    }
 
-	/**
-	 * Registers a new configuration for the account registration process.
-	 */
-	fun register(init: RegistrationBuilder.() -> Unit) {
-		val n = RegistrationBuilder()
-		n.init()
-		this.registration = n
-	}
+    /**
+     * Registers a new configuration for the account registration process.
+     */
+    fun register(init: RegistrationBuilder.() -> Unit) {
+        val n = RegistrationBuilder()
+        n.init()
+        this.registration = n
+    }
 
-	@Deprecated("Will be removed soon.")
-	fun modules(init: ModulesConfigBuilder.() -> Unit) {
-		this.modulesConfigBuilder.init()
-	}
+    @Deprecated("Will be removed soon.")
+    fun modules(init: ModulesConfigBuilder.() -> Unit) {
+        this.modulesConfigBuilder.init()
+    }
 
-	/**
-	 * Installs a module with an optional configuration function.
-	 * @param provider The module provider to install.
-	 * @param configuration The configuration function to apply to the module.
-	 */
-	fun <M : HalcyonModule, B : Any> install(
-		provider: HalcyonModuleProvider<M, B>,
-		configuration: B.() -> Unit = {},
-	) = this.modulesConfigBuilder.install(provider, configuration)
+    /**
+     * Installs a module with an optional configuration function.
+     * @param provider The module provider to install.
+     * @param configuration The configuration function to apply to the module.
+     */
+    fun <M : HalcyonModule, B : Any> install(
+        provider: HalcyonModuleProvider<M, B>,
+        configuration: B.() -> Unit = {}
+    ) = this.modulesConfigBuilder.install(provider, configuration)
 
-	fun build(): Configuration {
-		val account = this.auth?.build(this)
-		val registration = this.registration?.build(this)
-		if (account == null && registration == null) throw ConfigurationException("Account or account creation details must be provided")
+    fun build(): Configuration {
+        val account = this.auth?.build(this)
+        val registration = this.registration?.build(this)
+        if (account == null &&
+            registration == null
+        ) {
+            throw ConfigurationException("Account or account creation details must be provided")
+        }
 
-		val domain = if (account is DomainProvider) {
-			account.domain
-		} else registration?.domain ?: throw ConfigurationException("Cannot determine domain.")
-		val connection = connection?.build(this, domain) ?: defaultConnectionConfiguration(this, domain)
+        val domain = if (account is DomainProvider) {
+            account.domain
+        } else {
+            registration?.domain ?: throw ConfigurationException("Cannot determine domain.")
+        }
+        val connection =
+            connection?.build(this, domain) ?: defaultConnectionConfiguration(this, domain)
 
-		return Configuration(
-			sasl = account,
-			registration = registration,
-			connection = connection,
-		)
-	}
-
+        return Configuration(
+            sasl = account,
+            registration = registration,
+            connection = connection
+        )
+    }
 }
 
-expect fun defaultConnectionConfiguration(accountBuilder: ConfigurationBuilder, defaultDomain: String): ConnectionConfig
+expect fun defaultConnectionConfiguration(
+    accountBuilder: ConfigurationBuilder,
+    defaultDomain: String
+): ConnectionConfig
 
 fun createConfiguration(
-	initializeModules: Boolean = true,
-	init: ConfigurationBuilder.() -> Unit,
+    initializeModules: Boolean = true,
+    init: ConfigurationBuilder.() -> Unit
 ): ConfigurationBuilder {
-	val n = ConfigurationBuilder()
-	if (initializeModules) n.installAllModules() else n.installRequiredModules()
-	n.init()
-	return n
+    val n = ConfigurationBuilder()
+    if (initializeModules) n.installAllModules() else n.installRequiredModules()
+    n.init()
+    return n
 }
 
-fun createHalcyon(installAllModules: Boolean = true, init: ConfigurationBuilder.() -> Unit): Halcyon {
-	val n = ConfigurationBuilder()
-	if (installAllModules) n.installAllModules() else n.installRequiredModules()
-	n.init()
-	return Halcyon(n)
+fun createHalcyon(
+    installAllModules: Boolean = true,
+    init: ConfigurationBuilder.() -> Unit
+): Halcyon {
+    val n = ConfigurationBuilder()
+    if (installAllModules) n.installAllModules() else n.installRequiredModules()
+    n.init()
+    return Halcyon(n)
 }
 
 fun ConfigurationBuilder.installRequiredModules() {
-	this.install(StreamErrorModule)
-	this.install(StreamFeaturesModule)
-	this.install(BindModule)
-	this.install(SASLModule)
+    this.install(StreamErrorModule)
+    this.install(StreamFeaturesModule)
+    this.install(BindModule)
+    this.install(SASLModule)
 }
 
 fun ConfigurationBuilder.installAllModules() {
-	this.install(DiscoveryModule)
-	this.install(RosterModule)
-	this.install(PresenceModule)
-	this.install(MIXModule)
-	this.install(MAMModule)
-	this.install(PubSubModule)
-	this.install(MessageCarbonsModule)
-	this.install(MessageModule)
+    this.install(DiscoveryModule)
+    this.install(RosterModule)
+    this.install(PresenceModule)
+    this.install(MIXModule)
+    this.install(MAMModule)
+    this.install(PubSubModule)
+    this.install(MessageCarbonsModule)
+    this.install(MessageModule)
 // temporarly disabled	this.install(StreamManagementModule)
-	this.install(SASLModule)
-	this.install(BindModule)
-	this.install(PingModule)
-	this.install(StreamErrorModule)
-	this.install(StreamFeaturesModule)
-	this.install(EntityCapabilitiesModule)
-	this.install(UserAvatarModule)
-	this.install(VCardModule)
-	this.install(DeliveryReceiptsModule)
-	this.install(ChatStateModule)
-	this.install(ChatMarkersModule)
-	this.install(UniqueStableStanzaIdModule)
-	this.install(CommandsModule)
-	this.install(BlockingCommandModule)
-	this.install(MUCModule)
-	this.install(SASL2Module)
-	this.install(InBandRegistrationModule)
-	this.install(FileUploadModule)
-	this.install(ServiceFinderModule)
-	this.install(ExternalServiceDiscoveryModule)
+    this.install(SASLModule)
+    this.install(BindModule)
+    this.install(PingModule)
+    this.install(StreamErrorModule)
+    this.install(StreamFeaturesModule)
+    this.install(EntityCapabilitiesModule)
+    this.install(UserAvatarModule)
+    this.install(VCardModule)
+    this.install(DeliveryReceiptsModule)
+    this.install(ChatStateModule)
+    this.install(ChatMarkersModule)
+    this.install(UniqueStableStanzaIdModule)
+    this.install(CommandsModule)
+    this.install(BlockingCommandModule)
+    this.install(MUCModule)
+    this.install(SASL2Module)
+    this.install(InBandRegistrationModule)
+    this.install(FileUploadModule)
+    this.install(ServiceFinderModule)
+    this.install(ExternalServiceDiscoveryModule)
 }

@@ -4,8 +4,10 @@ import tigase.halcyon.core.configuration.ConnectionConfig
 import tigase.halcyon.core.connector.socket.SocketConnectorConfig
 
 actual fun defaultConnectionConfiguration(
-	accountBuilder: ConfigurationBuilder,
-	defaultDomain: String,
+    accountBuilder: ConfigurationBuilder,
+    defaultDomain: String
 ): ConnectionConfig = SocketConnectorConfig(
-	domain = defaultDomain, hostname = null, port = 5222
+    domain = defaultDomain,
+    hostname = null,
+    port = 5222
 )

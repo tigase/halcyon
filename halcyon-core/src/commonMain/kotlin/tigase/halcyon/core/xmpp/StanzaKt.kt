@@ -21,6 +21,4 @@ fun tigase.halcyon.core.xml.Element.getFromAttr(): FullJID? = this.attributes["f
 
 fun tigase.halcyon.core.xml.Element.getToAttr(): FullJID? = this.attributes["to"]?.toFullJID()
 
-fun tigase.halcyon.core.xml.Element.getIdAttr(): String? {
-	return this.attributes["id"]
-}
+fun tigase.halcyon.core.xml.Element.getIdAttr(): String? = this.attributes["id"]

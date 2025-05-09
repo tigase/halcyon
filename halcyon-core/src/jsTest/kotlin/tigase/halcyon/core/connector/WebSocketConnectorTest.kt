@@ -21,9 +21,7 @@ import kotlin.test.Test
 
 class WebSocketConnectorTest {
 
-	@Test
-	fun testBasic() {
-
-	}
-
+    @Test
+    fun testBasic() {
+    }
 }

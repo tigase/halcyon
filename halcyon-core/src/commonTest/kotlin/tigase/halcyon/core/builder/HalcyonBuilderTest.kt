@@ -1,5 +1,6 @@
 package tigase.halcyon.core.builder
 
+import kotlin.test.*
 import tigase.halcyon.core.ReflectionModuleManager
 import tigase.halcyon.core.configuration.JIDPasswordSaslConfig
 import tigase.halcyon.core.configuration.declaredDomain
@@ -21,118 +22,114 @@ import tigase.halcyon.core.xmpp.modules.pubsub.PubSubModule
 import tigase.halcyon.core.xmpp.modules.roster.InMemoryRosterStore
 import tigase.halcyon.core.xmpp.modules.roster.RosterModule
 import tigase.halcyon.core.xmpp.toBareJID
-import kotlin.test.*
 
 class HalcyonBuilderTest {
 
-	@Test
-	fun simple_factory() {
+    @Test
+    fun simple_factory() {
+        val halcyon = createHalcyon {
+            auth {
+                userJID = "a@localhost".toBareJID()
+                password { "a" }
+            }
+            bind {
+                resource = "test00909090"
+            }
+            presence {
+                store = InMemoryPresenceStore()
+            }
+            roster {
+                store = InMemoryRosterStore()
+            }
+            install(PingModule)
+            install(ChatMarkersModule) {
+                mode = ChatMarkersModuleConfig.Mode.All
+            }
+        }
+        assertIs<JIDPasswordSaslConfig>(halcyon.config.sasl).let {
+            assertEquals("a@localhost".toBareJID(), it.userJID)
+            assertEquals("a", it.passwordCallback.invoke())
+        }
+        assertEquals("localhost", assertNotNull(halcyon.config).declaredDomain)
+        assertEquals("test00909090", assertNotNull(halcyon.getModule(BindModule)).resource)
+        assertEquals(
+            "https://tigase.org/halcyon",
+            assertNotNull(halcyon.getModule(EntityCapabilitiesModule)).node
+        )
+    }
 
-		val halcyon = createHalcyon {
-			auth {
-				userJID = "a@localhost".toBareJID()
-				password { "a" }
-			}
-			bind {
-				resource = "test00909090"
-			}
-			presence {
-				store = InMemoryPresenceStore()
-			}
-			roster {
-				store = InMemoryRosterStore()
-			}
-			install(PingModule)
-			install(ChatMarkersModule) {
-				mode = ChatMarkersModuleConfig.Mode.All
-			}
-		}
-		assertIs<JIDPasswordSaslConfig>(halcyon.config.sasl).let {
-			assertEquals("a@localhost".toBareJID(), it.userJID)
-			assertEquals("a", it.passwordCallback.invoke())
-		}
-		assertEquals("localhost", assertNotNull(halcyon.config).declaredDomain)
-		assertEquals("test00909090", assertNotNull(halcyon.getModule(BindModule)).resource)
-		assertEquals("https://tigase.org/halcyon", assertNotNull(halcyon.getModule(EntityCapabilitiesModule)).node)
-	}
+    @Test
+    fun registration_factory() {
+        val halyon = createHalcyon {
+            register {
+                domain = "localhost"
+                registrationFormHandler { form ->
+                    form.getFieldByVar("username")!!.fieldValue = "user"
+                    form.getFieldByVar("password")!!.fieldValue = "password"
+                }
+                registrationHandler {
+                    it
+                }
+            }
+        }
 
-	@Test
-	fun registration_factory() {
+        assertNull(halyon.config.sasl)
+        assertEquals("localhost", halyon.config.declaredDomain)
+        assertNotNull(halyon.config.registration).let {
+            assertEquals("localhost", it.domain)
+            assertNotNull(it.formHandler)
+        }
+    }
 
-		val halyon = createHalcyon {
-			register {
-				domain = "localhost"
-				registrationFormHandler { form ->
-					form.getFieldByVar("username")!!.fieldValue = "user"
-					form.getFieldByVar("password")!!.fieldValue = "password"
-				}
-				registrationHandler {
-					it
-				}
-			}
-		}
+    @Test
+    fun anonymous_auth() {
+        val cvg = createHalcyon {
+            authAnonymous {
+                domain = "example.com"
+            }
+        }
+        assertEquals("example.com", cvg.config.declaredDomain)
+        assertIs<AnonymousSaslConfig>(cvg.config.sasl)
+    }
 
+    @OptIn(ReflectionModuleManager::class)
+    @Test
+    fun modules_configuration() {
+        val h = createHalcyon(false) {
+            authAnonymous {
+                domain = "example.com"
+            }
+            bind {
+                resource = "blahblah"
+            }
+            install(PingModule)
+            install(SASLModule) {
+                enabled = false
+            }
+            install(SASL2Module)
+            install(MIXModule)
+        }
 
-		assertNull(halyon.config.sasl)
-		assertEquals("localhost", halyon.config.declaredDomain)
-		assertNotNull(halyon.config.registration).let {
-			assertEquals("localhost", it.domain)
-			assertNotNull(it.formHandler)
-		}
+        assertNotNull(h.getModuleOrNull(DiscoveryModule))
+        assertNotNull(h.getModuleOrNull(MIXModule))
+        assertNotNull(h.getModuleOrNull(RosterModule))
+        assertNotNull(h.getModuleOrNull(MAMModule))
 
-	}
+        assertNull(h.getModuleOrNull(MessageModule))
+        assertNotNull(h.getModuleOrNull(PingModule))
+        assertNotNull(h.getModuleOrNull(PubSubModule))
 
-	@Test
-	fun anonymous_auth() {
-		val cvg = createHalcyon {
-			authAnonymous {
-				domain = "example.com"
-			}
-		}
-		assertEquals("example.com", cvg.config.declaredDomain)
-		assertIs<AnonymousSaslConfig>(cvg.config.sasl)
-	}
+        assertEquals("blahblah", assertNotNull(h.getModuleOrNull(BindModule)).resource)
 
-	@OptIn(ReflectionModuleManager::class)
-	@Test
-	fun modules_configuration() {
-		val h = createHalcyon(false) {
-			authAnonymous {
-				domain = "example.com"
-			}
-			bind {
-				resource = "blahblah"
-			}
-			install(PingModule)
-			install(SASLModule) {
-				enabled = false
-			}
-			install(SASL2Module)
-			install(MIXModule)
-		}
+        assertFalse(assertNotNull(h.getModuleOrNull(SASLModule)).enabled)
+        assertTrue(assertNotNull(h.getModuleOrNull(SASL2Module)).enabled)
 
+        assertEquals("blahblah", h.getModule<BindModule>().resource)
+        assertFalse(h.getModule<SASLModule>().enabled)
+        assertTrue(h.getModule<SASL2Module>().enabled)
 
-		assertNotNull(h.getModuleOrNull(DiscoveryModule))
-		assertNotNull(h.getModuleOrNull(MIXModule))
-		assertNotNull(h.getModuleOrNull(RosterModule))
-		assertNotNull(h.getModuleOrNull(MAMModule))
-
-		assertNull(h.getModuleOrNull(MessageModule))
-		assertNotNull(h.getModuleOrNull(PingModule))
-		assertNotNull(h.getModuleOrNull(PubSubModule))
-
-		assertEquals("blahblah", assertNotNull(h.getModuleOrNull(BindModule)).resource)
-
-		assertFalse(assertNotNull(h.getModuleOrNull(SASLModule)).enabled)
-		assertTrue(assertNotNull(h.getModuleOrNull(SASL2Module)).enabled)
-
-		assertEquals("blahblah", h.getModule<BindModule>().resource)
-		assertFalse(h.getModule<SASLModule>().enabled)
-		assertTrue(h.getModule<SASL2Module>().enabled)
-
-		assertEquals("blahblah", h.getModule<BindModule>(BindModule.TYPE).resource)
-		assertFalse(h.getModule<SASLModule>(SASLModule.TYPE).enabled)
-		assertTrue(h.getModule<SASL2Module>(SASL2Module.TYPE).enabled)
-	}
-
+        assertEquals("blahblah", h.getModule<BindModule>(BindModule.TYPE).resource)
+        assertFalse(h.getModule<SASLModule>(SASLModule.TYPE).enabled)
+        assertTrue(h.getModule<SASL2Module>(SASL2Module.TYPE).enabled)
+    }
 }

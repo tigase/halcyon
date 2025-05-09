@@ -37,156 +37,175 @@ import tigase.halcyon.core.xmpp.stanzas.Message
 
 data class UserAvatarUpdatedEvent(val jid: BareJID, val avatarId: String) : Event(TYPE) {
 
-	companion object : EventDefinition<UserAvatarUpdatedEvent> {
+    companion object : EventDefinition<UserAvatarUpdatedEvent> {
 
-		override val TYPE = "tigase.halcyon.core.xmpp.modules.avatar.UserAvatarUpdatedEvent"
-	}
+        override val TYPE = "tigase.halcyon.core.xmpp.modules.avatar.UserAvatarUpdatedEvent"
+    }
 }
 
 interface UserAvatarModuleConfig {
 
-	var store: UserAvatarStore
-
+    var store: UserAvatarStore
 }
 
-class UserAvatarModule(override val context: Context, private val pubSubModule: PubSubModule) : XmppModule,
-	UserAvatarModuleConfig {
+class UserAvatarModule(override val context: Context, private val pubSubModule: PubSubModule) :
+    XmppModule,
+    UserAvatarModuleConfig {
 
-	companion object : XmppModuleProvider<UserAvatarModule, UserAvatarModuleConfig> {
+    companion object : XmppModuleProvider<UserAvatarModule, UserAvatarModuleConfig> {
 
-		override val TYPE = "urn:xmpp:avatar"
-		const val XMLNS_DATA = "urn:xmpp:avatar:data"
-		const val XMLNS_METADATA = "urn:xmpp:avatar:metadata"
-		override fun instance(context: Context): UserAvatarModule =
-			UserAvatarModule(context, pubSubModule = context.modules.getModule(PubSubModule))
+        override val TYPE = "urn:xmpp:avatar"
+        const val XMLNS_DATA = "urn:xmpp:avatar:data"
+        const val XMLNS_METADATA = "urn:xmpp:avatar:metadata"
+        override fun instance(context: Context): UserAvatarModule =
+            UserAvatarModule(context, pubSubModule = context.modules.getModule(PubSubModule))
 
-		override fun configure(module: UserAvatarModule, cfg: UserAvatarModuleConfig.() -> Unit) = module.cfg()
+        override fun configure(module: UserAvatarModule, cfg: UserAvatarModuleConfig.() -> Unit) =
+            module.cfg()
 
-		override fun requiredModules() = listOf(PubSubModule)
+        override fun requiredModules() = listOf(PubSubModule)
 
-		override fun doAfterRegistration(module: UserAvatarModule, moduleManager: ModulesManager) = module.initialize()
+        override fun doAfterRegistration(module: UserAvatarModule, moduleManager: ModulesManager) =
+            module.initialize()
+    }
 
-	}
+    private val log = LoggerFactory.logger(
+        "tigase.halcyon.core.xmpp.modules.avatar.UserAvatarModule"
+    )
 
-	private val log = LoggerFactory.logger("tigase.halcyon.core.xmpp.modules.avatar.UserAvatarModule")
+    override val criteria: Criteria? = null
+    override val features: Array<String> = arrayOf("$XMLNS_METADATA+notify")
+    override val type: String = TYPE
 
-	override val criteria: Criteria? = null
-	override val features: Array<String> = arrayOf("$XMLNS_METADATA+notify")
-	override val type: String = TYPE
+    override var store: UserAvatarStore = object : UserAvatarStore {
 
-	override var store: UserAvatarStore = object : UserAvatarStore {
+        private val items = mutableMapOf<String, Avatar>()
 
-		private val items = mutableMapOf<String, Avatar>()
+        override fun store(userJID: BareJID, avatarID: String?, data: Avatar?) {
+            if (avatarID == null) return
+            if (data == null) {
+                items.remove(avatarID)
+            } else {
+                items[avatarID] = data
+            }
+        }
 
-		override fun store(userJID: BareJID, avatarID: String?, data: Avatar?) {
-			if (avatarID == null) return
-			if (data == null) {
-				items.remove(avatarID)
-			} else {
-				items[avatarID] = data
-			}
-		}
+        override fun load(userJID: BareJID, avatarID: String): Avatar? = items[avatarID]
 
-		override fun load(userJID: BareJID, avatarID: String): Avatar? = items[avatarID]
+        override fun isStored(userJID: BareJID, avatarID: String): Boolean =
+            items.containsKey(avatarID)
+    }
 
-		override fun isStored(userJID: BareJID, avatarID: String): Boolean = items.containsKey(avatarID)
-	}
+    private fun initialize() {
+        context.eventBus.register(PubSubItemEvent) { event ->
+            if (event.nodeName == XMLNS_METADATA && event is PubSubItemEvent.Published) {
+                val metadata =
+                    event.content?.let {
+                        if (it.name == "metadata" &&
+                            it.xmlns == XMLNS_METADATA
+                        ) {
+                            it
+                        } else {
+                            null
+                        }
+                    }
+                if (event.itemId != null &&
+                    metadata != null
+                ) {
+                    processMetadataItem(event.stanza, metadata)
+                }
+            }
+        }
+    }
 
-	private fun initialize() {
-		context.eventBus.register(PubSubItemEvent) { event ->
-			if (event.nodeName == XMLNS_METADATA && event is PubSubItemEvent.Published) {
-				val metadata =
-					event.content?.let { if (it.name == "metadata" && it.xmlns == XMLNS_METADATA) it else null }
-				if (event.itemId != null && metadata != null) processMetadataItem(event.stanza, metadata)
-			}
-		}
-	}
+    private fun parseInfo(info: Element): AvatarInfo = AvatarInfo(
+        info.attributes["bytes"]!!.toInt(),
+        info.attributes["height"]?.toInt(),
+        info.attributes["id"]!!,
+        info.attributes["type"]!!,
+        info.attributes["url"],
+        info.attributes["width"]?.toInt()
+    )
 
-	private fun parseInfo(info: Element): AvatarInfo {
-		return AvatarInfo(
-			info.attributes["bytes"]!!.toInt(),
-			info.attributes["height"]?.toInt(),
-			info.attributes["id"]!!,
-			info.attributes["type"]!!,
-			info.attributes["url"],
-			info.attributes["width"]?.toInt()
-		)
-	}
+    private fun processMetadataItem(stanza: Message, metadata: Element) {
+        val userJID = stanza.from?.bareJID ?: return
+        val info = metadata.getFirstChild("info")?.let { parseInfo(it) }
+        if (info == null) {
+            store.store(userJID, null, null)
+            return
+        }
 
-	private fun processMetadataItem(stanza: Message, metadata: Element) {
-		val userJID = stanza.from?.bareJID ?: return
-		val info = metadata.getFirstChild("info")?.let { parseInfo(it) }
-		if (info == null) {
-			store.store(userJID, null, null)
-			return
-		}
+        val stored = store.isStored(userJID, info.id)
+        if (!stored) {
+            retrieveAvatar(
+                userJID.toString().toJID(),
+                info.id
+            ).response {
+                if (it.isSuccess) {
+                    log.finest { "Storing UserAvatar data $info.id " + it.getOrNull() }
+                    val avatar = it.getOrNull()?.let { data ->
+                        if (data.base64Data == null) {
+                            null
+                        } else {
+                            Avatar(info, data)
+                        }
+                    }
+                    store.store(userJID, info.id, avatar)
+                    log.fine { "Stored data! $userJID" }
+                    context.eventBus.fire(UserAvatarUpdatedEvent(userJID, info.id))
+                }
+            }.send()
+        } else {
+            context.eventBus.fire(UserAvatarUpdatedEvent(userJID, info.id))
+        }
+    }
 
-		val stored = store.isStored(userJID, info.id)
-		if (!stored) {
-			retrieveAvatar(
-				userJID.toString().toJID(), info.id
-			).response {
-				if (it.isSuccess) {
-					log.finest { "Storing UserAvatar data $info.id " + it.getOrNull() }
-					val avatar = it.getOrNull()?.let { data ->
-						if (data.base64Data == null) {
-							null
-						} else {
-							Avatar(info, data)
-						}
-					}
-					store.store(userJID, info.id, avatar)
-					log.fine { "Stored data! $userJID" }
-					context.eventBus.fire(UserAvatarUpdatedEvent(userJID, info.id))
-				}
-			}.send()
-		} else {
-			context.eventBus.fire(UserAvatarUpdatedEvent(userJID, info.id))
-		}
-	}
+    @Serializable
+    data class Avatar(val info: AvatarInfo, val data: AvatarData)
 
-	@Serializable
-	data class Avatar(val info: AvatarInfo, val data: AvatarData)
+    @Serializable
+    data class AvatarData(val id: String, val base64Data: String?)
 
-	@Serializable
-	data class AvatarData(val id: String, val base64Data: String?)
+    @Serializable
+    data class AvatarInfo(
+        val bytes: Int,
+        val height: Int?,
+        val id: String,
+        val type: String,
+        val url: String?,
+        val width: Int?
+    )
 
-	@Serializable
-	data class AvatarInfo(
-		val bytes: Int, val height: Int?, val id: String, val type: String, val url: String?, val width: Int?,
-	)
+    fun retrieveAvatar(jid: JID, avatarID: String): RequestBuilder<AvatarData, IQ> =
+        pubSubModule.retrieveItem(jid.bareJID, XMLNS_DATA, avatarID).map { response ->
+            val item = response.items.first()
+            val data = item.content!!.value
+            AvatarData(avatarID, data)
+        }
 
-	fun retrieveAvatar(jid: JID, avatarID: String): RequestBuilder<AvatarData, IQ> {
-		return pubSubModule.retrieveItem(jid.bareJID, XMLNS_DATA, avatarID).map { response ->
-			val item = response.items.first()
-			val data = item.content!!.value
-			AvatarData(avatarID, data)
-		}
-	}
+    override fun process(element: Element) =
+        throw XMPPException(ErrorCondition.FeatureNotImplemented)
 
-	override fun process(element: Element) = throw XMPPException(ErrorCondition.FeatureNotImplemented)
+    fun publish(data: AvatarData): RequestBuilder<PubSubModule.PublishingInfo, IQ> {
+        val payload = element("data") {
+            xmlns = XMLNS_DATA
+            +data.base64Data!!
+        }
+        return pubSubModule.publish(null, XMLNS_DATA, data.id, payload)
+    }
 
-	fun publish(data: AvatarData): RequestBuilder<PubSubModule.PublishingInfo, IQ> {
-		val payload = element("data") {
-			xmlns = XMLNS_DATA
-			+data.base64Data!!
-		}
-		return pubSubModule.publish(null, XMLNS_DATA, data.id, payload)
-	}
-
-	fun publish(data: AvatarInfo): RequestBuilder<PubSubModule.PublishingInfo, IQ> {
-		val payload = element("metadata") {
-			xmlns = XMLNS_METADATA
-			"info" {
-				attribute("id", data.id)
-				attribute("type", data.type)
-				attribute("bytes", "${data.bytes}")
-				data.height?.let { attribute("height", "$it") }
-				data.width?.let { attribute("width", "$it") }
-				data.url?.let { attribute("url", it) }
-			}
-		}
-		return pubSubModule.publish(null, XMLNS_METADATA, data.id, payload)
-	}
-
+    fun publish(data: AvatarInfo): RequestBuilder<PubSubModule.PublishingInfo, IQ> {
+        val payload = element("metadata") {
+            xmlns = XMLNS_METADATA
+            "info" {
+                attribute("id", data.id)
+                attribute("type", data.type)
+                attribute("bytes", "${data.bytes}")
+                data.height?.let { attribute("height", "$it") }
+                data.width?.let { attribute("width", "$it") }
+                data.url?.let { attribute("url", it) }
+            }
+        }
+        return pubSubModule.publish(null, XMLNS_METADATA, data.id, payload)
+    }
 }

@@ -17,6 +17,7 @@
  */
 package tigase.halcyon.core.requests
 
+import kotlin.time.Duration
 import kotlinx.datetime.Instant
 import tigase.halcyon.core.logger.LoggerFactory
 import tigase.halcyon.core.xml.Element
@@ -25,7 +26,6 @@ import tigase.halcyon.core.xmpp.JID
 import tigase.halcyon.core.xmpp.XMPPException
 import tigase.halcyon.core.xmpp.stanzas.Stanza
 import tigase.halcyon.core.xmpp.stanzas.wrap
-import kotlin.time.Duration
 
 class Request<V, STT : Stanza<*>>(
     val jid: JID?,
@@ -38,7 +38,7 @@ class Request<V, STT : Stanza<*>>(
     private val errorHandler: (STT) -> XMPPError,
     private val parentRequest: Request<*, STT>? = null,
     @Deprecated("Will be removed") private val callHandlerOnSent: Boolean,
-    private val onSendHandler: SendHandler<V, STT>?,
+    private val onSendHandler: SendHandler<V, STT>?
 ) {
 
     private val log = LoggerFactory.logger("tigase.halcyon.core.requests.Request")
@@ -90,43 +90,61 @@ class Request<V, STT : Stanza<*>>(
         var tmpResult: Result<Any?>? = null
 
         requests.forEach { req ->
-            tmpResult = if (tmpResult != null && (tmpResult as Result<Any?>).isFailure) tmpResult else if (isTimeout) {
-                Result.failure(XMPPError(response, ErrorCondition.RemoteServerTimeout, "No response for request ${req.id}"))
-            } else {
-                when (response!!.attributes["type"]) {
-                    "result" -> {
-                        try {
-                            log.finest { "Mapping response in ${this@Request}" }
-                            tmpValue = req.transform.invoke(tmpValue!!)
-                            log.finest { "Mapping response finished in ${this@Request}" }
-                            Result.success(tmpValue)
-                        } catch (e: XMPPError) {
-//							log.warning(e) { "Mapping response error in ${this@Request}" }
-                            Result.failure<XMPPError>(e)
-                        } catch (e: XMPPException) {
-                            Result.failure<XMPPError>(XMPPError(req.response, e.condition, e.message))
-                        } catch (e: Throwable) {
-                            log.warning(e) { "Mapping response error in ${this@Request}" }
-                            Result.failure<Throwable>(e)
+            tmpResult =
+                if (tmpResult != null &&
+                    (tmpResult as Result<Any?>).isFailure
+                ) {
+                    tmpResult
+                } else if (isTimeout) {
+                    Result.failure(
+                        XMPPError(
+                            response,
+                            ErrorCondition.RemoteServerTimeout,
+                            "No response for request ${req.id}"
+                        )
+                    )
+                } else {
+                    when (response!!.attributes["type"]) {
+                        "result" -> {
+                            try {
+                                log.finest { "Mapping response in ${this@Request}" }
+                                tmpValue = req.transform.invoke(tmpValue!!)
+                                log.finest { "Mapping response finished in ${this@Request}" }
+                                Result.success(tmpValue)
+                            } catch (e: XMPPError) {
+// 							log.warning(e) { "Mapping response error in ${this@Request}" }
+                                Result.failure<XMPPError>(e)
+                            } catch (e: XMPPException) {
+                                Result.failure<XMPPError>(
+                                    XMPPError(req.response, e.condition, e.message)
+                                )
+                            } catch (e: Throwable) {
+                                log.warning(e) { "Mapping response error in ${this@Request}" }
+                                Result.failure<Throwable>(e)
+                            }
+                        }
+
+                        "error" -> {
+                            val z = errorHandler.invoke(response!!)
+                            Result.failure<XMPPError>(z)
+// 						val e = findCondition(response!!)
+// 						Result.failure(XMPPError(response!!, e.condition, e.message))
+                        }
+
+                        else -> {
+                            Result.failure(
+                                XMPPError(response!!, ErrorCondition.UnexpectedRequest, null)
+                            )
                         }
                     }
-
-                    "error" -> {
-                        val z = errorHandler.invoke(response!!)
-                        Result.failure<XMPPError>(z)
-//						val e = findCondition(response!!)
-//						Result.failure(XMPPError(response!!, e.condition, e.message))
-                    }
-
-                    else -> {
-                        Result.failure(XMPPError(response!!, ErrorCondition.UnexpectedRequest, null))
-                    }
                 }
-            }
 
             req.calculatedResult = tmpResult as (Result<Nothing>)
-            if (isTimeout) req.markTimeout(false)
-            else req.setResponseStanza(response!!, false)
+            if (isTimeout) {
+                req.markTimeout(false)
+            } else {
+                req.setResponseStanza(response!!, false)
+            }
         }
     }
 
@@ -206,20 +224,15 @@ class Request<V, STT : Stanza<*>>(
     }
 
     @Suppress("unused")
-    fun getData(name: String): Any? {
-        return data[name]
-    }
+    fun getData(name: String): Any? = data[name]
 
-    override fun toString(): String {
-        return buildString {
-            append("Request(")
-            requestName?.let {
-                append("name='$requestName', ")
-            }
-            append("stanza=")
-            append(stanza.getAsString())
-            append(")")
+    override fun toString(): String = buildString {
+        append("Request(")
+        requestName?.let {
+            append("name='$requestName', ")
         }
+        append("stanza=")
+        append(stanza.getAsString())
+        append(")")
     }
-
 }

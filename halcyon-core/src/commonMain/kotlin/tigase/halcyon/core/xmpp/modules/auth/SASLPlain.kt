@@ -31,7 +31,6 @@ class SASLPlain : SASLMechanism {
         override fun instance(): SASLPlain = SASLPlain()
 
         override fun configure(mechanism: SASLPlain, cfg: Unit.() -> Unit) {}
-
     }
 
     override val name = NAME
@@ -48,7 +47,9 @@ class SASLPlain : SASLMechanism {
         val authcId = credentials.authcId ?: credentials.userJID.localpart!!
         val authzId = if (credentials.authcId != null) {
             credentials.userJID.toString()
-        } else null
+        } else {
+            null
+        }
         val password = credentials.passwordCallback.invoke()
 
         saslContext.completed()
@@ -66,7 +67,5 @@ class SASLPlain : SASLMechanism {
         config: Configuration,
         saslContext: SASLContext,
         streamFeatures: Element
-    ): Boolean =
-        config.sasl is JIDPasswordSaslConfig
-
+    ): Boolean = config.sasl is JIDPasswordSaslConfig
 }

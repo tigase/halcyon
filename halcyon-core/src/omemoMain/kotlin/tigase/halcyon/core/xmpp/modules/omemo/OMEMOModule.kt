@@ -25,17 +25,17 @@ import tigase.halcyon.core.xmpp.modules.pubsub.PubSubModule
 import tigase.halcyon.core.xmpp.modules.uniqueId.getStanzaIDBy
 import tigase.halcyon.core.xmpp.stanzas.*
 
-@HalcyonConfigDsl
 /**
  * OMEMO Module configuration.
  */
+@HalcyonConfigDsl
 interface OMEMOModuleConfig {
 
     /**
      * Specify a store to keep Signal Protocol data like identities, keys, etc.
      */
     var protocolStore: SignalProtocolStoreFlushable
-    
+
     var bundleStateStorage: BundleStateStorage
 
     /**
@@ -47,13 +47,12 @@ interface OMEMOModuleConfig {
      * Automatically create OMEMO session when a message needs to be encrypted.
      */
     var autoCreateSession: Boolean
-
 }
 
 interface BundleStateStorage {
-    fun currentPreKeyId(): Int;
-    fun updatePreKeyMax(id: Int);
-    fun signedPreKeyId(): Int;
+    fun currentPreKeyId(): Int
+    fun updatePreKeyMax(id: Int)
+    fun signedPreKeyId(): Int
 }
 
 /**
@@ -63,7 +62,8 @@ class OMEMOModule(
     override val context: Context,
     private val pubsubModule: PubSubModule,
     private var mamModule: MAMModule
-) : HalcyonModule, OMEMOModuleConfig {
+) : HalcyonModule,
+    OMEMOModuleConfig {
 
     /**
      * Module is implementing OMEMO Encryption ([XEP-0384](https://xmpp.org/extensions/attic/xep-0384-0.3.0.html) version 0.3.0).
@@ -83,8 +83,11 @@ class OMEMOModule(
 
         internal const val ENCRYPTION_ELEMENT = "halcyon:omemo"
 
-        override fun instance(context: Context): OMEMOModule =
-            OMEMOModule(context, pubsubModule = context.modules.getModule(PubSubModule), mamModule = context.modules.getModule(MAMModule))
+        override fun instance(context: Context): OMEMOModule = OMEMOModule(
+            context,
+            pubsubModule = context.modules.getModule(PubSubModule),
+            mamModule = context.modules.getModule(MAMModule)
+        )
 
         override fun configure(module: OMEMOModule, cfg: OMEMOModuleConfig.() -> Unit) {
             module.cfg()
@@ -107,9 +110,8 @@ class OMEMOModule(
             moduleManager.registerOutgoingFilter(module.outgoingFilter)
             moduleManager.registerIncomingFilter(module.incomingFilter)
 
-            module.initialize();
+            module.initialize()
         }
-
     }
 
     private val log = LoggerFactory.logger("tigase.halcyon.core.xmpp.modules.omemo.OMEMOModule")
@@ -118,10 +120,11 @@ class OMEMOModule(
     override val features = arrayOf(XMLNS, "$DEVICE_LIST_NODE+notify")
 
     override lateinit var protocolStore: SignalProtocolStoreFlushable
+
 //    override var sessionStore: OMEMOSessionStore = InMemoryOMEMOSessionStore()
     override var autoUpdateIdentityStore: Boolean = true
     override var autoCreateSession: Boolean = false
-    override lateinit var bundleStateStorage: BundleStateStorage;
+    override lateinit var bundleStateStorage: BundleStateStorage
 
     init {
         context.eventBus.register(PubSubItemEvent) {
@@ -132,15 +135,15 @@ class OMEMOModule(
     private val outgoingFilter = createFilter(::beforeSend)
     private val incomingFilter = createFilter(::afterReceive)
 
-    private var devices: MutableMap<BareJID,List<Int>> = mutableMapOf();
-    private var devicesFetchError: MutableMap<BareJID,List<Int>> = mutableMapOf();
+    private var devices: MutableMap<BareJID, List<Int>> = mutableMapOf()
+    private var devicesFetchError: MutableMap<BareJID, List<Int>> = mutableMapOf()
 
     private fun initialize() {
         context.eventBus.register(ClearedEvent) {
             if (it.scopes.contains(Scope.Session)) {
                 log.fine { "resetting list of known OMEMO devices" }
-                devices.clear();
-                devicesFetchError.clear();
+                devices.clear()
+                devicesFetchError.clear()
             }
         }
         context.eventBus.register(MAMQueryFinished) {
@@ -151,10 +154,16 @@ class OMEMOModule(
     }
 
     private fun processPubSubItemPublishedEvent(event: PubSubItemEvent.Published) {
-        if (event.pubSubJID != null && event.nodeName == DEVICE_LIST_NODE && event.itemId == CURRENT) {
+        if (event.pubSubJID != null &&
+            event.nodeName == DEVICE_LIST_NODE &&
+            event.itemId == CURRENT
+        ) {
             processDevicesList(event.pubSubJID, event.content)
-        } else if (event.pubSubJID != null && event.nodeName.startsWith(BUNDLES_NODE_PREFIX) && event.itemId == CURRENT) {
-            val deviceId = event.nodeName.substringAfter(BUNDLES_NODE_PREFIX);
+        } else if (event.pubSubJID != null &&
+            event.nodeName.startsWith(BUNDLES_NODE_PREFIX) &&
+            event.itemId == CURRENT
+        ) {
+            val deviceId = event.nodeName.substringAfter(BUNDLES_NODE_PREFIX)
             processBundle(event.pubSubJID, deviceId, event.content)
         }
     }
@@ -168,19 +177,21 @@ class OMEMOModule(
         val deviceList = content.toDeviceList()
         if (autoUpdateIdentityStore) {
             if (context.boundJID?.bareJID == jid.bareJID) {
-                val knownSessions = protocolStore.getSubDeviceSessions(jid.bareJID.toString());
+                val knownSessions = protocolStore.getSubDeviceSessions(jid.bareJID.toString())
                 deviceList.filterNot(knownSessions::contains).forEach { deviceId ->
                     startSession(jid.bareJID, deviceId) {
                         it.onFailure {
-                            log.warning(it,{ "starting session for ${jid} with device ${deviceId} failed"})
+                            log.warning(it, {
+                                "starting session for $jid with device $deviceId failed"
+                            })
                         }
                         it.onSuccess {
-                            log.info("started session for ${jid} with device ${deviceId} successfully")
+                            log.info("started session for $jid with device $deviceId successfully")
                         }
                     }
                 }
 
-                val localDeviceId = protocolStore.getLocalRegistrationId();
+                val localDeviceId = protocolStore.getLocalRegistrationId()
                 if (!deviceList.contains(localDeviceId)) {
                     publishDeviceList(deviceList + listOf(localDeviceId)).response {
                         it.onFailure {
@@ -189,10 +200,10 @@ class OMEMOModule(
                         it.onSuccess {
                             log.fine("published updated device list successfully")
                         }
-                    }.send();
+                    }.send()
                 }
             } else {
-                devices[jid.bareJID] = deviceList;
+                devices[jid.bareJID] = deviceList
             }
 //            deviceList.forEach {
 //                val addr = SignalProtocolAddress(jid.toString(), it)
@@ -216,13 +227,26 @@ class OMEMOModule(
      * @param idFilter item id (`current` by default).
      */
     fun retrieveDevicesIds(jid: BareJID, idFilter: String? = null): RequestBuilder<List<Int>, IQ> {
-        log.fine {"fetching device ids for jid ${jid} on account ${context.boundJID?.bareJID}" }
-        return pubsubModule.retrieveItem(jid = jid, node = DEVICE_LIST_NODE, itemId = idFilter, maxItems = if (idFilter != null) { null } else { 1 }).map { resp ->
+        log.fine { "fetching device ids for jid $jid on account ${context.boundJID?.bareJID}" }
+        return pubsubModule.retrieveItem(
+            jid = jid,
+            node = DEVICE_LIST_NODE,
+            itemId = idFilter,
+            maxItems = if (idFilter !=
+                null
+            ) {
+                null
+            } else {
+                1
+            }
+        ).map { resp ->
             val value = resp.items.map { item ->
                 item.content.toDeviceList()
             }.flatten()
-            log.fine {"fetched device ids ${value} for jid ${jid} on account ${context.boundJID?.bareJID}" }
-            return@map value;
+            log.fine {
+                "fetched device ids $value for jid $jid on account ${context.boundJID?.bareJID}"
+            }
+            return@map value
         }
     }
 
@@ -231,14 +255,13 @@ class OMEMOModule(
      * @param jid JabberID
      * @param bundleId requested bundle identifier.
      */
-    fun retrieveBundle(jid: BareJID, bundleId: Int): RequestBuilder<Bundle, IQ> {
-        return pubsubModule.retrieveItem(jid, "$BUNDLES_NODE_PREFIX$bundleId", maxItems = 1).map {
+    fun retrieveBundle(jid: BareJID, bundleId: Int): RequestBuilder<Bundle, IQ> =
+        pubsubModule.retrieveItem(jid, "$BUNDLES_NODE_PREFIX$bundleId", maxItems = 1).map {
             it.items.firstOrNull()?.content?.toBundleOf(jid, bundleId) ?: throw XMPPException(
                 ErrorCondition.ItemNotFound,
                 "Bundle $bundleId not found"
             )
         }
-    }
 
     /**
      * Prepare request to delete specific bundle. Works only with own bundles.
@@ -253,14 +276,17 @@ class OMEMOModule(
      * Prepare request to delete whole own devices list.
      */
     fun deleteDeviceList(): RequestBuilder<Unit, IQ> = pubsubModule.deleteNode(
-        jid = context.boundJID?.bareJID ?: throw HalcyonException("Entity not bound"), node = DEVICE_LIST_NODE
+        jid = context.boundJID?.bareJID ?: throw HalcyonException("Entity not bound"),
+        node = DEVICE_LIST_NODE
     )
 
     /**
      * Prepare request to publish own devices list. It replaces previously published list.
      * @param deviceIds devices list to publish.
      */
-    fun publishDeviceList(deviceIds: List<Int>): PublishRequestBuilder<PubSubModule.PublishingInfo> {
+    fun publishDeviceList(
+        deviceIds: List<Int>
+    ): PublishRequestBuilder<PubSubModule.PublishingInfo> {
         log.fine { "publishing device list: $deviceIds for account ${context.boundJID?.bareJID}" }
         val payload = element("list") {
             xmlns = XMLNS
@@ -284,26 +310,27 @@ class OMEMOModule(
      * @param signedPreKeyId id of signed pre-key to publish.
      * @param preKeys list of pre-keys identifiers to publish.
      */
-    fun publishOwnBundle(signedPreKeyId: Int, preKeys: List<Int>): PublishRequestBuilder<PubSubModule.PublishingInfo> {
-        return publishBundle(
-            protocolStore.getIdentityKeyPair(),
-            protocolStore.getLocalRegistrationId(),
-            protocolStore.loadSignedPreKey(signedPreKeyId),
-            preKeys.map { protocolStore.loadPreKey(it) }
-        )
-    }
+    fun publishOwnBundle(
+        signedPreKeyId: Int,
+        preKeys: List<Int>
+    ): PublishRequestBuilder<PubSubModule.PublishingInfo> = publishBundle(
+        protocolStore.getIdentityKeyPair(),
+        protocolStore.getLocalRegistrationId(),
+        protocolStore.loadSignedPreKey(signedPreKeyId),
+        preKeys.map { protocolStore.loadPreKey(it) }
+    )
 
     fun startSession(jid: BareJID, deviceId: Int, handler: (Result<Unit>) -> Unit) {
-        log.finest("retrieving bundle for " + jid.toString() + ", device id: ${deviceId}...")
+        log.finest("retrieving bundle for " + jid.toString() + ", device id: $deviceId...")
         retrieveBundle(jid, deviceId).response {
             it.onSuccess {
-                storeBundle(SignalProtocolAddress(jid.toString(), deviceId), it);
-                handler(createSession(protocolStore, it));
+                storeBundle(SignalProtocolAddress(jid.toString(), deviceId), it)
+                handler(createSession(protocolStore, it))
             }
             it.onFailure {
-                devicesFetchError[jid] = (devicesFetchError[jid] ?: emptyList()) + listOf(deviceId);
-                log.warning(it, {"failed starting session for $jid, device id: $deviceId" })
-                handler(Result.failure(it));
+                devicesFetchError[jid] = (devicesFetchError[jid] ?: emptyList()) + listOf(deviceId)
+                log.warning(it, { "failed starting session for $jid, device id: $deviceId" })
+                handler(Result.failure(it))
             }
         }.send()
     }
@@ -385,9 +412,21 @@ class OMEMOModule(
         )
     }
 
-    private fun publish(jid: BareJID, node: String, itemId: String?, payload: Element?, publishOptions: JabberDataForm): PublishRequestBuilder<PubSubModule.PublishingInfo> {
-        return PublishRequestBuilder<PubSubModule.PublishingInfo>(
-            pubsubModule.publish(jid = jid, node = node, itemId = itemId, payload = payload, publishOptions = publishOptions)
+    private fun publish(
+        jid: BareJID,
+        node: String,
+        itemId: String?,
+        payload: Element?,
+        publishOptions: JabberDataForm
+    ): PublishRequestBuilder<PubSubModule.PublishingInfo> =
+        PublishRequestBuilder<PubSubModule.PublishingInfo>(
+            pubsubModule.publish(
+                jid = jid,
+                node = node,
+                itemId = itemId,
+                payload = payload,
+                publishOptions = publishOptions
+            )
         ).errorHandler { e, callback ->
             when {
                 e is XMPPError && e.error == ErrorCondition.Conflict -> {
@@ -409,16 +448,15 @@ class OMEMOModule(
                 else -> callback(Result.failure(e))
             }
         }
-    }
 
     fun correctNodeConfigIfRequired() {
-        val deviceId = protocolStore.getLocalRegistrationId();
+        val deviceId = protocolStore.getLocalRegistrationId()
         if (deviceId == 0) {
-            return;
+            return
         }
         context.boundJID?.bareJID?.let { jid ->
-            correctNodeConfigIfRequired(jid, DEVICE_LIST_NODE);
-            correctNodeConfigIfRequired(jid, BUNDLES_NODE_PREFIX + deviceId);
+            correctNodeConfigIfRequired(jid, DEVICE_LIST_NODE)
+            correctNodeConfigIfRequired(jid, BUNDLES_NODE_PREFIX + deviceId)
         }
     }
 
@@ -436,40 +474,48 @@ class OMEMOModule(
         }.send()
     }
 
-    private fun adjustNodeConfig(jid: BareJID, node: String, requiredOptions: JabberDataForm): RequestBuilder<Unit,IQ> {
-        val x = JabberDataForm.create(FormType.Form);
+    private fun adjustNodeConfig(
+        jid: BareJID,
+        node: String,
+        requiredOptions: JabberDataForm
+    ): RequestBuilder<Unit, IQ> {
+        val x = JabberDataForm.create(FormType.Form)
         requiredOptions.getAllFields().forEach {
-            x.addField(Field.create(varName = it.fieldName!!, type = it.fieldType).apply {
-                it.fieldValues.let { this.fieldValues = it }
-            })
+            x.addField(
+                Field.create(varName = it.fieldName!!, type = it.fieldType).apply {
+                    it.fieldValues.let { this.fieldValues = it }
+                }
+            )
         }
-        return pubsubModule.configureNode(pubSubJID = jid, node = node, config = x);
+        return pubsubModule.configureNode(pubSubJID = jid, node = node, config = x)
     }
-    
-    class PublishRequestBuilder<V>(val requestBuilder: RequestBuilder<V,IQ>) {
+
+    class PublishRequestBuilder<V>(val requestBuilder: RequestBuilder<V, IQ>) {
 
         private var handlers: MutableList<RHandler<V>> = mutableListOf()
-        private var errorHandler: ((Throwable,(Result<V>)->Unit)->Unit)? = null;
+        private var errorHandler: ((Throwable, (Result<V>) -> Unit) -> Unit)? = null
 
         fun response(handler: RHandler<V>): PublishRequestBuilder<V> {
             handlers.add(handler)
-            return this;
+            return this
         }
 
-        fun errorHandler(errorHandler: (Throwable,(Result<V>)->Unit)->Unit): PublishRequestBuilder<V> {
-            this.errorHandler = errorHandler;
-            return this;
+        fun errorHandler(
+            errorHandler: (Throwable, (Result<V>) -> Unit) -> Unit
+        ): PublishRequestBuilder<V> {
+            this.errorHandler = errorHandler
+            return this
         }
 
         fun send() {
             requestBuilder.response { result ->
                 result.onSuccess {
-                    callHandlers(result);
+                    callHandlers(result)
                 }
                 if (errorHandler != null) {
                     result.onFailure {
                         errorHandler!!.invoke(it) {
-                            callHandlers(it);
+                            callHandlers(it)
                         }
 //                        errorHandler!!.invoke(it).onSuccess {
 //                            it.response { callHandlers(it) }.send();
@@ -480,7 +526,7 @@ class OMEMOModule(
                 } else {
                     result.onFailure {
                         for (handler in handlers) {
-                            callHandlers(result);
+                            callHandlers(result)
                         }
                     }
                 }
@@ -489,7 +535,7 @@ class OMEMOModule(
 
         private fun callHandlers(result: Result<V>) {
             for (handler in handlers) {
-                handler(result);
+                handler(result)
             }
         }
     }
@@ -500,18 +546,18 @@ class OMEMOModule(
             return
         }
 
-        val mamResult = element.getChildrenNS("result", "urn:xmpp:mam:2");
+        val mamResult = element.getChildrenNS("result", "urn:xmpp:mam:2")
         if (mamResult != null) {
             mamResult.getChildren("forwarded").forEach { forwardedEl ->
-                val messageEl = forwardedEl.getFirstChild("message");
+                val messageEl = forwardedEl.getFirstChild("message")
                 if (messageEl != null) {
-                    forwardedEl.remove(messageEl);
-                    forwardedEl.add(decodeMessage(messageEl, true));
+                    forwardedEl.remove(messageEl)
+                    forwardedEl.add(decodeMessage(messageEl, true))
                 }
             }
-            chain.doFilter(element);
+            chain.doFilter(element)
         } else {
-            chain.doFilter(decodeMessage(element, false));
+            chain.doFilter(decodeMessage(element, false))
         }
     }
 
@@ -523,26 +569,34 @@ class OMEMOModule(
                 ?.toInt()
 
         if (senderJid == null || encElement == null || senderId == null) {
-            return element;
+            return element
         }
 
-        val localJid = context.boundJID!!.bareJID;
+        val localJid = context.boundJID!!.bareJID
         val session = OMEMOSession(
             protocolStore.getLocalRegistrationId(),
             localJid,
             emptyMap<SignalProtocolAddress, SessionCipher>().toMutableMap()
         )
-        val result = OMEMOEncryptor.decrypt(protocolStore, session, wrap(element), healSession = { address ->
-            val hasStableId = context.boundJID?.bareJID?.let { element.getStanzaIDBy(it) } != null;
-            if (hasStableId) {
-                if (postpone) {
-                    log.fine { "postponing healing session $address" }
-                    postponedHealing.add(address)
-                } else {
-                    healSession(address)
+        val result = OMEMOEncryptor.decrypt(
+            protocolStore,
+            session,
+            wrap(
+                element
+            ),
+            healSession = { address ->
+                val hasStableId =
+                    context.boundJID?.bareJID?.let { element.getStanzaIDBy(it) } != null
+                if (hasStableId) {
+                    if (postpone) {
+                        log.fine { "postponing healing session $address" }
+                        postponedHealing.add(address)
+                    } else {
+                        healSession(address)
+                    }
                 }
             }
-        })
+        )
         when (result) {
             is OMEMOMessage.Decrypted ->
                 if (result.wasPrekey) {
@@ -552,11 +606,11 @@ class OMEMOModule(
                 log.warning { "OMEMO decryption failure: ${result.condition}" }
             }
         }
-        return result;
+        return result
     }
 
-    private var postponedCompletion = HashSet<SignalProtocolAddress>();
-    private var postponedHealing = HashSet<SignalProtocolAddress>();
+    private var postponedCompletion = HashSet<SignalProtocolAddress>()
+    private var postponedHealing = HashSet<SignalProtocolAddress>()
 
     private fun postPreKeyMessageHandling(address: SignalProtocolAddress, postpone: Boolean) {
         if (postpone) {
@@ -564,7 +618,7 @@ class OMEMOModule(
             postponedCompletion.add(address)
         } else {
             if ((protocolStore as? PreKeyStoreFlushable)?.flushDeletedPreKeys() != false) {
-                publishBundleIfNeeded();
+                publishBundleIfNeeded()
             }
             completeSession(address)
         }
@@ -574,13 +628,13 @@ class OMEMOModule(
         log.fine { "processing postponed session completions: ${postponedCompletion.size}" }
         if (!postponedCompletion.isEmpty()) {
             if ((protocolStore as? PreKeyStoreFlushable)?.flushDeletedPreKeys() != false) {
-                publishBundleIfNeeded();
+                publishBundleIfNeeded()
             }
 
             for (address in postponedCompletion) {
                 completeSession(address)
             }
-            postponedCompletion.clear();
+            postponedCompletion.clear()
         }
         log.fine { "processing postponed session healing completions: ${postponedHealing.size}" }
         for (address in postponedHealing) {
@@ -593,7 +647,7 @@ class OMEMOModule(
         log.fine { "healing session $address..." }
         startSession(address.getName().toBareJID(), address.getDeviceId(), handler = {
             when (it) {
-                Result.success(Unit) -> completeSession(address);
+                Result.success(Unit) -> completeSession(address)
             }
         })
     }
@@ -609,77 +663,99 @@ class OMEMOModule(
         }
     }
 
-    private var bundleRefreshInProgress = false;
+    private var bundleRefreshInProgress = false
 
     fun publishBundleIfNeeded() {
-        val registrationId = protocolStore.getLocalRegistrationId();
+        val registrationId = protocolStore.getLocalRegistrationId()
         if (registrationId == 0 || bundleRefreshInProgress) {
-            log.fine { "skipping checking of OMEMO bundle publication for account ${context.boundJID?.bareJID}, local device id = ${registrationId}, refresh in progress = ${bundleRefreshInProgress}" }
-            return;
+            log.fine {
+                "skipping checking of OMEMO bundle publication for account ${context.boundJID?.bareJID}, local device id = $registrationId, refresh in progress = $bundleRefreshInProgress"
+            }
+            return
         }
 
         context.boundJID?.bareJID?.let { jid ->
-            bundleRefreshInProgress = true;
-            pubsubModule.retrieveItem(jid, "$BUNDLES_NODE_PREFIX$registrationId", maxItems = 1).response {
+            bundleRefreshInProgress = true
+            pubsubModule.retrieveItem(
+                jid,
+                "$BUNDLES_NODE_PREFIX$registrationId",
+                maxItems = 1
+            ).response {
                 it.onSuccess {
-                    protocolStore.loadSignedPreKeys()?.mapNotNull { it?.getId() }?.max()?.let { signedPreKeyId ->
+                    protocolStore.loadSignedPreKeys()?.mapNotNull {
+                        it?.getId()
+                    }?.max()?.let { signedPreKeyId ->
                         val currentKeys =
-                            it.items.firstOrNull()?.content?.getFirstChild("prekeys")?.children?.mapNotNull { it.attributes["preKeyId"]?.toIntOrNull() }
-                                ?: emptyList();
-                        
-                        val validKeys = currentKeys.filter { protocolStore.containsPreKey(it) };
-                        val needKeys = 150 - validKeys.size;
-                        log.fine {"publishing new OMEMO bundle with ${needKeys} new keys for account ${jid}" }
+                            it.items.firstOrNull()?.content?.getFirstChild(
+                                "prekeys"
+                            )?.children?.mapNotNull {
+                                it.attributes["preKeyId"]?.toIntOrNull()
+                            }
+                                ?: emptyList()
+
+                        val validKeys = currentKeys.filter { protocolStore.containsPreKey(it) }
+                        val needKeys = 150 - validKeys.size
+                        log.fine {
+                            "publishing new OMEMO bundle with $needKeys new keys for account $jid"
+                        }
                         if (needKeys > 0) {
-                            val nextPreKeyId = bundleStateStorage.currentPreKeyId() + 1;
+                            val nextPreKeyId = bundleStateStorage.currentPreKeyId() + 1
                             val newKeys = KeyHelper.generatePreKeys(nextPreKeyId, needKeys).map {
-                                protocolStore.storePreKey(it.getId(), it);
+                                protocolStore.storePreKey(it.getId(), it)
                                 it.getId()
-                            };
-                            val preKeysToPublish = (validKeys + newKeys);
+                            }
+                            val preKeysToPublish = (validKeys + newKeys)
                             bundleStateStorage.updatePreKeyMax(preKeysToPublish.max())
                             publishOwnBundle(signedPreKeyId, preKeysToPublish).response {
                                 it.onSuccess {
-                                    log.info { "publication of new OMEMO bundle succeeded for account ${jid}" }
+                                    log.info {
+                                        "publication of new OMEMO bundle succeeded for account $jid"
+                                    }
                                     this.addDevice(registrationId)
-                                    bundleRefreshInProgress = false;
+                                    bundleRefreshInProgress = false
                                 }
                                 it.onFailure { ex ->
-                                    log.warning(ex, { "publication of new OMEMO bundle failed for account ${jid}, reverting..." })
+                                    log.warning(ex, {
+                                        "publication of new OMEMO bundle failed for account $jid, reverting..."
+                                    })
                                     newKeys.forEach {
-                                        protocolStore.removePreKey(it);
+                                        protocolStore.removePreKey(it)
                                     }
                                     bundleStateStorage.updatePreKeyMax(nextPreKeyId - 1)
-                                    bundleRefreshInProgress = false;
+                                    bundleRefreshInProgress = false
                                 }
-                                bundleRefreshInProgress = false;
-                            }.send();
+                                bundleRefreshInProgress = false
+                            }.send()
                         } else {
-                            addDevice(registrationId);
+                            addDevice(registrationId)
                             bundleRefreshInProgress = false
                         }
                     }
                 }
                 it.onFailure {
                     if (it is XMPPError) {
-                       when(it.error) {
-                           ErrorCondition.InternalServerError, ErrorCondition.ItemNotFound -> protocolStore.loadSignedPreKeys()?.mapNotNull { it?.getId() }?.max()?.let { signedPreKeyId ->
-                               val preKeyId = bundleStateStorage.currentPreKeyId();
-                               if (preKeyId > 0) {
-                                   val newKeys = (0..preKeyId).filter { protocolStore.containsPreKey(it) }
-                                   log.fine { "publishing own OMEMO bundle succeeded" }
-                                   publishOwnBundle(signedPreKeyId, newKeys).response {
-                                       this.addDevice(registrationId)
-                                       bundleRefreshInProgress = false
-                                   }.send();
-                               } else {
-                                   bundleRefreshInProgress = false;
-                               }
-                           }
-                           else -> {
-                               bundleRefreshInProgress = false;
-                           }
-                       }
+                        when (it.error) {
+                            ErrorCondition.InternalServerError, ErrorCondition.ItemNotFound -> protocolStore.loadSignedPreKeys()?.mapNotNull {
+                                it?.getId()
+                            }?.max()?.let { signedPreKeyId ->
+                                val preKeyId = bundleStateStorage.currentPreKeyId()
+                                if (preKeyId > 0) {
+                                    val newKeys = (0..preKeyId).filter {
+                                        protocolStore.containsPreKey(it)
+                                    }
+                                    log.fine { "publishing own OMEMO bundle succeeded" }
+                                    publishOwnBundle(signedPreKeyId, newKeys).response {
+                                        this.addDevice(registrationId)
+                                        bundleRefreshInProgress = false
+                                    }.send()
+                                } else {
+                                    bundleRefreshInProgress = false
+                                }
+                            }
+                            else -> {
+                                bundleRefreshInProgress = false
+                            }
+                        }
                     }
                 }
             }.send()
@@ -742,130 +818,172 @@ class OMEMOModule(
 //        }
 //    }
 
-    fun activeDevices(jid: BareJID): List<Int> = devices[jid]?.filterNot { devicesFetchError[jid]?.contains(it) ?: false } ?: emptyList();
-    
-    private fun ensureSessions(addresses: List<SignalProtocolAddress>, callback: (List<SignalProtocolAddress>)->Unit) {
-        var results = addresses.toMutableList();
-        val missingSessions = addresses.filterNot { protocolStore.containsSession(it) };
-        log.fine { "got missing sessions ${missingSessions} for jid ${addresses.firstOrNull()?.getName()} at account ${context.boundJID?.bareJID}" }
-        var counter = missingSessions.size;
-        if (counter == 0) {
-            callback(addresses);
-            return;
+    fun activeDevices(jid: BareJID): List<Int> =
+        devices[jid]?.filterNot { devicesFetchError[jid]?.contains(it) ?: false } ?: emptyList()
+
+    private fun ensureSessions(
+        addresses: List<SignalProtocolAddress>,
+        callback: (List<SignalProtocolAddress>) -> Unit
+    ) {
+        var results = addresses.toMutableList()
+        val missingSessions = addresses.filterNot { protocolStore.containsSession(it) }
+        log.fine {
+            "got missing sessions $missingSessions for jid ${addresses.firstOrNull()?.getName()} at account ${context.boundJID?.bareJID}"
         }
-        
-        val lock = Lock();
+        var counter = missingSessions.size
+        if (counter == 0) {
+            callback(addresses)
+            return
+        }
+
+        val lock = Lock()
         missingSessions.forEach { addr ->
-            log.fine { "starting session for ${addr} at account ${context.boundJID?.bareJID}" }
-            val jid = addr.getName().toBareJID();
+            log.fine { "starting session for $addr at account ${context.boundJID?.bareJID}" }
+            val jid = addr.getName().toBareJID()
             startSession(jid, addr.getDeviceId()) {
                 val isReady = lock.withLock {
                     if (it.isFailure) {
-                        log.fine(it.exceptionOrNull(), { "failed to start session for ${addr} at account ${context.boundJID?.bareJID}" })
-                        results.remove(addr);
+                        log.fine(it.exceptionOrNull(), {
+                            "failed to start session for $addr at account ${context.boundJID?.bareJID}"
+                        })
+                        results.remove(addr)
                     } else {
-                        log.fine { "started session for ${addr} at account ${context.boundJID?.bareJID}, remaining session counter: ${counter-1}" }
+                        log.fine {
+                            "started session for $addr at account ${context.boundJID?.bareJID}, remaining session counter: ${counter - 1}"
+                        }
                     }
-                    counter -= 1;
+                    counter -= 1
                     counter == 0
                 }
-                log.fine { "are we ready? isReady: ${isReady} for jid ${jid} at account ${context.boundJID?.bareJID}" }
+                log.fine {
+                    "are we ready? isReady: $isReady for jid $jid at account ${context.boundJID?.bareJID}"
+                }
                 if (isReady) {
-                    log.fine { "got active sessions for addresses ${results} for jid ${jid} at account ${context.boundJID?.bareJID}" }
-                    callback(results);
+                    log.fine {
+                        "got active sessions for addresses $results for jid $jid at account ${context.boundJID?.bareJID}"
+                    }
+                    callback(results)
                 }
             }
         }
     }
 
     fun addresses(jids: List<BareJID>, callback: (List<SignalProtocolAddress>) -> Unit) {
-        log.fine {"retrieving addresses for jids ${jids} on account ${context.boundJID?.bareJID}" }
-        val lock = Lock();
+        log.fine { "retrieving addresses for jids $jids on account ${context.boundJID?.bareJID}" }
+        val lock = Lock()
         var allAddresses = mutableListOf<SignalProtocolAddress>()
-        var counter = jids.size;
+        var counter = jids.size
         val continuation = { addresses: List<SignalProtocolAddress> ->
             val isReady = lock.withLock {
-                allAddresses.addAll(addresses);
-                counter -= 1;
+                allAddresses.addAll(addresses)
+                counter -= 1
                 counter == 0
             }
             if (isReady) {
-                log.fine {"retrieved addresses for jids ${jids} on account ${context.boundJID?.bareJID}, result: ${allAddresses}" }
-                callback(allAddresses);
+                log.fine {
+                    "retrieved addresses for jids $jids on account ${context.boundJID?.bareJID}, result: $allAddresses"
+                }
+                callback(allAddresses)
             }
         }
 
         jids.forEach {
-            addresses(it, continuation);
+            addresses(it, continuation)
         }
     }
 
-    fun addresses(jid: BareJID, callback: (List<SignalProtocolAddress>)->Unit) {
+    fun addresses(jid: BareJID, callback: (List<SignalProtocolAddress>) -> Unit) {
         log.fine { "retrieving addresses for jid $jid on account ${context.boundJID?.bareJID}" }
-        val devices = activeDevices(jid);
+        val devices = activeDevices(jid)
         if (devices.isNotEmpty()) {
-            log.fine { "got local info about devices for ${jid} on account ${context.boundJID?.bareJID}, result: ${devices}" }
+            log.fine {
+                "got local info about devices for $jid on account ${context.boundJID?.bareJID}, result: $devices"
+            }
             // encrypt for known active devices
             callback(devices.map { SignalProtocolAddress(jid.toString(), it) })
         } else {
             // we need to discover active devices
             retrieveDevicesIds(jid).response {
                 it.onSuccess {
-                    log.fine { "got remote info about devices for ${jid} on account ${context.boundJID?.bareJID}, result: ${it}" }
+                    log.fine {
+                        "got remote info about devices for $jid on account ${context.boundJID?.bareJID}, result: $it"
+                    }
                     this.devices[jid] = it
                     callback(it.map { SignalProtocolAddress(jid.toString(), it) })
                 }
                 it.onFailure {
-                    log.fine(it, { "failed to fetch remote info about devices for ${jid} on account ${context.boundJID?.bareJID}" })
+                    log.fine(it, {
+                        "failed to fetch remote info about devices for $jid on account ${context.boundJID?.bareJID}"
+                    })
                     callback(emptyList())
                 }
             }.send()
         }
     }
-    
-    fun encryptAndSend(element: Element, chain: StanzaFilterChain, recipients: List<BareJID>, bodyEl: Element, order: EncryptMessage) {
-        addresses(recipients) { addresses ->
-            val localJid = context.boundJID!!.bareJID;
-            log.fine("discovered remote addresses: ${addresses} for account ${localJid} for jid ${element.getToAttr()}")
 
-            val localAddresses = protocolStore.getSubDeviceSessions(localJid.toString()).map { SignalProtocolAddress(localJid.toString(), it) };
-            log.fine("discovered local addresses: ${localAddresses} for account ${localJid}")
+    fun encryptAndSend(
+        element: Element,
+        chain: StanzaFilterChain,
+        recipients: List<BareJID>,
+        bodyEl: Element,
+        order: EncryptMessage
+    ) {
+        addresses(recipients) { addresses ->
+            val localJid = context.boundJID!!.bareJID
+            log.fine(
+                "discovered remote addresses: $addresses for account $localJid for jid ${element.getToAttr()}"
+            )
+
+            val localAddresses = protocolStore.getSubDeviceSessions(localJid.toString()).map {
+                SignalProtocolAddress(localJid.toString(), it)
+            }
+            log.fine("discovered local addresses: $localAddresses for account $localJid")
             element.remove(bodyEl)
 
             encrypt(element, localAddresses + addresses, bodyEl.value) { encryptedMessage ->
-                chain.doFilter(encryptedMessage);
+                chain.doFilter(encryptedMessage)
             }
         }
     }
 
-    fun encrypt(element: Element, addresses: List<SignalProtocolAddress>, body: String?, callback: (Element) -> Unit) {
+    fun encrypt(
+        element: Element,
+        addresses: List<SignalProtocolAddress>,
+        body: String?,
+        callback: (Element) -> Unit
+    ) {
         ensureSessions(addresses) { addresses ->
-            val localJid = context.boundJID!!.bareJID;
+            val localJid = context.boundJID!!.bareJID
             val session = OMEMOSession(
                 protocolStore.getLocalRegistrationId(),
                 localJid,
-                addresses.distinct().associateBy({ k -> k }, { k -> SessionCipher(protocolStore, k) })
+                addresses.distinct().associateBy({ k ->
+                    k
+                }, { k -> SessionCipher(protocolStore, k) })
                     .toMutableMap()
             )
 
             val encElement = OMEMOEncryptor.encrypt(session, body)
 
             element.add(encElement)
-            element.add(element("store") {
-                xmlns = "urn:xmpp:hints"
-            })
+            element.add(
+                element("store") {
+                    xmlns = "urn:xmpp:hints"
+                }
+            )
 
             if (body != null) {
-                element.add(element("body") {
-                    value = "[This message is OMEMO encrypted]"
-                })
+                element.add(
+                    element("body") {
+                        value = "[This message is OMEMO encrypted]"
+                    }
+                )
             }
 
             element.clearControls()
             callback(element)
         }
     }
-
 
     fun beforeSend(element: Element?, chain: StanzaFilterChain) {
         if (element?.name != Message.NAME) {
@@ -874,14 +992,15 @@ class OMEMOModule(
         }
 
         val order = element.encryptionOrder()
-        element.clearControls();
+        element.clearControls()
         val bodyEl = element.getFirstChild("body")
-        val recipient = element.getToAttr();
+        val recipient = element.getToAttr()
         if (bodyEl != null && recipient != null) {
-            when(order) {
+            when (order) {
                 is EncryptMessage.No -> chain.doFilter(element)
                 is EncryptMessage.Yes -> {
-                    val recipients = order.jids.takeUnless { it.isEmpty() }?: listOf(recipient.bareJID)
+                    val recipients =
+                        order.jids.takeUnless { it.isEmpty() } ?: listOf(recipient.bareJID)
                     encryptAndSend(element, chain, recipients, bodyEl, order)
                 }
             }
@@ -889,17 +1008,20 @@ class OMEMOModule(
             chain.doFilter(element)
         }
     }
-
 }
 
 sealed interface EncryptMessage {
-    data class Yes(val jids: List<BareJID> = emptyList()): EncryptMessage {}
-    object No: EncryptMessage {}
+    data class Yes(val jids: List<BareJID> = emptyList()) : EncryptMessage
+    object No : EncryptMessage
 }
 
 private fun Element?.toDeviceList(): List<Int> =
-    if (this?.name == "list" && this.xmlns == OMEMOModule.XMLNS) this.getChildren("device")
-        .mapNotNull { it.attributes["id"]?.toInt() } else emptyList()
+    if (this?.name == "list" && this.xmlns == OMEMOModule.XMLNS) {
+        this.getChildren("device")
+            .mapNotNull { it.attributes["id"]?.toInt() }
+    } else {
+        emptyList()
+    }
 
 /**
  * Prepare request to add device to currently published device list.

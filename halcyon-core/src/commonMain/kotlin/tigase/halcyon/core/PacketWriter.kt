@@ -31,5 +31,4 @@ interface PacketWriter {
      * Sends prepared element directly to server, without registering response handlers.
      */
     fun writeDirectly(stanza: Element)
-
 }

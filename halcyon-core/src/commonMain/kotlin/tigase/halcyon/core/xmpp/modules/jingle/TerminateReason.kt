@@ -22,39 +22,41 @@ import tigase.halcyon.core.xml.element
 
 enum class TerminateReason(val value: String) {
 
-	AlternativeSession("alternative-session"),
-	Busy("busy"),
-	Cancel("cancel"),
-	ConnectivityError("connectivity-error"),
-	Decline("decline"),
-	Expired("expired"),
-	FailedApplication("failed-application"),
-	FailedTransport("failed-transport"),
-	GeneralError("general-error"),
-	Gone("gone"),
-	IncompatibleParameters("incompatible-parameters"),
-	MediaError("media-error"),
-	SecurityError("security-error"),
-	Success("success"),
-	Timeout("timeout"),
-	UnsupportedApplications("unsupported-applications"),
-	UnsupportedTransports("unsupported-transports");
+    AlternativeSession("alternative-session"),
+    Busy("busy"),
+    Cancel("cancel"),
+    ConnectivityError("connectivity-error"),
+    Decline("decline"),
+    Expired("expired"),
+    FailedApplication("failed-application"),
+    FailedTransport("failed-transport"),
+    GeneralError("general-error"),
+    Gone("gone"),
+    IncompatibleParameters("incompatible-parameters"),
+    MediaError("media-error"),
+    SecurityError("security-error"),
+    Success("success"),
+    Timeout("timeout"),
+    UnsupportedApplications("unsupported-applications"),
+    UnsupportedTransports("unsupported-transports");
 
-	fun toElement(): Element = element(value) {}
-	fun toReasonElement(): Element = element("reason") {
-		xmlns = JingleModule.XMLNS
-		addChild(toElement())
-	}
+    fun toElement(): Element = element(value) {}
+    fun toReasonElement(): Element = element("reason") {
+        xmlns = JingleModule.XMLNS
+        addChild(toElement())
+    }
 
-	companion object {
+    companion object {
 
-		fun fromReasonElement(element: Element): TerminateReason? {
-			if (element.name == "reason") {
-				return element.children.filter { it.name != "text" }.firstNotNullOfOrNull { fromValue(it.name) }
+        fun fromReasonElement(element: Element): TerminateReason? {
+            if (element.name == "reason") {
+                return element.children.filter {
+                    it.name != "text"
+                }.firstNotNullOfOrNull { fromValue(it.name) }
             }
-			return null;
-		}
+            return null
+        }
 		
-		fun fromValue(value: String) = entries.find { it.value == value }
-	}
+        fun fromValue(value: String) = entries.find { it.value == value }
+    }
 }

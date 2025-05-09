@@ -23,23 +23,21 @@ import tigase.halcyon.core.connector.AbstractConnector
 import tigase.halcyon.core.connector.socket.SocketConnector
 import tigase.halcyon.core.logger.LoggerFactory
 
-actual class Halcyon actual constructor(configuration: ConfigurationBuilder) : AbstractHalcyon(configuration) {
+actual class Halcyon actual constructor(configuration: ConfigurationBuilder) :
+    AbstractHalcyon(configuration) {
 
-	private val log = LoggerFactory.logger("tigase.halcyon.core.Halcyon")
+    private val log = LoggerFactory.logger("tigase.halcyon.core.Halcyon")
 
-	init {
-		// this.config.connectorConfig = SocketConnectorConfig()
-	}
+    init {
+        // this.config.connectorConfig = SocketConnectorConfig()
+    }
 
-	override fun reconnect(immediately: Boolean) {
-		log.finer { "Called reconnect. immediately=$immediately" }
-		if (!immediately) usleep(3000u)
-		state = State.Connecting
-		startConnector()
-	}
+    override fun reconnect(immediately: Boolean) {
+        log.finer { "Called reconnect. immediately=$immediately" }
+        if (!immediately) usleep(3000u)
+        state = State.Connecting
+        startConnector()
+    }
 
-	override fun createConnector(): AbstractConnector {
-		return SocketConnector(this)
-	}
-
+    override fun createConnector(): AbstractConnector = SocketConnector(this)
 }

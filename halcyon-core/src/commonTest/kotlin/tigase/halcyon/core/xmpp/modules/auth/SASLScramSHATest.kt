@@ -1,57 +1,89 @@
 package tigase.halcyon.core.xmpp.modules.auth
 
 import korlibs.crypto.PBKDF2
+import kotlin.test.*
 import tigase.DummyHalcyon
 import tigase.halcyon.core.Base64
 import tigase.halcyon.core.builder.createConfiguration
 import tigase.halcyon.core.fromBase64
 import tigase.halcyon.core.toBase64
 import tigase.halcyon.core.xmpp.toBareJID
-import kotlin.test.*
 
 class SASLScramSHATest {
 
     @Test
     fun test_hi_from_soywiz() {
         assertEquals(
-            "n3jX3vxtWYywWAJWKRt1SH73XEHd+5x7bUVlwI3mTeI=", PBKDF2.pbkdf2WithHmacSHA256(
-                "a".encodeToByteArray(), Base64.decodeToByteArray("QSXCR+Q6sek8bf92"), 1024, 256
+            "n3jX3vxtWYywWAJWKRt1SH73XEHd+5x7bUVlwI3mTeI=",
+            PBKDF2.pbkdf2WithHmacSHA256(
+                "a".encodeToByteArray(),
+                Base64.decodeToByteArray("QSXCR+Q6sek8bf92"),
+                1024,
+                256
             ).base64
         )
         assertEquals(
-            "rk+0v0g6+r7NEX/w5STcHxccFyNbwkorOUNtyOkOsyA=", PBKDF2.pbkdf2WithHmacSHA256(
-                "aa".encodeToByteArray(), Base64.decodeToByteArray("QSXCR+Q6sek8bf92"), 1024, 256
+            "rk+0v0g6+r7NEX/w5STcHxccFyNbwkorOUNtyOkOsyA=",
+            PBKDF2.pbkdf2WithHmacSHA256(
+                "aa".encodeToByteArray(),
+                Base64.decodeToByteArray("QSXCR+Q6sek8bf92"),
+                1024,
+                256
             ).base64
         )
         assertEquals(
-            "eSexmOCD3+4+GYv7o0C158OFU/lIrpUDxtxlQrWQe7E=", PBKDF2.pbkdf2WithHmacSHA256(
-                "aaa".encodeToByteArray(), Base64.decodeToByteArray("QSXCR+Q6sek8bf92"), 1024, 256
+            "eSexmOCD3+4+GYv7o0C158OFU/lIrpUDxtxlQrWQe7E=",
+            PBKDF2.pbkdf2WithHmacSHA256(
+                "aaa".encodeToByteArray(),
+                Base64.decodeToByteArray("QSXCR+Q6sek8bf92"),
+                1024,
+                256
             ).base64
         )
         assertEquals(
-            "/A7+s5RfyLiJhkDrZrMA6QuYZoWtSMNzLGasrxVM1SA=", PBKDF2.pbkdf2WithHmacSHA256(
-                "aaaa".encodeToByteArray(), Base64.decodeToByteArray("QSXCR+Q6sek8bf92"), 1024, 256
+            "/A7+s5RfyLiJhkDrZrMA6QuYZoWtSMNzLGasrxVM1SA=",
+            PBKDF2.pbkdf2WithHmacSHA256(
+                "aaaa".encodeToByteArray(),
+                Base64.decodeToByteArray("QSXCR+Q6sek8bf92"),
+                1024,
+                256
             ).base64
         )
 
         assertEquals(
-            "vCLuivE7J56jv5TT3DSusTzLWDeaM6RFxYJFKMEVJ6w=", PBKDF2.pbkdf2WithHmacSHA256(
-                "a".encodeToByteArray(), Base64.decodeToByteArray("PxR/wv+epq"), 1024, 256
+            "vCLuivE7J56jv5TT3DSusTzLWDeaM6RFxYJFKMEVJ6w=",
+            PBKDF2.pbkdf2WithHmacSHA256(
+                "a".encodeToByteArray(),
+                Base64.decodeToByteArray("PxR/wv+epq"),
+                1024,
+                256
             ).base64
         )
         assertEquals(
-            "1Q1otjo/Bv+v9jLmMT9pWX2gG9HBq5LqgyFRkdSiGio=", PBKDF2.pbkdf2WithHmacSHA256(
-                "aa".encodeToByteArray(), Base64.decodeToByteArray("PxR/wv+epq"), 1024, 256
+            "1Q1otjo/Bv+v9jLmMT9pWX2gG9HBq5LqgyFRkdSiGio=",
+            PBKDF2.pbkdf2WithHmacSHA256(
+                "aa".encodeToByteArray(),
+                Base64.decodeToByteArray("PxR/wv+epq"),
+                1024,
+                256
             ).base64
         )
         assertEquals(
-            "ky3MAhegAZbI0BuXmbdgAtS9o1+Jju441H/taRHnJyw=", PBKDF2.pbkdf2WithHmacSHA256(
-                "aaa".encodeToByteArray(), Base64.decodeToByteArray("PxR/wv+epq"), 1024, 256
+            "ky3MAhegAZbI0BuXmbdgAtS9o1+Jju441H/taRHnJyw=",
+            PBKDF2.pbkdf2WithHmacSHA256(
+                "aaa".encodeToByteArray(),
+                Base64.decodeToByteArray("PxR/wv+epq"),
+                1024,
+                256
             ).base64
         )
         assertEquals(
-            "7P3B8R6LG6mA0Ipout5ZcMsj9HjHvekVltXe2LwgvGw=", PBKDF2.pbkdf2WithHmacSHA256(
-                "aaaa".encodeToByteArray(), Base64.decodeToByteArray("PxR/wv+epq"), 1024, 256
+            "7P3B8R6LG6mA0Ipout5ZcMsj9HjHvekVltXe2LwgvGw=",
+            PBKDF2.pbkdf2WithHmacSHA256(
+                "aaaa".encodeToByteArray(),
+                Base64.decodeToByteArray("PxR/wv+epq"),
+                1024,
+                256
             ).base64
         )
     }
@@ -60,25 +92,36 @@ class SASLScramSHATest {
     fun test_hi() {
         println(
             PBKDF2.pbkdf2WithHmacSHA256(
-                "a".encodeToByteArray(), Base64.decodeToByteArray("QSXCR+Q6sek8bf92"), 1024, 256
+                "a".encodeToByteArray(),
+                Base64.decodeToByteArray("QSXCR+Q6sek8bf92"),
+                1024,
+                256
             ).base64
         )
 
         assertEquals(
             "n3jX3vxtWYywWAJWKRt1SH73XEHd+5x7bUVlwI3mTeI=",
-            Base64.encode(hi("a".encodeToByteArray(), Base64.decodeToByteArray("QSXCR+Q6sek8bf92"), 1024))
+            Base64.encode(
+                hi("a".encodeToByteArray(), Base64.decodeToByteArray("QSXCR+Q6sek8bf92"), 1024)
+            )
         )
         assertEquals(
             "rk+0v0g6+r7NEX/w5STcHxccFyNbwkorOUNtyOkOsyA=",
-            Base64.encode(hi("aa".encodeToByteArray(), Base64.decodeToByteArray("QSXCR+Q6sek8bf92"), 1024))
+            Base64.encode(
+                hi("aa".encodeToByteArray(), Base64.decodeToByteArray("QSXCR+Q6sek8bf92"), 1024)
+            )
         )
         assertEquals(
             "eSexmOCD3+4+GYv7o0C158OFU/lIrpUDxtxlQrWQe7E=",
-            Base64.encode(hi("aaa".encodeToByteArray(), Base64.decodeToByteArray("QSXCR+Q6sek8bf92"), 1024))
+            Base64.encode(
+                hi("aaa".encodeToByteArray(), Base64.decodeToByteArray("QSXCR+Q6sek8bf92"), 1024)
+            )
         )
         assertEquals(
             "/A7+s5RfyLiJhkDrZrMA6QuYZoWtSMNzLGasrxVM1SA=",
-            Base64.encode(hi("aaaa".encodeToByteArray(), Base64.decodeToByteArray("QSXCR+Q6sek8bf92"), 1024))
+            Base64.encode(
+                hi("aaaa".encodeToByteArray(), Base64.decodeToByteArray("QSXCR+Q6sek8bf92"), 1024)
+            )
         )
         assertEquals(
             "vCLuivE7J56jv5TT3DSusTzLWDeaM6RFxYJFKMEVJ6w=",
@@ -86,15 +129,21 @@ class SASLScramSHATest {
         )
         assertEquals(
             "1Q1otjo/Bv+v9jLmMT9pWX2gG9HBq5LqgyFRkdSiGio=",
-            Base64.encode(hi("aa".encodeToByteArray(), Base64.decodeToByteArray("PxR/wv+epq"), 1024))
+            Base64.encode(
+                hi("aa".encodeToByteArray(), Base64.decodeToByteArray("PxR/wv+epq"), 1024)
+            )
         )
         assertEquals(
             "ky3MAhegAZbI0BuXmbdgAtS9o1+Jju441H/taRHnJyw=",
-            Base64.encode(hi("aaa".encodeToByteArray(), Base64.decodeToByteArray("PxR/wv+epq"), 1024))
+            Base64.encode(
+                hi("aaa".encodeToByteArray(), Base64.decodeToByteArray("PxR/wv+epq"), 1024)
+            )
         )
         assertEquals(
             "7P3B8R6LG6mA0Ipout5ZcMsj9HjHvekVltXe2LwgvGw=",
-            Base64.encode(hi("aaaa".encodeToByteArray(), Base64.decodeToByteArray("PxR/wv+epq"), 1024))
+            Base64.encode(
+                hi("aaaa".encodeToByteArray(), Base64.decodeToByteArray("PxR/wv+epq"), 1024)
+            )
         )
     }
 
@@ -121,7 +170,6 @@ class SASLScramSHATest {
                 .decodeToString(),
             "Invalid first client message"
         )
-
     }
 
     @Test
@@ -147,7 +195,6 @@ class SASLScramSHATest {
                 .decodeToString(),
             "Invalid first client message"
         )
-
     }
 
     @Test
@@ -175,26 +222,31 @@ class SASLScramSHATest {
 
         // client last message
         assertEquals(
-            "c=biws,r=fyko+d2lbbFgONRv9qkxdawL3rfcNHYJY1ZVvWVs7j,p=v0X8v3Bz2T0CJGbJQyF0X+HI4Ts=", assertNotNull(
+            "c=biws,r=fyko+d2lbbFgONRv9qkxdawL3rfcNHYJY1ZVvWVs7j,p=v0X8v3Bz2T0CJGbJQyF0X+HI4Ts=",
+            assertNotNull(
                 scram.evaluateChallenge(
                     "r=fyko+d2lbbFgONRv9qkxdawL3rfcNHYJY1ZVvWVs7j,s=QSXCR+Q6sek8bf92,i=4096".encodeToByteArray()
-                        .toBase64(), DummyHalcyon(),
+                        .toBase64(),
+                    DummyHalcyon(),
                     configuration,
                     context
                 )
             ).fromBase64()
-                .decodeToString(), "Invalid last client message"
+                .decodeToString(),
+            "Invalid last client message"
         )
 
         assertFalse(context.complete, "It should not be completed yet.")
 
         assertNull(
             scram.evaluateChallenge(
-                "v=rmF9pqV8S7suAoZWja4dJRkFsKQ=".encodeToByteArray().toBase64(), DummyHalcyon(), configuration, context
+                "v=rmF9pqV8S7suAoZWja4dJRkFsKQ=".encodeToByteArray().toBase64(),
+                DummyHalcyon(),
+                configuration,
+                context
             )
         )
         assertTrue(context.complete, "It should be completed.")
-
     }
 
     @Test
@@ -226,7 +278,8 @@ class SASLScramSHATest {
             assertNotNull(
                 scram.evaluateChallenge(
                     "r=rOprNGfwEbeRWgbNEkqO%hvYDpWUa2RaTCAfuxFIlj)hNlF\$k0,s=W22ZaJ0SNY7soEsUEjb6gQ==,i=4096".encodeToByteArray()
-                        .toBase64(), DummyHalcyon(),
+                        .toBase64(),
+                    DummyHalcyon(),
                     configuration,
                     context
                 )
@@ -246,7 +299,6 @@ class SASLScramSHATest {
             )
         )
         assertTrue(context.complete, "It should be completed.")
-
     }
 
     @Test
@@ -276,7 +328,8 @@ class SASLScramSHATest {
             assertNotNull(
                 scram.evaluateChallenge(
                     "r=rOprNGfwEbeRWgbNEkqO%hvYDpWUa2RaTCAfuxFIlj)hNlF\$k0,s=W22ZaJ0SNY7soEsUEjb6gQ==,i=4096".encodeToByteArray()
-                        .toBase64(), DummyHalcyon(),
+                        .toBase64(),
+                    DummyHalcyon(),
                     configuration,
                     context
                 )
@@ -297,6 +350,5 @@ class SASLScramSHATest {
         }
 
         assertFalse(context.complete, "It should NOT be completed.")
-
     }
 }
