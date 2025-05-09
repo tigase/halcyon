@@ -16,24 +16,24 @@
  * If not, see http://www.gnu.org/licenses/.
  */
 plugins {
-	id("kotlinMultiplatformConvention")
-	`maven-publish`
-	signing
+    id("kotlinMultiplatformConvention")
+    `maven-publish`
+    signing
 }
 
 kotlin {
 
-	sourceSets {
-		named("commonMain") {
-			dependencies {
-				implementation(project(":halcyon-core"))
-				implementation(libs.kotlinx.coroutines.core)
-			}
-		}
-		named("commonTest") {
-			dependencies {
-				implementation(libs.kotlinx.coroutines.test)
-			}
-		}
-	}
+    sourceSets {
+        named("commonMain") {
+            dependencies {
+                implementation(project(":halcyon-core"))
+                implementation(libs.kotlinx.coroutines.core)
+            }
+        }
+        named("commonTest") {
+            dependencies {
+                implementation(libs.kotlinx.coroutines.test)
+            }
+        }
+    }
 }

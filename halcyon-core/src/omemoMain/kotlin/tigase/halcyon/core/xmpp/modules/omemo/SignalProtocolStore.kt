@@ -1,6 +1,6 @@
 package tigase.halcyon.core.xmpp.modules.omemo
 
-//expect interface SignalProtocolStore {
+// expect interface SignalProtocolStore {
 //
 //    fun getIdentityKeyPair(): IdentityKeyPair
 //    fun getLocalRegistrationId(): Int;
@@ -15,11 +15,13 @@ package tigase.halcyon.core.xmpp.modules.omemo
 //
 //    fun saveIdentity(address: SignalProtocolAddress, key: IdentityKey): Boolean
 //
-//}
+// }
 
-expect interface SignalProtocolStore: IdentityKeyStore, PreKeyStore, SessionStore, SignedPreKeyStore {
-    
-}
+expect interface SignalProtocolStore :
+    IdentityKeyStore,
+    PreKeyStore,
+    SessionStore,
+    SignedPreKeyStore
 
 expect interface ECPublicKey {
     fun serialize(): ByteArray

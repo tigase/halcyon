@@ -17,10 +17,15 @@
  */
 package tigase.halcyon.core.xml.parser
 
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
+import kotlin.test.assertIs
+import kotlin.test.assertNotEquals
+import kotlin.test.assertNull
+import kotlin.test.fail
 import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xml.XmlException
-import kotlin.test.*
-
 
 class StreamParserTest {
 
@@ -43,7 +48,6 @@ class StreamParserTest {
 
     @Test
     fun testEntities() {
-
         var e = parse("<message from=\"test@example.com\"><body>© §      ∉ ⇒ </body></message>")
         assertEquals("© §      ∉ ⇒ ", e.findChild("message", "body")!!.value)
 
@@ -111,11 +115,12 @@ class StreamParserTest {
         }
 
         try {
-            parse("<message to=\"test@zeus\" type=\"chat\" id=\"t&amp;t<\"><body>Test &amp; done</body></message>")
+            parse(
+                "<message to=\"test@zeus\" type=\"chat\" id=\"t&amp;t<\"><body>Test &amp; done</body></message>"
+            )
             fail("Error expected!")
         } catch (_: Exception) {
         }
-
     }
 
     @Test
@@ -152,8 +157,8 @@ class StreamParserTest {
 
         parser.parse(
             "<stream:stream>\n" +
-                    "<iq/>\n" +
-                    "</stream:stream>"
+                "<iq/>\n" +
+                "</stream:stream>"
         )
         assertNull(e)
     }
@@ -183,12 +188,11 @@ class StreamParserTest {
 
         parser.parse(
             "<stream:stream>\n" +
-                    "<x>ok</x>INVALID<x>ok</x>\n" +
-                    "</stream:stream>"
+                "<x>ok</x>INVALID<x>ok</x>\n" +
+                "</stream:stream>"
         )
         assertIs<XmlException>(e).let {
             assertEquals("Invalid characters between tags.", it.message)
         }
     }
-
 }

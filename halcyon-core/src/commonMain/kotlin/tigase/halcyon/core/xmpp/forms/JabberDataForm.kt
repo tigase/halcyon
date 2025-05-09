@@ -18,7 +18,11 @@
 package tigase.halcyon.core.xmpp.forms
 
 import kotlinx.serialization.Serializable
-import tigase.halcyon.core.xml.*
+import tigase.halcyon.core.xml.Element
+import tigase.halcyon.core.xml.element
+import tigase.halcyon.core.xml.getChildContent
+import tigase.halcyon.core.xml.setAtt
+import tigase.halcyon.core.xml.setChildContent
 import tigase.halcyon.core.xmpp.ErrorCondition
 import tigase.halcyon.core.xmpp.XMPPException
 
@@ -103,7 +107,8 @@ class Field(val element: Element) {
         get() = element.attributes["type"]?.let {
             FieldType.values()
                 .firstOrNull { te -> te.xmppValue == it } ?: throw XMPPException(
-                ErrorCondition.BadRequest, "Unknown field type '$it'"
+                ErrorCondition.BadRequest,
+                "Unknown field type '$it'"
             )
         }
 
@@ -193,9 +198,7 @@ class Field(val element: Element) {
             }
             return Field(field)
         }
-
     }
-
 }
 
 /**
@@ -224,8 +227,7 @@ enum class FormType(val xmppValue: String) {
      * The form-processing entity is returning data (e.g., search results) to the form-submitting entity,
      * or the data is a generic data set.
      */
-    Result("result");
-
+    Result("result")
 }
 
 /**
@@ -246,7 +248,6 @@ class JabberDataForm(val element: Element) {
             JabberDataForm(element("x") { xmlns = XMLNS }).apply {
                 this.type = type
             }
-
     }
 
     /**
@@ -269,7 +270,8 @@ class JabberDataForm(val element: Element) {
         get() = element.attributes["type"]?.let { typeName ->
             FormType.values()
                 .firstOrNull { it.xmppValue == typeName } ?: throw XMPPException(
-                ErrorCondition.BadRequest, "Unknown form type '$typeName'."
+                ErrorCondition.BadRequest,
+                "Unknown form type '$typeName'."
             )
         } ?: throw XMPPException(ErrorCondition.BadRequest, "Empty form type.")
 
@@ -287,14 +289,14 @@ class JabberDataForm(val element: Element) {
         set(value) = internalSetChildrenValue("description", value)
         get() = internalGetChildrenValue("description")
 
-    private fun internalGetChildrenValue(elementName: String): String? {
-        return element.getFirstChild(elementName)?.value
-    }
+    private fun internalGetChildrenValue(elementName: String): String? =
+        element.getFirstChild(elementName)?.value
 
     private fun internalSetChildrenValue(elementName: String, value: String?) {
         var e = element.getFirstChild(elementName)
-        if (e != null && value == null) element.remove(e)
-        else if (e == null) {
+        if (e != null && value == null) {
+            element.remove(e)
+        } else if (e == null) {
             e = element(elementName) { +"$value" }
             element.add(e)
         } else {
@@ -305,10 +307,8 @@ class JabberDataForm(val element: Element) {
     /**
      * Returns list of all fields.
      */
-    fun getAllFields(): List<Field> {
-        return element.getChildren("field")
-            .map { Field(it) }
-    }
+    fun getAllFields(): List<Field> = element.getChildren("field")
+        .map { Field(it) }
 
     /**
      * Returns field by name or null if such field does not exist.
@@ -406,12 +406,12 @@ class JabberDataForm(val element: Element) {
     /**
      * Returns list of reported columns.
      */
-    fun getReportedColumns(): List<Field> {
-        return checkNotNull(element.getFirstChild("reported")) { "This is not Multiple Items form." }.getChildren(
-            "field"
-        )
-            .map { Field(it) }
-    }
+    fun getReportedColumns(): List<Field> = checkNotNull(element.getFirstChild("reported")) {
+        "This is not Multiple Items form."
+    }.getChildren(
+        "field"
+    )
+        .map { Field(it) }
 
     /**
      * Sets list of reported columns.
@@ -440,9 +440,11 @@ class JabberDataForm(val element: Element) {
             throw IllegalArgumentException("Fields vars doesn't match to declared columns.")
         }
 
-        element.add(element("item") {
-            fields.forEach { addChild(it.element) }
-        })
+        element.add(
+            element("item") {
+                fields.forEach { addChild(it.element) }
+            }
+        )
     }
 
     fun getItems(): List<Item> {
@@ -450,7 +452,6 @@ class JabberDataForm(val element: Element) {
         return element.getChildren("item")
             .map { Item(columns, it) }
     }
-
 }
 
 class Item(private val columns: List<Field>, private val element: Element) {
@@ -460,5 +461,4 @@ class Item(private val columns: List<Field>, private val element: Element) {
             ?: throw IllegalStateException("Column $name does not exists.")
         return Field(e)
     }
-
 }

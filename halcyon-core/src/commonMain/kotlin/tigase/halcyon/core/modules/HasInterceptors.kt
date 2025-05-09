@@ -20,6 +20,5 @@ package tigase.halcyon.core.modules
 @Deprecated("do wyjebki")
 interface HasInterceptors {
 
-	val stanzaInterceptors: Array<StanzaInterceptor>
-
+    val stanzaInterceptors: Array<StanzaInterceptor>
 }

@@ -18,7 +18,12 @@
 package tigase.halcyon.core.xmpp.stanzas
 
 import kotlinx.serialization.Serializable
-import tigase.halcyon.core.xml.*
+import tigase.halcyon.core.xml.Element
+import tigase.halcyon.core.xml.PresenceStanzaSerializer
+import tigase.halcyon.core.xml.attributeProp
+import tigase.halcyon.core.xml.elementProperty
+import tigase.halcyon.core.xml.intWithDefaultElementProperty
+import tigase.halcyon.core.xml.stringElementProperty
 import tigase.halcyon.core.xmpp.ErrorCondition
 import tigase.halcyon.core.xmpp.XMPPException
 
@@ -46,9 +51,9 @@ enum class Show(val value: String) {
     /**
      * The entity or resource is busy (dnd = "Do Not Disturb").
      */
-    DnD("dnd"),
-
+    DnD("dnd")
 }
+
 @Serializable
 enum class PresenceType(val value: String) {
 
@@ -58,7 +63,7 @@ enum class PresenceType(val value: String) {
     Subscribed("subscribed"),
     Unavailable("unavailable"),
     Unsubscribe("unsubscribe"),
-    Unsubscribed("unsubscribed"),
+    Unsubscribed("unsubscribed")
 }
 
 @Serializable(with = PresenceStanzaSerializer::class)
@@ -79,21 +84,22 @@ class Presence(wrappedElement: Element) : Stanza<PresenceType?>(wrappedElement) 
             s?.let {
                 PresenceType.values()
                     .firstOrNull { te -> te.value == it } ?: throw XMPPException(
-                    ErrorCondition.BadRequest, "Unknown stanza type '$it'"
+                    ErrorCondition.BadRequest,
+                    "Unknown stanza type '$it'"
                 )
             }
-        })
+        }
+    )
 
     var show: Show? by elementProperty(stringToValue = { s ->
         s?.let {
             Show.values()
                 .firstOrNull { s -> s.value == it } ?: throw XMPPException(
-                ErrorCondition.BadRequest, "Unknown show value: '$it'"
+                ErrorCondition.BadRequest,
+                "Unknown show value: '$it'"
             )
         }
-
     }, valueToString = { v -> v?.value })
     var priority: Int by intWithDefaultElementProperty(defaultValue = 0)
     var status: String? by stringElementProperty()
-
 }

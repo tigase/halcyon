@@ -6,5 +6,5 @@ expect class SessionBuilder(store: SignalProtocolStore, address: SignalProtocolA
     fun process(preKeyBundle: PreKeyBundle)
 }
 
-expect class InvalidKeyException: Exception {}
-expect class UntrustedIdentityException: Exception {}
+expect class InvalidKeyException : Exception
+expect class UntrustedIdentityException : Exception

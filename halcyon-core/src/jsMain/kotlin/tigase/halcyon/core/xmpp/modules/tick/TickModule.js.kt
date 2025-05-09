@@ -4,9 +4,9 @@ import kotlinx.browser.window
 import tigase.halcyon.core.Context
 import tigase.halcyon.core.TickEvent
 
-actual fun createTickTimer(): TickTimer  = DefaultTickTimer()
+actual fun createTickTimer(): TickTimer = DefaultTickTimer()
 
-class DefaultTickTimer() : TickTimer {
+class DefaultTickTimer : TickTimer {
 
     private var intervalHandler: Int = -1
 
@@ -23,5 +23,4 @@ class DefaultTickTimer() : TickTimer {
     private fun tick(context: Context) {
         context.eventBus.fire(TickEvent(++tickCounter))
     }
-
 }

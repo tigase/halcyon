@@ -17,62 +17,64 @@
  */
 package tigase.halcyon.core.xmpp.modules.mix
 
+import kotlin.test.Test
+import kotlin.test.assertFalse
 import tigase.DummyHalcyon
 import tigase.halcyon.core.xmpp.modules.roster.RosterItem
 import tigase.halcyon.core.xmpp.modules.roster.RosterModule
 import tigase.halcyon.core.xmpp.stanzas.message
 import tigase.halcyon.core.xmpp.toBareJID
 import tigase.halcyon.core.xmpp.toJID
-import kotlin.test.Test
-import kotlin.test.assertFalse
 
 class MIXModuleTest {
 
-	val halcyon = DummyHalcyon().apply {
-		connect()
-	}
+    val halcyon = DummyHalcyon().apply {
+        connect()
+    }
 
-	/**
-	 * Problem HALCYON-51
-	 */
-	@Test
-	fun testMIXMessageEventCalling() {
-		halcyon.getModule<RosterModule>(RosterModule.TYPE).store.addItem(
-			RosterItem(
-				"arturs@mix.tigase.org".toBareJID(), "MIX", annotations = arrayOf(
-					MIXRosterItemAnnotation("123")
-				)
-			)
-		)
+    /**
+     * Problem HALCYON-51
+     */
+    @Test
+    fun testMIXMessageEventCalling() {
+        halcyon.getModule<RosterModule>(RosterModule.TYPE).store.addItem(
+            RosterItem(
+                "arturs@mix.tigase.org".toBareJID(),
+                "MIX",
+                annotations = arrayOf(
+                    MIXRosterItemAnnotation("123")
+                )
+            )
+        )
 
-		val module = halcyon.getModule<MIXModule>(MIXModule.TYPE)
+        val module = halcyon.getModule<MIXModule>(MIXModule.TYPE)
 
-		var eventCalled = false
+        var eventCalled = false
 
-		halcyon.eventBus.register<MIXMessageEvent>(MIXMessageEvent.TYPE) {
-			eventCalled = true
-		}
+        halcyon.eventBus.register<MIXMessageEvent>(MIXMessageEvent.TYPE) {
+            eventCalled = true
+        }
 
-		val stanza = message {
-			from = "arturs@mix.tigase.org".toJID()
-			to = "kobit@tigase.org".toJID()
-			attributes["id"] = "4"
-			"event" {
-				xmlns = "http://jabber.org/protocol/pubsub#event"
-				"items" {
-					attributes["node"] = "urn:xmpp:mix:nodes:participants"
-				}
-			}
-			"stanza-id" {
-				xmlns = "urn:xmpp:sid:0"
-				attributes["id"] = "2b40219a-8f51-419f-ab0f-71ee03d278e9"
-				attributes["by"] = "kobit@tigase.org"
-			}
-		}
+        val stanza = message {
+            from = "arturs@mix.tigase.org".toJID()
+            to = "kobit@tigase.org".toJID()
+            attributes["id"] = "4"
+            "event" {
+                xmlns = "http://jabber.org/protocol/pubsub#event"
+                "items" {
+                    attributes["node"] = "urn:xmpp:mix:nodes:participants"
+                }
+            }
+            "stanza-id" {
+                xmlns = "urn:xmpp:sid:0"
+                attributes["id"] = "2b40219a-8f51-419f-ab0f-71ee03d278e9"
+                attributes["by"] = "kobit@tigase.org"
+            }
+        }
 
-		if (module.criteria.match(stanza)) module.process(stanza)
+        if (module.criteria.match(stanza)) module.process(stanza)
 
-		assertFalse(stanza.isMixMessage(), "This is not MIX Message")
-		assertFalse(eventCalled, "Event should not be called")
-	}
+        assertFalse(stanza.isMixMessage(), "This is not MIX Message")
+        assertFalse(eventCalled, "Event should not be called")
+    }
 }

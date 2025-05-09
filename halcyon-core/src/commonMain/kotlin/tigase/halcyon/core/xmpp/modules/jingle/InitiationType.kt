@@ -19,6 +19,6 @@ package tigase.halcyon.core.xmpp.modules.jingle
 
 enum class InitiationType {
 
-	Iq,
-	Message
+    Iq,
+    Message
 }

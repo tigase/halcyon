@@ -25,7 +25,6 @@ interface StanzaInterceptor {
     fun afterReceive(element: Element): Element?
 
     fun beforeSend(element: Element): Element
-
 }
 
 class BeforeSendInterceptorFilter(private val interceptor: StanzaInterceptor) : StanzaFilter {

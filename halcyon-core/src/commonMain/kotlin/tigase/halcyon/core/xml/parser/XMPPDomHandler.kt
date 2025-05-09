@@ -26,13 +26,12 @@ class XMPPDomHandler(
     val onNextElement: (Element) -> Unit,
     val onStreamStarted: (Map<String, String>) -> Unit,
     val onStreamClosed: () -> Unit,
-    val onParseError: (String) -> Unit,
+    val onParseError: (String) -> Unit
 ) : SimpleHandler {
 
     companion object {
 
         private val ELEM_STREAM_STREAM = "stream:stream"
-
     }
 
     private val log = LoggerFactory.logger("tigase.halcyon.core.xml.parser.XMPPDomHandler", false)
@@ -54,15 +53,18 @@ class XMPPDomHandler(
         }
 
         val idx = tmpName.indexOf(':')
-		var elemName = tmpName
-		if (idx > 0) {
+        var elemName = tmpName
+        if (idx > 0) {
             val tmpNamePrefix = tmpName.substring(0, idx)
-			if (namespaces.containsKey(tmpNamePrefix)) {
+            if (namespaces.containsKey(tmpNamePrefix)) {
                 elemName = tmpName.substring(idx + 1)
-			}
+            }
         }
 
-        if (elementBuilder != null && elementBuilder!!.onTop && elementBuilder!!.currentElement.name == elemName) {
+        if (elementBuilder != null &&
+            elementBuilder!!.onTop &&
+            elementBuilder!!.currentElement.name == elemName
+        ) {
             val element = elementBuilder!!.build()
             elementBuilder = null
             onNextElement.invoke(element)
@@ -84,13 +86,12 @@ class XMPPDomHandler(
             """Start element name: $name
 			Element attributes names: ${attrNames?.joinToString { " " }}
 			Element attributes values: ${attrValues?.joinToString { " " }}	
-		""".trimIndent()
+            """.trimIndent()
         }
 
         // Look for 'xmlns:' declarations:
         if (attrNames != null) {
             for (i in attrNames.indices) {
-
                 // Exit the loop as soon as we reach end of attributes set
                 if (attrNames[i] == null) {
                     break
@@ -99,7 +100,6 @@ class XMPPDomHandler(
                 if (attrNames[i].toString()
                         .startsWith("xmlns:")
                 ) {
-
                     // TODO should use a StringCache instead of intern() to
                     // avoid potential
                     // DOS by exhausting permgen
@@ -108,7 +108,7 @@ class XMPPDomHandler(
                         attrValues!![i].toString()
                     )
 
-                    log.finest { "Namespace found: ${attrValues[i].toString()}" }
+                    log.finest { "Namespace found: ${attrValues[i]}" }
                 } // end of if (att_name.startsWith("xmlns:"))
             } // end of for (String att_name : attnames)
         } // end of if (attr_names != null)
@@ -178,7 +178,6 @@ class XMPPDomHandler(
         }
 
         elementBuilder!!.attributes(attribs)
-
     }
 
     override fun restoreParserState(): Any? = parserState

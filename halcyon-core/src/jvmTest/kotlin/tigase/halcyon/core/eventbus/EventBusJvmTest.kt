@@ -17,69 +17,67 @@
  */
 package tigase.halcyon.core.eventbus
 
+import kotlin.test.Test
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 import tigase.halcyon.core.Halcyon
 import tigase.halcyon.core.builder.createConfiguration
 import tigase.halcyon.core.eventbus.EventBusInterface.Companion.ALL_EVENTS
 import tigase.halcyon.core.xmpp.toBareJID
-import kotlin.test.Test
-import kotlin.test.assertFalse
-import kotlin.test.assertTrue
 
 class EventBusJvmTest {
 
-	@Test
-	fun testBasic() {
+    @Test
+    fun testBasic() {
+        val halcyon = Halcyon(
+            createConfiguration {
+                auth {
+                    userJID = "user@example.com".toBareJID()
+                    password { "pencil" }
+                }
+            }
+        )
+        val eventBus = EventBus(halcyon)
+        val responses = mutableListOf<Any>()
 
-		val halcyon = Halcyon(createConfiguration {
-			auth {
-				userJID = "user@example.com".toBareJID()
-				password { "pencil" }
-			}
-		})
-		val eventBus = EventBus(halcyon)
-		val responses = mutableListOf<Any>()
+        val handler = object : EventHandler<TestEvent> {
+            @Override
+            override fun onEvent(event: TestEvent) {
+                responses.add(event.value!!)
+            }
+        }
 
-		val handler = object : EventHandler<TestEvent> {
-			@Override
-			override fun onEvent(event: TestEvent) {
-				responses.add(event.value!!)
-			}
-		}
+        eventBus.register(TestEvent.TYPE, handler)
 
-		eventBus.register(TestEvent.TYPE, handler)
+        eventBus.fire(TestEvent("01"))
+        eventBus.fire(TestEvent("02"))
+        eventBus.fire(TestEvent("03"))
+        eventBus.fire(TestEvent("04"))
+        eventBus.fire(TestEvent("05"))
 
-		eventBus.fire(TestEvent("01"))
-		eventBus.fire(TestEvent("02"))
-		eventBus.fire(TestEvent("03"))
-		eventBus.fire(TestEvent("04"))
-		eventBus.fire(TestEvent("05"))
+        assertTrue(responses.contains("01"))
+        assertTrue(responses.contains("02"))
+        assertTrue(responses.contains("03"))
+        assertTrue(responses.contains("04"))
+        assertTrue(responses.contains("05"))
+        assertFalse(responses.contains("06"))
 
-		assertTrue(responses.contains("01"))
-		assertTrue(responses.contains("02"))
-		assertTrue(responses.contains("03"))
-		assertTrue(responses.contains("04"))
-		assertTrue(responses.contains("05"))
-		assertFalse(responses.contains("06"))
+        eventBus.unregister(handler)
 
-		eventBus.unregister(handler)
+        eventBus.fire(TestEvent("06"))
+        assertFalse(responses.contains("06"))
 
-		eventBus.fire(TestEvent("06"))
-		assertFalse(responses.contains("06"))
+        eventBus.register(ALL_EVENTS, handler)
 
-		eventBus.register(ALL_EVENTS, handler)
+        eventBus.fire(TestEvent("07"))
+        assertTrue(responses.contains("07"))
+    }
 
-		eventBus.fire(TestEvent("07"))
-		assertTrue(responses.contains("07"))
+    internal class TestEvent(val value: String?) : Event(TYPE) {
 
-	}
+        companion object : EventDefinition<TestEvent> {
 
-	internal class TestEvent(val value: String?) : Event(TYPE) {
-
-		companion object : EventDefinition<TestEvent> {
-
-			override val TYPE = "test"
-		}
-
-	}
-
+            override val TYPE = "test"
+        }
+    }
 }

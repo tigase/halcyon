@@ -69,7 +69,9 @@ class SimpleParser {
         if (chr.code <= 0xD7FF) {
             return if (chr.code >= 0x20) {
                 true
-            } else ALLOWED_CHARS_LOW[chr.code]
+            } else {
+                ALLOWED_CHARS_LOW[chr.code]
+            }
         } else if (chr.code <= 0xFFFD) {
             if (chr.code >= 0xE000) {
                 return true
@@ -85,13 +87,12 @@ class SimpleParser {
         return false
     }
 
-    //private boolean ignore(char chr) {
+    // private boolean ignore(char chr) {
     //  return Arrays.binarySearch(IGNORE_CHARS, chr) >= 0;
-    //}
+    // }
     private fun initArray(size: Int): Array<StringBuilder?> = arrayOfNulls(size)
 
     private fun isWhite(chr: Char): Boolean {
-
         // In most cases the white character is just a space, in such a case
         // below loop would be faster than a binary search
         for (c in WHITE_CHARS) {
@@ -115,21 +116,21 @@ class SimpleParser {
 
         if (parserState == null) {
             parserState = ParserState()
-        }    // end of if (parser_state == null)
+        } // end of if (parser_state == null)
 
         LOOP@ for (idx in offset..offset + len) {
             val chr = data[idx]
-//		for (index in off until len) {
-//			val chr Char = data[index]
+// 		for (index in off until len) {
+// 			val chr Char = data[index]
 
             // Only one character to ignore right now, let's do it more efficiently
             //    if (ignore(chr)) {
             //      break;
             //    } // end of if (ignore(chr))
-            //		Replaced by checkCharIsValidInXML()
-            //			if (chr == IGNORE_CHARS[0]) {
-            //				break;
-            //			}
+            // 		Replaced by checkCharIsValidInXML()
+            // 			if (chr == IGNORE_CHARS[0]) {
+            // 				break;
+            // 			}
             if (!checkIsCharValidInXML(parserState, chr)) {
                 parserState.errorMessage = "Not allowed character '$chr' in XML stream"
                 parserState.state = State.ERROR
@@ -139,7 +140,7 @@ class SimpleParser {
                 State.START -> if (chr == OPEN_BRACKET) {
                     parserState.state = State.OPEN_BRACKET
                     parserState.slash_found = false
-                }    // end of if (chr == OPEN_BRACKET)
+                } // end of if (chr == OPEN_BRACKET)
 
                 State.OPEN_BRACKET -> when (chr) {
                     QUESTION_MARK, EXCLAMATION_MARK -> {
@@ -155,7 +156,10 @@ class SimpleParser {
                     }
 
                     else -> if (!WHITE_CHARS.contains(chr)) {
-                        if (chr == ERR_NAME_CHARS[0] || chr == ERR_NAME_CHARS[1] || chr == ERR_NAME_CHARS[2]) {
+                        if (chr == ERR_NAME_CHARS[0] ||
+                            chr == ERR_NAME_CHARS[1] ||
+                            chr == ERR_NAME_CHARS[2]
+                        ) {
                             parserState.state = State.ERROR
                             parserState.errorMessage =
                                 "Not allowed character in start element name: " + chr
@@ -165,27 +169,26 @@ class SimpleParser {
                             parserState.element_name!!.append(chr)
                         }
                     } // end of if ()
-                }        // end of switch (chr)
+                } // end of switch (chr)
 
                 State.ELEMENT_NAME -> {
                     if (isWhite(chr)) {
                         parserState.state = State.END_ELEMENT_NAME
 
                         continue@LOOP
-                    }        // end of if ()
+                    } // end of if ()
 
                     if (chr == SLASH) {
                         parserState.slash_found = true
 
                         continue@LOOP
-                    }        // end of if (chr == SLASH)
+                    } // end of if (chr == SLASH)
 
                     if (chr == CLOSE_BRACKET) {
                         parserState.state = State.ELEMENT_CDATA
                         handler.startElement(parserState.element_name!!.toString(), null, null)
 
                         if (parserState.slash_found) {
-
                             // parser_state.state = State.START;
                             handler.endElement(parserState.element_name!!.toString())
                         }
@@ -193,44 +196,55 @@ class SimpleParser {
                         parserState.element_name = null
 
                         continue@LOOP
-                    }    // end of if ()
+                    } // end of if ()
 
-                    if (chr == ERR_NAME_CHARS[0] || chr == ERR_NAME_CHARS[1] || chr == ERR_NAME_CHARS[2]) {
+                    if (chr == ERR_NAME_CHARS[0] ||
+                        chr == ERR_NAME_CHARS[1] ||
+                        chr == ERR_NAME_CHARS[2]
+                    ) {
                         parserState.state = State.ERROR
                         parserState.errorMessage =
-                            "Not allowed character in start element name: " + chr + "\nExisting characters in start element name: " + parserState.element_name!!.toString()
+                            "Not allowed character in start element name: " + chr +
+                            "\nExisting characters in start element name: " +
+                            parserState.element_name!!.toString()
 
                         continue@LOOP
-                    }    // end of if ()
+                    } // end of if ()
 
                     parserState.element_name!!.append(chr)
 
                     if (parserState.element_name!!.length > maxElementNameSize) {
                         parserState.state = State.ERROR
                         parserState.errorMessage =
-                            "Max element name size exceeded: " + maxElementNameSize + "\nreceived: " + parserState.element_name!!.toString()
+                            "Max element name size exceeded: " + maxElementNameSize + "\nreceived: " +
+                            parserState.element_name!!.toString()
                     }
                 }
 
                 State.CLOSE_ELEMENT -> {
                     if (isWhite(chr)) {
                         continue@LOOP
-                    }    // end of if ()
+                    } // end of if ()
 
                     if (chr == SLASH) {
                         parserState.state = State.ERROR
                         parserState.errorMessage =
-                            "Not allowed character in close element name: " + chr + "\nExisting characters in close element name: " + parserState.element_name!!.toString()
+                            "Not allowed character in close element name: " + chr +
+                            "\nExisting characters in close element name: " +
+                            parserState.element_name!!.toString()
 
                         continue@LOOP
-                    }    // end of if (chr == SLASH)
+                    } // end of if (chr == SLASH)
 
                     if (chr == CLOSE_BRACKET) {
                         parserState.state = State.ELEMENT_CDATA
                         if (!handler.endElement(parserState.element_name!!.toString())) {
                             parserState.state = State.ERROR
                             parserState.errorMessage =
-                                "Malformed XML: element close found without open for this element: " + parserState.element_name!!.toString() + " in data: " + data.concatToString(
+                                "Malformed XML: element close found without open for this element: " +
+                                parserState.element_name!!.toString() +
+                                " in data: " +
+                                data.concatToString(
                                     offset,
                                     offset + len
                                 )
@@ -241,22 +255,28 @@ class SimpleParser {
                         parserState.element_name = null
 
                         continue@LOOP
-                    }    // end of if ()
+                    } // end of if ()
 
-                    if (chr == ERR_NAME_CHARS[0] || chr == ERR_NAME_CHARS[1] || chr == ERR_NAME_CHARS[2]) {
+                    if (chr == ERR_NAME_CHARS[0] ||
+                        chr == ERR_NAME_CHARS[1] ||
+                        chr == ERR_NAME_CHARS[2]
+                    ) {
                         parserState.state = State.ERROR
                         parserState.errorMessage =
-                            "Not allowed character in close element name: " + chr + "\nExisting characters in close element name: " + parserState.element_name!!.toString()
+                            "Not allowed character in close element name: " + chr +
+                            "\nExisting characters in close element name: " +
+                            parserState.element_name!!.toString()
 
                         continue@LOOP
-                    }    // end of if ()
+                    } // end of if ()
 
                     parserState.element_name!!.append(chr)
 
                     if (parserState.element_name!!.length > maxElementNameSize) {
                         parserState.state = State.ERROR
                         parserState.errorMessage =
-                            "Max element name size exceeded: " + maxElementNameSize + "\nreceived: " + parserState.element_name!!.toString()
+                            "Max element name size exceeded: " + maxElementNameSize + "\nreceived: " +
+                            parserState.element_name!!.toString()
                     }
                 }
 
@@ -265,7 +285,7 @@ class SimpleParser {
                         parserState.slash_found = true
 
                         continue@LOOP
-                    }    // end of if (chr == SLASH)
+                    } // end of if (chr == SLASH)
 
                     if (chr == CLOSE_BRACKET) {
                         parserState.state = State.ELEMENT_CDATA
@@ -279,7 +299,6 @@ class SimpleParser {
                         parserState.current_attr = -1
 
                         if (parserState.slash_found) {
-
                             // parser_state.state = State.START;
                             handler.endElement(parserState.element_name!!.toString())
                         }
@@ -287,7 +306,7 @@ class SimpleParser {
                         parserState.element_name = null
 
                         continue@LOOP
-                    }      // end of if ()
+                    } // end of if ()
 
                     if (!isWhite(chr)) {
                         parserState.state = State.ATTRIB_NAME
@@ -300,7 +319,9 @@ class SimpleParser {
                                 if (parserState.attrib_names!!.size >= attributesNumberLimit) {
                                     parserState.state = State.ERROR
                                     parserState.errorMessage =
-                                        "Attributes nuber limit exceeded: " + attributesNumberLimit + "\nreceived: " + parserState.element_name!!.toString()
+                                        "Attributes nuber limit exceeded: " + attributesNumberLimit +
+                                        "\nreceived: " +
+                                        parserState.element_name!!.toString()
                                     continue@LOOP
                                 } else {
                                     val newSize = parserState.attrib_names!!.size + maxAttribsNumber
@@ -311,13 +332,13 @@ class SimpleParser {
                                         resizeArray(parserState.attrib_values, newSize)
                                 }
                             }
-                        }    // end of else
+                        } // end of else
 
                         parserState.attrib_names!![++parserState.current_attr] = StringBuilder(8)
                         parserState.attrib_names!![parserState.current_attr]!!.append(chr)
 
                         continue@LOOP
-                    }      // end of if ()
+                    } // end of if ()
                 }
 
                 State.ATTRIB_NAME -> {
@@ -325,22 +346,31 @@ class SimpleParser {
                         parserState.state = State.END_OF_ATTR_NAME
 
                         continue@LOOP
-                    }    // end of if ()
+                    } // end of if ()
 
-                    if (chr == ERR_NAME_CHARS[0] || chr == ERR_NAME_CHARS[1] || chr == ERR_NAME_CHARS[2]) {
+                    if (chr == ERR_NAME_CHARS[0] ||
+                        chr == ERR_NAME_CHARS[1] ||
+                        chr == ERR_NAME_CHARS[2]
+                    ) {
                         parserState.state = State.ERROR
                         parserState.errorMessage =
-                            "Not allowed character in element attribute name: " + chr + "\nExisting characters in element attribute name: " + parserState.attrib_names!![parserState.current_attr].toString()
+                            "Not allowed character in element attribute name: " + chr +
+                            "\nExisting characters in element attribute name: " +
+                            parserState.attrib_names!![parserState.current_attr].toString()
 
                         continue@LOOP
-                    }    // end of if ()
+                    } // end of if ()
 
                     parserState.attrib_names!![parserState.current_attr]!!.append(chr)
 
-                    if (parserState.attrib_names!![parserState.current_attr]!!.length > maxAttributeNameSize) {
+                    if (parserState.attrib_names!![parserState.current_attr]!!.length >
+                        maxAttributeNameSize
+                    ) {
                         parserState.state = State.ERROR
                         parserState.errorMessage =
-                            "Max attribute name size exceeded: " + maxAttributeNameSize + "\nreceived: " + parserState.attrib_names!![parserState.current_attr].toString()
+                            "Max attribute name size exceeded: " + maxAttributeNameSize +
+                            "\nreceived: " +
+                            parserState.attrib_names!![parserState.current_attr].toString()
                     }
                 }
 
@@ -348,12 +378,12 @@ class SimpleParser {
                     if (chr == SINGLE_QUOTE) {
                         parserState.state = State.ATTRIB_VALUE_S
                         parserState.attrib_values!![parserState.current_attr] = StringBuilder(64)
-                    }    // end of if (chr == SINGLE_QUOTE || chr == DOUBLE_QUOTE)
+                    } // end of if (chr == SINGLE_QUOTE || chr == DOUBLE_QUOTE)
 
                     if (chr == DOUBLE_QUOTE) {
                         parserState.state = State.ATTRIB_VALUE_D
                         parserState.attrib_values!![parserState.current_attr] = StringBuilder(64)
-                    }    // end of if (chr == SINGLE_QUOTE || chr == DOUBLE_QUOTE)
+                    } // end of if (chr == SINGLE_QUOTE || chr == DOUBLE_QUOTE)
                 }
 
                 State.ATTRIB_VALUE_S -> {
@@ -361,7 +391,7 @@ class SimpleParser {
                         parserState.state = State.END_ELEMENT_NAME
 
                         continue@LOOP
-                    }    // end of if (chr == SINGLE_QUOTE || chr == DOUBLE_QUOTE)
+                    } // end of if (chr == SINGLE_QUOTE || chr == DOUBLE_QUOTE)
 
                     parserState.attrib_values!![parserState.current_attr]!!.append(chr)
                     when (chr) {
@@ -374,17 +404,23 @@ class SimpleParser {
                         '<' -> {
                             parserState.state = State.ERROR
                             parserState.errorMessage =
-                                "Not allowed character in element attribute value: " + chr + "\nExisting characters in element attribute value: " + parserState.attrib_values!![parserState.current_attr].toString()
+                                "Not allowed character in element attribute value: " + chr +
+                                "\nExisting characters in element attribute value: " +
+                                parserState.attrib_values!![parserState.current_attr].toString()
                         }
 
                         else -> {
                         }
                     }
 
-                    if (parserState.attrib_values!![parserState.current_attr]!!.length > maxAttributeValueSize) {
+                    if (parserState.attrib_values!![parserState.current_attr]!!.length >
+                        maxAttributeValueSize
+                    ) {
                         parserState.state = State.ERROR
                         parserState.errorMessage =
-                            "Max attribute value size exceeded: " + maxAttributeValueSize + "\nreceived: " + parserState.attrib_values!![parserState.current_attr].toString()
+                            "Max attribute value size exceeded: " + maxAttributeValueSize +
+                            "\nreceived: " +
+                            parserState.attrib_values!![parserState.current_attr].toString()
                     }
                 }
 
@@ -393,7 +429,7 @@ class SimpleParser {
                         parserState.state = State.END_ELEMENT_NAME
 
                         continue@LOOP
-                    }    // end of if (chr == SINGLE_QUOTE || chr == DOUBLE_QUOTE)
+                    } // end of if (chr == SINGLE_QUOTE || chr == DOUBLE_QUOTE)
 
                     parserState.attrib_values!![parserState.current_attr]!!.append(chr)
 
@@ -407,17 +443,23 @@ class SimpleParser {
                         '<' -> {
                             parserState.state = State.ERROR
                             parserState.errorMessage =
-                                "Not allowed character in element attribute value: " + chr + "\nExisting characters in element attribute value: " + parserState.attrib_values!![parserState.current_attr].toString()
+                                "Not allowed character in element attribute value: " + chr +
+                                "\nExisting characters in element attribute value: " +
+                                parserState.attrib_values!![parserState.current_attr].toString()
                         }
 
                         else -> {
                         }
                     }
 
-                    if (parserState.attrib_values!![parserState.current_attr]!!.length > maxAttributeValueSize) {
+                    if (parserState.attrib_values!![parserState.current_attr]!!.length >
+                        maxAttributeValueSize
+                    ) {
                         parserState.state = State.ERROR
                         parserState.errorMessage =
-                            "Max attribute value size exceeded: " + maxAttributeValueSize + "\nreceived: " + parserState.attrib_values!![parserState.current_attr].toString()
+                            "Max attribute value size exceeded: " + maxAttributeValueSize +
+                            "\nreceived: " +
+                            parserState.attrib_values!![parserState.current_attr].toString()
                     }
                 }
 
@@ -429,7 +471,7 @@ class SimpleParser {
                         if (parserState.element_cdata != null) {
                             handler.elementCData(parserState.element_cdata!!.toString())
                             parserState.element_cdata = null
-                        }    // end of if (parser_state.element_cdata != null)
+                        } // end of if (parser_state.element_cdata != null)
                     } catch (e: Exception) {
                         parserState.state = State.ERROR
                         parserState.errorMessage = e.message
@@ -438,14 +480,13 @@ class SimpleParser {
                     continue@LOOP
                 } else {
                     if (parserState.element_cdata == null) {
-
                         //            // Skip leading white characters
                         //            if (Arrays.binarySearch(WHITE_CHARS, chr) < 0) {
                         parserState.element_cdata = StringBuilder(100)
 
                         //            parser_state.element_cdata.append(chr);
                         //            }// end of if (Arrays.binarySearch(WHITE_CHARS, chr) < 0)
-                    }    // end of if (parser_state.element_cdata == null) else
+                    } // end of if (parser_state.element_cdata == null) else
 
                     parserState.element_cdata!!.append(chr)
                     if (chr == '&') {
@@ -457,7 +498,8 @@ class SimpleParser {
                     if (parserState.element_cdata!!.length > maxCdataSize) {
                         parserState.state = State.ERROR
                         parserState.errorMessage =
-                            "Max cdata size exceeded: " + maxCdataSize + "\nreceived: " + parserState.element_cdata!!.toString()
+                            "Max cdata size exceeded: " + maxCdataSize + "\nreceived: " +
+                            parserState.element_cdata!!.toString()
                     }
                 }
 
@@ -503,7 +545,14 @@ class SimpleParser {
                             }
                         }
 
-                        EntityType.CODEPOINT_HEX -> if (!(chr >= 'a' && chr <= 'f' || chr >= 'A' || chr <= 'F' || numeric)) {
+                        EntityType.CODEPOINT_HEX -> if (!(
+                                chr >= 'a' &&
+                                    chr <= 'f' ||
+                                    chr >= 'A' ||
+                                    chr <= 'F' ||
+                                    numeric
+                                )
+                        ) {
                             if (chr != SEMICOLON) {
                                 valid = false
                             } else {
@@ -513,12 +562,19 @@ class SimpleParser {
                     }
 
                     if (valid) {
-                        if (parserState.parentState == State.ATTRIB_VALUE_D || parserState.parentState == State.ATTRIB_VALUE_S) parserState.attrib_values!![parserState.current_attr]!!.append(
-                            chr
-                        )
-                        else if (parserState.parentState == State.ELEMENT_CDATA) parserState.element_cdata!!.append(
-                            chr
-                        )
+                        if (parserState.parentState == State.ATTRIB_VALUE_D ||
+                            parserState.parentState == State.ATTRIB_VALUE_S
+                        ) {
+                            parserState.attrib_values!![parserState.current_attr]!!.append(
+                                chr
+                            )
+                        } else if (parserState.parentState ==
+                            State.ELEMENT_CDATA
+                        ) {
+                            parserState.element_cdata!!.append(
+                                chr
+                            )
+                        }
                     } else {
                         parserState.state = State.ERROR
                         parserState.errorMessage = "Invalid XML entity"
@@ -531,20 +587,21 @@ class SimpleParser {
                         handler.otherXML(parserState.element_cdata!!.toString())
                         parserState.element_cdata = null
 
-                        //continue@LOOP
+                        // continue@LOOP
                         continue@LOOP
-                    }    // end of if (chr == CLOSE_BRACKET)
+                    } // end of if (chr == CLOSE_BRACKET)
 
                     if (parserState.element_cdata == null) {
                         parserState.element_cdata = StringBuilder(100)
-                    }    // end of if (parser_state.element_cdata == null) else
+                    } // end of if (parser_state.element_cdata == null) else
 
                     parserState.element_cdata!!.append(chr)
 
                     if (parserState.element_cdata!!.length > maxCdataSize) {
                         parserState.state = State.ERROR
                         parserState.errorMessage =
-                            "Max cdata size exceeded: " + maxCdataSize + "\nreceived: " + parserState.element_cdata!!.toString()
+                            "Max cdata size exceeded: " + maxCdataSize + "\nreceived: " +
+                            parserState.element_cdata!!.toString()
                     }
                 }
 
@@ -556,11 +613,11 @@ class SimpleParser {
 
                 // break;
                 else -> throw RuntimeException("Unknown SimpleParser state: " + parserState.state)
-            }// Skip everything up to open bracket
+            } // Skip everything up to open bracket
             // do nothing, skip white chars
             // Skip white characters and actually everything except quotes
             // end of switch (state)
-        }      // end of for ()
+        } // end of for ()
 
         handler.saveParserState(parserState)
     }
@@ -568,9 +625,11 @@ class SimpleParser {
     private fun toStringArray(src: Array<StringBuilder?>?): Array<String?>? {
         if (src == null) return null
         val res = arrayOfNulls<String>(src.size)
-        for (i: Int in src.indices) res[i] = when {
-            src[i] == null -> null
-            else -> src[i].toString()
+        for (i: Int in src.indices) {
+            res[i] = when {
+                src[i] == null -> null
+                else -> src[i].toString()
+            }
         }
         return res
     }
@@ -637,13 +696,13 @@ class SimpleParser {
         private val SINGLE_QUOTE = '\''
         private val DOUBLE_QUOTE = '"'
 
-        //		private val QUOTES = charArrayOf(SINGLE_QUOTE, DOUBLE_QUOTE).sortedArray()
+        // 		private val QUOTES = charArrayOf(SINGLE_QUOTE, DOUBLE_QUOTE).sortedArray()
         private val WHITE_CHARS = charArrayOf(SPACE, LF, CR, TAB).sortedArray()
 
-        //		private val END_NAME_CHARS = charArrayOf(CLOSE_BRACKET, SLASH, SPACE, TAB, LF, CR).sortedArray()
+        // 		private val END_NAME_CHARS = charArrayOf(CLOSE_BRACKET, SLASH, SPACE, TAB, LF, CR).sortedArray()
         private val ERR_NAME_CHARS = charArrayOf(OPEN_BRACKET, QUESTION_MARK, AMP).sortedArray()
 
-        //		private val IGNORE_CHARS = charArrayOf('\u0000').sortedArray()
+        // 		private val IGNORE_CHARS = charArrayOf('\u0000').sortedArray()
         private val ALLOWED_CHARS_LOW = BooleanArray(0x20)
 
         init {
@@ -652,6 +711,4 @@ class SimpleParser {
             ALLOWED_CHARS_LOW[0x0D] = true
         }
     }
-}    // SimpleParser
-
-
+} // SimpleParser

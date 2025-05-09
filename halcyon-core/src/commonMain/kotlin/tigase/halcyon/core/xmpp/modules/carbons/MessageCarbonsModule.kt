@@ -46,102 +46,126 @@ import tigase.halcyon.core.xmpp.stanzas.asStanza
 
 sealed class CarbonEvent(@Suppress("unused") val fromJID: JID?, val stanza: Message) : Event(TYPE) {
 
-	companion object : EventDefinition<CarbonEvent> {
+    companion object : EventDefinition<CarbonEvent> {
 
-		override val TYPE = "tigase.halcyon.core.xmpp.modules.carbons.CarbonEvent"
-	}
+        override val TYPE = "tigase.halcyon.core.xmpp.modules.carbons.CarbonEvent"
+    }
 
-	class Sent(fromJID: JID?, stanza: Message) : CarbonEvent(fromJID, stanza)
-	class Received(fromJID: JID?, stanza: Message) : CarbonEvent(fromJID, stanza)
+    class Sent(fromJID: JID?, stanza: Message) : CarbonEvent(fromJID, stanza)
+    class Received(fromJID: JID?, stanza: Message) : CarbonEvent(fromJID, stanza)
 }
 
 @HalcyonConfigDsl
 interface MessageCarbonsModuleConfig
 
-class MessageCarbonsModule(override val context: Context, private val forwardHandler: (Message) -> Unit) : XmppModule,
-	InlineProtocol, MessageCarbonsModuleConfig {
+class MessageCarbonsModule(
+    override val context: Context,
+    private val forwardHandler: (Message) -> Unit
+) : XmppModule,
+    InlineProtocol,
+    MessageCarbonsModuleConfig {
 
-	override val type = TYPE
-	override val criteria = Criterion.chain(Criterion.name(Message.NAME), Criterion.xmlns(XMLNS))
-	override val features: Array<String> = arrayOf(XMLNS)
+    override val type = TYPE
+    override val criteria = Criterion.chain(Criterion.name(Message.NAME), Criterion.xmlns(XMLNS))
+    override val features: Array<String> = arrayOf(XMLNS)
 
-	private var messageModule: MessageModule? = null
+    private var messageModule: MessageModule? = null
 
-	companion object : XmppModuleProvider<MessageCarbonsModule, MessageCarbonsModuleConfig> {
+    companion object : XmppModuleProvider<MessageCarbonsModule, MessageCarbonsModuleConfig> {
 
-		const val XMLNS = "urn:xmpp:carbons:2"
-		override val TYPE = XMLNS
-		private const val FORWARD_XMLNS = "urn:xmpp:forward:0"
+        const val XMLNS = "urn:xmpp:carbons:2"
+        override val TYPE = XMLNS
+        private const val FORWARD_XMLNS = "urn:xmpp:forward:0"
 
-		override fun instance(context: Context): MessageCarbonsModule {
-			if (!(context is AbstractHalcyon)) throw ConfigurationException("Cannot create instance of MessageCarbonModule. Unsupported type of context.")
-			return MessageCarbonsModule(context, context::processReceivedXmlElement)
-		}
+        override fun instance(context: Context): MessageCarbonsModule {
+            if (!(context is AbstractHalcyon)) {
+                throw ConfigurationException(
+                    "Cannot create instance of MessageCarbonModule. Unsupported type of context."
+                )
+            }
+            return MessageCarbonsModule(context, context::processReceivedXmlElement)
+        }
 
-		override fun configure(module: MessageCarbonsModule, cfg: MessageCarbonsModuleConfig.() -> Unit) = module.cfg()
+        override fun configure(
+            module: MessageCarbonsModule,
+            cfg: MessageCarbonsModuleConfig.() -> Unit
+        ) = module.cfg()
 
-		override fun doAfterRegistration(module: MessageCarbonsModule, moduleManager: ModulesManager) =
-			module.initialize()
+        override fun doAfterRegistration(
+            module: MessageCarbonsModule,
+            moduleManager: ModulesManager
+        ) = module.initialize()
+    }
 
-	}
+    private fun initialize() {
+        this.messageModule = context.modules.getModuleOrNull(MessageModule.TYPE)
+    }
 
-	private fun initialize() {
-		this.messageModule = context.modules.getModuleOrNull(MessageModule.TYPE)
-	}
+    override fun process(element: Element) {
+        val ownJid = context.boundJID?.bareJID
+        val from = element.getFromAttr()
+        if (from != null &&
+            from.bareJID != ownJid
+        ) {
+            throw XMPPException(ErrorCondition.NotAcceptable)
+        }
+        element.getChildrenNS(XMLNS).firstOrNull()?.let {
+            when (it.name) {
+                "sent" -> processSent(it)
+                "received" -> processReceived(it)
+                else -> throw XMPPException(ErrorCondition.BadRequest)
+            }
+        }
+    }
 
-	override fun process(element: Element) {
-		val ownJid = context.boundJID?.bareJID
-		val from = element.getFromAttr()
-		if (from != null && from.bareJID != ownJid) throw XMPPException(ErrorCondition.NotAcceptable)
-		element.getChildrenNS(XMLNS).firstOrNull()?.let {
-			when (it.name) {
-				"sent" -> processSent(it)
-				"received" -> processReceived(it)
-				else -> throw XMPPException(ErrorCondition.BadRequest)
-			}
-		}
-	}
+    @Suppress("unused")
+    fun enable(): RequestBuilder<Unit, IQ> = context.request.iq {
+        type = IQType.Set
+        "enable" {
+            xmlns = XMLNS
+        }
+    }.map { }
 
-	@Suppress("unused")
-	fun enable(): RequestBuilder<Unit, IQ> = context.request.iq {
-		type = IQType.Set
-		"enable" {
-			xmlns = XMLNS
-		}
-	}.map { }
+    @Suppress("unused")
+    fun disable(): RequestBuilder<Unit, IQ> = context.request.iq {
+        type = IQType.Set
+        "disable" {
+            xmlns = XMLNS
+        }
+    }.map { }
 
-	@Suppress("unused")
-	fun disable(): RequestBuilder<Unit, IQ> = context.request.iq {
-		type = IQType.Set
-		"disable" {
-			xmlns = XMLNS
-		}
-	}.map { }
-
-	private fun processSent(carbon: Element) {
-		val msg = carbon.getChildrenNS("forwarded", FORWARD_XMLNS)?.getChildren(Message.NAME)?.firstOrNull()
-			?.asStanza<Message>() ?: return
+    private fun processSent(carbon: Element) {
+        val msg =
+            carbon.getChildrenNS(
+                "forwarded",
+                FORWARD_XMLNS
+            )?.getChildren(Message.NAME)?.firstOrNull()
+                ?.asStanza<Message>() ?: return
 		
-		forwardHandler.invoke(msg)
-		//messageModule?.process(msg)
-		context.eventBus.fire(CarbonEvent.Sent(msg.from, msg))
-	}
+        forwardHandler.invoke(msg)
+        // messageModule?.process(msg)
+        context.eventBus.fire(CarbonEvent.Sent(msg.from, msg))
+    }
 
-	private fun processReceived(carbon: Element) {
-		val msg = carbon.getChildrenNS("forwarded", FORWARD_XMLNS)?.getChildren(Message.NAME)?.firstOrNull()
-			?.asStanza<Message>() ?: return
+    private fun processReceived(carbon: Element) {
+        val msg =
+            carbon.getChildrenNS(
+                "forwarded",
+                FORWARD_XMLNS
+            )?.getChildren(Message.NAME)?.firstOrNull()
+                ?.asStanza<Message>() ?: return
 
-		forwardHandler.invoke(msg)
-		context.eventBus.fire(CarbonEvent.Received(msg.from, msg))
-	}
+        forwardHandler.invoke(msg)
+        context.eventBus.fire(CarbonEvent.Received(msg.from, msg))
+    }
 
-	override fun featureFor(features: InlineFeatures, stage: InlineProtocolStage): Element? {
-		return if (stage == InlineProtocolStage.AfterBind && features.supports(XMLNS)) {
-			element("enable") { xmlns = XMLNS }
-		} else null
-	}
+    override fun featureFor(features: InlineFeatures, stage: InlineProtocolStage): Element? =
+        if (stage == InlineProtocolStage.AfterBind && features.supports(XMLNS)) {
+            element("enable") { xmlns = XMLNS }
+        } else {
+            null
+        }
 
-	override fun process(response: InlineResponse) {
-	}
-
+    override fun process(response: InlineResponse) {
+    }
 }

@@ -7,7 +7,6 @@ import tigase.halcyon.core.xml.Element
 
 data class AuthData(val mechanismName: String, val data: String?)
 
-
 interface MechanismsConfiguration {
 
     /**
@@ -21,10 +20,7 @@ interface MechanismsConfiguration {
     /**
      * Remove installed SASL mechanism.
      */
-    fun <MECH : SASLMechanism, CFG : Any> uninstall(
-        provider: SASLMechanismProvider<MECH, CFG>
-    )
-
+    fun <MECH : SASLMechanism, CFG : Any> uninstall(provider: SASLMechanismProvider<MECH, CFG>)
 }
 
 class SASLEngine(val context: Context) : MechanismsConfiguration {
@@ -45,11 +41,18 @@ class SASLEngine(val context: Context) : MechanismsConfiguration {
         install(SASLPlain)
     }
 
-    private fun selectMechanism(allowedMechanisms: List<String>, streamFeatures: Element): SASLMechanism {
+    private fun selectMechanism(
+        allowedMechanisms: List<String>,
+        streamFeatures: Element
+    ): SASLMechanism {
         for (mechanism in mechanisms) {
             log.finer { "Checking mechanism ${mechanism.name}" }
-            if (allowedMechanisms.contains(mechanism.name) && mechanism.isAllowedToUse(
-                    context, context.config, saslContext, streamFeatures
+            if (allowedMechanisms.contains(mechanism.name) &&
+                mechanism.isAllowedToUse(
+                    context,
+                    context.config,
+                    saslContext,
+                    streamFeatures
                 )
             ) {
                 log.fine { "Selected mechanism: ${mechanism.name}" }
@@ -68,7 +71,9 @@ class SASLEngine(val context: Context) : MechanismsConfiguration {
         this.mechanisms.add(m)
     }
 
-    override fun <MECH : SASLMechanism, CFG : Any> uninstall(provider: SASLMechanismProvider<MECH, CFG>) {
+    override fun <MECH : SASLMechanism, CFG : Any> uninstall(
+        provider: SASLMechanismProvider<MECH, CFG>
+    ) {
         this.mechanisms.removeAll { mech -> mech.name == provider.NAME }
     }
 
@@ -83,7 +88,11 @@ class SASLEngine(val context: Context) : MechanismsConfiguration {
 
     fun evaluateChallenge(data: String?): String? {
         val mechanism = saslContext.mechanism ?: throw ClientSaslException("SASL Context is empty")
-        if (saslContext.complete) throw ClientSaslException("Mechanism ${mechanism.name} is finished but Server sent challenge.")
+        if (saslContext.complete) {
+            throw ClientSaslException(
+                "Mechanism ${mechanism.name} is finished but Server sent challenge."
+            )
+        }
         val r = mechanism.evaluateChallenge(data, context, context.config, saslContext)
         return r
     }
@@ -107,8 +116,7 @@ class SASLEngine(val context: Context) : MechanismsConfiguration {
 
     fun removeAllMechanisms() = this.mechanisms.clear()
 
-    fun checkMechanisms(allowedMechanisms: List<String>): Boolean {
-        return this.mechanisms.map { it.name }.any { allowedMechanisms.contains(it) }
-    }
-
+    fun checkMechanisms(allowedMechanisms: List<String>): Boolean = this.mechanisms.map {
+        it.name
+    }.any { allowedMechanisms.contains(it) }
 }
