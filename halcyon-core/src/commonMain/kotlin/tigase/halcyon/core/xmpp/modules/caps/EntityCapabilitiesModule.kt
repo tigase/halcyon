@@ -19,19 +19,30 @@ package tigase.halcyon.core.xmpp.modules.caps
 
 import korlibs.crypto.sha1
 import kotlinx.serialization.Serializable
-import tigase.halcyon.core.*
+import tigase.halcyon.core.AbstractHalcyon
+import tigase.halcyon.core.Base64
+import tigase.halcyon.core.Context
+import tigase.halcyon.core.HalcyonStateChangeEvent
+import tigase.halcyon.core.Scope
 import tigase.halcyon.core.builder.HalcyonConfigDsl
 import tigase.halcyon.core.logger.LoggerFactory
-import tigase.halcyon.core.modules.*
+import tigase.halcyon.core.modules.Criteria
+import tigase.halcyon.core.modules.ModulesManager
+import tigase.halcyon.core.modules.StanzaInterceptor
+import tigase.halcyon.core.modules.XmppModule
+import tigase.halcyon.core.modules.XmppModuleProvider
 import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xml.element
-import tigase.halcyon.core.xmpp.*
+import tigase.halcyon.core.xmpp.BareJID
+import tigase.halcyon.core.xmpp.ErrorCondition
+import tigase.halcyon.core.xmpp.XMPPException
 import tigase.halcyon.core.xmpp.forms.JabberDataForm
 import tigase.halcyon.core.xmpp.modules.StreamFeaturesModule
 import tigase.halcyon.core.xmpp.modules.discovery.DiscoveryModule
 import tigase.halcyon.core.xmpp.modules.discovery.NodeDetailsProvider
 import tigase.halcyon.core.xmpp.stanzas.Presence
 import tigase.halcyon.core.xmpp.stanzas.wrap
+import tigase.halcyon.core.xmpp.toBareJID
 
 /**
  * Configuration of [EntityCapabilitiesModule].

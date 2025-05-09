@@ -1,12 +1,23 @@
 package tigase.halcyon.core.builder
 
 import tigase.halcyon.core.Halcyon
-import tigase.halcyon.core.configuration.*
+import tigase.halcyon.core.configuration.Configuration
+import tigase.halcyon.core.configuration.ConnectionConfig
+import tigase.halcyon.core.configuration.DomainProvider
+import tigase.halcyon.core.configuration.JIDPasswordAuthConfigBuilder
+import tigase.halcyon.core.configuration.Registration
+import tigase.halcyon.core.configuration.SaslConfig
 import tigase.halcyon.core.exceptions.HalcyonException
 import tigase.halcyon.core.modules.HalcyonModule
 import tigase.halcyon.core.modules.HalcyonModuleProvider
 import tigase.halcyon.core.xmpp.forms.JabberDataForm
-import tigase.halcyon.core.xmpp.modules.*
+import tigase.halcyon.core.xmpp.modules.BindModule
+import tigase.halcyon.core.xmpp.modules.ExternalServiceDiscoveryModule
+import tigase.halcyon.core.xmpp.modules.InBandRegistrationModule
+import tigase.halcyon.core.xmpp.modules.MessageModule
+import tigase.halcyon.core.xmpp.modules.PingModule
+import tigase.halcyon.core.xmpp.modules.StreamErrorModule
+import tigase.halcyon.core.xmpp.modules.StreamFeaturesModule
 import tigase.halcyon.core.xmpp.modules.auth.SASL2Module
 import tigase.halcyon.core.xmpp.modules.auth.SASLModule
 import tigase.halcyon.core.xmpp.modules.avatar.UserAvatarModule

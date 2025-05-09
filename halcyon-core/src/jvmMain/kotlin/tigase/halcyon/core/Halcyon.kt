@@ -17,7 +17,7 @@
  */
 package tigase.halcyon.core
 
-import java.util.*
+import java.util.Timer
 import kotlin.concurrent.timerTask
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.DurationUnit

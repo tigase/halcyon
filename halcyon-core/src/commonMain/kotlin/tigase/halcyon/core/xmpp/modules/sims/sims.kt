@@ -17,7 +17,12 @@
  */
 package tigase.halcyon.core.xmpp.modules.sims
 
-import tigase.halcyon.core.xml.*
+import tigase.halcyon.core.xml.Element
+import tigase.halcyon.core.xml.element
+import tigase.halcyon.core.xml.intAttributeProperty
+import tigase.halcyon.core.xml.intElementProperty
+import tigase.halcyon.core.xml.stringAttributeProperty
+import tigase.halcyon.core.xml.stringElementProperty
 import tigase.halcyon.core.xmpp.stanzas.Stanza
 
 class Reference(val element: Element) : Element by element {

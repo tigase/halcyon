@@ -18,7 +18,12 @@
 package tigase.halcyon.core.xmpp.stanzas
 
 import kotlinx.serialization.Serializable
-import tigase.halcyon.core.xml.*
+import tigase.halcyon.core.xml.Element
+import tigase.halcyon.core.xml.PresenceStanzaSerializer
+import tigase.halcyon.core.xml.attributeProp
+import tigase.halcyon.core.xml.elementProperty
+import tigase.halcyon.core.xml.intWithDefaultElementProperty
+import tigase.halcyon.core.xml.stringElementProperty
 import tigase.halcyon.core.xmpp.ErrorCondition
 import tigase.halcyon.core.xmpp.XMPPException
 

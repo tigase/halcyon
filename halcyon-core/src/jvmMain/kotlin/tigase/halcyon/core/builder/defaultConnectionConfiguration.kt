@@ -3,7 +3,11 @@ package tigase.halcyon.core.builder
 import java.security.cert.X509Certificate
 import javax.net.ssl.X509TrustManager
 import tigase.halcyon.core.configuration.ConnectionConfig
-import tigase.halcyon.core.connector.socket.*
+import tigase.halcyon.core.connector.socket.DefaultHostnameVerifier
+import tigase.halcyon.core.connector.socket.DefaultTLSProcessor
+import tigase.halcyon.core.connector.socket.DnsResolverMiniDns
+import tigase.halcyon.core.connector.socket.SocketConnectorConfig
+import tigase.halcyon.core.connector.socket.TLSProcessorFactory
 
 /**
  * The DefaultTLSProcessorFactory variable represents the default implementation of the TLSProcessorFactory interface.

@@ -6,7 +6,11 @@ import tigase.halcyon.core.Scope
 import tigase.halcyon.core.builder.HalcyonConfigDsl
 import tigase.halcyon.core.exceptions.HalcyonException
 import tigase.halcyon.core.logger.LoggerFactory
-import tigase.halcyon.core.modules.*
+import tigase.halcyon.core.modules.HalcyonModule
+import tigase.halcyon.core.modules.HalcyonModuleProvider
+import tigase.halcyon.core.modules.ModulesManager
+import tigase.halcyon.core.modules.StanzaFilterChain
+import tigase.halcyon.core.modules.createFilter
 import tigase.halcyon.core.requests.RHandler
 import tigase.halcyon.core.requests.RequestBuilder
 import tigase.halcyon.core.requests.XMPPError
@@ -14,16 +18,28 @@ import tigase.halcyon.core.toBase64
 import tigase.halcyon.core.utils.Lock
 import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xml.element
-import tigase.halcyon.core.xmpp.*
+import tigase.halcyon.core.xmpp.BareJID
+import tigase.halcyon.core.xmpp.ErrorCondition
+import tigase.halcyon.core.xmpp.JID
+import tigase.halcyon.core.xmpp.XMPPException
+import tigase.halcyon.core.xmpp.bareJID
 import tigase.halcyon.core.xmpp.forms.Field
 import tigase.halcyon.core.xmpp.forms.FormType
 import tigase.halcyon.core.xmpp.forms.JabberDataForm
+import tigase.halcyon.core.xmpp.getFromAttr
+import tigase.halcyon.core.xmpp.getToAttr
 import tigase.halcyon.core.xmpp.modules.mam.MAMModule
 import tigase.halcyon.core.xmpp.modules.mam.MAMQueryFinished
 import tigase.halcyon.core.xmpp.modules.pubsub.PubSubItemEvent
 import tigase.halcyon.core.xmpp.modules.pubsub.PubSubModule
 import tigase.halcyon.core.xmpp.modules.uniqueId.getStanzaIDBy
-import tigase.halcyon.core.xmpp.stanzas.*
+import tigase.halcyon.core.xmpp.stanzas.IQ
+import tigase.halcyon.core.xmpp.stanzas.Message
+import tigase.halcyon.core.xmpp.stanzas.MessageNode
+import tigase.halcyon.core.xmpp.stanzas.MessageType
+import tigase.halcyon.core.xmpp.stanzas.message
+import tigase.halcyon.core.xmpp.stanzas.wrap
+import tigase.halcyon.core.xmpp.toBareJID
 
 /**
  * OMEMO Module configuration.

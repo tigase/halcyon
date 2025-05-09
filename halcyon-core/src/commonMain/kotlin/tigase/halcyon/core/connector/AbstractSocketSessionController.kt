@@ -25,7 +25,12 @@ import tigase.halcyon.core.exceptions.HalcyonException
 import tigase.halcyon.core.logger.LoggerFactory
 import tigase.halcyon.core.xmpp.JID
 import tigase.halcyon.core.xmpp.XMPPException
-import tigase.halcyon.core.xmpp.modules.*
+import tigase.halcyon.core.xmpp.modules.BindEvent
+import tigase.halcyon.core.xmpp.modules.BindModule
+import tigase.halcyon.core.xmpp.modules.InBandRegistrationModule
+import tigase.halcyon.core.xmpp.modules.StreamErrorEvent
+import tigase.halcyon.core.xmpp.modules.StreamFeaturesEvent
+import tigase.halcyon.core.xmpp.modules.StreamFeaturesModule
 import tigase.halcyon.core.xmpp.modules.auth.SASL2Module
 import tigase.halcyon.core.xmpp.modules.auth.SASLEvent
 import tigase.halcyon.core.xmpp.modules.auth.SASLModule

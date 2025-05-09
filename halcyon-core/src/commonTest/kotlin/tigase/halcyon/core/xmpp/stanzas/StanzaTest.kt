@@ -17,7 +17,11 @@
  */
 package tigase.halcyon.core.xmpp.stanzas
 
-import kotlin.test.*
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertNotEquals
+import kotlin.test.assertNotSame
+import kotlin.test.assertTrue
 import tigase.halcyon.core.xml.element
 import tigase.halcyon.core.xmpp.toJID
 

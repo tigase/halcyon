@@ -24,8 +24,13 @@ import tigase.halcyon.core.eventbus.EventDefinition
 import tigase.halcyon.core.eventbus.handler
 import tigase.halcyon.core.logger.LoggerFactory
 import tigase.halcyon.core.utils.Lock
-import tigase.halcyon.core.xmpp.*
+import tigase.halcyon.core.xmpp.BareJID
+import tigase.halcyon.core.xmpp.ErrorCondition
+import tigase.halcyon.core.xmpp.JID
+import tigase.halcyon.core.xmpp.XMPPException
+import tigase.halcyon.core.xmpp.bareJID
 import tigase.halcyon.core.xmpp.modules.presence.ContactChangeStatusEvent
+import tigase.halcyon.core.xmpp.resource
 import tigase.halcyon.core.xmpp.stanzas.PresenceType
 
 abstract class AbstractJingleSessionManager<S : AbstractJingleSession>(name: String) :

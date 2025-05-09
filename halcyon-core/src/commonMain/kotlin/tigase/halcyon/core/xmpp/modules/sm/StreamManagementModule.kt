@@ -39,7 +39,11 @@ import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xml.element
 import tigase.halcyon.core.xmpp.ErrorCondition
 import tigase.halcyon.core.xmpp.XMPPException
-import tigase.halcyon.core.xmpp.modules.auth.*
+import tigase.halcyon.core.xmpp.modules.auth.InlineFeatures
+import tigase.halcyon.core.xmpp.modules.auth.InlineProtocol
+import tigase.halcyon.core.xmpp.modules.auth.InlineProtocolStage
+import tigase.halcyon.core.xmpp.modules.auth.InlineResponse
+import tigase.halcyon.core.xmpp.modules.auth.whenExists
 import tigase.halcyon.core.xmpp.stanzas.IQ
 import tigase.halcyon.core.xmpp.stanzas.Message
 import tigase.halcyon.core.xmpp.stanzas.Presence

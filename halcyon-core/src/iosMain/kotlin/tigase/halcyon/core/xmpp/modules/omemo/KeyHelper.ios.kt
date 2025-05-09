@@ -1,7 +1,22 @@
 package tigase.halcyon.core.xmpp.modules.omemo
 
-import kotlinx.cinterop.*
-import libsignal.*
+import kotlinx.cinterop.ExperimentalForeignApi
+import kotlinx.cinterop.UIntVar
+import kotlinx.cinterop.alloc
+import kotlinx.cinterop.allocPointerTo
+import kotlinx.cinterop.memScoped
+import kotlinx.cinterop.ptr
+import kotlinx.cinterop.value
+import libsignal.ratchet_identity_key_pair_serialize
+import libsignal.session_pre_key_serialize
+import libsignal.session_signed_pre_key_serialize
+import libsignal.signal_buffer_free
+import libsignal.signal_protocol_key_helper_generate_identity_key_pair
+import libsignal.signal_protocol_key_helper_generate_pre_keys
+import libsignal.signal_protocol_key_helper_generate_registration_id
+import libsignal.signal_protocol_key_helper_generate_signed_pre_key
+import libsignal.signal_protocol_key_helper_key_list_element
+import libsignal.signal_protocol_key_helper_key_list_next
 import platform.Foundation.NSDate
 import platform.Foundation.timeIntervalSince1970
 

@@ -18,7 +18,9 @@
 package tigase.halcyon.core.eventbus
 
 import java.util.concurrent.ConcurrentLinkedQueue
-import kotlin.test.*
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.fail
 import tigase.halcyon.core.Halcyon
 import tigase.halcyon.core.builder.createConfiguration
 import tigase.halcyon.core.eventbus.EventBusInterface.Companion.ALL_EVENTS

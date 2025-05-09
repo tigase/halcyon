@@ -23,7 +23,11 @@ import kotlin.test.assertTrue
 import kotlin.test.fail
 import tigase.halcyon.core.exceptions.HalcyonException
 import tigase.halcyon.core.xml.ElementImpl
-import tigase.halcyon.core.xmpp.stanzas.*
+import tigase.halcyon.core.xmpp.stanzas.IQ
+import tigase.halcyon.core.xmpp.stanzas.Message
+import tigase.halcyon.core.xmpp.stanzas.Presence
+import tigase.halcyon.core.xmpp.stanzas.Stanza
+import tigase.halcyon.core.xmpp.stanzas.wrap
 
 class StanzaBuildersKtTest {
 

@@ -17,7 +17,13 @@
  */
 package tigase.halcyon.core.xmpp.modules.muc
 
-import kotlin.test.*
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
+import kotlin.test.assertTrue
+import kotlin.test.fail
 import tigase.DummyHalcyon
 import tigase.assertContains
 import tigase.halcyon.core.eventbus.Event
@@ -26,7 +32,13 @@ import tigase.halcyon.core.xmpp.ErrorCondition
 import tigase.halcyon.core.xmpp.forms.JabberDataForm
 import tigase.halcyon.core.xmpp.modules.MessageReceivedEvent
 import tigase.halcyon.core.xmpp.modules.PingModule
-import tigase.halcyon.core.xmpp.stanzas.*
+import tigase.halcyon.core.xmpp.stanzas.IQType
+import tigase.halcyon.core.xmpp.stanzas.MessageType
+import tigase.halcyon.core.xmpp.stanzas.PresenceType
+import tigase.halcyon.core.xmpp.stanzas.Show
+import tigase.halcyon.core.xmpp.stanzas.iq
+import tigase.halcyon.core.xmpp.stanzas.message
+import tigase.halcyon.core.xmpp.stanzas.presence
 import tigase.halcyon.core.xmpp.toBareJID
 import tigase.halcyon.core.xmpp.toJID
 

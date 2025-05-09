@@ -17,7 +17,12 @@
  */
 package tigase.halcyon.core.xmpp.modules.vcard
 
-import kotlin.test.*
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
+import kotlin.test.assertTrue
 import tigase.halcyon.core.xml.element
 import tigase.halcyon.core.xml.parser.parseXML
 

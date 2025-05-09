@@ -18,7 +18,11 @@
 package tigase.halcyon.core.xmpp.forms
 
 import kotlinx.serialization.Serializable
-import tigase.halcyon.core.xml.*
+import tigase.halcyon.core.xml.Element
+import tigase.halcyon.core.xml.element
+import tigase.halcyon.core.xml.getChildContent
+import tigase.halcyon.core.xml.setAtt
+import tigase.halcyon.core.xml.setChildContent
 import tigase.halcyon.core.xmpp.ErrorCondition
 import tigase.halcyon.core.xmpp.XMPPException
 

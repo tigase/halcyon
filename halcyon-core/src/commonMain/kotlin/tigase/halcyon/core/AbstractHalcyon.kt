@@ -19,7 +19,11 @@ package tigase.halcyon.core
 
 import tigase.halcyon.core.builder.ConfigurationBuilder
 import tigase.halcyon.core.configuration.Configuration
-import tigase.halcyon.core.connector.*
+import tigase.halcyon.core.connector.AbstractConnector
+import tigase.halcyon.core.connector.ConnectorStateChangeEvent
+import tigase.halcyon.core.connector.ReceivedXMLElementEvent
+import tigase.halcyon.core.connector.SentXMLElementEvent
+import tigase.halcyon.core.connector.SessionController
 import tigase.halcyon.core.eventbus.Event
 import tigase.halcyon.core.eventbus.EventBus
 import tigase.halcyon.core.eventbus.EventDefinition
@@ -27,7 +31,11 @@ import tigase.halcyon.core.eventbus.EventHandler
 import tigase.halcyon.core.exceptions.HalcyonException
 import tigase.halcyon.core.logger.Level
 import tigase.halcyon.core.logger.LoggerFactory
-import tigase.halcyon.core.modules.*
+import tigase.halcyon.core.modules.HalcyonModule
+import tigase.halcyon.core.modules.HalcyonModuleProvider
+import tigase.halcyon.core.modules.ModulesManager
+import tigase.halcyon.core.modules.property
+import tigase.halcyon.core.modules.propertySimple
 import tigase.halcyon.core.requests.Request
 import tigase.halcyon.core.requests.RequestBuilderFactory
 import tigase.halcyon.core.requests.RequestsManager

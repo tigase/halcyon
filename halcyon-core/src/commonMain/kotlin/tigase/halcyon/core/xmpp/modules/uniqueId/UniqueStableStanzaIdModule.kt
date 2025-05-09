@@ -19,7 +19,12 @@ package tigase.halcyon.core.xmpp.modules.uniqueId
 
 import tigase.halcyon.core.Context
 import tigase.halcyon.core.builder.HalcyonConfigDsl
-import tigase.halcyon.core.modules.*
+import tigase.halcyon.core.modules.Criteria
+import tigase.halcyon.core.modules.ModulesManager
+import tigase.halcyon.core.modules.StanzaFilterChain
+import tigase.halcyon.core.modules.XmppModule
+import tigase.halcyon.core.modules.XmppModuleProvider
+import tigase.halcyon.core.modules.createFilter
 import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xmpp.BareJID
 import tigase.halcyon.core.xmpp.ErrorCondition

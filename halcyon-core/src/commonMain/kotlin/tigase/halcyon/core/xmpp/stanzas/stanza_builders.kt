@@ -18,7 +18,12 @@
 package tigase.halcyon.core.xmpp.stanzas
 
 import tigase.halcyon.core.exceptions.HalcyonException
-import tigase.halcyon.core.xml.*
+import tigase.halcyon.core.xml.Element
+import tigase.halcyon.core.xml.ElementImpl
+import tigase.halcyon.core.xml.ElementNode
+import tigase.halcyon.core.xml.HalcyonElementDsl
+import tigase.halcyon.core.xml.getChildContent
+import tigase.halcyon.core.xml.setChildContent
 import tigase.halcyon.core.xmpp.JID
 import tigase.halcyon.core.xmpp.nextUID
 import tigase.halcyon.core.xmpp.toJID

@@ -1,6 +1,7 @@
 package tigase.halcyon.core.xmpp.modules.tick
 
-import java.util.*
+import java.util.Timer
+import java.util.TimerTask
 import tigase.halcyon.core.Context
 import tigase.halcyon.core.TickEvent
 import tigase.halcyon.core.logger.LoggerFactory
