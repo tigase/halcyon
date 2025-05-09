@@ -7,6 +7,7 @@ dokka = "1.9.20"
 java-languageVersion = "17"
 kotlin = "1.9.25"
 krypto = "4.0.10"
+ktlint = "1.5.0"
 minidns = "1.1.1"
 reactive = "1.3.0"
 researchgate-release = "3.0.2"
@@ -43,6 +44,8 @@ bouncycastle = { group = "org.bouncycastle", name = "bctls-jdk18on", version.ref
 
 signal-protocol-java = { group = "org.whispersystems", name = "signal-protocol-java", version.ref = "signalProtocol" }
 signal-protocol-android = { group = "org.whispersystems", name = "signal-protocol-android", version.ref = "signalProtocol" }
+
+ktlint-cli = { group = "com.pinterest.ktlint", name = "ktlint-cli", version.ref = "ktlint" }
 
 #  = { group = "", name = "", version.ref = "" }
 
