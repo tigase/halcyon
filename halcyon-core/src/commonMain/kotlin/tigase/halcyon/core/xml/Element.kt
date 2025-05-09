@@ -71,20 +71,16 @@ class ElementImpl(override val name: String) : Element {
         return child
     }
 
-    override fun getFirstChild(): Element? {
-        return if (!children.isEmpty()) {
-            children.first()
-        } else {
-            null
-        }
+    override fun getFirstChild(): Element? = if (!children.isEmpty()) {
+        children.first()
+    } else {
+        null
     }
 
-    override fun getFirstChild(name: String): Element? {
-        return if (!children.isEmpty()) {
-            children.firstOrNull { element -> element.name == name }
-        } else {
-            null
-        }
+    override fun getFirstChild(name: String): Element? = if (!children.isEmpty()) {
+        children.firstOrNull { element -> element.name == name }
+    } else {
+        null
     }
 
     override fun getChildAfter(child: Element): Element {
@@ -129,7 +125,9 @@ class ElementImpl(override val name: String) : Element {
         val builder = StringBuilder()
         builder.append('<')
         builder.append(name)
-        if (xmlns != null && (parent == null || parent?.xmlns == null || !parent?.xmlns.equals(xmlns))) {
+        if (xmlns != null &&
+            (parent == null || parent?.xmlns == null || !parent?.xmlns.equals(xmlns))
+        ) {
             builder.append(' ')
             builder.append("xmlns=\"")
             builder.append(EscapeUtils.escape(xmlns))
@@ -152,8 +150,11 @@ class ElementImpl(override val name: String) : Element {
             builder.append(element.getAsString())
         }
         if (value != null) {
-            if (true) builder.append(EscapeUtils.escape(value))
-            else builder.append("...")
+            if (true) {
+                builder.append(EscapeUtils.escape(value))
+            } else {
+                builder.append("...")
+            }
         }
         if (!(children.isEmpty() && value == null)) {
             builder.append("</")
@@ -176,14 +177,13 @@ class ElementImpl(override val name: String) : Element {
                 }
             }
             return true
-        } else return false
+        } else {
+            return false
+        }
     }
 
-    override fun hashCode(): Int {
-        return "$name::${attributes.size}::${children::size}::${attributes["id"]}".hashCode()
-    }
+    override fun hashCode(): Int =
+        "$name::${attributes.size}::${children::size}::${attributes["id"]}".hashCode()
 
-    override fun toString(): String {
-        return "XMLElement[name='$name' hash='${hashCode()}']"
-    }
+    override fun toString(): String = "XMLElement[name='$name' hash='${hashCode()}']"
 }

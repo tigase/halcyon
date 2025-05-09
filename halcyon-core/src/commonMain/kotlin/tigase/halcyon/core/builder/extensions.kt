@@ -16,23 +16,22 @@ import tigase.halcyon.core.xmpp.modules.roster.RosterModule
 import tigase.halcyon.core.xmpp.modules.roster.RosterModuleConfiguration
 
 fun ConfigurationBuilder.bind(cfg: BindModuleConfig.() -> Unit) =
-	this.install(BindModule, configuration = cfg)
+    this.install(BindModule, configuration = cfg)
 
 fun ConfigurationBuilder.sasl(cfg: SASLModuleConfig.() -> Unit) =
-	this.install(SASLModule, configuration = cfg)
+    this.install(SASLModule, configuration = cfg)
 
 fun ConfigurationBuilder.sasl2(cfg: SASL2ModuleConfig.() -> Unit) =
-	this.install(SASL2Module, configuration = cfg)
+    this.install(SASL2Module, configuration = cfg)
 
 fun ConfigurationBuilder.discovery(cfg: DiscoveryModuleConfiguration.() -> Unit) =
-	this.install(DiscoveryModule, configuration = cfg)
+    this.install(DiscoveryModule, configuration = cfg)
 
 fun ConfigurationBuilder.capabilities(cfg: EntityCapabilitiesModuleConfig.() -> Unit) =
-	this.install(EntityCapabilitiesModule, configuration = cfg)
+    this.install(EntityCapabilitiesModule, configuration = cfg)
 
 fun ConfigurationBuilder.presence(cfg: PresenceModuleConfig.() -> Unit) =
-	this.install(PresenceModule, configuration = cfg)
+    this.install(PresenceModule, configuration = cfg)
 
 fun ConfigurationBuilder.roster(cfg: RosterModuleConfiguration.() -> Unit) =
-	this.install(RosterModule, configuration = cfg)
-
+    this.install(RosterModule, configuration = cfg)

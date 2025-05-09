@@ -23,23 +23,23 @@ import kotlinx.datetime.toLocalDateTime
 import tigase.halcyon.core.logger.Level
 import tigase.halcyon.core.logger.LoggerInternal
 
-actual class DefaultLoggerSPI actual constructor(val name: String, val enabled: Boolean) : LoggerInternal {
+actual class DefaultLoggerSPI actual constructor(val name: String, val enabled: Boolean) :
+    LoggerInternal {
 
-	companion object {
+    companion object {
 
-		var levelFilter: Level = Level.INFO
-		var nameFilter: String? = null
-	}
+        var levelFilter: Level = Level.INFO
+        var nameFilter: String? = null
+    }
 	
-	actual override fun isLoggable(level: Level): Boolean = levelFilter.value <= level.value
+    actual override fun isLoggable(level: Level): Boolean = levelFilter.value <= level.value
 
-	actual override fun log(level: Level, msg: String, caught: Throwable?) {
-		if (!enabled) return
+    actual override fun log(level: Level, msg: String, caught: Throwable?) {
+        if (!enabled) return
 
-		val ts = Clock.System.now()
-			.toLocalDateTime(TimeZone.UTC)
-			.toString()
-		println("${ts}: ${msg}")
-	}
-
+        val ts = Clock.System.now()
+            .toLocalDateTime(TimeZone.UTC)
+            .toString()
+        println("$ts: $msg")
+    }
 }

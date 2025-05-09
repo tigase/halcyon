@@ -1,6 +1,8 @@
 package tigase.halcyon.core.xmpp.modules.auth
 
 import korlibs.crypto.*
+import kotlin.experimental.xor
+import kotlin.random.Random
 import tigase.halcyon.core.Context
 import tigase.halcyon.core.configuration.Configuration
 import tigase.halcyon.core.configuration.JIDPasswordSaslConfig
@@ -8,8 +10,6 @@ import tigase.halcyon.core.fromBase64
 import tigase.halcyon.core.logger.LoggerFactory
 import tigase.halcyon.core.toBase64
 import tigase.halcyon.core.xml.Element
-import kotlin.experimental.xor
-import kotlin.random.Random
 
 enum class BindType(val xmlValue: String) {
 
@@ -36,14 +36,14 @@ enum class BindType(val xmlValue: String) {
     /**
      * Client requires channel binding: <code>tls-exporter</code>.
      */
-    TlsExporter("tls-exporter");
-
-
+    TlsExporter("tls-exporter")
 }
 
 enum class ScramHashAlgorithm {
 
-    SHA1, SHA256, SHA512
+    SHA1,
+    SHA256,
+    SHA512
 }
 
 @Suppress("ArrayInDataClass")
@@ -54,13 +54,13 @@ data class SCRAMData(
     var bindData: ByteArray = ByteArray(0),
     var bindType: BindType? = null,
     var bindTypesSupportedByServer: List<BindType>? = null,
-//	var cb: String? = null,
+// 	var cb: String? = null,
     var gs2CBindFlag: String? = null,
     var gs2Header: String? = null,
     var clientFirstMessageBare: String? = null,
     var conce: String? = null,
     var saltedPassword: ByteArray? = null,
-    var stage: Int = 0,
+    var stage: Int = 0
 ) : MechanismData
 
 interface SASLScramConfig {
@@ -68,30 +68,34 @@ interface SASLScramConfig {
     var conceGenerator: () -> String
     var clientKeyData: ByteArray
     var serverKeyData: ByteArray
-
 }
 
-abstract class AbstractSASLScram(
-    override val name: String,
-    val hashAlgorithm: ScramHashAlgorithm,
-) : SASLMechanism, SASLScramConfig {
+abstract class AbstractSASLScram(override val name: String, val hashAlgorithm: ScramHashAlgorithm) :
+    SASLMechanism,
+    SASLScramConfig {
 
-    private val log = LoggerFactory.logger("tigase.halcyon.core.xmpp.modules.auth.AbstractSASLScram")
+    private val log = LoggerFactory.logger(
+        "tigase.halcyon.core.xmpp.modules.auth.AbstractSASLScram"
+    )
 
     override var conceGenerator: () -> String = { randomString() }
     override var clientKeyData: ByteArray = "Client Key".encodeToByteArray()
     override var serverKeyData: ByteArray = "Server Key".encodeToByteArray()
 
-
     private val serverFirstMessageRegex = Regex(
-        "^(m=[^,]+,)?r=([^,]+),s=([^,]+),i=([0-9]+)(?:,.*)?$", RegexOption.IGNORE_CASE
+        "^(m=[^,]+,)?r=([^,]+),s=([^,]+),i=([0-9]+)(?:,.*)?$",
+        RegexOption.IGNORE_CASE
     )
     private val serverLastMessageRegex = Regex(
-        "^(?:e=([^,]+)|v=([^,]+)(?:,.*)?)$", RegexOption.IGNORE_CASE
+        "^(?:e=([^,]+)|v=([^,]+)(?:,.*)?)$",
+        RegexOption.IGNORE_CASE
     )
 
     override fun isAllowedToUse(
-        context: Context, config: Configuration, saslContext: SASLContext, streamFeatures: Element
+        context: Context,
+        config: Configuration,
+        saslContext: SASLContext,
+        streamFeatures: Element
     ): Boolean = config.sasl is JIDPasswordSaslConfig
 
     protected fun scramData(saslContext: SASLContext): SCRAMData {
@@ -102,13 +106,16 @@ abstract class AbstractSASLScram(
     }
 
     protected open fun prepareChannelBindingData(
-        context: Context, config: Configuration, saslContext: SASLContext
-    ): Pair<BindType, ByteArray> {
-        return Pair(BindType.N, ByteArray(0))
-    }
+        context: Context,
+        config: Configuration,
+        saslContext: SASLContext
+    ): Pair<BindType, ByteArray> = Pair(BindType.N, ByteArray(0))
 
     override fun evaluateChallenge(
-        input: String?, context: Context, config: Configuration, saslContext: SASLContext
+        input: String?,
+        context: Context,
+        config: Configuration,
+        saslContext: SASLContext
     ): String? {
         val data = scramData(saslContext)
         val credentials = config.sasl as JIDPasswordSaslConfig
@@ -124,7 +131,9 @@ abstract class AbstractSASLScram(
             data.authcId = credentials.authcId ?: credentials.userJID.localpart!!
             data.authzId = if (credentials.authcId != null) {
                 credentials.userJID.toString()
-            } else null
+            } else {
+                null
+            }
 
             data.gs2CBindFlag = when (data.bindType!!) {
                 BindType.N -> "n"
@@ -159,11 +168,15 @@ abstract class AbstractSASLScram(
                 ?: throw ClientSaslException("Bad challenge syntax")
 
             // val mext = r.groups[1]?.value
-            val nonce = r.groups[2]?.value ?: throw ClientSaslException("Bad challenge syntax: missing nonce")
+            val nonce =
+                r.groups[2]?.value
+                    ?: throw ClientSaslException("Bad challenge syntax: missing nonce")
             val salt =
-                r.groups[3]?.value?.fromBase64() ?: throw ClientSaslException("Bad challenge syntax: missing salt")
+                r.groups[3]?.value?.fromBase64()
+                    ?: throw ClientSaslException("Bad challenge syntax: missing salt")
             val iterations =
-                r.groups[4]?.value?.toInt() ?: throw ClientSaslException("Bad challenge syntax: missing iterations")
+                r.groups[4]?.value?.toInt()
+                    ?: throw ClientSaslException("Bad challenge syntax: missing iterations")
 
             if (!nonce.startsWith(data.conce!!)) throw ClientSaslException("Wrong nonce")
 
@@ -178,7 +191,9 @@ abstract class AbstractSASLScram(
                 append(nonce)
             }
 
-            data.authMessage = data.clientFirstMessageBare + "," + serverFirstMessage + "," + clientFinalMessageBare
+            data.authMessage =
+                data.clientFirstMessageBare + "," + serverFirstMessage + "," +
+                clientFinalMessageBare
 
             data.saltedPassword = when (hashAlgorithm) {
                 ScramHashAlgorithm.SHA1 -> PBKDF2.pbkdf2WithHmacSHA1(
@@ -214,9 +229,18 @@ abstract class AbstractSASLScram(
                 ScramHashAlgorithm.SHA512 -> clientKey.sha512()
             }.bytes
             val clientSignature = when (hashAlgorithm) {
-                ScramHashAlgorithm.SHA1 -> HMAC.hmacSHA1(key = storedKey, data.authMessage!!.encodeToByteArray())
-                ScramHashAlgorithm.SHA256 -> HMAC.hmacSHA256(key = storedKey, data.authMessage!!.encodeToByteArray())
-                ScramHashAlgorithm.SHA512 -> HMAC.hmacSHA512(key = storedKey, data.authMessage!!.encodeToByteArray())
+                ScramHashAlgorithm.SHA1 -> HMAC.hmacSHA1(
+                    key = storedKey,
+                    data.authMessage!!.encodeToByteArray()
+                )
+                ScramHashAlgorithm.SHA256 -> HMAC.hmacSHA256(
+                    key = storedKey,
+                    data.authMessage!!.encodeToByteArray()
+                )
+                ScramHashAlgorithm.SHA512 -> HMAC.hmacSHA512(
+                    key = storedKey,
+                    data.authMessage!!.encodeToByteArray()
+                )
             }.bytes
 
             val clientProof = clientKey.copyOf().also {
@@ -249,9 +273,18 @@ abstract class AbstractSASLScram(
                 ScramHashAlgorithm.SHA512 -> HMAC.hmacSHA512(data.saltedPassword!!, serverKeyData)
             }.bytes
             val serverSignature = when (hashAlgorithm) {
-                ScramHashAlgorithm.SHA1 -> HMAC.hmacSHA1(key = serverKey, data.authMessage!!.encodeToByteArray())
-                ScramHashAlgorithm.SHA256 -> HMAC.hmacSHA256(key = serverKey, data.authMessage!!.encodeToByteArray())
-                ScramHashAlgorithm.SHA512 -> HMAC.hmacSHA512(key = serverKey, data.authMessage!!.encodeToByteArray())
+                ScramHashAlgorithm.SHA1 -> HMAC.hmacSHA1(
+                    key = serverKey,
+                    data.authMessage!!.encodeToByteArray()
+                )
+                ScramHashAlgorithm.SHA256 -> HMAC.hmacSHA256(
+                    key = serverKey,
+                    data.authMessage!!.encodeToByteArray()
+                )
+                ScramHashAlgorithm.SHA512 -> HMAC.hmacSHA512(
+                    key = serverKey,
+                    data.authMessage!!.encodeToByteArray()
+                )
             }.bytes
 
             if (!(serverSignature contentEquals v.fromBase64())) {
@@ -263,10 +296,11 @@ abstract class AbstractSASLScram(
         } else if (saslContext.complete && input == null) {
             return null
         } else {
-            throw IllegalStateException("SASL Client in illegal state. stage=${data.stage} complete=${saslContext.complete}")
+            throw IllegalStateException(
+                "SASL Client in illegal state. stage=${data.stage} complete=${saslContext.complete}"
+            )
         }
     }
-
 }
 
 fun hi(password: ByteArray, salt: ByteArray, iterations: Int): ByteArray {

@@ -30,10 +30,8 @@ class SASLContext {
         this.complete = true
     }
 
-    override fun toString(): String {
-        return "SASLContext(mechanism=$mechanism, state=$state, complete=$complete)"
-    }
-
+    override fun toString(): String =
+        "SASLContext(mechanism=$mechanism, state=$state, complete=$complete)"
 }
 
 sealed class SASLEvent : Event(TYPE) {

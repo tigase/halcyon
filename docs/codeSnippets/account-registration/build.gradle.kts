@@ -1,16 +1,16 @@
 plugins {
-	application
-	kotlin("jvm")
+    application
+    kotlin("jvm")
 }
 
 kotlin {
-	jvmToolchain(jdkVersion = libs.versions.java.languageVersion.get().toInt())
+    jvmToolchain(jdkVersion = libs.versions.java.languageVersion.get().toInt())
 }
 
 application {
-	mainClass.set("accountregistration.ApplicationKt")
+    mainClass.set("accountregistration.ApplicationKt")
 }
 
 dependencies {
-	implementation(libs.halcyon.core)
+    implementation(libs.halcyon.core)
 }

@@ -29,7 +29,6 @@ class SASLAnonymous : SASLMechanism {
         override fun instance(): SASLAnonymous = SASLAnonymous()
 
         override fun configure(mechanism: SASLAnonymous, cfg: Unit.() -> Unit) {}
-
     }
 
     override val name = NAME
@@ -50,5 +49,4 @@ class SASLAnonymous : SASLMechanism {
         saslContext: SASLContext,
         streamFeatures: Element
     ): Boolean = true
-
 }

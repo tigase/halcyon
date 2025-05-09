@@ -6,46 +6,47 @@ import tigase.halcyon.core.connector.AbstractConnector
 import tigase.halcyon.core.connector.SessionController
 import tigase.halcyon.core.xmpp.toBareJID
 
-class DummyHalcyon : AbstractHalcyon(createConfiguration {
-	auth {
-		userJID = "test@tester.com".toBareJID()
-		passwordCallback = { "test" }
+class DummyHalcyon :
+    AbstractHalcyon(
+        createConfiguration {
+            auth {
+                userJID = "test@tester.com".toBareJID()
+                passwordCallback = { "test" }
+            }
+        }
+    ) {
 
-	}
-}) {
+    inner class DummySessionController : SessionController {
 
-	inner class DummySessionController : SessionController {
+        override val halcyon: AbstractHalcyon
+            get() = TODO("Not yet implemented")
 
-		override val halcyon: AbstractHalcyon
-			get() = TODO("Not yet implemented")
+        override fun start() {
+        }
 
-		override fun start() {
-		}
+        override fun stop() {
+        }
+    }
 
-		override fun stop() {
-		}
-	}
+    inner class DummyConnector : AbstractConnector(this) {
 
-	inner class DummyConnector : AbstractConnector(this) {
+        override fun createSessionController(): SessionController = DummySessionController()
 
-		override fun createSessionController(): SessionController = DummySessionController()
+        override fun send(data: CharSequence) {
+        }
 
-		override fun send(data: CharSequence) {
-		}
+        override fun start() {
+            state = tigase.halcyon.core.connector.State.Connected
+        }
 
-		override fun start() {
-			state = tigase.halcyon.core.connector.State.Connected
-		}
+        override fun stop() {
+            state = tigase.halcyon.core.connector.State.Disconnected
+        }
+    }
 
-		override fun stop() {
-			state = tigase.halcyon.core.connector.State.Disconnected
-		}
+    override fun reconnect(immediately: Boolean) {
+        TODO("Not yet implemented")
+    }
 
-	}
-
-	override fun reconnect(immediately: Boolean) {
-		TODO("Not yet implemented")
-	}
-
-	override fun createConnector(): AbstractConnector = DummyConnector()
+    override fun createConnector(): AbstractConnector = DummyConnector()
 }

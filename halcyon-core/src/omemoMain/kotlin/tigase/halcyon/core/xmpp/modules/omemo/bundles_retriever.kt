@@ -3,12 +3,15 @@ package tigase.halcyon.core.xmpp.modules.omemo
 import tigase.halcyon.core.logger.LoggerFactory
 import tigase.halcyon.core.xmpp.BareJID
 
-
 private data class Devices(val jid: BareJID, val ids: List<Int>)
 
 private val log = LoggerFactory.logger("tigase.halcyon.core.xmpp.modules.omemo")
 
-private fun retrieveDevicesOfUsers(omemo: OMEMOModule, jids: List<BareJID>, handler: (List<Devices>) -> Unit) {
+private fun retrieveDevicesOfUsers(
+    omemo: OMEMOModule,
+    jids: List<BareJID>,
+    handler: (List<Devices>) -> Unit
+) {
     var c = jids.size
     val result = mutableListOf<Devices>()
 
@@ -34,7 +37,11 @@ private fun retrieveDevicesOfUsers(omemo: OMEMOModule, jids: List<BareJID>, hand
     }
 }
 
-private fun retireveBundlesOfDevices(omemo: OMEMOModule, devices: List<Devices>, handler: (List<Bundle>) -> Unit) {
+private fun retireveBundlesOfDevices(
+    omemo: OMEMOModule,
+    devices: List<Devices>,
+    handler: (List<Bundle>) -> Unit
+) {
     var c = devices.sumOf { it.ids.size }
     val result = mutableListOf<Bundle>()
 

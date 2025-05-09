@@ -16,34 +16,33 @@
  * If not, see http://www.gnu.org/licenses/.
  */
 plugins {
-	kotlin("multiplatform")
-	kotlin("plugin.serialization")
+    kotlin("multiplatform")
+    kotlin("plugin.serialization")
 }
 
-
 kotlin {
-	jvmToolchain(jdkVersion = libs.versions.java.languageVersion.get().toInt())
-	jvm {
-		withJava()
-		testRuns["test"].executionTask.configure {
-			useJUnit()
-		}
-	}
+    jvmToolchain(jdkVersion = libs.versions.java.languageVersion.get().toInt())
+    jvm {
+        withJava()
+        testRuns["test"].executionTask.configure {
+            useJUnit()
+        }
+    }
 
-	sourceSets {
-		all {
-			languageSettings {
-				optIn("kotlin.RequiresOptIn")
-			}
-		}
-		named("jvmTest") {
-			dependencies {
-				implementation(kotlin("test"))
-				implementation(kotlin("test-junit"))
-				implementation(project(":halcyon-core"))
-				implementation(project(":halcyon-bouncycastle"))
-				implementation(deps.kotlinx.datetime)
-			}
-		}
-	}
+    sourceSets {
+        all {
+            languageSettings {
+                optIn("kotlin.RequiresOptIn")
+            }
+        }
+        named("jvmTest") {
+            dependencies {
+                implementation(kotlin("test"))
+                implementation(kotlin("test-junit"))
+                implementation(project(":halcyon-core"))
+                implementation(project(":halcyon-bouncycastle"))
+                implementation(deps.kotlinx.datetime)
+            }
+        }
+    }
 }

@@ -1,6 +1,5 @@
 package tigase.halcyon.core.xmpp.modules.tick
 
-import tigase.halcyon.core.AbstractHalcyon
 import tigase.halcyon.core.AbstractHalcyon.State.*
 import tigase.halcyon.core.Context
 import tigase.halcyon.core.HalcyonStateChangeEvent
@@ -14,7 +13,6 @@ import tigase.halcyon.core.modules.ModulesManager
 interface TickModuleConfig {
 
     var tickTimer: TickTimer
-
 }
 
 interface TickTimer {
@@ -22,17 +20,21 @@ interface TickTimer {
     fun stopTimer(context: Context)
 }
 
-class TickModule(override val context: Context) : HalcyonModule, TickModuleConfig {
+class TickModule(override val context: Context) :
+    HalcyonModule,
+    TickModuleConfig {
 
     companion object : HalcyonModuleProvider<TickModule, TickModuleConfig> {
         override val TYPE = "halcyon:tick"
         override fun instance(context: Context): TickModule = TickModule(context)
 
-        override fun configure(module: TickModule, cfg: TickModuleConfig.() -> Unit) =
-            module.cfg()
+        override fun configure(module: TickModule, cfg: TickModuleConfig.() -> Unit) = module.cfg()
 
         override fun doAfterRegistration(module: TickModule, moduleManager: ModulesManager) =
-            module.context.eventBus.register(HalcyonStateChangeEvent, module::doOnHalcyonStateChange)
+            module.context.eventBus.register(
+                HalcyonStateChangeEvent,
+                module::doOnHalcyonStateChange
+            )
     }
 
     private val log = LoggerFactory.logger("tigase.halcyon.core.xmpp.modules.tick.TickModule")
@@ -59,7 +61,6 @@ class TickModule(override val context: Context) : HalcyonModule, TickModuleConfi
             }
         }
     }
-
 }
 
 expect fun createTickTimer(): TickTimer

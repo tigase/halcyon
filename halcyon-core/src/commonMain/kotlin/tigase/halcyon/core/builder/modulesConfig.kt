@@ -7,7 +7,7 @@ import tigase.halcyon.core.xmpp.modules.tick.TickModule
 
 data class Item<M : HalcyonModule, B : Any>(
     val provider: HalcyonModuleProvider<M, B>,
-    val configuration: (B.() -> Unit)? = null,
+    val configuration: (B.() -> Unit)? = null
 )
 
 @HalcyonConfigDsl
@@ -21,14 +21,14 @@ class ModulesConfigBuilder {
 
     fun <M : HalcyonModule, B : Any> install(
         provider: HalcyonModuleProvider<M, B>,
-        configuration: B.() -> Unit = {},
+        configuration: B.() -> Unit = {}
     ) {
         this.providers.remove(provider.TYPE)
         this.providers[provider.TYPE] = Item(provider, configuration)
     }
 //
 //
-//	}
+// 	}
 
     internal fun initializeModules(modulesManager: ModulesManager) {
         val modulesToConfigure =
@@ -47,8 +47,5 @@ class ModulesConfigBuilder {
             val module = modulesManager.getModuleOrNull<HalcyonModule>(provider.TYPE)
             provider.doAfterRegistration(module!!, modulesManager)
         }
-
     }
-
 }
-

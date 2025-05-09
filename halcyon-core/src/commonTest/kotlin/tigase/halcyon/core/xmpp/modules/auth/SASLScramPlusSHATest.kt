@@ -1,11 +1,11 @@
 package tigase.halcyon.core.xmpp.modules.auth
 
+import kotlin.test.*
 import tigase.DummyHalcyon
 import tigase.halcyon.core.builder.createConfiguration
 import tigase.halcyon.core.fromBase64
 import tigase.halcyon.core.toBase64
 import tigase.halcyon.core.xmpp.toBareJID
-import kotlin.test.*
 
 class SASLScramPlusSHATest {
 
@@ -27,10 +27,14 @@ class SASLScramPlusSHATest {
         // first client message
         assertEquals(
             "p=tls-unique,a=user@example.com,n=differentusername,r=fyko+d2lbbFgONRv9qkxdawL",
-            scram.evaluateChallenge(null, DummyHalcyon(), configuration, context)!!.fromBase64().decodeToString(),
+            scram.evaluateChallenge(
+                null,
+                DummyHalcyon(),
+                configuration,
+                context
+            )!!.fromBase64().decodeToString(),
             "Invalid first client message"
         )
-
     }
 
     @Test
@@ -51,14 +55,19 @@ class SASLScramPlusSHATest {
         // first client message
         assertEquals(
             "p=tls-unique,a=user@example.com,n=user,r=fyko+d2lbbFgONRv9qkxdawL",
-            scram.evaluateChallenge(null, DummyHalcyon(), configuration, context)!!.fromBase64().decodeToString(),
+            scram.evaluateChallenge(
+                null,
+                DummyHalcyon(),
+                configuration,
+                context
+            )!!.fromBase64().decodeToString(),
             "Invalid first client message"
         )
-
     }
 
-    private fun createSASLScramPlus(randomGenerator: () -> String): AbstractSASLScramPlus {
-        return object : AbstractSASLScramPlus(name = "SCRAM-SHA-1-PLUS",
+    private fun createSASLScramPlus(randomGenerator: () -> String): AbstractSASLScramPlus =
+        object : AbstractSASLScramPlus(
+            name = "SCRAM-SHA-1-PLUS",
             hashAlgorithm = ScramHashAlgorithm.SHA1,
             tlsUniqueProvider = {
                 byteArrayOf(
@@ -66,8 +75,8 @@ class SASLScramPlusSHATest {
                     'P'.code.toByte(),
                     'I'.code.toByte()
                 )
-            }) {}.apply { conceGenerator = randomGenerator }
-    }
+            }
+        ) {}.apply { conceGenerator = randomGenerator }
 
     @Test
     fun test_messages_sha1() {
@@ -86,7 +95,12 @@ class SASLScramPlusSHATest {
         // first client message
         assertEquals(
             "p=tls-unique,,n=bmalkow,r=SpiXKmhi57DBp5sdE5G3H3ms",
-            scram.evaluateChallenge(null, DummyHalcyon(), configuration, context)!!.fromBase64().decodeToString(),
+            scram.evaluateChallenge(
+                null,
+                DummyHalcyon(),
+                configuration,
+                context
+            )!!.fromBase64().decodeToString(),
             "Invalid first client message"
         )
 
@@ -96,7 +110,10 @@ class SASLScramPlusSHATest {
             assertNotNull(
                 scram.evaluateChallenge(
                     "r=SpiXKmhi57DBp5sdE5G3H3ms5kLrhitKUHVoSOmzdR,s=Ey6OJnGx7JEJAIJp,i=4096".encodeToByteArray()
-                        .toBase64(), DummyHalcyon(), configuration, context
+                        .toBase64(),
+                    DummyHalcyon(),
+                    configuration,
+                    context
                 )
             ).fromBase64().decodeToString(),
             "Invalid last client message"
@@ -106,11 +123,12 @@ class SASLScramPlusSHATest {
 
         assertNull(
             scram.evaluateChallenge(
-                "v=NQ/f8FjeMxUuRK9F88G8tMji4pk=".encodeToByteArray().toBase64(), DummyHalcyon(), configuration, context
+                "v=NQ/f8FjeMxUuRK9F88G8tMji4pk=".encodeToByteArray().toBase64(),
+                DummyHalcyon(),
+                configuration,
+                context
             )
         )
         assertTrue(context.complete, "It should be completed.")
-
     }
-
 }

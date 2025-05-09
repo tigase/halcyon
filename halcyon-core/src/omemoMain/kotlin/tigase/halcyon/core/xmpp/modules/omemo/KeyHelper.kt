@@ -5,6 +5,9 @@ expect class KeyHelper {
         fun generateIdentityKeyPair(): IdentityKeyPair
         fun generateRegistrationId(extendedRange: Boolean): Int
         fun generatePreKeys(start: Int, count: Int): List<PreKeyRecord>
-        fun generateSignedPreKey(identityKeyPair: IdentityKeyPair, signedPreKeyId: Int): SignedPreKeyRecord
+        fun generateSignedPreKey(
+            identityKeyPair: IdentityKeyPair,
+            signedPreKeyId: Int
+        ): SignedPreKeyRecord
     }
 }

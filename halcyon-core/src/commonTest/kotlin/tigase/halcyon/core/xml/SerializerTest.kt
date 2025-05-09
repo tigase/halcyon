@@ -1,12 +1,12 @@
 package tigase.halcyon.core.xml
 
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
-import tigase.halcyon.core.xmpp.stanzas.*
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertIs
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
+import tigase.halcyon.core.xmpp.stanzas.*
 
 class SerializerTest {
 
@@ -71,7 +71,6 @@ class SerializerTest {
         assertEquals(data, x)
         assertEquals(data.getAsString(), x.getAsString())
     }
-
 
     @Test
     fun iq_test() {
@@ -191,6 +190,4 @@ class SerializerTest {
         assertEquals(data, x)
         assertEquals(data.getAsString(), x.getAsString())
     }
-
-
 }

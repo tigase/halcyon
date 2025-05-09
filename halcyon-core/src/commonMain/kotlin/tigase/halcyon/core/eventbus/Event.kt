@@ -22,27 +22,26 @@ import tigase.halcyon.core.AbstractHalcyon
 
 interface EventDefinition<out M : Event> {
 
-	val TYPE: String
+    val TYPE: String
 }
 
 /**
  * Base class for events.
  */
 abstract class Event(
-	/** Identifier of event type. */
-	val eventType: String,
+    /** Identifier of event type. */
+    val eventType: String
 ) {
 
-	/**
-	 * Halcyon context.
-	 */
-	lateinit var context: AbstractHalcyon
-		internal set
+    /**
+     * Halcyon context.
+     */
+    lateinit var context: AbstractHalcyon
+        internal set
 
-	/**
-	 * Event fire time.
-	 */
-	var eventTime: Instant = Instant.DISTANT_PAST
-		internal set
-
+    /**
+     * Event fire time.
+     */
+    var eventTime: Instant = Instant.DISTANT_PAST
+        internal set
 }

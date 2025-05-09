@@ -18,5 +18,4 @@ class DefaultTickTimer : TickTimer {
     private fun tick(context: Context) {
         context.eventBus.fire(TickEvent(++tickCounter))
     }
-
 }

@@ -1,9 +1,9 @@
 package tigase.halcyon.core.xmpp.modules.tick
 
+import java.util.*
 import tigase.halcyon.core.Context
 import tigase.halcyon.core.TickEvent
 import tigase.halcyon.core.logger.LoggerFactory
-import java.util.*
 
 actual fun createTickTimer(): TickTimer = DefaultTickTimer()
 
@@ -31,11 +31,11 @@ class DefaultTickTimer : TickTimer {
         timer = Timer("timer", true).also {
             it.schedule(tickTask, 1_000, 1_000)
         }
-        logger.finest("Started timer, task: ${tickTask}, timer: ${timer}")
+        logger.finest("Started timer, task: $tickTask, timer: $timer")
     }
 
     override fun stopTimer(context: Context) {
-        logger.finest("Stopping timer, task: ${tickTask}, timer: ${timer}")
+        logger.finest("Stopping timer, task: $tickTask, timer: $timer")
         tickTask?.cancel()
         tickTask = null
         timer?.purge()
@@ -46,5 +46,4 @@ class DefaultTickTimer : TickTimer {
     private fun tick(context: Context) {
         context.eventBus.fire(TickEvent(++tickCounter))
     }
-
 }

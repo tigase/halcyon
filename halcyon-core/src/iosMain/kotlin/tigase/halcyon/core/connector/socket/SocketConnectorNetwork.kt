@@ -15,27 +15,27 @@
  * along with this program. Look for COPYING file in the top folder.
  * If not, see http://www.gnu.org/licenses/.
  */
-//package tigase.halcyon.core.connector.socket
+// package tigase.halcyon.core.connector.socket
 //
-//import kotlinx.cinterop.*
-//import platform.Network.*
-//import platform.darwin.*
-//import platform.posix.size_t
-//import platform.posix.usleep
-//import tigase.halcyon.core.Halcyon
-//import tigase.halcyon.core.connector.*
-//import tigase.halcyon.core.excutor.TickExecutor
-//import tigase.halcyon.core.logger.Level
-//import tigase.halcyon.core.logger.LoggerFactory
-//import tigase.halcyon.core.xml.Element
-//import tigase.halcyon.core.xml.element
-//import tigase.halcyon.core.xml.parser.StreamParser
-//import tigase.halcyon.core.xmpp.ErrorCondition
-//import tigase.halcyon.core.xmpp.XMPPException
-//import tigase.halcyon.core.xmpp.modules.sm.StreamManagementModule
-//import kotlin.time.Duration.Companion.seconds
+// import kotlinx.cinterop.*
+// import platform.Network.*
+// import platform.darwin.*
+// import platform.posix.size_t
+// import platform.posix.usleep
+// import tigase.halcyon.core.Halcyon
+// import tigase.halcyon.core.connector.*
+// import tigase.halcyon.core.excutor.TickExecutor
+// import tigase.halcyon.core.logger.Level
+// import tigase.halcyon.core.logger.LoggerFactory
+// import tigase.halcyon.core.xml.Element
+// import tigase.halcyon.core.xml.element
+// import tigase.halcyon.core.xml.parser.StreamParser
+// import tigase.halcyon.core.xmpp.ErrorCondition
+// import tigase.halcyon.core.xmpp.XMPPException
+// import tigase.halcyon.core.xmpp.modules.sm.StreamManagementModule
+// import kotlin.time.Duration.Companion.seconds
 //
-//class SocketConnectorNetwork(halcyon: Halcyon) : AbstractConnector(halcyon) {
+// class SocketConnectorNetwork(halcyon: Halcyon) : AbstractConnector(halcyon) {
 //
 //    companion object {
 //
@@ -276,10 +276,10 @@
 //            return completionHandler(createSocket(seeOther, config.port));
 //        }
 //
-////		val forcedHost = halcyon.sessionObject.getProperty<String>(SERVER_HOST)
-////		if (forcedHost != null) {
-////			return Socket(InetAddress.getByName(forcedHost), config.port)
-////		}
+// //		val forcedHost = halcyon.sessionObject.getProperty<String>(SERVER_HOST)
+// //		if (forcedHost != null) {
+// //			return Socket(InetAddress.getByName(forcedHost), config.port)
+// //		}
 //
 //        val userJid = halcyon.config.userJID!!
 //        resolver = DnsResolver();
@@ -294,12 +294,12 @@
 //
 //    private fun onTick() {
 //        // FIXME: Do we need whitespace ping??
-////        if (state == State.Connected && whiteSpaceEnabled) {
-////            log.finer { "Whitespace ping" }
-////            log.finer { "Whitespace ping" }
-////            worker.writer.write(' '.code)
-////            worker.writer.flush()
-////        }
+// //        if (state == State.Connected && whiteSpaceEnabled) {
+// //            log.finer { "Whitespace ping" }
+// //            log.finer { "Whitespace ping" }
+// //            worker.writer.write(' '.code)
+// //            worker.writer.flush()
+// //        }
 //    }
 //
 //    fun process(data: ByteArray) {
@@ -318,10 +318,10 @@
 //        }
 //        nw_connection_send(socket, out, NW_CONNECTION_DEFAULT_MESSAGE_CONTEXT, true, completion);
 //        println("3")
-////        { error ->
-////            if (error != null) {
-////                this.connectionError(SocketConnectionErrorEvent.Unknown(error));
-////            }
-////        }
+// //        { error ->
+// //            if (error != null) {
+// //                this.connectionError(SocketConnectionErrorEvent.Unknown(error));
+// //            }
+// //        }
 //    }
-//}
+// }

@@ -34,30 +34,32 @@ import tigase.halcyon.core.xmpp.stanzas.wrap
  * @param criteria The criteria for matching the XML element.
  */
 abstract class AbstractXmppIQModule(
-	context: Context, type: String, features: Array<String>, criteria: Criteria,
+    context: Context,
+    type: String,
+    features: Array<String>,
+    criteria: Criteria
 ) : AbstractXmppModule(context, type, features, criteria) {
 
-	final override fun process(element: Element) {
-		val iq: IQ = wrap(element)
-		when (iq.type) {
-			IQType.Set -> processSet(iq)
-			IQType.Get -> processGet(iq)
-			else -> throw XMPPException(ErrorCondition.BadRequest)
-		}
-	}
+    final override fun process(element: Element) {
+        val iq: IQ = wrap(element)
+        when (iq.type) {
+            IQType.Set -> processSet(iq)
+            IQType.Get -> processGet(iq)
+            else -> throw XMPPException(ErrorCondition.BadRequest)
+        }
+    }
 
-	/**
-	 * Processes the IQ element with the Get type.
-	 *
-	 * @param element The IQ element to process.
-	 */
-	abstract fun processGet(element: IQ)
+    /**
+     * Processes the IQ element with the Get type.
+     *
+     * @param element The IQ element to process.
+     */
+    abstract fun processGet(element: IQ)
 
-	/**
-	 * Processes the IQ element with the Set type.
-	 *
-	 * @param element The IQ element to process.
-	 */
-	abstract fun processSet(element: IQ)
-
+    /**
+     * Processes the IQ element with the Set type.
+     *
+     * @param element The IQ element to process.
+     */
+    abstract fun processSet(element: IQ)
 }

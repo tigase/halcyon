@@ -24,21 +24,18 @@ actual typealias ECPublicKey = org.whispersystems.libsignal.ecc.ECPublicKey
 actual typealias ECKeyPair = org.whispersystems.libsignal.ecc.ECKeyPair
 actual typealias IdentityKey = org.whispersystems.libsignal.IdentityKey
 
-
 actual typealias IdentityKeyPair = org.whispersystems.libsignal.IdentityKeyPair
 actual typealias SignedPreKeyRecord = org.whispersystems.libsignal.state.SignedPreKeyRecord
 actual typealias PreKeyRecord = org.whispersystems.libsignal.state.PreKeyRecord
 actual class SessionBuilder actual constructor(
     store: SignalProtocolStore,
     address: SignalProtocolAddress
-) : org.whispersystems.libsignal.SessionBuilder(store, address) {
-
-}
+) : org.whispersystems.libsignal.SessionBuilder(store, address)
 
 actual typealias SessionCipher = org.whispersystems.libsignal.SessionCipher
 
 actual typealias UntrustedIdentityException = org.whispersystems.libsignal.UntrustedIdentityException
-actual typealias InvalidKeyException = org.whispersystems.libsignal.InvalidKeyException;
+actual typealias InvalidKeyException = org.whispersystems.libsignal.InvalidKeyException
 
 actual typealias SignalProtocolStore = org.whispersystems.libsignal.state.SignalProtocolStore
 
@@ -53,4 +50,4 @@ actual typealias SessionStore = org.whispersystems.libsignal.state.SessionStore
 
 actual typealias IdentityKeyStore = org.whispersystems.libsignal.state.IdentityKeyStore
 
-actual typealias IdentityKeyStoreDirection = org.whispersystems.libsignal.state.IdentityKeyStore.Direction;
+actual typealias IdentityKeyStoreDirection = org.whispersystems.libsignal.state.IdentityKeyStore.Direction

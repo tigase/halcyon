@@ -10,7 +10,6 @@ import kotlinx.serialization.descriptors.buildClassSerialDescriptor
 import kotlinx.serialization.descriptors.element
 import kotlinx.serialization.encoding.*
 
-
 object ElementListSerializer : KSerializer<List<Element>> {
 
     val listSerializer: KSerializer<List<Element>> = ListSerializer(Element.serializer())
@@ -19,9 +18,8 @@ object ElementListSerializer : KSerializer<List<Element>> {
     override val descriptor: SerialDescriptor =
         SerialDescriptor("children", listSerializer.descriptor)
 
-    override fun deserialize(decoder: Decoder): List<Element> {
-        return decoder.decodeSerializableValue(listSerializer)
-    }
+    override fun deserialize(decoder: Decoder): List<Element> =
+        decoder.decodeSerializableValue(listSerializer)
 
     override fun serialize(encoder: Encoder, value: List<Element>) {
         encoder.encodeSerializableValue(listSerializer, value)
@@ -52,8 +50,14 @@ object ElementSerializer : KSerializer<Element> {
                         2,
                         MapSerializer(String.serializer(), String.serializer())
                     )
-                    3 -> children =
-                        decodeSerializableElement(descriptor, 3, ElementListSerializer, children)
+                    3 ->
+                        children =
+                            decodeSerializableElement(
+                                descriptor,
+                                3,
+                                ElementListSerializer,
+                                children
+                            )
 
                     CompositeDecoder.DECODE_DONE -> break
                     else -> error("Unexpected index: $index")
@@ -95,5 +99,4 @@ object ElementSerializer : KSerializer<Element> {
             }
         }
     }
-
 }

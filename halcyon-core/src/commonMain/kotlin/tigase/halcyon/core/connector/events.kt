@@ -24,56 +24,56 @@ import tigase.halcyon.core.xml.Element
 
 data class ConnectorStateChangeEvent(val oldState: State, val newState: State) : Event(TYPE) {
 
-	companion object : EventDefinition<ConnectorStateChangeEvent> {
+    companion object : EventDefinition<ConnectorStateChangeEvent> {
 
-		override val TYPE = "tigase.halcyon.core.connector.ConnectorStateChangeEvent"
-	}
+        override val TYPE = "tigase.halcyon.core.connector.ConnectorStateChangeEvent"
+    }
 }
 
 data class ReceivedXMLElementEvent(val element: Element) : Event(TYPE) {
 
-	companion object : EventDefinition<ReceivedXMLElementEvent> {
+    companion object : EventDefinition<ReceivedXMLElementEvent> {
 
-		override val TYPE = "tigase.halcyon.core.connector.ReceivedXMLElementEvent"
-	}
+        override val TYPE = "tigase.halcyon.core.connector.ReceivedXMLElementEvent"
+    }
 }
 
 data class StreamStartedEvent(val attrs: Map<String, String>) : Event(TYPE) {
 
-	companion object : EventDefinition<StreamStartedEvent> {
+    companion object : EventDefinition<StreamStartedEvent> {
 
-		override val TYPE = "tigase.halcyon.core.connector.StreamStartedEvent"
-	}
+        override val TYPE = "tigase.halcyon.core.connector.StreamStartedEvent"
+    }
 }
 
 class StreamTerminatedEvent : Event(TYPE) {
 
-	companion object : EventDefinition<StreamStartedEvent> {
+    companion object : EventDefinition<StreamStartedEvent> {
 
-		override val TYPE = "tigase.halcyon.core.connector.StreamTerminatedEvent"
-	}
+        override val TYPE = "tigase.halcyon.core.connector.StreamTerminatedEvent"
+    }
 }
 
 data class ParseErrorEvent(val errorMessage: String) : Event(TYPE) {
 
-	companion object : EventDefinition<ParseErrorEvent> {
+    companion object : EventDefinition<ParseErrorEvent> {
 
-		override val TYPE = "tigase.halcyon.core.connector.ParseErrorEvent"
-	}
+        override val TYPE = "tigase.halcyon.core.connector.ParseErrorEvent"
+    }
 }
 
 data class SentXMLElementEvent(val element: Element, val request: Request<*, *>?) : Event(TYPE) {
 
-	companion object : EventDefinition<SentXMLElementEvent> {
+    companion object : EventDefinition<SentXMLElementEvent> {
 
-		override val TYPE = "tigase.halcyon.core.connector.SentXMLElementEvent"
-	}
+        override val TYPE = "tigase.halcyon.core.connector.SentXMLElementEvent"
+    }
 }
 
 abstract class ConnectionErrorEvent : Event(TYPE) {
 
-	companion object : EventDefinition<ConnectionErrorEvent> {
+    companion object : EventDefinition<ConnectionErrorEvent> {
 
-		override val TYPE = "tigase.halcyon.core.connector.ConnectionErrorEvent"
-	}
+        override val TYPE = "tigase.halcyon.core.connector.ConnectionErrorEvent"
+    }
 }

@@ -17,6 +17,9 @@
  */
 package tigase.halcyon.core.requests
 
+import kotlin.time.Duration
+import kotlin.time.DurationUnit
+import kotlin.time.toDuration
 import kotlinx.datetime.Clock
 import tigase.halcyon.core.Context
 import tigase.halcyon.core.xml.Element
@@ -24,15 +27,15 @@ import tigase.halcyon.core.xml.ElementImpl
 import tigase.halcyon.core.xmpp.ErrorCondition
 import tigase.halcyon.core.xmpp.XMPPException
 import tigase.halcyon.core.xmpp.stanzas.*
-import kotlin.time.Duration
-import kotlin.time.DurationUnit
-import kotlin.time.toDuration
 
-//typealias ResultHandler<V> = (Result<V>) -> Unit
+// typealias ResultHandler<V> = (Result<V>) -> Unit
 typealias ResponseStanzaHandler<STT> = (Request<*, STT>, STT?) -> Unit
 
-open class XMPPError(val response: Stanza<*>?, val error: ErrorCondition, val description: String?) :
-    Exception("$error: $description");
+open class XMPPError(
+    val response: Stanza<*>?,
+    val error: ErrorCondition,
+    val description: String?
+) : Exception("$error: $description")
 
 typealias RHandler<V> = (Result<V>) -> Unit
 
@@ -49,7 +52,6 @@ class ResultHandler<V> {
             it.invoke(tmp)
         }
     }
-
 }
 
 class SendHandler<V, STT : Stanza<*>> {
@@ -65,12 +67,14 @@ class SendHandler<V, STT : Stanza<*>> {
             it.invoke(request)
         }
     }
-
 }
 
 class RequestBuilderFactory(private val context: Context) {
 
-    fun iq(stanza: Element): RequestBuilder<IQ, IQ> = RequestBuilder(halcyon = context, element = stanza) { it as IQ }
+    fun iq(stanza: Element): RequestBuilder<IQ, IQ> =
+        RequestBuilder(halcyon = context, element = stanza) {
+            it as IQ
+        }
 
     fun iq(init: IQNode.() -> Unit): RequestBuilder<IQ, IQ> {
         val n = IQNode(IQ(ElementImpl(IQ.NAME)))
@@ -94,14 +98,17 @@ class RequestBuilderFactory(private val context: Context) {
     fun message(stanza: Element, writeDirectly: Boolean = false): RequestBuilder<Unit, Message> =
         RequestBuilder(halcyon = context, element = stanza, writeDirectly = writeDirectly) { }
 
-    fun message(writeDirectly: Boolean = false, init: MessageNode.() -> Unit): RequestBuilder<Unit, Message> {
+    fun message(
+        writeDirectly: Boolean = false,
+        init: MessageNode.() -> Unit
+    ): RequestBuilder<Unit, Message> {
         val n = MessageNode(Message(ElementImpl(Message.NAME)))
         n.init()
         n.id()
         val stanza = n.element as Message
-        return RequestBuilder(halcyon = context, element = stanza, writeDirectly = writeDirectly) { }
+        return RequestBuilder(halcyon = context, element = stanza, writeDirectly = writeDirectly) {
+        }
     }
-
 }
 
 class RequestBuilder<V, STT : Stanza<*>>(
@@ -109,7 +116,7 @@ class RequestBuilder<V, STT : Stanza<*>>(
     internal val element: Element,
     private val writeDirectly: Boolean = false,
     @Deprecated("Use onSend() instead.") private val callHandlerOnSent: Boolean = false,
-    private val transform: (value: Any?) -> V,
+    private val transform: (value: Any?) -> V
 ) {
 
     private var requestName: String? = null
@@ -153,7 +160,18 @@ class RequestBuilder<V, STT : Stanza<*>>(
     fun <R> map(transform: (value: V) -> R): RequestBuilder<R, STT> {
         check(!writeDirectly) { "Mapping cannot be added to directly writable request." }
         val res =
-            RequestBuilder<R, STT>(halcyon, element, writeDirectly, callHandlerOnSent, transform as (((Any?) -> R)))
+            RequestBuilder<R, STT>(
+                halcyon,
+                element,
+                writeDirectly,
+                callHandlerOnSent,
+                transform as (
+                (
+                (
+                    Any?
+                ) -> R
+                ))
+            )
         res.errorTransformer = errorTransformer
         res.timeoutDelay = timeoutDelay
         res.resultHandler = null
@@ -167,8 +185,10 @@ class RequestBuilder<V, STT : Stanza<*>>(
         return this
     }
 
-
-    fun handleResponseStanza(name: String? = null, handler: ResponseStanzaHandler<STT>): RequestBuilder<V, STT> {
+    fun handleResponseStanza(
+        name: String? = null,
+        handler: ResponseStanzaHandler<STT>
+    ): RequestBuilder<V, STT> {
         check(!writeDirectly) { "Response handler cannot be added to directly writable request." }
         this.responseStanzaHandler = handler
         if (requestName != null) this.requestName = name
@@ -201,8 +221,11 @@ class RequestBuilder<V, STT : Stanza<*>>(
 
     fun send(): Request<V, STT> {
         val req = build()
-        if (writeDirectly) halcyon.writer.writeDirectly(req.stanza)
-        else halcyon.writer.write(req)
+        if (writeDirectly) {
+            halcyon.writer.writeDirectly(req.stanza)
+        } else {
+            halcyon.writer.write(req)
+        }
         return req
     }
 
@@ -210,24 +233,26 @@ class RequestBuilder<V, STT : Stanza<*>>(
         this.requestName = requestName
         return this
     }
-
 }
 
-fun <V> RequestBuilder<V, Message>.modifyMessage(block: MessageNode.() -> Unit): RequestBuilder<V, Message>  {
+fun <V> RequestBuilder<V, Message>.modifyMessage(
+    block: MessageNode.() -> Unit
+): RequestBuilder<V, Message> {
     MessageNode(Message(element)).apply(block)
-    return this;
+    return this
 }
 
-fun <V> RequestBuilder<V, IQ>.modifyIQ(block: IQNode.() -> Unit): RequestBuilder<V, IQ>  {
+fun <V> RequestBuilder<V, IQ>.modifyIQ(block: IQNode.() -> Unit): RequestBuilder<V, IQ> {
     IQNode(IQ(element)).apply(block)
-    return this;
+    return this
 }
 
-fun <V> RequestBuilder<V, Presence>.modifyPresence(block: PresenceNode.() -> Unit): RequestBuilder<V, Presence>  {
+fun <V> RequestBuilder<V, Presence>.modifyPresence(
+    block: PresenceNode.() -> Unit
+): RequestBuilder<V, Presence> {
     PresenceNode(Presence(element)).apply(block)
-    return this;
+    return this
 }
-
 
 class ConsumerPublisher<CSR> {
 
@@ -236,7 +261,6 @@ class ConsumerPublisher<CSR> {
     fun publish(data: CSR) {
         observers.forEach { it.invoke(data) }
     }
-
 }
 
 class RequestConsumerBuilder<CSR, V, STT : Stanza<*>>(
@@ -244,7 +268,7 @@ class RequestConsumerBuilder<CSR, V, STT : Stanza<*>>(
     private val element: Element,
     private val writeDirectly: Boolean = false,
     @Deprecated("Use onSend() instead.") private val callHandlerOnSent: Boolean = false,
-    private val transform: (value: Any) -> V,
+    private val transform: (value: Any) -> V
 ) {
 
     private var requestName: String? = null
@@ -289,7 +313,14 @@ class RequestConsumerBuilder<CSR, V, STT : Stanza<*>>(
     @Suppress("UNCHECKED_CAST")
     fun <R : Any> map(transform: (value: V) -> R): RequestConsumerBuilder<CSR, R, STT> {
         val xx: ((Any) -> R) = transform as (((Any) -> R))
-        val res = RequestConsumerBuilder<CSR, R, STT>(halcyon, element, writeDirectly, callHandlerOnSent, xx)
+        val res =
+            RequestConsumerBuilder<CSR, R, STT>(
+                halcyon,
+                element,
+                writeDirectly,
+                callHandlerOnSent,
+                xx
+            )
         res.errorTransformer = errorTransformer
         res.timeoutDelay = timeoutDelay
         res.resultHandler = null
@@ -305,14 +336,18 @@ class RequestConsumerBuilder<CSR, V, STT : Stanza<*>>(
 
     @Suppress("unused")
     fun handleResponseStanza(
-        requestName: String? = null, handler: ResponseStanzaHandler<STT>,
+        requestName: String? = null,
+        handler: ResponseStanzaHandler<STT>
     ): RequestConsumerBuilder<CSR, V, STT> {
         this.responseStanzaHandler = handler
         if (requestName != null) this.requestName = requestName
         return this
     }
 
-    fun response(requestName: String? = null, handler: RHandler<V>): RequestConsumerBuilder<CSR, V, STT> {
+    fun response(
+        requestName: String? = null,
+        handler: RHandler<V>
+    ): RequestConsumerBuilder<CSR, V, STT> {
         if (this.resultHandler == null) this.resultHandler = ResultHandler()
         this.resultHandler?.add(handler)
         if (requestName != null) this.requestName = requestName
@@ -342,8 +377,11 @@ class RequestConsumerBuilder<CSR, V, STT : Stanza<*>>(
 
     fun send(): Request<V, STT> {
         val req = build()
-        if (writeDirectly) halcyon.writer.writeDirectly(req.stanza)
-        else halcyon.writer.write(req)
+        if (writeDirectly) {
+            halcyon.writer.writeDirectly(req.stanza)
+        } else {
+            halcyon.writer.write(req)
+        }
         return req
     }
 
@@ -351,17 +389,25 @@ class RequestConsumerBuilder<CSR, V, STT : Stanza<*>>(
         this.requestName = requestName
         return this
     }
-
 }
 
 fun findCondition(stanza: Element): Request.Error {
-    val error = stanza.children.firstOrNull { element -> element.name == "error" } ?: return Request.Error(
-        ErrorCondition.Unknown, null
-    )
+    val error =
+        stanza.children.firstOrNull { element -> element.name == "error" } ?: return Request.Error(
+            ErrorCondition.Unknown,
+            null
+        )
     // Condition Element
-    val cnd = error.children.firstOrNull { element -> element.name != "text" && element.xmlns == XMPPException.XMLNS }
-        ?: return Request.Error(ErrorCondition.Unknown, null)
-    val txt = error.children.firstOrNull { element -> element.name == "text" && element.xmlns == XMPPException.XMLNS }
+    val cnd =
+        error.children.firstOrNull { element ->
+            element.name != "text" &&
+                element.xmlns == XMPPException.XMLNS
+        }
+            ?: return Request.Error(ErrorCondition.Unknown, null)
+    val txt = error.children.firstOrNull { element ->
+        element.name == "text" &&
+            element.xmlns == XMPPException.XMLNS
+    }
 
     val c = ErrorCondition.getByElementName(cnd.name)
     return Request.Error(c, txt?.value)
