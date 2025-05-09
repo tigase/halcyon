@@ -5,7 +5,11 @@ import java.io.InputStream
 import java.net.HttpURLConnection
 import java.net.URL
 import java.security.cert.X509Certificate
-import javax.net.ssl.*
+import javax.net.ssl.HostnameVerifier
+import javax.net.ssl.HttpsURLConnection
+import javax.net.ssl.SSLContext
+import javax.net.ssl.SSLSession
+import javax.net.ssl.X509TrustManager
 
 fun uploadFile(input: InputStream, slot: Slot): Int {
     val factory = SSLContext.getInstance("SSL")

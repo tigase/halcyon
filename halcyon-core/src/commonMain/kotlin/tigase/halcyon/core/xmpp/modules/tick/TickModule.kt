@@ -1,6 +1,10 @@
 package tigase.halcyon.core.xmpp.modules.tick
 
-import tigase.halcyon.core.AbstractHalcyon.State.*
+import tigase.halcyon.core.AbstractHalcyon.State.Connected
+import tigase.halcyon.core.AbstractHalcyon.State.Connecting
+import tigase.halcyon.core.AbstractHalcyon.State.Disconnected
+import tigase.halcyon.core.AbstractHalcyon.State.Disconnecting
+import tigase.halcyon.core.AbstractHalcyon.State.Stopped
 import tigase.halcyon.core.Context
 import tigase.halcyon.core.HalcyonStateChangeEvent
 import tigase.halcyon.core.builder.HalcyonConfigDsl

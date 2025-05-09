@@ -2,8 +2,12 @@ package tigase.halcyon.coroutines
 
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlinx.coroutines.*
+import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.ObsoleteCoroutinesApi
 import kotlinx.coroutines.flow.filterIsInstance
+import kotlinx.coroutines.launch
 import tigase.halcyon.core.AbstractHalcyon
 import tigase.halcyon.core.builder.createConfiguration
 import tigase.halcyon.core.connector.AbstractConnector

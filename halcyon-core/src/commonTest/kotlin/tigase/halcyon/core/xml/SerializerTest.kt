@@ -6,7 +6,16 @@ import kotlin.test.assertFailsWith
 import kotlin.test.assertIs
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import tigase.halcyon.core.xmpp.stanzas.*
+import tigase.halcyon.core.xmpp.stanzas.IQ
+import tigase.halcyon.core.xmpp.stanzas.IQType
+import tigase.halcyon.core.xmpp.stanzas.Message
+import tigase.halcyon.core.xmpp.stanzas.MessageType
+import tigase.halcyon.core.xmpp.stanzas.Presence
+import tigase.halcyon.core.xmpp.stanzas.PresenceType
+import tigase.halcyon.core.xmpp.stanzas.Stanza
+import tigase.halcyon.core.xmpp.stanzas.iq
+import tigase.halcyon.core.xmpp.stanzas.message
+import tigase.halcyon.core.xmpp.stanzas.presence
 
 class SerializerTest {
 

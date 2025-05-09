@@ -1,6 +1,11 @@
 package tigase.halcyon.core.xmpp.modules.auth
 
-import kotlin.test.*
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
+import kotlin.test.assertTrue
 import tigase.DummyHalcyon
 import tigase.halcyon.core.builder.createConfiguration
 import tigase.halcyon.core.fromBase64

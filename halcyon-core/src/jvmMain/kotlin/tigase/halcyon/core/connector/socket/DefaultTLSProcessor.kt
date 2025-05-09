@@ -5,7 +5,7 @@ import java.security.MessageDigest
 import java.security.SecureRandom
 import java.security.cert.Certificate
 import java.security.cert.X509Certificate
-import java.util.*
+import java.util.Locale
 import javax.net.ssl.SSLContext
 import javax.net.ssl.SSLHandshakeException
 import javax.net.ssl.SSLSocket

@@ -3,7 +3,11 @@ package tigase.halcyon.core.builder
 import java.security.cert.X509Certificate
 import javax.net.ssl.X509TrustManager
 import tigase.halcyon.core.connector.DnsResolver
-import tigase.halcyon.core.connector.socket.*
+import tigase.halcyon.core.connector.socket.DefaultHostnameVerifier
+import tigase.halcyon.core.connector.socket.DnsResolverMiniDns
+import tigase.halcyon.core.connector.socket.SocketConnectorConfig
+import tigase.halcyon.core.connector.socket.TLSProcessorFactory
+import tigase.halcyon.core.connector.socket.XMPPHostnameVerifier
 
 /**
  * Builder class for creating a SocketConnectorConfig instance for configuring a socket connection.

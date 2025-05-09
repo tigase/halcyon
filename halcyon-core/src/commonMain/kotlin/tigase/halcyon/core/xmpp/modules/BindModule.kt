@@ -29,12 +29,20 @@ import tigase.halcyon.core.modules.XmppModuleProvider
 import tigase.halcyon.core.requests.RequestBuilder
 import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xml.element
-import tigase.halcyon.core.xmpp.*
-import tigase.halcyon.core.xmpp.modules.auth.*
+import tigase.halcyon.core.xmpp.ErrorCondition
+import tigase.halcyon.core.xmpp.FullJID
+import tigase.halcyon.core.xmpp.JID
+import tigase.halcyon.core.xmpp.XMPPException
+import tigase.halcyon.core.xmpp.modules.auth.InlineFeatures
+import tigase.halcyon.core.xmpp.modules.auth.InlineProtocol
+import tigase.halcyon.core.xmpp.modules.auth.InlineProtocolStage
+import tigase.halcyon.core.xmpp.modules.auth.InlineResponse
+import tigase.halcyon.core.xmpp.modules.auth.whenExists
 import tigase.halcyon.core.xmpp.modules.sm.StreamManagementModule
 import tigase.halcyon.core.xmpp.stanzas.IQ
 import tigase.halcyon.core.xmpp.stanzas.IQType
 import tigase.halcyon.core.xmpp.stanzas.iq
+import tigase.halcyon.core.xmpp.toFullJID
 
 /**
  * Event fired when resource binding process is finished.
@@ -188,11 +196,8 @@ class BindModule(override val context: AbstractHalcyon) :
             )
 
             InlineResponse(InlineProtocolStage.AfterBind, boundElement).let { response ->
-                context.modules.getModules().filterIsInstance<InlineProtocol>().forEach {
-                        consumer
-                    ->
-                    consumer.process(response)
-                }
+                context.modules.getModules().filterIsInstance<InlineProtocol>()
+                    .forEach { consumer -> consumer.process(response) }
             }
         }
     }

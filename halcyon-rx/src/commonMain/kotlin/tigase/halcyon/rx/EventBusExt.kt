@@ -1,6 +1,10 @@
 package tigase.halcyon.rx
 
-import com.badoo.reaktive.observable.*
+import com.badoo.reaktive.observable.Observable
+import com.badoo.reaktive.observable.doOnAfterDispose
+import com.badoo.reaktive.observable.doOnBeforeDispose
+import com.badoo.reaktive.observable.doOnBeforeSubscribe
+import com.badoo.reaktive.observable.subscribe
 import com.badoo.reaktive.subject.behavior.BehaviorSubject
 import com.badoo.reaktive.subject.publish.PublishSubject
 import tigase.halcyon.core.eventbus.Event

@@ -1,8 +1,10 @@
 package tigase.halcyon.core.xmpp.modules.omemo
 
 import java.nio.charset.Charset
-import java.security.*
+import java.security.InvalidAlgorithmParameterException
 import java.security.InvalidKeyException
+import java.security.NoSuchAlgorithmException
+import java.security.SecureRandom
 import java.security.spec.AlgorithmParameterSpec
 import javax.crypto.Cipher
 import javax.crypto.KeyGenerator
@@ -11,7 +13,11 @@ import javax.crypto.spec.GCMParameterSpec
 import javax.crypto.spec.SecretKeySpec
 import korlibs.crypto.encoding.hex
 import org.whispersystems.curve25519.NoSuchProviderException
-import org.whispersystems.libsignal.*
+import org.whispersystems.libsignal.DuplicateMessageException
+import org.whispersystems.libsignal.InvalidMessageException
+import org.whispersystems.libsignal.InvalidVersionException
+import org.whispersystems.libsignal.LegacyMessageException
+import org.whispersystems.libsignal.NoSessionException
 import org.whispersystems.libsignal.protocol.PreKeySignalMessage
 import org.whispersystems.libsignal.protocol.SignalMessage
 import tigase.halcyon.core.exceptions.HalcyonException

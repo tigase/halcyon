@@ -11,11 +11,15 @@ import tigase.halcyon.core.builder.createConfiguration
 import tigase.halcyon.core.requests.RequestBuilder
 import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xml.response
-import tigase.halcyon.core.xmpp.*
+import tigase.halcyon.core.xmpp.ErrorCondition
+import tigase.halcyon.core.xmpp.JID
+import tigase.halcyon.core.xmpp.XMPPException
 import tigase.halcyon.core.xmpp.modules.PingModule
 import tigase.halcyon.core.xmpp.stanzas.IQ
 import tigase.halcyon.core.xmpp.stanzas.IQType
 import tigase.halcyon.core.xmpp.stanzas.iq
+import tigase.halcyon.core.xmpp.toBareJID
+import tigase.halcyon.core.xmpp.toJID
 import tigase.requestResponse
 
 @HalcyonConfigDsl

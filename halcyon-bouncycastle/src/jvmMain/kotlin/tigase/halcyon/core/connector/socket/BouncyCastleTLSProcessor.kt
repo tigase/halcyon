@@ -9,7 +9,15 @@ import java.security.cert.CertificateFactory
 import java.security.cert.X509Certificate
 import javax.net.ssl.SSLHandshakeException
 import javax.net.ssl.X509TrustManager
-import org.bouncycastle.tls.*
+import org.bouncycastle.tls.AbstractTlsKeyExchange
+import org.bouncycastle.tls.Certificate
+import org.bouncycastle.tls.ChannelBinding
+import org.bouncycastle.tls.DefaultTlsClient
+import org.bouncycastle.tls.ServerOnlyTlsAuthentication
+import org.bouncycastle.tls.TlsAuthentication
+import org.bouncycastle.tls.TlsClientProtocol
+import org.bouncycastle.tls.TlsKeyExchange
+import org.bouncycastle.tls.TlsServerCertificate
 import org.bouncycastle.tls.crypto.impl.bc.BcTlsCrypto
 import tigase.halcyon.core.logger.LoggerFactory
 

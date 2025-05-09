@@ -25,7 +25,11 @@ import tigase.halcyon.core.builder.HalcyonConfigDsl
 import tigase.halcyon.core.eventbus.Event
 import tigase.halcyon.core.eventbus.EventDefinition
 import tigase.halcyon.core.logger.LoggerFactory
-import tigase.halcyon.core.modules.*
+import tigase.halcyon.core.modules.Criteria
+import tigase.halcyon.core.modules.Criterion
+import tigase.halcyon.core.modules.ModulesManager
+import tigase.halcyon.core.modules.XmppModule
+import tigase.halcyon.core.modules.XmppModuleProvider
 import tigase.halcyon.core.parseISO8601
 import tigase.halcyon.core.requests.ConsumerPublisher
 import tigase.halcyon.core.requests.RequestBuilder
@@ -33,12 +37,21 @@ import tigase.halcyon.core.requests.RequestConsumerBuilder
 import tigase.halcyon.core.requests.XMPPError
 import tigase.halcyon.core.timestampToISO8601
 import tigase.halcyon.core.xml.Element
-import tigase.halcyon.core.xmpp.*
+import tigase.halcyon.core.xmpp.BareJID
+import tigase.halcyon.core.xmpp.ErrorCondition
+import tigase.halcyon.core.xmpp.XMPPException
 import tigase.halcyon.core.xmpp.forms.FieldType
 import tigase.halcyon.core.xmpp.forms.FormType
 import tigase.halcyon.core.xmpp.forms.JabberDataForm
 import tigase.halcyon.core.xmpp.modules.RSM
-import tigase.halcyon.core.xmpp.stanzas.*
+import tigase.halcyon.core.xmpp.nextUID
+import tigase.halcyon.core.xmpp.stanzas.IQ
+import tigase.halcyon.core.xmpp.stanzas.IQType
+import tigase.halcyon.core.xmpp.stanzas.Message
+import tigase.halcyon.core.xmpp.stanzas.Stanza
+import tigase.halcyon.core.xmpp.stanzas.iq
+import tigase.halcyon.core.xmpp.stanzas.wrap
+import tigase.halcyon.core.xmpp.toBareJID
 
 data class MAMMessageEvent(
     val resultStanza: Message,

@@ -100,9 +100,8 @@ class SASL2Module(override val context: Context, private val discoveryModule: Di
         engine.evaluateSuccess(element.getFirstChild("additional-data")?.value)
         try {
             InlineResponse(InlineProtocolStage.AfterSasl, element).let { response ->
-                context.modules.getModules().filterIsInstance<InlineProtocol>().forEach { consumer ->
-                    consumer.process(response)
-                }
+                context.modules.getModules().filterIsInstance<InlineProtocol>()
+                    .forEach { consumer -> consumer.process(response) }
             }
         } catch (e: Throwable) {
             log.log(Level.SEVERE, "Error during inline processing: ${e.message}", e)

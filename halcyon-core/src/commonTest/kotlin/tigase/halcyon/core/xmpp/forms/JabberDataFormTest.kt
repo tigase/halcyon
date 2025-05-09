@@ -17,7 +17,15 @@
  */
 package tigase.halcyon.core.xmpp.forms
 
-import kotlin.test.*
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
+import kotlin.test.assertFalse
+import kotlin.test.assertIs
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
+import kotlin.test.assertTrue
+import kotlin.test.fail
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import tigase.halcyon.core.xml.Element

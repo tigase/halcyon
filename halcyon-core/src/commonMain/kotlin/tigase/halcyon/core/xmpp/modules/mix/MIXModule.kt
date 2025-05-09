@@ -34,7 +34,10 @@ import tigase.halcyon.core.requests.RequestConsumerBuilder
 import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xml.element
 import tigase.halcyon.core.xml.getChildContent
-import tigase.halcyon.core.xmpp.*
+import tigase.halcyon.core.xmpp.BareJID
+import tigase.halcyon.core.xmpp.FullJID
+import tigase.halcyon.core.xmpp.JID
+import tigase.halcyon.core.xmpp.bareJID
 import tigase.halcyon.core.xmpp.forms.FieldType
 import tigase.halcyon.core.xmpp.forms.FormType
 import tigase.halcyon.core.xmpp.forms.JabberDataForm
@@ -47,7 +50,13 @@ import tigase.halcyon.core.xmpp.modules.pubsub.PubSubModule
 import tigase.halcyon.core.xmpp.modules.roster.RosterItemAnnotation
 import tigase.halcyon.core.xmpp.modules.roster.RosterItemAnnotationProcessor
 import tigase.halcyon.core.xmpp.modules.roster.RosterModule
-import tigase.halcyon.core.xmpp.stanzas.*
+import tigase.halcyon.core.xmpp.stanzas.IQ
+import tigase.halcyon.core.xmpp.stanzas.IQType
+import tigase.halcyon.core.xmpp.stanzas.Message
+import tigase.halcyon.core.xmpp.stanzas.MessageType
+import tigase.halcyon.core.xmpp.stanzas.wrap
+import tigase.halcyon.core.xmpp.toBareJID
+import tigase.halcyon.core.xmpp.toJID
 
 @Serializable
 data class MIXRosterItemAnnotation(val participantId: String) : RosterItemAnnotation

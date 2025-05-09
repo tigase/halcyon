@@ -30,7 +30,11 @@ import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xmpp.BareJID
 import tigase.halcyon.core.xmpp.JID
 import tigase.halcyon.core.xmpp.getFromAttr
-import tigase.halcyon.core.xmpp.stanzas.*
+import tigase.halcyon.core.xmpp.stanzas.Presence
+import tigase.halcyon.core.xmpp.stanzas.PresenceType
+import tigase.halcyon.core.xmpp.stanzas.Show
+import tigase.halcyon.core.xmpp.stanzas.presence
+import tigase.halcyon.core.xmpp.stanzas.wrap
 
 /**
  * Event released when **any** presence stanza will be received.

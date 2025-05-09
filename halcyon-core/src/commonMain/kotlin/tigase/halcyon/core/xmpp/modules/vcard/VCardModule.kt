@@ -26,11 +26,15 @@ import tigase.halcyon.core.modules.XmppModule
 import tigase.halcyon.core.modules.XmppModuleProvider
 import tigase.halcyon.core.requests.RequestBuilder
 import tigase.halcyon.core.xml.Element
-import tigase.halcyon.core.xmpp.*
+import tigase.halcyon.core.xmpp.BareJID
+import tigase.halcyon.core.xmpp.ErrorCondition
+import tigase.halcyon.core.xmpp.XMPPException
+import tigase.halcyon.core.xmpp.bareJID
 import tigase.halcyon.core.xmpp.modules.pubsub.PubSubItemEvent
 import tigase.halcyon.core.xmpp.stanzas.IQ
 import tigase.halcyon.core.xmpp.stanzas.IQType
 import tigase.halcyon.core.xmpp.stanzas.iq
+import tigase.halcyon.core.xmpp.toJID
 
 data class VCardUpdatedEvent(val jid: BareJID, val vcard: VCard?) : Event(TYPE) {
 

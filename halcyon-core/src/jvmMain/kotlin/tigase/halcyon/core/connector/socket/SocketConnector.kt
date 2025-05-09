@@ -26,7 +26,14 @@ import kotlin.time.Duration.Companion.seconds
 import org.minidns.dnssec.DnssecValidationFailedException
 import tigase.halcyon.core.Halcyon
 import tigase.halcyon.core.configuration.declaredUserJID
-import tigase.halcyon.core.connector.*
+import tigase.halcyon.core.connector.AbstractConnector
+import tigase.halcyon.core.connector.ChannelBindingDataProvider
+import tigase.halcyon.core.connector.ConnectionErrorEvent
+import tigase.halcyon.core.connector.ParseErrorEvent
+import tigase.halcyon.core.connector.SessionController
+import tigase.halcyon.core.connector.State
+import tigase.halcyon.core.connector.StreamStartedEvent
+import tigase.halcyon.core.connector.StreamTerminatedEvent
 import tigase.halcyon.core.exceptions.HalcyonException
 import tigase.halcyon.core.excutor.TickExecutor
 import tigase.halcyon.core.logger.Level

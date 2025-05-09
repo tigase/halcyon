@@ -17,7 +17,12 @@
  */
 package tigase.halcyon.core.xmpp.modules.commands
 
-import kotlin.test.*
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
+import kotlin.test.assertTrue
+import kotlin.test.fail
 import tigase.DummyHalcyon
 import tigase.assertContains
 import tigase.halcyon.core.xml.element

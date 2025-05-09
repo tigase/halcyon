@@ -5,7 +5,11 @@ import kotlinx.serialization.KSerializer
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
-import tigase.halcyon.core.xmpp.stanzas.*
+import tigase.halcyon.core.xmpp.stanzas.IQ
+import tigase.halcyon.core.xmpp.stanzas.Message
+import tigase.halcyon.core.xmpp.stanzas.Presence
+import tigase.halcyon.core.xmpp.stanzas.Stanza
+import tigase.halcyon.core.xmpp.stanzas.wrap
 
 object ElementImplSerializer :
     ElementWrapperSerializer<ElementImpl>(

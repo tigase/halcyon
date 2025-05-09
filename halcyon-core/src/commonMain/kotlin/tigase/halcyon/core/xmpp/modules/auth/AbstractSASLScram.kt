@@ -1,6 +1,10 @@
 package tigase.halcyon.core.xmpp.modules.auth
 
-import korlibs.crypto.*
+import korlibs.crypto.HMAC
+import korlibs.crypto.PBKDF2
+import korlibs.crypto.sha1
+import korlibs.crypto.sha256
+import korlibs.crypto.sha512
 import kotlin.experimental.xor
 import kotlin.random.Random
 import tigase.halcyon.core.Context

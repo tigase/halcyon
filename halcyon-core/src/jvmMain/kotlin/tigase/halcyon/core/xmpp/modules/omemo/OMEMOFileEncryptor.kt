@@ -1,16 +1,14 @@
 package tigase.halcyon.core.xmpp.modules.omemo
 
-import korlibs.crypto.encoding.hexLower
-import tigase.halcyon.core.exceptions.HalcyonException
-import tigase.halcyon.core.logger.LoggerFactory
-// import java.io.InputStream
-// import java.io.OutputStream
 import java.security.SecureRandom
 import javax.crypto.Cipher
 import javax.crypto.CipherInputStream
 import javax.crypto.CipherOutputStream
 import javax.crypto.spec.GCMParameterSpec
 import javax.crypto.spec.SecretKeySpec
+import korlibs.crypto.encoding.hexLower
+import tigase.halcyon.core.exceptions.HalcyonException
+import tigase.halcyon.core.logger.LoggerFactory
 
 typealias InputStream = java.io.InputStream
 typealias OutputStream = java.io.OutputStream

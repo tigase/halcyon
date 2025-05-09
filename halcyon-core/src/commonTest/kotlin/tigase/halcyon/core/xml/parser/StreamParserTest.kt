@@ -17,7 +17,13 @@
  */
 package tigase.halcyon.core.xml.parser
 
-import kotlin.test.*
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
+import kotlin.test.assertIs
+import kotlin.test.assertNotEquals
+import kotlin.test.assertNull
+import kotlin.test.fail
 import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xml.XmlException
 

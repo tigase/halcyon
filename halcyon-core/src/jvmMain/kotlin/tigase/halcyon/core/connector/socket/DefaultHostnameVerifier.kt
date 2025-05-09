@@ -2,7 +2,7 @@ package tigase.halcyon.core.connector.socket
 
 import java.security.cert.Certificate
 import java.security.cert.X509Certificate
-import java.util.*
+import java.util.Locale
 import javax.security.auth.x500.X500Principal
 import tigase.halcyon.core.logger.LoggerFactory
 
