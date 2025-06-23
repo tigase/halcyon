@@ -125,17 +125,21 @@ actual object OMEMOEncryptor {
     
     @OptIn(ExperimentalForeignApi::class)
     fun generateIV(): ByteArray {
-        val data = ByteArray(12);
-        SecRandomCopyBytes(kSecRandomDefault, 12.toULong(), data.toCValues());
-        return data;
+        memScoped {
+            val data = allocArray<UByteVar>(12);
+            SecRandomCopyBytes(kSecRandomDefault, 12.toULong(), data)
+            return data.readBytes(12);
+        }
     }
     
     @OptIn(ExperimentalForeignApi::class)
     fun generateKey(keySize: Int = 128): ByteArray {
         val keySizeInBytes = keySize / 8;
-        val data = ByteArray(keySizeInBytes);
-        SecRandomCopyBytes(kSecRandomDefault, keySizeInBytes.toULong(), data.toCValues());
-        return data;
+        memScoped {
+            val data = allocArray<UByteVar>(keySizeInBytes)
+            SecRandomCopyBytes(kSecRandomDefault, keySizeInBytes.toULong(), data);
+            return data.readBytes(keySizeInBytes);
+        }
     }
 
     actual fun encrypt(
@@ -188,12 +192,10 @@ actual object OMEMOEncryptor {
 
 }
 
-class AesGcmCipher(val iv: ByteArray, val key: ByteArray) {
-    val engine = AesGcmEngine();
-}
-
 @OptIn(ExperimentalForeignApi::class)
 class AesGcmEngine {
+
+    private val log = LoggerFactory.logger("tigase.halcyon.core.xmpp.modules.omemo.OMEMOEncryptor");
 
     fun decrypt(iv: ByteArray, key: ByteArray, payload: ByteArray, tag: ByteArray?): ByteArray? {
         val ctx = EVP_CIPHER_CTX_new();
@@ -298,7 +300,9 @@ class AesGcmEngine {
             }
         }, chunkConsumer = {
             memScoped {
-                output.write(it.toCValues().ptr, it.size.toULong());
+                if (it.size > 0) {
+                    output.write(it.toCValues().ptr, it.size.toULong());
+                }
             }
         })
     }
@@ -354,15 +358,16 @@ class AesGcmEngine {
 
             EVP_EncryptFinal_ex(ctx, output, outputLen.ptr);
 
-            val tag = UByteArray(16);
-            EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_GCM_GET_TAG, 16, tag.toCValues());
-            return@memScoped Encrypted(data = result, tag = tag.toByteArray());
+            val tag = allocArray<UByteVar>(16);
+            EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_GCM_GET_TAG, 16, tag);
+            return@memScoped Encrypted(data = result, tag = tag.readBytes(16));
         }
 
         EVP_CIPHER_CTX_free(ctx);
         return encrypted;
     }
 
+    @OptIn(ExperimentalStdlibApi::class)
     fun encrypt(iv: ByteArray, key: ByteArray, includeAuthTag: Boolean = true, chunkProvider: () -> EncryptionStep, chunkConsumer: (UByteArray) -> Unit) {
         val ctx = EVP_CIPHER_CTX_new();
         val cipher = if (key.size == 32) { EVP_aes_256_gcm() } else { EVP_aes_128_gcm() };
@@ -392,14 +397,16 @@ class AesGcmEngine {
 
                 is EncryptionStep.EndOfInput -> {
                     memScoped {
-                        val output = allocArray<UByteVar>(1024);
+                        val output = allocArray<UByteVar>(8*1024);
                         val outputLen: IntVar = alloc<IntVar>();
                         EVP_EncryptFinal_ex(ctx, output, outputLen.ptr);
                         chunkConsumer(output.readBytes(outputLen.value).toUByteArray());
                         if (includeAuthTag) {
                             val tag = allocArray<UByteVar>(16);
                             EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_GCM_GET_TAG, 16, tag);
-                            chunkConsumer(tag.readBytes(outputLen.value).toUByteArray());
+                            val tagData = tag.readBytes(16).toUByteArray();
+                            log.finest { "prepared tag data of ${tagData.size}: ${tagData.toHexString()}" }
+                            chunkConsumer(tagData);
                         }
                     }
                     processing = false;
@@ -416,11 +423,14 @@ class AesGcmEngine {
     }
 
     fun encrypt(iv: ByteArray, key: ByteArray, includeAuthTag: Boolean = true, input: NSInputStream, output: NSOutputStream) {
+        var encrypted = 0;
+        var wrote = 0;
         encrypt(iv, key, includeAuthTag, chunkProvider = {
             memScoped {
                 val buffer = allocArray<UByteVar>(4096);
                 val read = input.read(buffer, 4096u).toInt();
                 if (read > 0) {
+                    encrypted += read;
                     return@memScoped EncryptionStep.InputChunk(buffer.readBytes(read));
                 } else {
                     return@memScoped EncryptionStep.EndOfInput();
@@ -428,9 +438,13 @@ class AesGcmEngine {
             }
         }, chunkConsumer = { chunk ->
             memScoped {
-                output.write(chunk.toCValues().ptr, chunk.size.toULong());
+                if (chunk.size > 0) {
+                    wrote += chunk.size;
+                    output.write(chunk.toCValues().ptr, chunk.size.toULong());
+                }
             }
         })
+        log.finest("encrypted file of $encrypted bytes resulting in $wrote")
     }
 
     fun encrypt(iv: ByteArray, key: ByteArray, includeAuthTag: Boolean = true, input: NSInputStream): ByteArray {
