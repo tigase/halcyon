@@ -96,10 +96,11 @@ actual object OMEMOEncryptor {
                 }
 
                 val authtaglength = key.size - 16
-                val newCipherText = ciphertext.copyOf().plus(key.copyOfRange(16, 16 + authtaglength));
+                //val newCipherText = ciphertext.copyOf().plus(key.copyOfRange(16, 16 + authtaglength));
+                val tag = key.copyOfRange(16, key.size)
                 val newKey = key.copyOfRange(0, 16);
 
-                val result = engine.decrypt(iv, key, ciphertext, null);
+                val result = engine.decrypt(iv, newKey, ciphertext, tag);
                 
                 val decryptedBody =(result?.decodeToString()) ?: "Cannot decrypt message.";
                 stanza.replaceBody(decryptedBody)
