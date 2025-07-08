@@ -8,6 +8,7 @@ import platform.Foundation.NSOutputStream
 import platform.Security.SecRandomCopyBytes
 import platform.Security.kSecRandomDefault
 import tigase.halcyon.core.fromBase64
+import tigase.halcyon.core.logger.Level
 import tigase.halcyon.core.logger.LoggerFactory
 import tigase.halcyon.core.toBase64
 import tigase.halcyon.core.xml.Element
@@ -44,12 +45,13 @@ actual object OMEMOEncryptor {
                 if (e is SignalException) {
                     when (e.error) {
                         // we need to try to recover
-                        SignalError.invalidMessage, SignalError.noSession, SignalError.noSession -> healSession(senderAddr)
+                        SignalError.invalidMessage, SignalError.noSession-> healSession(senderAddr)
                         else -> {}
                     }
                 }
-                log.warning(e, { "failed to decrypt key for " + sessionCipher.address + ", store = " + sessionCipher.store + ", error: " + e.cause })
-                e.printStackTrace();
+                if (log.isLoggable(Level.FINEST)) {
+                    log.finest(e, { "failed to decrypt key for " + sessionCipher.address + ", store = " + sessionCipher.store + ", error = " + e.message })
+                }
                 if (iterator.hasNext()) {
                     continue
                 }
@@ -108,14 +110,22 @@ actual object OMEMOEncryptor {
 
             return OMEMOMessage.Decrypted(stanza, senderAddr, store.getIdentity(senderAddr)!!.publicKey.serialize().hex, decryptedKey.isPreKey);
         } catch (e: Exception) {
-            log.warning(e) { "Cannot decrypt message: ${stanza.getAsString()}" }
             val condition = when (e) {
-                is OMEMOException -> e.condition
-                is SignalException -> when (e.error) {
-                    SignalError.duplicateMessage -> OMEMOErrorCondition.DuplicateMessage
-                    else -> OMEMOErrorCondition.CannotDecrypt
+                is OMEMOException -> {
+                    log.warning { "Cannot decrypt message due to condition ${e.condition}: ${stanza.getAsString()}" }
+                    e.condition
                 }
-                else -> OMEMOErrorCondition.CannotDecrypt
+                is SignalException -> {
+                    log.warning { "Cannot decrypt message due to error ${e.error}: ${e.message} : ${stanza.getAsString()}" }
+                    when (e.error) {
+                        SignalError.duplicateMessage -> OMEMOErrorCondition.DuplicateMessage
+                        else -> OMEMOErrorCondition.CannotDecrypt
+                    }
+                }
+                else -> {
+                    log.warning(e) { "Cannot decrypt message due to exception ${e.message} : ${stanza.getAsString()}" }
+                    OMEMOErrorCondition.CannotDecrypt
+                }
             }
             if (hasCipherText) {
                 stanza.replaceBody(condition.message())
