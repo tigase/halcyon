@@ -14,6 +14,7 @@ import tigase.halcyon.core.toBase64
 import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xml.element
 import tigase.halcyon.core.xmpp.modules.mix.getMixAnnotation
+import tigase.halcyon.core.xmpp.modules.uniqueId.getStanzaIDBy
 import tigase.halcyon.core.xmpp.stanzas.Message
 import tigase.halcyon.core.xmpp.toBareJID
 
@@ -108,6 +109,7 @@ actual object OMEMOEncryptor {
                 stanza.replaceBody(decryptedBody)
             }
 
+            log.fine { "Decrypted message with id ${stanza.getStanzaIDBy(session.localJid)}" }
             return OMEMOMessage.Decrypted(stanza, senderAddr, store.getIdentity(senderAddr)!!.publicKey.serialize().hex, decryptedKey.isPreKey);
         } catch (e: Exception) {
             val condition = when (e) {
@@ -116,7 +118,7 @@ actual object OMEMOEncryptor {
                     e.condition
                 }
                 is SignalException -> {
-                    log.warning { "Cannot decrypt message due to error ${e.error}: ${e.message} : ${stanza.getAsString()}" }
+                    log.warning { "Cannot decrypt message due to error ${e.error}: ${stanza.getStanzaIDBy(session.localJid)}: ${e.message} : ${stanza.getAsString()}" }
                     when (e.error) {
                         SignalError.duplicateMessage -> OMEMOErrorCondition.DuplicateMessage
                         else -> OMEMOErrorCondition.CannotDecrypt
@@ -127,7 +129,11 @@ actual object OMEMOEncryptor {
                     OMEMOErrorCondition.CannotDecrypt
                 }
             }
-            if (hasCipherText) {
+            if (condition == OMEMOErrorCondition.DuplicateMessage) {
+                // if that is a message duplicate we should skip it to not enter/update message with this content as it was already processed.
+                // removing body will force clients to not report/log it in the conversation
+                stanza.getChildren("body").forEach { stanza.remove(it) }
+            } else if (hasCipherText) {
                 stanza.replaceBody(condition.message())
             }
             return OMEMOMessage.Error(stanza, condition)
