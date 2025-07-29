@@ -21,6 +21,5 @@ import tigase.halcyon.core.xml.Element
 
 interface Criteria {
 
-	fun match(element: Element): Boolean
-
+    fun match(element: Element): Boolean
 }

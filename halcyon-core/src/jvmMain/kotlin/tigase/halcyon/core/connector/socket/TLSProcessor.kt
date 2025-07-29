@@ -1,9 +1,9 @@
 package tigase.halcyon.core.connector.socket
 
-import tigase.halcyon.core.connector.ChannelBindingDataProvider
 import java.io.InputStream
 import java.io.OutputStream
 import java.net.Socket
+import tigase.halcyon.core.connector.ChannelBindingDataProvider
 
 typealias TLSCallback = (InputStream, OutputStream) -> Unit
 
@@ -14,18 +14,17 @@ typealias TLSCallback = (InputStream, OutputStream) -> Unit
  */
 interface TLSProcessor : ChannelBindingDataProvider {
 
-	fun proceedTLS(callback: TLSCallback)
+    fun proceedTLS(callback: TLSCallback)
 
-	override fun isConnectionSecure(): Boolean
+    override fun isConnectionSecure(): Boolean
 
-	override fun getTlsServerEndpoint(): ByteArray? = null
+    override fun getTlsServerEndpoint(): ByteArray? = null
 
-	override fun getTlsUnique(): ByteArray? = null
+    override fun getTlsUnique(): ByteArray? = null
 
-	override fun getTlsExporter(): ByteArray? = null
+    override fun getTlsExporter(): ByteArray? = null
 
-	fun clear()
-
+    fun clear()
 }
 
 /**
@@ -33,21 +32,20 @@ interface TLSProcessor : ChannelBindingDataProvider {
  */
 interface TLSProcessorFactory {
 
-	/**
-	 * The NAME variable represents the name TLS Processor.
-	 *
-	 * @see TLSProcessorFactory
-	 * @see TLSProcessor
-	 */
-	val NAME: String
+    /**
+     * The NAME variable represents the name TLS Processor.
+     *
+     * @see TLSProcessorFactory
+     * @see TLSProcessor
+     */
+    val NAME: String
 
-	/**
-	 * Creates a TLSProcessor instance for the given socket and configuration.
-	 *
-	 * @param socket The socket to create a TLSProcessor for.
-	 * @param config The SocketConnectorConfig containing the necessary configuration for TLS processing.
-	 * @return The created TLSProcessor instance.
-	 */
-	fun create(socket: Socket, config: SocketConnectorConfig): TLSProcessor
-
+    /**
+     * Creates a TLSProcessor instance for the given socket and configuration.
+     *
+     * @param socket The socket to create a TLSProcessor for.
+     * @param config The SocketConnectorConfig containing the necessary configuration for TLS processing.
+     * @return The created TLSProcessor instance.
+     */
+    fun create(socket: Socket, config: SocketConnectorConfig): TLSProcessor
 }

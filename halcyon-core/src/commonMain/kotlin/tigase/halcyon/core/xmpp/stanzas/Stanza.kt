@@ -33,35 +33,28 @@ sealed class Stanza<STANZA_TYPE>(protected val element: Element) : Element by el
 
     abstract var type: STANZA_TYPE
 
-    override fun equals(other: Any?): Boolean {
-        return element.equals(other)
-    }
+    override fun equals(other: Any?): Boolean = element.equals(other)
 
-    override fun hashCode(): Int {
-        return element.hashCode()
-    }
+    override fun hashCode(): Int = element.hashCode()
 
-    override fun toString(): String {
-        return buildString {
-            append(name.uppercase()).append("[")
-            attributes["type"]?.let {
-                append("type=").append(it)
-                    .append(" ")
-            }
-            attributes["id"]?.let {
-                append("id=").append(it)
-                    .append(" ")
-            }
-            attributes["to"]?.let {
-                append("to=").append(it)
-                    .append(" ")
-            }
-            attributes["from"]?.let {
-                append("from=").append(it)
-                    .append(" ")
-            }
-            append("]")
+    override fun toString(): String = buildString {
+        append(name.uppercase()).append("[")
+        attributes["type"]?.let {
+            append("type=").append(it)
+                .append(" ")
         }
+        attributes["id"]?.let {
+            append("id=").append(it)
+                .append(" ")
+        }
+        attributes["to"]?.let {
+            append("to=").append(it)
+                .append(" ")
+        }
+        attributes["from"]?.let {
+            append("from=").append(it)
+                .append(" ")
+        }
+        append("]")
     }
-
 }

@@ -24,31 +24,33 @@ import tigase.halcyon.core.xmpp.modules.sm.StreamManagementModule
 
 abstract class AbstractConnector(val halcyon: AbstractHalcyon) {
 
-	protected var eventsEnabled = true
+    protected var eventsEnabled = true
 
-	var state: State = State.Disconnected
-		protected set(value) {
-			val old = field
-			field = value
-			if (old != field) fire(ConnectorStateChangeEvent(old, field))
-		}
+    var state: State = State.Disconnected
+        protected set(value) {
+            val old = field
+            field = value
+            if (old != field) fire(ConnectorStateChangeEvent(old, field))
+        }
 
-	abstract fun createSessionController(): SessionController
+    abstract fun createSessionController(): SessionController
 
-	abstract fun send(data: CharSequence)
+    abstract fun send(data: CharSequence)
 
-	abstract fun start()
+    abstract fun start()
 
-	abstract fun stop()
+    abstract fun stop()
 
-	protected fun handleReceivedElement(element: Element) {
-		if (halcyon.getModuleOrNull(StreamManagementModule)?.processElementReceived(element) == true) {
-			return
-		}
-		fire(ReceivedXMLElementEvent(element))
-	}
+    protected fun handleReceivedElement(element: Element) {
+        if (halcyon.getModuleOrNull(StreamManagementModule)?.processElementReceived(element) ==
+            true
+        ) {
+            return
+        }
+        fire(ReceivedXMLElementEvent(element))
+    }
 
-	protected fun fire(e: Event) {
-		if (eventsEnabled) halcyon.eventBus.fire(e)
-	}
+    protected fun fire(e: Event) {
+        if (eventsEnabled) halcyon.eventBus.fire(e)
+    }
 }

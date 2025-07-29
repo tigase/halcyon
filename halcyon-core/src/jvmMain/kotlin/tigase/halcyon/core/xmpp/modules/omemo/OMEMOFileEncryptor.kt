@@ -1,23 +1,23 @@
 package tigase.halcyon.core.xmpp.modules.omemo
 
-import korlibs.crypto.encoding.hexLower
-import tigase.halcyon.core.exceptions.HalcyonException
-import tigase.halcyon.core.logger.LoggerFactory
-//import java.io.InputStream
-//import java.io.OutputStream
 import java.security.SecureRandom
 import javax.crypto.Cipher
 import javax.crypto.CipherInputStream
 import javax.crypto.CipherOutputStream
 import javax.crypto.spec.GCMParameterSpec
 import javax.crypto.spec.SecretKeySpec
+import korlibs.crypto.encoding.hexLower
+import tigase.halcyon.core.exceptions.HalcyonException
+import tigase.halcyon.core.logger.LoggerFactory
 
 typealias InputStream = java.io.InputStream
 typealias OutputStream = java.io.OutputStream
 
 object OMEMOFileEncryptor {
 
-    private val log = LoggerFactory.logger("tigase.halcyon.core.xmpp.modules.omemo.OMEMOFileEncryptor")
+    private val log = LoggerFactory.logger(
+        "tigase.halcyon.core.xmpp.modules.omemo.OMEMOFileEncryptor"
+    )
 
     private const val CIPHER_NAME: String = "AES/GCM/NoPadding"
     private const val ALGORITHM_NAME: String = "AES"
@@ -27,22 +27,24 @@ object OMEMOFileEncryptor {
     /**
      * Generates IV and encryption key.
      */
-    fun generateIvAndKey(): String {
-        return ByteArray(12 + 32).apply {
-            rnd.nextBytes(this)
-        }.hexLower
-    }
+    fun generateIvAndKey(): String = ByteArray(12 + 32).apply {
+        rnd.nextBytes(this)
+    }.hexLower
 
     internal fun getIv(data: ByteArray): ByteArray {
-        if (data.size > 32)
+        if (data.size > 32) {
             return data.copyOfRange(0, data.size - 32)
-        else throw HalcyonException("Key is too short.")
+        } else {
+            throw HalcyonException("Key is too short.")
+        }
     }
 
     internal fun getKey(data: ByteArray): ByteArray {
-        if (data.size > 32)
+        if (data.size > 32) {
             return data.copyOfRange(data.size - 32, data.size)
-        else throw HalcyonException("Key is too short.")
+        } else {
+            throw HalcyonException("Key is too short.")
+        }
     }
 
     fun cipherOutputStream(keyAndIv: ByteArray, output: OutputStream): OutputStream {
@@ -76,5 +78,4 @@ object OMEMOFileEncryptor {
             it.transferTo(output)
         }
     }
-
 }

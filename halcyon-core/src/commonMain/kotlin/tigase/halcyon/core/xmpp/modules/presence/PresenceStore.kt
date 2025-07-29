@@ -26,12 +26,11 @@ import tigase.halcyon.core.xmpp.stanzas.Presence
  */
 interface PresenceStore {
 
-	fun setPresence(stanza: Presence)
+    fun setPresence(stanza: Presence)
 
-	fun getPresence(jid: JID): Presence?
+    fun getPresence(jid: JID): Presence?
 
-	fun removePresence(jid: JID): Presence?
+    fun removePresence(jid: JID): Presence?
 
-	fun getPresences(jid: BareJID): List<Presence>
-
+    fun getPresences(jid: BareJID): List<Presence>
 }

@@ -22,13 +22,13 @@ package tigase.halcyon.core.xmpp.modules.caps
  */
 class DefaultEntityCapabilitiesCache : EntityCapabilitiesCache {
 
-	private val entities = mutableMapOf<String, EntityCapabilitiesModule.Caps>()
+    private val entities = mutableMapOf<String, EntityCapabilitiesModule.Caps>()
 
-	override fun isCached(node: String): Boolean = entities.containsKey(node)
+    override fun isCached(node: String): Boolean = entities.containsKey(node)
 
-	override fun store(node: String, caps: EntityCapabilitiesModule.Caps) {
-		entities[node] = caps
-	}
+    override fun store(node: String, caps: EntityCapabilitiesModule.Caps) {
+        entities[node] = caps
+    }
 
-	override fun load(node: String): EntityCapabilitiesModule.Caps? = entities[node]
+    override fun load(node: String): EntityCapabilitiesModule.Caps? = entities[node]
 }

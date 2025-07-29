@@ -36,7 +36,7 @@ kotlin {
     js(IR) {
         browser {
             commonWebpackConfig {
-				// cssSupport()
+                // cssSupport()
             }
             testTask {
                 useKarma {
