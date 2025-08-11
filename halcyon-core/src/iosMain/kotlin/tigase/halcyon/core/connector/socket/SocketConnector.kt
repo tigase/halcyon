@@ -159,7 +159,7 @@ class SocketConnector(halcyon: Halcyon) : AbstractConnector(halcyon) {
 		state = State.Connecting
 
 		socket = Socket()
-		resolveTarget { name, port ->
+		resolveTarget { name, port, directTls ->
 			socket?.readCallback = { data ->
 				log.finest("read data: " + data.size)
 				this.processSocketData(data)
@@ -180,6 +180,10 @@ class SocketConnector(halcyon: Halcyon) : AbstractConnector(halcyon) {
 			}
 
 			log.fine { "Opening socket connection" }
+            if (directTls) {
+                val domain = (halcyon.config.connection as SocketConnectorConfig).domain
+                sslEngine = SSLEngine(this, domain)
+            }
 			socket?.connect(name = name, port = port)
 			socket?.startProcessing()
 		}
@@ -260,19 +264,21 @@ class SocketConnector(halcyon: Halcyon) : AbstractConnector(halcyon) {
 		restartStream()
 	}
 
-	private fun resolveTarget(completionHandler: (String, Int) -> Unit) {
+    private var lastEndpoint: Pair<Int,Boolean>? = null
+
+	private fun resolveTarget(completionHandler: (String, Int, Boolean) -> Unit) {
 		val location = halcyon.getModuleOrNull(StreamManagementModule)?.resumptionLocation
 		if (location != null) {
-			return completionHandler(location, config.port)
+			return completionHandler(location, lastEndpoint?.first ?: config.port, lastEndpoint?.second ?: config.directTls)
 		}
 
 		val seeOther = halcyon.internalDataStore.getData<String>(SEE_OTHER_HOST_KEY)
 		if (seeOther != null) {
-			return completionHandler(seeOther, config.port)
+			return completionHandler(seeOther, lastEndpoint?.first ?: config.port, lastEndpoint?.second ?: config.directTls)
 		}
 
 		(halcyon.config.connection as SocketConnectorConfig).hostname?.let {
-			return completionHandler(it, config.port)
+			return completionHandler(it, config.port, config.directTls)
 		}
 
 //		val forcedHost = halcyon.sessionObject.getProperty<String>(SERVER_HOST)
@@ -283,10 +289,11 @@ class SocketConnector(halcyon: Halcyon) : AbstractConnector(halcyon) {
 		resolver = DnsResolver()
 		resolver.resolve(domain) { result ->
 			result.onSuccess { records ->
-				completionHandler(records.first().target, records.first().port.toInt())
+                val record = records.first();
+				completionHandler(record.target, record.port.toInt(), record.directTls)
 			}
 				.onFailure {
-					completionHandler(domain, config.port)
+					completionHandler(domain, config.port, config.directTls)
 				}
 		}
 	}

@@ -8,10 +8,7 @@ import java.security.SecureRandom
 import java.security.cert.Certificate
 import java.security.cert.X509Certificate
 import java.util.*
-import javax.net.ssl.SSLContext
-import javax.net.ssl.SSLHandshakeException
-import javax.net.ssl.SSLSocket
-import javax.net.ssl.SSLSocketFactory
+import javax.net.ssl.*
 
 /**
  * Default implementation of the TLSProcessor interface, used for handling TLS encryption in socket communication.
@@ -77,10 +74,14 @@ class DefaultTLSProcessor(private val socket: Socket, private val config: Socket
 			// but just in case it's not and to avoid Android exceptions let's to it like this
 			sslSocket.useClientMode = true
 		}
+        sslSocket.sslParameters = sslSocket.sslParameters.apply {
+            serverNames = listOf(SNIHostName(config.domain))
+        }
 		sslSocket.addHandshakeCompletedListener { handshakeCompletedEvent ->
 			log.info { "Handshake completed $handshakeCompletedEvent" }
 			this.peerCertificates = handshakeCompletedEvent.session.peerCertificates
 			if (!config.hostnameVerifier.verify(config.domain, this.peerCertificates!!.first())) {
+                log.warning { "expected certificate for domain ${config.domain} while got ${this.peerCertificates!!.first()}"}
 				throw SSLHandshakeException(
 					"Certificate hostname doesn't match domain name you want to connect."
 				)

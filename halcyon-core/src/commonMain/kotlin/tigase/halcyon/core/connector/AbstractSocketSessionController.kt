@@ -66,7 +66,7 @@ abstract class AbstractSocketSessionController(final override val halcyon: Abstr
 
 			if (sasl2Module?.isAllowed(event.features) == true) {
 				sasl2Module.startAuth(event.features)
-			} else if (sasl1Module?.isAllowed(event.features) == true) {
+			} else if (sasl2Module?.inProgress != true && sasl1Module?.isAllowed(event.features) == true) {
 				sasl1Module.startAuth(event.features)
 			} else if (registrationModule?.isAllowed(event.features) == true && halcyon.config.registration != null) {
 				processInBandRegistration()

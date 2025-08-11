@@ -19,6 +19,7 @@ package tigase.halcyon.core.connector.socket
 
 import kotlinx.cinterop.*
 import platform.darwin.*
+import tigase.halcyon.core.connector.socket.DnsResolver.SrvRecord
 import tigase.halcyon.core.logger.Level
 import tigase.halcyon.core.logger.LoggerFactory
 import tigase.halcyon.core.utils.Lock
@@ -27,13 +28,100 @@ import kotlin.concurrent.AtomicReference
 @OptIn(kotlinx.cinterop.ExperimentalForeignApi::class)
 class DnsResolver {
 
+    private val resolvers = listOf(DnsResolverInternal(true), DnsResolverInternal(false))
+
+    fun resolve(domain: String, completionHandler: (Result<List<SrvRecord>>) -> Unit) {
+        var counter = resolvers.count();
+        val results = mutableListOf<SrvRecord>();
+        val lock = Lock();
+        val callback: (Result<List<SrvRecord>>) -> Unit = { result ->
+            val finished = lock.withLock {
+                result.getOrNull()?.let { results += it }
+                counter -= 1;
+                counter == 0
+            }
+            if (finished) {
+                if (results.isEmpty() && result.isFailure) {
+                    completionHandler.invoke(result);
+                } else {
+                    completionHandler.invoke(Result.success(results.shuffled().sortedBy {
+                        if (it.directTls) {
+                            0
+                        } else {
+                            1
+                        }
+                    }));
+                }
+            }
+        };
+        resolvers.forEach { resolver ->
+            resolver.resolve(domain, callback)
+        }
+    }
+
+    class SrvRecord(val port: UInt, val weight: UInt, val priority: UInt, val target: String, val directTls: Boolean) {
+
+        companion object {
+
+            private val log = LoggerFactory.logger("tigase.halcyon.core.connector.socket.SrvRecord")
+            fun parse(rdata: UByteArray, directTls: Boolean): SrvRecord? {
+                if (rdata.size <= 7) {
+                    log.warning("rdata too short!")
+                    return null
+                }
+                var idx = 0
+                val priority = rdata.get(idx)
+                    .toUShort() * 256.toUShort() + rdata.get(idx + 1)
+                    .toUShort()
+                idx += 2
+                val weight = rdata.get(idx)
+                    .toUShort() * 256.toUShort() + rdata.get(idx + 1)
+                    .toUShort()
+                idx += 2
+                val port = rdata.get(idx)
+                    .toUShort() * 256.toUShort() + rdata.get(idx + 1)
+                    .toUShort()
+                idx += 2
+
+                var target = ""
+                while (idx < rdata.size) {
+                    val targetLen = rdata.get(idx)
+                        .toInt()
+                    if (targetLen == 0) {
+                        break
+                    }
+                    idx += 1
+                    val part = rdata.asByteArray()
+                        .toKString(startIndex = idx, endIndex = idx + targetLen)
+                    if (target.isEmpty()) {
+                        target = part
+                    } else {
+                        target = "${target}.${part}"
+                    }
+                    idx += targetLen
+                }
+                if (target.isEmpty()) {
+                    log.warning("rdata target is empty!")
+                    return null
+                }
+
+                return SrvRecord(port, weight, priority, target, directTls)
+            }
+        }
+
+    }
+}
+
+@OptIn(kotlinx.cinterop.ExperimentalForeignApi::class)
+class DnsResolverInternal(val directTls: Boolean) {
+
 	private val log = LoggerFactory.logger("tigase.halcyon.core.connector.socket.DnsResolver")
 	private val lock = Lock();
 	private var callback: ((Result<List<SrvRecord>>) -> Unit)? = null
 	//private var sdRef: DNSServiceRefVar = memScoped { alloc<DNSServiceRefVar>(); }
 	private var results: AtomicReference<List<SrvRecord>> =
 		AtomicReference<List<SrvRecord>>(emptyList<SrvRecord>())
-	private var stableRef: StableRef<DnsResolver>? = null;
+	private var stableRef: StableRef<DnsResolverInternal>? = null;
 	private var queue = dispatch_queue_create("dns_resolver_queue", null)
 	private var domain: String = ""
 
@@ -52,7 +140,7 @@ class DnsResolver {
 				sdRef.ptr,
 				kDNSServiceFlagsReturnIntermediates,
 				kDNSServiceInterfaceIndexAny.toUInt(),
-				"_xmpp-client._tcp." + domain,
+				if (directTls) { "_xmpps-client._tcp." } else { "_xmpp-client._tcp." } + domain,
 				kDNSServiceType_SRV.toUShort(),
 				kDNSServiceClass_IN.toUShort(), staticCFunction(::QueryRecordCallback),
 				stableRef?.asCPointer()
@@ -129,59 +217,7 @@ class DnsResolver {
 			results.value = records
 		}
 	}
-
-	class SrvRecord(val port: UInt, val weight: UInt, val priority: UInt, val target: String) {
-
-		companion object {
-
-			private val log = LoggerFactory.logger("tigase.halcyon.core.connector.socket.SrvRecord")
-			fun parse(rdata: UByteArray): SrvRecord? {
-				if (rdata.size <= 7) {
-					log.warning("rdata too short!")
-					return null
-				}
-				var idx = 0
-				val priority = rdata.get(idx)
-					.toUShort() * 256.toUShort() + rdata.get(idx + 1)
-					.toUShort()
-				idx += 2
-				val weight = rdata.get(idx)
-					.toUShort() * 256.toUShort() + rdata.get(idx + 1)
-					.toUShort()
-				idx += 2
-				val port = rdata.get(idx)
-					.toUShort() * 256.toUShort() + rdata.get(idx + 1)
-					.toUShort()
-				idx += 2
-
-				var target = ""
-				while (idx < rdata.size) {
-					val targetLen = rdata.get(idx)
-						.toInt()
-					if (targetLen == 0) {
-						break
-					}
-					idx += 1
-					val part = rdata.asByteArray()
-						.toKString(startIndex = idx, endIndex = idx + targetLen)
-					if (target.isEmpty()) {
-						target = part
-					} else {
-						target = "${target}.${part}"
-					}
-					idx += targetLen
-				}
-				if (target.isEmpty()) {
-					log.warning("rdata target is empty!")
-					return null
-				}
-
-				return SrvRecord(port, weight, priority, target)
-			}
-		}
-
-	}
-
+    
 }
 
 class DnsException(message: String) : Exception(message = message)
@@ -200,7 +236,7 @@ fun QueryRecordCallback(
 	@Suppress("UNUSED_PARAMETER")ttl: UInt,
 	context: COpaquePointer?,
 ) {
-	val resolver: DnsResolver = context!!.asStableRef<DnsResolver>()
+	val resolver: DnsResolverInternal = context!!.asStableRef<DnsResolverInternal>()
 		.get()
 
 	if ((flags and kDNSServiceFlagsAdd) == 0.toUInt()) {
@@ -217,7 +253,7 @@ fun QueryRecordCallback(
 				?.readBytes(rdlen.toInt())
 				?.toUByteArray()
 				?.let { srvdata ->
-					DnsResolver.SrvRecord.parse(srvdata)
+					DnsResolver.SrvRecord.parse(srvdata, resolver.directTls)
 						?.let { record ->
 							resolver.addRecord(record)
 						}

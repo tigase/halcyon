@@ -34,6 +34,7 @@ import tigase.halcyon.core.xmpp.XMPPException
 import tigase.halcyon.core.xmpp.modules.sm.StreamManagementModule
 import java.io.InputStreamReader
 import java.io.OutputStreamWriter
+import java.net.InetSocketAddress
 import java.net.Socket
 import java.net.UnknownHostException
 import kotlin.time.Duration.Companion.seconds
@@ -54,7 +55,7 @@ sealed class SocketConnectionErrorEvent : ConnectionErrorEvent() {
 
 class HostNotFound : HalcyonException()
 
-typealias HostPort = Pair<String, Int>
+typealias HostPort = Triple<String, Int, Boolean>
 
 var extendedSocketOptionsConfigurer: ((Socket)->Unit)? = null;
 
@@ -186,7 +187,7 @@ class SocketConnector(halcyon: Halcyon, val tlsProcesorFactory: TLSProcessorFact
 
 		val location = halcyon.getModuleOrNull(StreamManagementModule)?.resumptionLocation
 		if (location != null) {
-			hosts += HostPort(location, config.port)
+			hosts += HostPort(location, lastEndpoint?.second ?: config.port, lastEndpoint?.third ?: config.directTls)
 			log.fine { "Using host ${location}:${config.port}" }
 			completionHandler(hosts)
 			return
@@ -194,14 +195,14 @@ class SocketConnector(halcyon: Halcyon, val tlsProcesorFactory: TLSProcessorFact
 
 		val seeOther = halcyon.internalDataStore.getData<String>(SEE_OTHER_HOST_KEY)
 		if (seeOther != null) {
-			hosts += HostPort(seeOther, config.port)
+			hosts += HostPort(seeOther, lastEndpoint?.second ?: config.port, lastEndpoint?.third ?: config.directTls)
 			log.fine { "Using host ${seeOther}:${config.port}" }
 			completionHandler(hosts)
 			return
 		}
 
 		if (config.hostname != null) {
-			hosts += HostPort(config.hostname!!, config.port)
+			hosts += HostPort(config.hostname!!, config.port, false)
 			log.fine { "Using host ${config.hostname}:${config.port}" }
 			completionHandler(hosts)
 			return
@@ -210,23 +211,28 @@ class SocketConnector(halcyon: Halcyon, val tlsProcesorFactory: TLSProcessorFact
 		log.fine { "Resolving DNS of ${config.domain}" }
 		config.dnsResolver.resolve(config.domain) { result ->
 			result.onFailure {
-				hosts += HostPort(config.domain, config.port)
+				hosts += HostPort(config.domain, config.port, false)
 			}
 			result.onSuccess {
-				hosts.addAll(it.shuffled().map { HostPort(it.target, it.port.toInt()) })
+				hosts.addAll(it.sortedBy { if (it.directTls) { 0 } else { 1 } }.map { HostPort(it.target, it.port.toInt(), it.directTls) })
 			}
 
 			completionHandler(hosts)
 		}
 	}
 
-	private fun createSocket(completionHandler: (Result<Socket>) -> Unit) {
+    private var lastEndpoint: HostPort? = null;
+
+	private fun createSocket(completionHandler: (Result<Pair<Socket,Boolean>>) -> Unit) {
 		resolveTarget { hosts ->
 			hosts.forEach { hp ->
 				try {
 					log.fine { "Opening connection to ${hp.first}:${hp.second}" }
-					val s = Socket(hp.first, hp.second)
-					completionHandler(Result.success(s))
+					val s = Socket()
+                    s.tcpNoDelay = true
+                    s.connect(InetSocketAddress(hp.first, hp.second), 90*1000)
+                    lastEndpoint = hp
+					completionHandler(Result.success(Pair(s, hp.third)))
 					return@resolveTarget
 				} catch (e: Throwable) {
 					log.fine { "Host ${hp.first}:${hp.second} is unreachable." }
@@ -255,7 +261,7 @@ class SocketConnector(halcyon: Halcyon, val tlsProcesorFactory: TLSProcessorFact
 						}
 					}
 				}
-				result.onSuccess { sckt ->
+				result.onSuccess { (sckt, ssl) ->
 					try {
 						this.socket = sckt
 						sckt.soTimeout = 20 * 1000
@@ -270,7 +276,14 @@ class SocketConnector(halcyon: Halcyon, val tlsProcesorFactory: TLSProcessorFact
 							onError = { exception -> onWorkerException(exception) }
 						}
 						this.tlsProcesor = tlsProcesorFactory.create(sckt, config)
-						worker?.start() ?: throw HalcyonException("Socket Worker not created properly.")
+                        if (ssl) {
+                            tlsProcesor?.proceedTLS { inputStream, outputStream ->
+                                worker?.setReaderAndWriter(
+                                    InputStreamReader(inputStream), OutputStreamWriter(outputStream)
+                                ) ?: throw HalcyonException("Socket worker not initialized")
+                            } ?: throw HalcyonException("TLS Processor not initialized")
+                        }
+                        worker?.start() ?: throw HalcyonException("Socket Worker not created properly.")
 						val sb = buildString {
 							append("<stream:stream xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams' ")
 							append("version='1.0' ")
@@ -319,6 +332,7 @@ class SocketConnector(halcyon: Halcyon, val tlsProcesorFactory: TLSProcessorFact
 
 	override fun stop() {
 		started = false
+        lastEndpoint = null
 		if ((state != State.Disconnected)) {
 			log.fine { "Stopping..." }
 			try {

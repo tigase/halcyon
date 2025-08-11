@@ -28,5 +28,6 @@ actual fun defaultConnectionConfiguration(
 	},
 	dnsResolver = DnsResolverMiniDns(),
 	hostnameVerifier = DefaultHostnameVerifier(),
-	tlsProcessorFactory = DefaultTLSProcessorFactory
+	tlsProcessorFactory = DefaultTLSProcessorFactory,
+    directTls = false
 )

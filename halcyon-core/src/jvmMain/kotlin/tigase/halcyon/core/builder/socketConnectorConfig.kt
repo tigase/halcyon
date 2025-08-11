@@ -73,7 +73,8 @@ class SocketConnectionBuilder : ConnectionConfigItemBuilder<SocketConnectorConfi
 			},
 			dnsResolver = dnsResolver,
 			hostnameVerifier = hostnameVerifier,
-			tlsProcessorFactory = tlsProcessorFactory
+			tlsProcessorFactory = tlsProcessorFactory,
+            directTls = false
 		)
 	}
 }

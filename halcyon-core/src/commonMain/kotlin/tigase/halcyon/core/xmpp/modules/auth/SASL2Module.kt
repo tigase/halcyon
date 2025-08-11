@@ -48,7 +48,8 @@ class SASL2Module(override val context: Context, private val discoveryModule: Di
     private val engine = SASLEngine(context)
 
     override var enabled: Boolean = true
-
+    override val inProgress: Boolean
+        get() = engine.saslContext.state == State.InProgress
 
     override fun mechanisms(clear: Boolean, init: MechanismsConfiguration.() -> Unit) {
         if (clear) engine.removeAllMechanisms()

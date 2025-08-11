@@ -42,6 +42,8 @@ interface SASLModuleConfig {
 
     var enabled: Boolean
 
+    val inProgress: Boolean
+
     /**
      *
      */
@@ -141,6 +143,8 @@ class SASLModule(override val context: Context) : XmppModule, SASLModuleConfig {
     val saslContext: SASLContext by engine::saslContext
 
     override var enabled: Boolean = true
+    override val inProgress: Boolean
+        get() = engine.saslContext.state == State.InProgress
 
     override fun mechanisms(clear: Boolean, init: MechanismsConfiguration.() -> Unit) {
         if (clear) engine.removeAllMechanisms()

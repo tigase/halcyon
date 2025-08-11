@@ -23,4 +23,5 @@ data class SocketConnectorConfig(
 	val domain: String,
 	val hostname: String?,
 	val port: Int = 5222,
+    val directTls: Boolean = false,
 ) : ConnectionConfig
