@@ -28,14 +28,14 @@ import kotlin.concurrent.AtomicReference
 @OptIn(kotlinx.cinterop.ExperimentalForeignApi::class)
 class DnsResolver {
 
+    private val lock = Lock();
     private val resolvers = listOf(DnsResolverInternal(true), DnsResolverInternal(false))
 
     fun resolve(domain: String, completionHandler: (Result<List<SrvRecord>>) -> Unit) {
         var counter = resolvers.count();
         val results = mutableListOf<SrvRecord>();
-        val lock = Lock();
         val callback: (Result<List<SrvRecord>>) -> Unit = { result ->
-            val finished = lock.withLock {
+            val finished = this.lock.withLock {
                 result.getOrNull()?.let { results += it }
                 counter -= 1;
                 counter == 0
@@ -191,6 +191,7 @@ class DnsResolverInternal(val directTls: Boolean) {
 	}
 	
 	fun failed(reason: String) {
+        log.finest(reason);
 		lock.withLock {
 			results.value = emptyList()
 			callback?.invoke(Result.failure(DnsException(message = "DNS resolution failed! Reason: " + reason)))
@@ -211,7 +212,7 @@ class DnsResolverInternal(val directTls: Boolean) {
 
 	fun addRecord(record: SrvRecord) {
 		lock.withLock {
-			var records = ArrayList<SrvRecord>()
+			val records = ArrayList<SrvRecord>()
 			records += results.value
 			records += record
 			results.value = records
