@@ -20,7 +20,6 @@ package tigase.halcyon.core.connector.socket
 import kotlinx.cinterop.*
 import platform.darwin.*
 import tigase.halcyon.core.connector.socket.DnsResolver.SrvRecord
-import tigase.halcyon.core.logger.Level
 import tigase.halcyon.core.logger.LoggerFactory
 import tigase.halcyon.core.utils.Lock
 import kotlin.concurrent.AtomicReference
@@ -28,6 +27,7 @@ import kotlin.concurrent.AtomicReference
 @OptIn(kotlinx.cinterop.ExperimentalForeignApi::class)
 class DnsResolver {
 
+    private val log = LoggerFactory.logger("tigase.halcyon.core.connector.socket.DnsResolver")
     private val lock = Lock();
     private val resolvers = listOf(DnsResolverInternal(true), DnsResolverInternal(false))
 
@@ -40,6 +40,7 @@ class DnsResolver {
                 counter -= 1;
                 counter == 0
             }
+            log.fine { "received results ${result.getOrNull()} for domain $domain, finished: $finished" }
             if (finished) {
                 if (results.isEmpty() && result.isFailure) {
                     completionHandler.invoke(result);
@@ -124,47 +125,49 @@ class DnsResolverInternal(val directTls: Boolean) {
 	private var stableRef: StableRef<DnsResolverInternal>? = null;
 	private var queue = dispatch_queue_create("dns_resolver_queue", null)
 	private var domain: String = ""
+    private var serviceName: String = if (directTls) { "_xmpps-client._tcp." } else { "_xmpp-client._tcp." }
+    private var sdRef: DNSServiceRef? = null
+    private var readSource: NSObject? = null;
 
 	fun resolve(domain: String, completionHandler: (Result<List<SrvRecord>>) -> Unit) {
 		stableRef = StableRef.create(this)
 		this.domain = domain
 		this.callback = completionHandler
 		results.value = emptyList()
-		if (log.isLoggable(Level.FINEST)) {
-			log.finest("Resolving SRV records for domain ${domain}")
-		}
-		//this.freeze();
-		val (result, sdRef) = memScoped {
+        log.finest("Resolving SRV records for domain ${domain}, service: $serviceName")
+
+        //this.freeze();
+		val result = memScoped {
 			val sdRef = alloc<DNSServiceRefVar>()
 			val result = DNSServiceQueryRecord(
 				sdRef.ptr,
 				kDNSServiceFlagsReturnIntermediates,
 				kDNSServiceInterfaceIndexAny.toUInt(),
-				if (directTls) { "_xmpps-client._tcp." } else { "_xmpp-client._tcp." } + domain,
+				serviceName + domain,
 				kDNSServiceType_SRV.toUShort(),
 				kDNSServiceClass_IN.toUShort(), staticCFunction(::QueryRecordCallback),
 				stableRef?.asCPointer()
 			)
-			return@memScoped Pair(result, sdRef.value);
+            this@DnsResolverInternal.sdRef = sdRef.value;
+			return@memScoped result;
 		}
 		if (result == kDNSServiceErr_NoError) {
 			val dnsSocket = DNSServiceRefSockFD(sdRef)
 			if (dnsSocket == -1) {
-				DNSServiceRefDeallocate(sdRef)
 				failed("could not allocate DNS socket!")
 				return
 			}
 			log.finest("using dns socket: " + dnsSocket)
 
 			//val stableRef = this.stableRef
-			val readSource = dispatch_source_create(
+			readSource = dispatch_source_create(
 				DISPATCH_SOURCE_TYPE_READ,
 				handle = dnsSocket.toULong(),
 				mask = 0u,
 				queue = queue
 			)//dispatch_get_main_queue());
 			val block: () -> Unit = {
-				log.finest("processing result..")
+				log.finest("processing result for resolver: $this..")
 				val res = DNSServiceProcessResult(sdRef)
 				log.finest("result processed: " + res)
 				if (res != kDNSServiceErr_NoError) {
@@ -187,16 +190,15 @@ class DnsResolverInternal(val directTls: Boolean) {
 	}
 
 	fun failed(errorCode: Int) {
-		failed("DNS resolution error: $errorCode");
+		this.failed("DNS resolution error: $errorCode");
 	}
 	
-	fun failed(reason: String) {
+	private fun failed(reason: String) {
         log.finest(reason);
 		lock.withLock {
 			results.value = emptyList()
 			callback?.invoke(Result.failure(DnsException(message = "DNS resolution failed! Reason: " + reason)))
-			stableRef?.dispose()
-			stableRef = null;
+            completed()
 		}
 	}
 
@@ -205,10 +207,20 @@ class DnsResolverInternal(val directTls: Boolean) {
 			val results = this.results.value.sortedBy { it.priority }
 			callback?.invoke(Result.success(results))
 			//callback = null;
-			stableRef?.dispose()
-			stableRef = null;
+			completed()
 		}
 	}
+
+    // call only from the lock!!
+    private fun completed() {
+        log.finest { "releasing DNSResolver for $serviceName$domain" }
+        readSource?.let { dispatch_source_cancel(it) }
+        readSource = null
+        sdRef?.let { DNSServiceRefDeallocate(it) }
+        sdRef = null;
+        stableRef?.dispose()
+        stableRef = null;
+    }
 
 	fun addRecord(record: SrvRecord) {
 		lock.withLock {
@@ -237,12 +249,15 @@ fun QueryRecordCallback(
 	@Suppress("UNUSED_PARAMETER")ttl: UInt,
 	context: COpaquePointer?,
 ) {
+    val log = LoggerFactory.logger("tigase.halcyon.core.connector.socket.DnsResolver")
 	val resolver: DnsResolverInternal = context!!.asStableRef<DnsResolverInternal>()
 		.get()
 
 	if ((flags and kDNSServiceFlagsAdd) == 0.toUInt()) {
 		return
 	}
+
+    log.finest { "QueryRecordCallback errorCode: ${errorCode}, resolver: $resolver" }
 
 	when (errorCode) {
 		kDNSServiceErr_NoError -> {
