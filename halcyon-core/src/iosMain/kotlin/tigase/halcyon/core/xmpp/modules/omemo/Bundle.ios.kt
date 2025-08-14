@@ -470,6 +470,18 @@ actual class SignalProtocolAddress actual constructor(val name: String, val devi
         }
     }
 
+
+    override fun equals(other: Any?): Boolean {
+        if (other == null) return false
+        if (other !is SignalProtocolAddress) return false
+
+        return this.name == other.name && this.deviceId == other.deviceId
+    }
+
+    override fun hashCode(): Int {
+        return name.hashCode() xor this.deviceId
+    }
+
     override fun toString(): String {
         return "Address[$name:$deviceId]";
     }

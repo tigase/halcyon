@@ -7,14 +7,20 @@ import tigase.halcyon.core.eventbus.Event
 import tigase.halcyon.core.eventbus.EventBusInterface
 import tigase.halcyon.core.eventbus.EventDefinition
 import tigase.halcyon.core.eventbus.EventHandler
+import tigase.halcyon.core.logger.LoggerFactory
 
 fun <T : Event> EventBusInterface.observe(definition: EventDefinition<T>): Observable<T> = this.observe(definition.TYPE)
 
+private val log = LoggerFactory.logger("tigase.halcyon.rx.observe")
 fun <T : Event> EventBusInterface.observe(type: String? = null): Observable<T> {
     val subject = PublishSubject<T>()
     val handler = object : EventHandler<T> {
         override fun onEvent(event: T) {
-            subject.onNext(event)
+            try {
+                subject.onNext(event)
+            } catch (e: Throwable) {
+                log.warning(e) { "Error handling event $event" }
+            }
         }
     }
     return subject.doOnBeforeSubscribe {
