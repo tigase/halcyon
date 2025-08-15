@@ -242,11 +242,17 @@ actual object OMEMOEncryptor {
                 "iv" {
                     +iv.toBase64()
                 }
-                session.ciphers.forEach { (addr, sessionCipher) ->
+                session.ciphers.map { (addr, sessionCipher) ->
+                    try {
+                        Pair(addr, sessionCipher.encrypt(combinedKey))
+                    } catch (e: Throwable) {
+                        log.warning { "failed to encrypt message for $addr, ${e.localizedMessage}" }
+                        null;
+                    }
+                }.filterNotNull().forEach { (addr, m) ->
                     "key" {
                         attributes["rid"] = addr.deviceId.toString()
 
-                        val m = sessionCipher.encrypt(combinedKey)
                         if (m.type == CiphertextMessage.PREKEY_TYPE) {
                             attributes["prekey"] = "true"
                         }

@@ -89,7 +89,11 @@ actual object OMEMOEncryptor {
 
             // extracting inner key
             var decryptedKey =
-                retrieveKey(findKeyElements(encElement), senderAddr, store, session, healSession)
+                retrieveKey(findKeyElements(encElement), senderAddr, store, session, {
+                    if (hasCipherText) {
+                        healSession(it)
+                    }
+                })
                     ?: throw OMEMOException.DeviceKeyNotFoundException();
 
             ciphertext?.let { ciphertext ->
@@ -184,12 +188,18 @@ actual object OMEMOEncryptor {
                 "iv" {
                     +iv.toBase64()
                 }
-                session.ciphers.forEach { (addr, sessionCipher) ->
+                session.ciphers.map { (addr, sessionCipher) ->
+                    try {
+                        Pair(addr, sessionCipher.encrypt(authtagPlusInnerKey))
+                    } catch (e: Throwable) {
+                        log.warning { "failed to encrypt message for $addr, ${e.message}" }
+                        null;
+                    }
+                }.filterNotNull().forEach { (addr, m) ->
                     log.finest("adding encryption key for " + addr.deviceId)
                     "key" {
                         attributes["rid"] = addr.deviceId.toString()
                         
-                        val m = sessionCipher.encrypt(authtagPlusInnerKey)
                         if (m.isPreKey) {
                             attributes["prekey"] = "true"
                         }
