@@ -39,6 +39,7 @@ import tigase.halcyon.core.xmpp.forms.FieldType
 import tigase.halcyon.core.xmpp.forms.FormType
 import tigase.halcyon.core.xmpp.forms.JabberDataForm
 import tigase.halcyon.core.xmpp.modules.RSM
+import tigase.halcyon.core.xmpp.modules.avatar.UserAvatarModule
 import tigase.halcyon.core.xmpp.modules.mam.ForwardedStanza
 import tigase.halcyon.core.xmpp.modules.mam.MAMModule
 import tigase.halcyon.core.xmpp.modules.pubsub.Affiliation
@@ -143,6 +144,14 @@ sealed class MixParticipantEvent(val channel: BareJID, val id: String): Event(TY
 	}
 }
 
+data class MIXChannelInfoUpdatedEvent(val channel: BareJID, val info: ChannelInfo?) : Event(TYPE) {
+
+    companion object : EventDefinition<MIXChannelInfoUpdatedEvent> {
+
+        override val TYPE = "tigase.halcyon.core.xmpp.modules.mix.MIXChannelInfoUpdatedEvent"
+    }
+}
+
 @HalcyonConfigDsl
 interface MIXModuleConfig
 
@@ -196,6 +205,14 @@ class MIXModule(
 	private fun processPubSubEvent(event: PubSubItemEvent) {
 		when (event.nodeName) {
 			NODE_PARTICIPANTS -> processParticipantsEvent(event);
+            "urn:xmpp:mix:nodes:info" -> {
+                val channelJid = event.pubSubJID?.bareJID ?: return;
+                val info = when (event) {
+                    is PubSubItemEvent.Published -> event.content?.let { ChannelInfo.fromElement(it) }
+                    is PubSubItemEvent.Retracted -> null
+                }
+                context.eventBus.fire(MIXChannelInfoUpdatedEvent(channelJid, info = info))
+            }
 			else -> {}
 		}
 	}
@@ -337,6 +354,7 @@ class MIXModule(
 					"subscribe" { attributes["node"] = NODE_PRESENCE }
 					"subscribe" { attributes["node"] = NODE_PARTICIPANTS }
 					"subscribe" { attributes["node"] = "urn:xmpp:mix:nodes:info" }
+                    "subscribe" { attributes["node"] = UserAvatarModule.XMLNS_METADATA }
 					invitation?.let {
 						addChild(invitationToElement(it))
 					}

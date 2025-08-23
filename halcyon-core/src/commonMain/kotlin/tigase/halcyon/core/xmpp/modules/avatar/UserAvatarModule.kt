@@ -166,15 +166,15 @@ class UserAvatarModule(override val context: Context, private val pubSubModule: 
 
 	override fun process(element: Element) = throw XMPPException(ErrorCondition.FeatureNotImplemented)
 
-	fun publish(data: AvatarData): RequestBuilder<PubSubModule.PublishingInfo, IQ> {
+	fun publish(jid: JID? = null, data: AvatarData): RequestBuilder<PubSubModule.PublishingInfo, IQ> {
 		val payload = element("data") {
 			xmlns = XMLNS_DATA
 			+data.base64Data!!
 		}
-		return pubSubModule.publish(null, XMLNS_DATA, data.id, payload)
+		return pubSubModule.publish(jid, XMLNS_DATA, data.id, payload)
 	}
 
-	fun publish(data: AvatarInfo): RequestBuilder<PubSubModule.PublishingInfo, IQ> {
+	fun publish(jid: JID? = null, data: AvatarInfo): RequestBuilder<PubSubModule.PublishingInfo, IQ> {
 		val payload = element("metadata") {
 			xmlns = XMLNS_METADATA
 			"info" {
@@ -186,7 +186,7 @@ class UserAvatarModule(override val context: Context, private val pubSubModule: 
 				data.url?.let { attribute("url", it) }
 			}
 		}
-		return pubSubModule.publish(null, XMLNS_METADATA, data.id, payload)
+		return pubSubModule.publish(jid, XMLNS_METADATA, data.id, payload)
 	}
 
 }
