@@ -377,7 +377,7 @@ class OMEMOModule(
             }
         }
         return publish(
-            jid = context.boundJID?.bareJID ?: throw HalcyonException("JID not bound."),
+            jid = context.boundJID?.bareJID,
             node = "$BUNDLES_NODE_PREFIX$registrationId",
             itemId = CURRENT,
             payload = payload,
@@ -385,7 +385,7 @@ class OMEMOModule(
         )
     }
 
-    private fun publish(jid: BareJID, node: String, itemId: String?, payload: Element?, publishOptions: JabberDataForm): PublishRequestBuilder<PubSubModule.PublishingInfo> {
+    private fun publish(jid: BareJID?, node: String, itemId: String?, payload: Element?, publishOptions: JabberDataForm): PublishRequestBuilder<PubSubModule.PublishingInfo> {
         return PublishRequestBuilder<PubSubModule.PublishingInfo>(
             pubsubModule.publish(jid = jid, node = node, itemId = itemId, payload = payload, publishOptions = publishOptions)
         ).errorHandler { e, callback ->
@@ -436,7 +436,7 @@ class OMEMOModule(
         }.send()
     }
 
-    private fun adjustNodeConfig(jid: BareJID, node: String, requiredOptions: JabberDataForm): RequestBuilder<Unit,IQ> {
+    private fun adjustNodeConfig(jid: BareJID?, node: String, requiredOptions: JabberDataForm): RequestBuilder<Unit,IQ> {
         val x = JabberDataForm.create(FormType.Form);
         requiredOptions.getAllFields().forEach {
             x.addField(Field.create(varName = it.fieldName!!, type = it.fieldType).apply {

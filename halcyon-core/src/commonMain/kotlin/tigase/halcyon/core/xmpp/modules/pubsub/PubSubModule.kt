@@ -173,7 +173,7 @@ class PubSubModule(override val context: Context) : XmppModule, PubSubModuleConf
 		return context.request.iq(iq).map {}
 	}
 
-	fun configureNode(pubSubJID: JID, node: String, config: JabberDataForm): RequestBuilder<Unit, IQ> {
+	fun configureNode(pubSubJID: JID?, node: String, config: JabberDataForm): RequestBuilder<Unit, IQ> {
 		val iq = iq {
 			type = IQType.Set
 			to = pubSubJID
