@@ -42,6 +42,7 @@ import tigase.halcyon.core.xmpp.modules.RSM
 import tigase.halcyon.core.xmpp.modules.avatar.UserAvatarModule
 import tigase.halcyon.core.xmpp.modules.mam.ForwardedStanza
 import tigase.halcyon.core.xmpp.modules.mam.MAMModule
+import tigase.halcyon.core.xmpp.modules.presence.PresenceModule
 import tigase.halcyon.core.xmpp.modules.pubsub.Affiliation
 import tigase.halcyon.core.xmpp.modules.pubsub.PubSubItemEvent
 import tigase.halcyon.core.xmpp.modules.pubsub.PubSubModule
@@ -337,7 +338,7 @@ class MIXModule(
 		join(invitation.channel, nick, invitation)
 
 	fun join(
-		channel: BareJID, nick: String, invitation: MIXInvitation? = null,
+		channel: BareJID, nick: String, invitation: MIXInvitation? = null, presenceSubscription: Boolean = true
 	): RequestBuilder<JoinResponse, IQ> {
 		return context.request.iq {
 			type = IQType.Set
@@ -371,6 +372,10 @@ class MIXModule(
 				id = parts[0];
 				jid = parts[1];
 			}
+            context.modules.getModuleOrNull(PresenceModule)?.let { presenceModule ->
+                presenceModule.sendSubscriptionSet(jid.toJID(), PresenceType.Subscribed).send()
+                presenceModule.sendSubscriptionSet(jid.toJID(), PresenceType.Subscribe).send()
+            }
 			JoinResponse(jid.toJID(), nck, nodes, id)
 		}
 	}

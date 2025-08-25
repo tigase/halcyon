@@ -154,7 +154,33 @@ class UserAvatarModule(override val context: Context, private val pubSubModule: 
 	@Serializable
 	data class AvatarInfo(
 		val bytes: Int, val height: Int?, val id: String, val type: String, val url: String?, val width: Int?,
-	)
+	) {
+        companion object {
+            fun parse(element: Element): AvatarInfo? {
+                if (element.name != "info") {
+                    return null;
+                }
+                val bytes = element.attributes["bytes"]?.toInt() ?: return null
+                val type = element.attributes["type"] ?: return null
+                val id = element.attributes["id"] ?: return null
+                return AvatarInfo(
+                    bytes = bytes,
+                    height = element.attributes["height"]?.toInt(),
+                    id = id,
+                    type = type,
+                    url = element.attributes["url"],
+                    width = element.attributes["width"]?.toInt()
+                )
+            }
+        }
+    }
+
+    fun retrieveAvatar(jid: JID): RequestBuilder<AvatarInfo?, IQ> {
+        return pubSubModule.retrieveItem(jid.bareJID, XMLNS_METADATA, maxItems = 1).map {
+            val el = it.items.firstOrNull()?.content?.getFirstChild("info") ?: return@map null;
+            return@map AvatarInfo.parse(el);
+        }
+    }
 
 	fun retrieveAvatar(jid: JID, avatarID: String): RequestBuilder<AvatarData, IQ> {
 		return pubSubModule.retrieveItem(jid.bareJID, XMLNS_DATA, avatarID).map { response ->
