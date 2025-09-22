@@ -4,6 +4,8 @@ import tigase.halcyon.core.ClearedEvent
 import tigase.halcyon.core.Context
 import tigase.halcyon.core.Scope
 import tigase.halcyon.core.builder.HalcyonConfigDsl
+import tigase.halcyon.core.eventbus.Event
+import tigase.halcyon.core.eventbus.EventDefinition
 import tigase.halcyon.core.exceptions.HalcyonException
 import tigase.halcyon.core.logger.LoggerFactory
 import tigase.halcyon.core.modules.*
@@ -48,6 +50,16 @@ interface OMEMOModuleConfig {
      */
     var autoCreateSession: Boolean
 
+}
+
+public data class OMEMODeviceListChanged(
+    val devices: Map<BareJID,List<Int>>
+): Event(TYPE) {
+
+    companion object : EventDefinition<OMEMODeviceListChanged> {
+
+        override val TYPE = "tigase.halcyon.core.xmpp.modules.omemo.OMEMODeviceListChanged"
+    }
 }
 
 interface BundleStateStorage {
@@ -141,6 +153,7 @@ class OMEMOModule(
                 log.fine { "resetting list of known OMEMO devices" }
                 devices.clear();
                 devicesFetchError.clear();
+                context.eventBus.fire(OMEMODeviceListChanged(devices = emptyMap()));
             }
         }
         context.eventBus.register(MAMQueryFinished) {
@@ -193,6 +206,7 @@ class OMEMOModule(
                 }
             } else {
                 devices[jid.bareJID] = deviceList;
+                context.eventBus.fire(OMEMODeviceListChanged(devices = devices.toMap()))
             }
 //            deviceList.forEach {
 //                val addr = SignalProtocolAddress(jid.toString(), it)
