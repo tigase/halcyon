@@ -209,7 +209,11 @@ actual object OMEMOEncryptor {
                 is DuplicateMessageException -> OMEMOErrorCondition.DuplicateMessage
                 else -> OMEMOErrorCondition.CannotDecrypt
             }
-            if (hasCipherText) {
+            if (condition == OMEMOErrorCondition.DuplicateMessage) {
+                // if that is a message duplicate we should skip it to not enter/update message with this content as it was already processed.
+                // removing body will force clients to not report/log it in the conversation
+                stanza.getChildren("body").forEach { stanza.remove(it) }
+            } else if (hasCipherText) {
                 stanza.replaceBody(condition.message())
             }
             return OMEMOMessage.Error(stanza, condition)
