@@ -50,6 +50,7 @@ interface OMEMOModuleConfig {
      */
     var autoCreateSession: Boolean
 
+    var ignoreNotEncryptedForThisDevice: Boolean
 }
 
 public data class OMEMODeviceListChanged(
@@ -134,6 +135,7 @@ class OMEMOModule(
     override var autoUpdateIdentityStore: Boolean = true
     override var autoCreateSession: Boolean = false
     override lateinit var bundleStateStorage: BundleStateStorage;
+    override var ignoreNotEncryptedForThisDevice: Boolean = false;
 
     init {
         context.eventBus.register(PubSubItemEvent) {
@@ -520,7 +522,7 @@ class OMEMOModule(
                 val messageEl = forwardedEl.getFirstChild("message");
                 if (messageEl != null) {
                     forwardedEl.remove(messageEl);
-                    forwardedEl.add(decodeMessage(messageEl, true));
+                    decodeMessage(messageEl, true)?.let(forwardedEl::add)
                 }
             }
             chain.doFilter(element);
@@ -529,7 +531,7 @@ class OMEMOModule(
         }
     }
 
-    private fun decodeMessage(element: Element, postpone: Boolean): Element {
+    private fun decodeMessage(element: Element, postpone: Boolean): Element? {
         val senderJid = element.getFromAttr()
         val encElement = element.getChildrenNS("encrypted", XMLNS)
         val senderId =
@@ -564,6 +566,13 @@ class OMEMOModule(
                 }
             is OMEMOMessage.Error -> {
                 log.warning { "OMEMO decryption failure: ${result.condition}" }
+                val shouldIgnore = when (result.condition) {
+                    OMEMOErrorCondition.DeviceKeyNotFound -> ignoreNotEncryptedForThisDevice
+                    else -> false
+                }
+                if (shouldIgnore) {
+                    return null;
+                }
             }
         }
         return result;
