@@ -159,11 +159,11 @@ abstract class AbstractJingleSessionManager<S : AbstractJingleSession>(
 
 		session(context, jid, sid)?.let { session ->
 			log.finest("initiating session that already existed for jid: ${jid}, sid: $sid, sdp: $media, bundle: $bundle")
-			session.initiated(contents, bundle)
+			session.initiated(jid, contents, bundle)
 		} ?: run {
 			log.finest("creating an initiating session for jid: ${jid}, sid: $sid, sdp: $media, bundle: $bundle")
 			val session = open(context, jid, sid, Content.Creator.responder, InitiationType.Iq);
-			session.initiated(contents, bundle)
+			session.initiated(jid, contents, bundle)
 			reportIncomingCallAction(
 				session,
 				MessageInitiationAction.Propose(

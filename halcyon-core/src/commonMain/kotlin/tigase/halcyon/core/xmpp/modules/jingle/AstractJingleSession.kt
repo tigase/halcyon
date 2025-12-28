@@ -181,8 +181,9 @@ abstract class AbstractJingleSession(
 		}
 	}
 
-	fun initiated(contents: List<Content>, bundle: List<String>?) {
+	fun initiated(jid: JID, contents: List<Content>, bundle: List<String>?) {
 		lock.withLock {
+			this.jid = jid;
 			updateCreators(contents);
 			state = State.Initiating
 			remoteContents = contents
