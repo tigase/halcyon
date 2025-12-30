@@ -32,7 +32,7 @@ abstract class AbstractJingleSessionManager<S : AbstractJingleSession>(
 	name: String
 ) : Jingle.SessionManager {
 
-	abstract fun createSession(context: Context, jid: JID, sid: String, role: Content.Creator, initiationType: InitiationType): S
+	abstract fun createSession(context: Context, account: BareJID, jid: JID, sid: String, role: Content.Creator, initiationType: InitiationType): S
 	abstract fun reportIncomingCallAction(session: S, action: MessageInitiationAction)
 
 	private val log = LoggerFactory.logger(name)
@@ -76,8 +76,19 @@ abstract class AbstractJingleSessionManager<S : AbstractJingleSession>(
 		role: Content.Creator,
 		initiationType: InitiationType,
 	): S {
+		return open(context, context.boundJID?.bareJID!!, jid, sid, role, initiationType)
+	}
+
+	fun open(
+		context: Context,
+		account: BareJID,
+		jid: JID,
+		sid: String,
+		role: Content.Creator,
+		initiationType: InitiationType,
+	): S {
 		return lock.withLock {
-			val session = this.createSession(context, jid, sid, role, initiationType);
+			val session = this.createSession(context, account, jid, sid, role, initiationType);
 			sessions = sessions + session
 			return@withLock session
 		}
@@ -111,7 +122,7 @@ abstract class AbstractJingleSessionManager<S : AbstractJingleSession>(
 				if (this.session(context, fromJid, action.id) != null) {
 					return;
 				}
-				val session = open(context, fromJid, action.id, Content.Creator.responder, InitiationType.Message);
+				val session = open(context, context.boundJID?.bareJID!!, fromJid, action.id, Content.Creator.responder, InitiationType.Message);
 				reportIncomingCallAction(session, action);
 			}
 			is MessageInitiationAction.Ringing -> {
@@ -162,7 +173,7 @@ abstract class AbstractJingleSessionManager<S : AbstractJingleSession>(
 			session.initiated(jid, contents, bundle)
 		} ?: run {
 			log.finest("creating an initiating session for jid: ${jid}, sid: $sid, sdp: $media, bundle: $bundle")
-			val session = open(context, jid, sid, Content.Creator.responder, InitiationType.Iq);
+			val session = open(context, context.boundJID?.bareJID!!, jid, sid, Content.Creator.responder, InitiationType.Iq);
 			session.initiated(jid, contents, bundle)
 			reportIncomingCallAction(
 				session,

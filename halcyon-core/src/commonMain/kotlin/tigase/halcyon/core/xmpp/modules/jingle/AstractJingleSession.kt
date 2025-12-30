@@ -31,13 +31,13 @@ import tigase.halcyon.core.xmpp.modules.jingle.Jingle.Session.State
 abstract class AbstractJingleSession(
 	private val terminateFunction: (AbstractJingleSession)->Unit,
 	context: Context,
+	override val account: BareJID,
 	jid: JID,
 	override val sid: String,
 	val role: Content.Creator,
 	val initiationType: InitiationType,
 ) : Jingle.Session {
 
-	final override val account: BareJID
 	private val jingleModule: JingleModule
 
 	interface StateDelegate {
@@ -75,7 +75,6 @@ abstract class AbstractJingleSession(
 	private var remoteBundles: List<String>? = null
 
 	init {
-		this.account = context.boundJID!!.bareJID;
 		this.jingleModule = context.modules.getModule<JingleModule>()
 	}
 
