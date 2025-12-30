@@ -1,3 +1,5 @@
+import java.time.Duration
+
 /*
  * halcyon-core
  * Copyright (C) 2018 Tigase, Inc. (office@tigase.com)
@@ -30,6 +32,7 @@ kotlin {
         withJava()
         testRuns["test"].executionTask.configure {
             useJUnit()
+            timeout = Duration.ofSeconds(60)
         }
     }
 
