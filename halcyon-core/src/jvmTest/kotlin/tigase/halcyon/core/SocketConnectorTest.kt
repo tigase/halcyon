@@ -48,7 +48,7 @@ class SocketConnectorTest {
             }
         }
         client.connect()
-        sleep(45*1000*1000)
+        sleep(45*1000)
         assertEquals(SASLModule.SASLError.NotAuthorized, receivedSaslError)
         println("connection timeout reached, checking state..")
         assertNotEquals(AbstractHalcyon.State.Connected, client.state)
