@@ -1,20 +1,5 @@
-/*
-* halcyon-core
-* Copyright (C) 2018 Tigase, Inc. (office@tigase.com)
-*
-* This program is free software: you can redistribute it and/or modify
-* it under the terms of the GNU Affero General Public License as published by
-* the Free Software Foundation, version 3 of the License.
-*
-* This program is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-* GNU Affero General Public License for more details.
-*
-* You should have received a copy of the GNU Affero General Public License
-* along with this program. Look for COPYING file in the top folder.
-* If not, see http://www.gnu.org/licenses/.
-*/
+import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
+
 plugins {
 	id("kotlinMultiplatformConvention")
 	`maven-publish`
@@ -23,90 +8,48 @@ plugins {
 	alias(libs.plugins.jetbrains.dokka)
 }
 
-kotlin {
-
-
-
-
-	iosArm64 {
-
-		// TODO: Before compilation you need to download https://github.com/tigase/openssl-swiftpm/releases/download/1.1.171/OpenSSL.xcframework.zip to "frameworks" directory and unpack this ZIP file.
-		// TODO: Before compilation it is required to go to OpenSSL.xcframework to each subdirectory and Headers and move all files there to "openssl" subdirectory inside Headers
-		val openSSLFrameworkDir = "$rootDir/build/frameworks/OpenSSL.xcframework/ios-arm64_armv7";
-		val libsignalFrameworkDir = "$rootDir/build/frameworks/libsignal.xcframework/ios-arm64"
-		compilations.getByName("main") {
-			cinterops {
-				val OpenSSL by creating {
-					defFile("src/nativeInterop/cinterop/OpenSSL.def")
-					includeDirs("$openSSLFrameworkDir/")
-					compilerOpts(
-						"-F$openSSLFrameworkDir", "-framework", "OpenSSL"
-					)
-				}
-				val libsignal by creating {
-					defFile("src/nativeInterop/cinterop/libsignal.def")
-					includeDirs("$libsignalFrameworkDir/")
-					compilerOpts(
-						"-F$libsignalFrameworkDir", "-framework", "libsignal"
-					)
-				}
+val iosApply = { target: KotlinNativeTarget, openSslFrameworkDir: String, libsignalFrameworkDir: String ->
+	target.compilations.named("main").configure {
+		cinterops {
+			val OpenSSL by creating {
+				defFile("src/nativeInterop/cinterop/OpenSSL.def")
+				includeDirs("$openSslFrameworkDir/")
+				compilerOpts(
+					"-F$openSslFrameworkDir", "-framework", "OpenSSL"
+				)
 			}
-			kotlinOptions.freeCompilerArgs = listOf(
-				"-include-binary",
-				"$openSSLFrameworkDir/OpenSSL.framework/OpenSSL",
-				"-include-binary",
-				"$libsignalFrameworkDir/libsignal.framework/libsignal"
-			)
-			this@iosArm64.binaries.all {
-				linkerOpts(
-					"-F$openSSLFrameworkDir",
-					"-framework",
-					"OpenSSL",
-					"-F$libsignalFrameworkDir",
-					"-framework",
-					"libsignal"
+			val libsignal by creating {
+				defFile("src/nativeInterop/cinterop/libsignal.def")
+				includeDirs("$libsignalFrameworkDir/")
+				compilerOpts(
+					"-F$libsignalFrameworkDir", "-framework", "libsignal"
 				)
 			}
 		}
 	}
-	// Same target as above for iOS but for Arm64 simulator (simulator in AppleSilicon machine)
-	iosSimulatorArm64 {
-		val openSSLFrameworkDir = "$rootDir/build/frameworks/OpenSSL.xcframework/ios-arm64_i386_x86_64-simulator"
-		val libsignalFrameworkDir = "$rootDir/build/frameworks/libsignal.xcframework/ios-arm64_x86_64-simulator"
-		compilations.getByName("main") {
-			cinterops {
-				val OpenSSL by creating {
-					defFile("src/nativeInterop/cinterop/OpenSSL.def")
-					includeDirs("$openSSLFrameworkDir/")
-					compilerOpts(
-						"-F$openSSLFrameworkDir", "-framework", "OpenSSL"
-					)
-				}
-				val libsignal by creating {
-					defFile("src/nativeInterop/cinterop/libsignal.def")
-					includeDirs("$libsignalFrameworkDir/")
-					compilerOpts(
-						"-F$libsignalFrameworkDir", "-framework", "libsignal"
-					)
-				}
-			}
-			kotlinOptions.freeCompilerArgs = listOf(
-				"-include-binary",
-				"$openSSLFrameworkDir/OpenSSL.framework/OpenSSL",
-				"-include-binary",
-				"$libsignalFrameworkDir/libsignal.framework/libsignal"
+	target.binaries {
+		all {
+			linkerOpts(
+				"-F$openSslFrameworkDir",
+				"-framework",
+				"OpenSSL",
+				"-F$libsignalFrameworkDir",
+				"-framework",
+				"libsignal"
 			)
-			this@iosSimulatorArm64.binaries.all {
-				linkerOpts(
-					"-F$openSSLFrameworkDir",
-					"-framework",
-					"OpenSSL",
-					"-F$libsignalFrameworkDir",
-					"-framework",
-					"libsignal"
-				)
-			}
 		}
+	}
+}
+
+kotlin {
+
+
+	iosArm64 {
+		iosApply(this, "$rootDir/build/frameworks/OpenSSL.xcframework/ios-arm64_armv7", "$rootDir/build/frameworks/libsignal.xcframework/ios-arm64")
+	}
+
+	iosSimulatorArm64 {
+		iosApply(this, "$rootDir/build/frameworks/OpenSSL.xcframework/ios-arm64_i386_x86_64-simulator", "$rootDir/build/frameworks/libsignal.xcframework/ios-arm64_x86_64-simulator")
 	}
 
 	applyDefaultHierarchyTemplate()
