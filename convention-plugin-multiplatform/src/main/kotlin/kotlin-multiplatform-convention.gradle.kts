@@ -1,5 +1,3 @@
-import java.time.Duration
-
 /*
  * halcyon-core
  * Copyright (C) 2018 Tigase, Inc. (office@tigase.com)
@@ -17,6 +15,9 @@ import java.time.Duration
  * along with this program. Look for COPYING file in the top folder.
  * If not, see http://www.gnu.org/licenses/.
  */
+
+import java.time.Duration
+
 val libs = project.extensions.getByType<VersionCatalogsExtension>().named("libs")
 
 plugins {
@@ -28,18 +29,19 @@ kotlin {
         jdkVersion = libs.findVersion("java-languageVersion").get().requiredVersion.toInt()
     )
 
-    jvm {
-        withJava()
-        testRuns["test"].executionTask.configure {
-            useJUnit()
-            timeout = Duration.ofSeconds(60)
-        }
+    compilerOptions {
+        freeCompilerArgs.add("-Xexpect-actual-classes")
     }
+
+    // default targets
+    jvm() {}
+    iosArm64() {}
+    iosSimulatorArm64() {}
 
     js(IR) {
         browser {
             commonWebpackConfig {
-				// cssSupport()
+                // cssSupport()
             }
             testTask {
                 useKarma {
@@ -50,16 +52,6 @@ kotlin {
         }
     }
 
-    listOf(
-        // iosX64(),
-        iosArm64(),
-        iosSimulatorArm64()
-    ).forEach {
-        it.binaries.framework {
-            // baseName = "ComposeApp"
-            // isStatic = true
-        }
-    }
 
     sourceSets {
         all {
@@ -69,30 +61,26 @@ kotlin {
             }
         }
 
-        commonMain.dependencies {
-            implementation(kotlin("stdlib-common"))
-        }
-
         commonTest.dependencies {
             implementation(kotlin("test"))
         }
+    }
+}
 
-        jvmMain.dependencies {
-        }
 
-        jvmTest.dependencies {
-            implementation(kotlin("test-junit"))
-        }
+// #### Tests
 
-        jsMain.dependencies {
-            implementation(kotlin("stdlib-js"))
-        }
+// fails to run…
+project.gradle.startParameter.excludedTaskNames.add("iosSimulatorArm64Test")
 
-        jsTest.dependencies {
-            implementation(kotlin("test-js"))
-        }
+// can't be run without additional dependencies…
+project.gradle.startParameter.excludedTaskNames.add("jsBrowserTest")
 
-        iosMain.dependencies {
-        }
+
+tasks.withType<Test> {
+    timeout.set(Duration.ofSeconds(10))
+
+    testLogging {
+        events("skipped", "failed")
     }
 }

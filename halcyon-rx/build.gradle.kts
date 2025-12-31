@@ -16,9 +16,9 @@
  * If not, see http://www.gnu.org/licenses/.
  */
 plugins {
-	id("kotlinMultiplatformConvention")
-	`maven-publish`
-	signing
+	id("kotlin-multiplatform-convention")
+	id("maven-publish-convention")
+
 	alias(libs.plugins.kotlinx.serialization)
 }
 
@@ -26,13 +26,13 @@ plugins {
 kotlin {
 
 	sourceSets {
-		named("commonMain") {
+		val commonMain by getting {
 			dependencies {
 				implementation(project(":halcyon-core"))
 				implementation(libs.reactive.reaktive)
 			}
 		}
-		named("commonTest") {
+		val commonTest by getting {
 			dependencies {
 				implementation(libs.reactive.testing)
 			}

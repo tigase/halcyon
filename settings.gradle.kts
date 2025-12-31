@@ -38,6 +38,7 @@ dependencyResolutionManagement {
 	repositories {
 		google()
 		mavenCentral()
-		mavenLocal()
+		maven(settings.extra["tigaseMavenRepoSnapshot"] as String)
+		maven(settings.extra["tigaseMavenRepoRelease"] as String)
 	}
 }

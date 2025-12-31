@@ -1,9 +1,9 @@
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
 
 plugins {
-	id("kotlinMultiplatformConvention")
-	`maven-publish`
-	signing
+	id("kotlin-multiplatform-convention")
+	id("maven-publish-convention")
+
 	alias(libs.plugins.kotlinx.serialization)
 	alias(libs.plugins.jetbrains.dokka)
 }
@@ -70,9 +70,7 @@ kotlin {
 		val omemoMain by creating {
 			dependsOn(commonMain)
 		}
-		val omemoTest by creating {
-			dependsOn(commonTest)
-		}
+
 		val jvmMain by getting {
 			dependsOn(omemoMain)
 			dependencies {
@@ -80,26 +78,14 @@ kotlin {
 				implementation(libs.signal.protocol.java)
 			}
 		}
-		val jvmTest by getting {
-			dependsOn(omemoTest)
-		}
-		val jsMain by getting  {
-			dependsOn(commonMain)
-		}
-		val jsTest by getting {
-			dependsOn(commonTest)
-		}
+		val jvmTest by getting
+
+		val jsMain by getting
+
+		val jsTest by getting
+
 		val iosMain by getting {
 			dependsOn(omemoMain)
-			dependencies {
-				implementation(libs.kotlinx.datetime)
-			}
-		}
-		val iosArm64Main by getting {
-			dependsOn(iosMain)
-		}
-		val iosSimulatorArm64Main by getting {
-			dependsOn(iosMain)
 		}
 	}
 }

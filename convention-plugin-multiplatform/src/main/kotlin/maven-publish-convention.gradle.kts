@@ -15,25 +15,25 @@
  * along with this program. Look for COPYING file in the top folder.
  * If not, see http://www.gnu.org/licenses/.
  */
+
 plugins {
-	id("kotlin-multiplatform-convention")
-	id("maven-publish-convention")
+    `maven-publish`
 }
 
-kotlin {
+pluginManager.withPlugin("maven-publish") {
+    publishing {
+        repositories {
+            maven {
+                val releasesRepoUrl = project.properties["tigaseMavenRepoRelease"]
+                val snapshotsRepoUrl = project.properties["tigaseMavenRepoSnapshot"]
+                val repoUrl = if (version.toString().endsWith("-SNAPSHOT")) snapshotsRepoUrl else releasesRepoUrl
+                this.url = uri(repoUrl!!)
 
-	sourceSets {
-		val commonMain by getting {
-			dependencies {
-				implementation(project(":halcyon-core"))
-				implementation(libs.kotlinx.coroutines.core)
-			}
-		}
-
-		val commonTest by getting {
-			dependencies {
-				implementation(libs.kotlinx.coroutines.test)
-			}
-		}
-	}
+                credentials {
+                    username = project.properties["mavenUsername"] as String
+                    password = project.properties["mavenPassword"] as String
+                }
+            }
+        }
+    }
 }

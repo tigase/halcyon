@@ -16,17 +16,16 @@
  * If not, see http://www.gnu.org/licenses/.
  */
 plugins {
-	id("kotlinMultiplatformConvention")
-	`maven-publish`
-	signing
+	id("kotlin-multiplatform-convention")
+	id("maven-publish-convention")
+
 	alias(libs.plugins.kotlinx.serialization)
 }
 
 
 kotlin {
-
 	sourceSets {
-		named("jvmMain") {
+		val jvmMain by getting {
 			dependencies {
 				implementation(project(":halcyon-core"))
 				implementation(libs.bouncycastle)
