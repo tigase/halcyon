@@ -25,11 +25,15 @@ plugins {
 
 kotlin {
 
+
+
+
 	iosArm64 {
+
 		// TODO: Before compilation you need to download https://github.com/tigase/openssl-swiftpm/releases/download/1.1.171/OpenSSL.xcframework.zip to "frameworks" directory and unpack this ZIP file.
 		// TODO: Before compilation it is required to go to OpenSSL.xcframework to each subdirectory and Headers and move all files there to "openssl" subdirectory inside Headers
-		val openSSLFrameworkDir = "$rootDir/frameworks/OpenSSL.xcframework/ios-arm64_armv7";
-		val libsignalFrameworkDir = "$rootDir/frameworks/libsignal.xcframework/ios-arm64"
+		val openSSLFrameworkDir = "$rootDir/build/frameworks/OpenSSL.xcframework/ios-arm64_armv7";
+		val libsignalFrameworkDir = "$rootDir/build/frameworks/libsignal.xcframework/ios-arm64"
 		compilations.getByName("main") {
 			cinterops {
 				val OpenSSL by creating {
@@ -67,8 +71,8 @@ kotlin {
 	}
 	// Same target as above for iOS but for Arm64 simulator (simulator in AppleSilicon machine)
 	iosSimulatorArm64 {
-		val openSSLFrameworkDir = "$rootDir/frameworks/OpenSSL.xcframework/ios-arm64_i386_x86_64-simulator"
-		val libsignalFrameworkDir = "$rootDir/frameworks/libsignal.xcframework/ios-arm64_x86_64-simulator"
+		val openSSLFrameworkDir = "$rootDir/build/frameworks/OpenSSL.xcframework/ios-arm64_i386_x86_64-simulator"
+		val libsignalFrameworkDir = "$rootDir/build/frameworks/libsignal.xcframework/ios-arm64_x86_64-simulator"
 		compilations.getByName("main") {
 			cinterops {
 				val OpenSSL by creating {
@@ -104,6 +108,8 @@ kotlin {
 			}
 		}
 	}
+
+	applyDefaultHierarchyTemplate()
 
 	sourceSets {
 		val commonMain by getting {
@@ -155,62 +161,6 @@ kotlin {
 	}
 }
 
-//tasks["clean"].doLast {
-//	delete("$rootDir/frameworks/OpenSSL.xcframework")
-//}
-//
-
-tasks["cinteropLibsignalIosArm64"].dependsOn("prepareLibsignal")
-tasks["cinteropLibsignalIosSimulatorArm64"].dependsOn("prepareLibsignal")
-tasks.register("prepareLibsignal") {
-	description = "Download and unpack libsignal XCFramework."
-	val zipUrl = "https://github.com/tigase/libsignal/releases/download/1.0.0/libsignal.xcframework.zip"
-
-	fun download(url: String, path: String) = ant.invokeMethod("get", mapOf("src" to url, "dest" to File(path)))
-
-	doLast {
-		if (!File("$rootDir/frameworks/libsignal.xcframework.zip").exists()) {
-			logger.lifecycle("Downloading libsignal framework...")
-			download(
-				zipUrl, "$rootDir/frameworks/"
-			)
-		}
-		if (!File("$rootDir/frameworks/libsignal.xcframework").exists()) {
-			logger.lifecycle("Unzipping libsignal framework...")
-			copy {
-				from(zipTree("$rootDir/frameworks/libsignal.xcframework.zip"))
-				into("$rootDir/frameworks/")
-			}
-		}
-	}
-}
-
-tasks["cinteropOpenSSLIosArm64"].dependsOn("prepareOpenSSL")
-tasks["cinteropOpenSSLIosSimulatorArm64"].dependsOn("prepareOpenSSL")
-
-tasks.register("prepareOpenSSL") {
-	description = "Downloads and unpack OpenSSL XCFramework."
-	val zipUrl = "https://github.com/tigase/openssl-swiftpm/releases/download/1.1.171/OpenSSL.xcframework.zip"
-
-	fun download(url: String, path: String) = ant.invokeMethod("get", mapOf("src" to url, "dest" to File(path)))
-
-	doLast {
-		if (!File("$rootDir/frameworks/OpenSSL.xcframework.zip").exists()) {
-			logger.lifecycle("Downloading OpenSSL framework...")
-			download(
-				zipUrl, "$rootDir/frameworks/"
-			)
-		}
-		if (!File("$rootDir/frameworks/OpenSSL.xcframework").exists()) {
-			logger.lifecycle("Unzipping OpenSSL framework...")
-			copy {
-				from(zipTree("$rootDir/frameworks/OpenSSL.xcframework.zip"))
-				into("$rootDir/frameworks/")
-			}
-		}
-	}
-}
-
 tasks.withType<org.jetbrains.dokka.gradle.DokkaTask>().configureEach {
 		moduleName.set("Tigase Halcyon")
 		moduleVersion.set(project.version.toString())
@@ -219,3 +169,58 @@ tasks.withType<org.jetbrains.dokka.gradle.DokkaTask>().configureEach {
 		suppressInheritedMembers.set(false)
 		offlineMode.set(false)
 	}
+
+if (booleanProperty(Modules.ios.propertyName) || booleanProperty(Modules.iosSimulator.propertyName)) {
+	val deleteOpenSSL = tasks.register<DeleteFrameworkTask>("deleteOpenSSL") {
+		description = "Deleting OpenSSL XCFramework."
+		frameworkName = "OpenSSL"
+		frameworkZipPath = getFrameworkZipPath(frameworkName.get())
+		frameworkDirectoryPath = getFrameworkDirectoryPath(frameworkName.get())
+		outputs.cacheIf { false }
+	}
+
+	val deleteLibsignal = tasks.register<DeleteFrameworkTask>("deleteLibsignal") {
+		description = "Deleting libsignal XCFramework."
+		frameworkName = "libsignal"
+		frameworkZipPath = getFrameworkZipPath(frameworkName.get())
+		frameworkDirectoryPath = getFrameworkDirectoryPath(frameworkName.get())
+		outputs.cacheIf { false }
+	}
+
+	tasks.clean {
+		dependsOn(deleteOpenSSL)
+		dependsOn(deleteLibsignal)
+	}
+
+
+	val prepareLibsignalTask = tasks.register<DownloadFrameworkTask>("prepareLibsignal") {
+		description = "Download and unpack libsignal XCFramework."
+		frameworkName = "libsignal"
+		frameworkVersion = "1.0.0"
+		group = "Interop"
+		swiftpm.set(false)
+		outputs.cacheIf { false }
+		projectRootDir = project.rootDir.path
+	}
+
+	val prepareOpenSSLTask = tasks.register<DownloadFrameworkTask>("prepareOpenSSL") {
+		description = "Downloads and unpack OpenSSL XCFramework."
+		frameworkName = "OpenSSL"
+		frameworkVersion = "1.1.171-1"
+		group = "Interop"
+		swiftpm.set(true)
+		outputs.cacheIf { false }
+		projectRootDir = project.rootDir.path
+	}
+
+	if (booleanProperty(Modules.ios.propertyName)) {
+		tasks["cinteropLibsignalIosArm64"].dependsOn(prepareLibsignalTask)
+		tasks["cinteropOpenSSLIosArm64"].dependsOn(prepareOpenSSLTask)
+	}
+
+	if (booleanProperty(Modules.iosSimulator.propertyName)) {
+		tasks["cinteropLibsignalIosSimulatorArm64"].dependsOn(prepareLibsignalTask)
+		tasks["cinteropOpenSSLIosSimulatorArm64"].dependsOn(prepareOpenSSLTask)
+	}
+}
+
