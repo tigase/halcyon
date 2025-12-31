@@ -65,6 +65,7 @@ kotlin {
         all {
             languageSettings {
                 optIn("kotlin.RequiresOptIn")
+                optIn("kotlin.ExperimentalMultiplatform")
             }
         }
 
