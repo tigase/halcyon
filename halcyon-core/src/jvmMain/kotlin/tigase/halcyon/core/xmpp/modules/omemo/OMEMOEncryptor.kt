@@ -163,7 +163,6 @@ actual object OMEMOEncryptor {
     actual fun decrypt(store: SignalProtocolStore, session: OMEMOSession, stanza: Message, healSession: (SignalProtocolAddress) -> Unit): OMEMOMessage {
         var hasCipherText = false
         try {
-            val myAddr = SignalProtocolAddress(session.localJid.toString(), session.localRegistrationId)
             val encElement =
                 stanza.getChildrenNS("encrypted", OMEMOModule.XMLNS) ?: throw OMEMOException.NoEncryptedElement()
             val ciphertext = encElement.getFirstChild("payload")?.value?.fromBase64()?.also {

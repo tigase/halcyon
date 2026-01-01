@@ -15,6 +15,8 @@
  * along with this program. Look for COPYING file in the top folder.
  * If not, see http://www.gnu.org/licenses/.
  */
+@file:Suppress("UnusedVariable", "UNUSED_VARIABLE", "UnusedParameter", "UNUSED_PARAMETER", "unused")
+
 package tigase.halcyon.core.connector.socket
 
 import kotlinx.cinterop.*
@@ -38,7 +40,7 @@ class Socket {
 	}
 
 	private var sockfd: Int = -1
-	var state: State by Delegates.observable(State.disconnected) { kProperty: KProperty<*>, oldState: State, newState: State ->
+	var state: State by Delegates.observable(State.disconnected) { _: KProperty<*>, _: State, newState: State ->
 		stateCallback?.invoke(newState)
 	}
 	var readCallback: ((ByteArray) -> Unit)? = null

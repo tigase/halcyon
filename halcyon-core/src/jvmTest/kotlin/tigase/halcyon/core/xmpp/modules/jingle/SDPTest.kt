@@ -119,7 +119,7 @@ class SDPTest {
                 "a=ssrc:1499381982 mslabel:RTCmS\r\n" +
                 "a=ssrc:1499381982 label:video-22BCC273-B3C3-4437-8CFE-BE42978DB6EC\r\n"
 
-        val (sdp, id) = SDP.parse(source, { x -> Content.Creator.initiator}, Content.Creator.initiator) ?: throw AssertionError();
+        val (sdp, id) = SDP.parse(source, { Content.Creator.initiator}, Content.Creator.initiator) ?: throw AssertionError();
         assertEquals(listOf("0","1"), sdp.bundle)
         val output = sdp.toString(id, Content.Creator.initiator, SDPDirection.incoming)
         assertEquals(source, output)

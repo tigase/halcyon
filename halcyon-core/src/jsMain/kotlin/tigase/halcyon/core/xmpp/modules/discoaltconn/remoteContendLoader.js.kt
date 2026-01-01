@@ -4,7 +4,7 @@ import org.w3c.xhr.XMLHttpRequest
 
 actual fun loadRemoteContent(url: String, callback: (String) -> Unit) {
 	val xhr = XMLHttpRequest()
-	xhr.onreadystatechange = { event ->
+	xhr.onreadystatechange = {
 		if (xhr.readyState == XMLHttpRequest.DONE) {
 			callback(xhr.responseText)
 		}

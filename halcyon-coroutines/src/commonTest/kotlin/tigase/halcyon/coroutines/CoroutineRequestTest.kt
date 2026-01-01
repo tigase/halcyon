@@ -9,7 +9,6 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.fail
 
-@ExperimentalCoroutinesApi
 @DelicateCoroutinesApi
 class CoroutineRequestTest {
 

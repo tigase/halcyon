@@ -1,3 +1,7 @@
+@file:OptIn(ExperimentalForeignApi::class)
+@file:Suppress("UnusedVariable", "UNUSED_VARIABLE", "UnusedParameter", "UNUSED_PARAMETER", "unused")
+
+
 package tigase.halcyon.core.xmpp.modules.omemo
 
 import cnames.structs.signal_buffer
@@ -7,7 +11,6 @@ import platform.CoreCrypto.*
 import platform.posix.size_t
 import platform.posix.uint8_tVar
 
-@OptIn(ExperimentalForeignApi::class)
 val signalCryptoProvider: Lazy<signal_crypto_provider> = lazy {
     val provider = kotlinx.cinterop.nativeHeap.alloc<signal_crypto_provider>();
     provider.random_func = staticCFunction { data, len, ctx ->
@@ -46,7 +49,6 @@ val signalCryptoProvider: Lazy<signal_crypto_provider> = lazy {
     return@lazy provider;
 };
 
-@OptIn(ExperimentalForeignApi::class)
 fun random_func(data: CPointer<UByteVarOf<UByte>>?, len: ULong, ctx: COpaquePointer?): Int {
     if (CCRandomGenerateBytes(data, len) != kCCSuccess) {
         return SG_ERR_INVAL;
@@ -54,7 +56,6 @@ fun random_func(data: CPointer<UByteVarOf<UByte>>?, len: ULong, ctx: COpaquePoin
     return SG_SUCCESS;
 }
 
-@OptIn(ExperimentalForeignApi::class)
 fun hmac_sha256_init_func(
     hmacCtx: CPointer<COpaquePointerVar>?,
     key: CPointer<uint8_tVar>?,
@@ -71,7 +72,6 @@ fun hmac_sha256_init_func(
     return SG_SUCCESS;
 }
 
-@OptIn(ExperimentalForeignApi::class)
 fun hmac_sha256_update_func(hmacCtx: COpaquePointer?, key: CPointer<uint8_tVar>?, len: size_t, ctx: COpaquePointer?): Int {
     if (!(hmacCtx != null && key != null)) {
         return SG_ERR_INVAL;
@@ -81,7 +81,6 @@ fun hmac_sha256_update_func(hmacCtx: COpaquePointer?, key: CPointer<uint8_tVar>?
     return SG_SUCCESS;
 }
 
-@OptIn(ExperimentalForeignApi::class)
 fun hmac_sha256_final_func(
     hmacCtx: COpaquePointer?,
     output: CPointer<CPointerVar<signal_buffer>>?,
@@ -100,7 +99,6 @@ fun hmac_sha256_final_func(
     return SG_SUCCESS;
 }
 
-@OptIn(ExperimentalForeignApi::class)
 fun hmac_sha256_cleanup_func(hmacCtx: COpaquePointer?, ctx: COpaquePointer?): Int {
     if (hmacCtx == null) {
         return SG_ERR_INVAL;
@@ -111,7 +109,6 @@ fun hmac_sha256_cleanup_func(hmacCtx: COpaquePointer?, ctx: COpaquePointer?): In
     return SG_SUCCESS;
 }
 
-@OptIn(ExperimentalForeignApi::class)
 fun sha512_digest_init_func(
     digestCtx: CPointer<COpaquePointerVar>?,
     ctx: COpaquePointer?
@@ -126,7 +123,6 @@ fun sha512_digest_init_func(
     return SG_SUCCESS;
 }
 
-@OptIn(ExperimentalForeignApi::class)
 fun sha512_digest_update_func(digestCtx: COpaquePointer?, data: CPointer<uint8_tVar>?, len: size_t, ctx: COpaquePointer?): Int {
     if (!(digestCtx != null && data != null)) {
         return SG_ERR_INVAL;
@@ -136,7 +132,6 @@ fun sha512_digest_update_func(digestCtx: COpaquePointer?, data: CPointer<uint8_t
     return SG_SUCCESS;
 }
 
-@OptIn(ExperimentalForeignApi::class)
 fun sha512_digest_final_func(
     digestCtx: COpaquePointer?,
     output: CPointer<CPointerVar<signal_buffer>>?,
@@ -157,7 +152,6 @@ fun sha512_digest_final_func(
     return SG_SUCCESS;
 }
 
-@OptIn(ExperimentalForeignApi::class)
 fun sha512_digest_cleanup_func(digestCtx: COpaquePointer?, ctx: COpaquePointer?): Int {
     if (digestCtx == null) {
         return SG_ERR_INVAL;
@@ -168,7 +162,6 @@ fun sha512_digest_cleanup_func(digestCtx: COpaquePointer?, ctx: COpaquePointer?)
     return SG_SUCCESS;
 }
 
-@OptIn(ExperimentalForeignApi::class)
 fun encrypt_func(
     output: CPointer<CPointerVar<signal_buffer>>?,
     cipher: Int,
@@ -206,7 +199,6 @@ fun encrypt_func(
     }
 }
 
-@OptIn(ExperimentalForeignApi::class)
 fun decrypt_func(
     output: CPointer<CPointerVar<signal_buffer>>?,
     cipher: Int,

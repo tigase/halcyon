@@ -15,6 +15,8 @@
  * along with this program. Look for COPYING file in the top folder.
  * If not, see http://www.gnu.org/licenses/.
  */
+@file:Suppress("UnusedVariable", "UNUSED_VARIABLE", "UnusedParameter", "UNUSED_PARAMETER", "unused")
+
 package tigase.halcyon.core.request2
 
 import tigase.DummyHalcyon
@@ -76,11 +78,11 @@ class RequestsTest {
 				++mapCounter3
 				value + 1
 			}
-			.map { value ->
+			.map {
 				++mapCounter4
 				1
 			}
-			.response { result ->
+			.response {
 				++respCounter2
 //			rr2 = result
 			}

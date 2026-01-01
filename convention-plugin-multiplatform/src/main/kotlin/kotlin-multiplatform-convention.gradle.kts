@@ -16,6 +16,8 @@
  * If not, see http://www.gnu.org/licenses/.
  */
 
+@file:Suppress("OPT_IN_USAGE")
+
 import java.time.Duration
 
 val libs = project.extensions.getByType<VersionCatalogsExtension>().named("libs")
@@ -31,6 +33,8 @@ kotlin {
 
     compilerOptions {
         freeCompilerArgs.add("-Xexpect-actual-classes")
+//        freeCompilerArgs.add("-Xsuppress-warning=UNUSED_VARIABLE") // since kotlin 2.1
+//        freeCompilerArgs.add("-Xwarning-level=UNUSED_VARIABLE:disabled") // since kotlin 2.2
     }
 
     // default targets
@@ -58,6 +62,13 @@ kotlin {
             languageSettings {
                 optIn("kotlin.RequiresOptIn")
                 optIn("kotlin.ExperimentalMultiplatform")
+            }
+
+            if (name.startsWith("ios")) {
+                languageSettings {
+                    optIn("kotlinx.cinterop.ExperimentalForeignApi")
+                    optIn("kotlin.ExperimentalStdlibApi")
+                }
             }
         }
 

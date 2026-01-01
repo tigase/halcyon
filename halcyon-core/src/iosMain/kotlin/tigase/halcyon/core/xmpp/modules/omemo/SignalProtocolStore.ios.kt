@@ -1,3 +1,6 @@
+@file:OptIn(ExperimentalForeignApi::class)
+@file:Suppress("UnusedVariable", "UNUSED_VARIABLE", "UnusedParameter", "UNUSED_PARAMETER", "unused")
+
 package tigase.halcyon.core.xmpp.modules.omemo
 
 import cnames.structs.signal_buffer
@@ -10,7 +13,6 @@ import platform.posix.uint32_t
 import platform.posix.uint8_t
 import platform.posix.uint8_tVar
 
-@OptIn(ExperimentalForeignApi::class)
 class SignalContext(val context: CPointer<cnames.structs.signal_context>) {
 
     companion object {
@@ -43,7 +45,7 @@ class SignalContext(val context: CPointer<cnames.structs.signal_context>) {
                     it!!.asStableRef<NSRecursiveLock>().get().unlock();
                     //lock.unlock();
                 })
-                signal_context_set_log_function(ctx.value, staticCFunction { level, message, size, userData ->
+                signal_context_set_log_function(ctx.value, staticCFunction { level, message, _, _ ->
                     print("SignalProtocol: " + level + " : " + message!!.toKStringFromUtf8())
                 })
                 return@memScoped ctx.value!!;
@@ -56,7 +58,6 @@ class SignalContext(val context: CPointer<cnames.structs.signal_context>) {
         signal_context_destroy(context);
     }
 
-    @OptIn(ExperimentalForeignApi::class)
     fun initializeContext(protocolStore: SignalProtocolStore): CPointer<cnames.structs.signal_protocol_store_context> {
         // FIXME: we need to call that in a proper location (keep it alive for OMEMOStore lifetime!!)
         val store = StableRef.create(protocolStore).asCPointer();
@@ -113,7 +114,6 @@ class SignalContext(val context: CPointer<cnames.structs.signal_context>) {
 
 }
 
-@OptIn(ExperimentalForeignApi::class)
 actual interface SignalProtocolStore : IdentityKeyStore, PreKeyStore, SessionStore, SignedPreKeyStore {
 
     val signalContext: SignalContext;
@@ -121,7 +121,6 @@ actual interface SignalProtocolStore : IdentityKeyStore, PreKeyStore, SessionSto
 
 }
 
-@OptIn(ExperimentalForeignApi::class)
 private fun load_session_func(
     record: CPointer<CPointerVar<signal_buffer>>?,
     userRecord: CPointer<CPointerVar<signal_buffer>>?,
@@ -139,7 +138,6 @@ private fun load_session_func(
     }
 }
 
-@OptIn(ExperimentalForeignApi::class)
 private fun get_sub_device_sessions_func(
     sessions: CPointer<CPointerVar<signal_int_list>>?,
     name: CPointer<ByteVar>?,
@@ -156,7 +154,6 @@ private fun get_sub_device_sessions_func(
     return devices.size;
 }
 
-@OptIn(ExperimentalForeignApi::class)
 private fun store_session_func(
     address: CPointer<signal_protocol_address>?,
     record: CPointer<uint8_tVar>?,
@@ -171,7 +168,6 @@ private fun store_session_func(
     return 1;
 }
 
-@OptIn(ExperimentalForeignApi::class)
 private fun contains_session_func(
     address: CPointer<signal_protocol_address>?,
     userData: COpaquePointer?
@@ -181,7 +177,6 @@ private fun contains_session_func(
     return if (result) 1 else 0;
 }
 
-@OptIn(ExperimentalForeignApi::class)
 private fun delete_session_func(
     address: CPointer<signal_protocol_address>?,
     userData: COpaquePointer?
@@ -191,7 +186,6 @@ private fun delete_session_func(
     return 1;
 }
 
-@OptIn(ExperimentalForeignApi::class)
 private fun delete_all_sessions_func(
     name: CPointer<ByteVar>?,
     nameLen: size_t,
@@ -202,21 +196,18 @@ private fun delete_all_sessions_func(
     return 1;
 }
 
-@OptIn(ExperimentalForeignApi::class)
 private fun destroy_func(
     userData: COpaquePointer?
 ) {
     // nothing to do..
 }
 
-@OptIn(ExperimentalForeignApi::class)
 private fun load_pre_key_func(record:  CPointer<CPointerVar<signal_buffer>>?, preKeyId: UInt, userData: COpaquePointer?): Int {
     val preKey = userData!!.asStableRef<SignalProtocolStore>().get().loadPreKey(preKeyId.toInt());
     record!!.pointed.value = preKey.serialize().toSignalBuffer();
     return SG_SUCCESS;
 }
 
-@OptIn(ExperimentalForeignApi::class)
 private fun store_pre_key_func(
     preKeyId: UInt, record: CPointer<uint8_tVar>?,
     recordLen: size_t, userData: COpaquePointer?
@@ -226,7 +217,6 @@ private fun store_pre_key_func(
     return 1;
 }
 
-@OptIn(ExperimentalForeignApi::class)
 private fun contains_pre_key_func(
     preKeyId: UInt, userData: COpaquePointer?
 ): Int {
@@ -234,20 +224,17 @@ private fun contains_pre_key_func(
     return if (result) 1 else 0;
 }
 
-@OptIn(ExperimentalForeignApi::class)
 private fun remove_pre_key_func(preKeyId: UInt, userData: COpaquePointer?): Int {
     val result = userData!!.asStableRef<SignalProtocolStore>().get().removePreKey(preKeyId.toInt());
     return 1;
 }
 
-@OptIn(ExperimentalForeignApi::class)
 private fun load_signed_pre_key_func(record:  CPointer<CPointerVar<signal_buffer>>?, signedPreKeyId: UInt, userData: COpaquePointer?): Int {
     val preKey = userData!!.asStableRef<SignalProtocolStore>().get().loadSignedPreKey(signedPreKeyId.toInt());
     record!!.pointed.value = preKey.data.toSignalBuffer() //signal_buffer_create(preKey.data.toUByteArray().toCValues(), preKey.data.size.toULong());
     return SG_SUCCESS;
 }
 
-@OptIn(ExperimentalForeignApi::class)
 private fun store_signed_pre_key_func(
     signedPreKeyId: UInt, record: CPointer<uint8_tVar>?,
     recordLen: size_t, userData: COpaquePointer?
@@ -257,7 +244,6 @@ private fun store_signed_pre_key_func(
     return 1;
 }
 
-@OptIn(ExperimentalForeignApi::class)
 private fun contains_signed_pre_key_func(
     signedPreKeyId: UInt, userData: COpaquePointer?
 ): Int {
@@ -265,13 +251,11 @@ private fun contains_signed_pre_key_func(
     return if (result) 1 else 0;
 }
 
-@OptIn(ExperimentalForeignApi::class)
 private fun remove_signed_pre_key_func(signedPreKeyId: UInt, userData: COpaquePointer?): Int {
     val result = userData!!.asStableRef<SignalProtocolStore>().get().removePreKey(signedPreKeyId.toInt());
     return 1;
 }
 
-@OptIn(ExperimentalForeignApi::class)
 private fun get_identity_key_pair(publicData: CPointer<CPointerVar<signal_buffer>>?, privateData: CPointer<CPointerVar<signal_buffer>>?, userData: COpaquePointer?): Int {
     val identityKeyPair = userData!!.asStableRef<SignalProtocolStore>().get().getIdentityKeyPair();
     publicData!!.pointed.value = identityKeyPair.getPublicKey().serialize().toSignalBuffer();
@@ -280,13 +264,11 @@ private fun get_identity_key_pair(publicData: CPointer<CPointerVar<signal_buffer
     return SG_SUCCESS;
 }
 
-@OptIn(ExperimentalForeignApi::class)
 private fun get_local_registration_id(userData: COpaquePointer?, registrationId: CPointer<UIntVarOf<uint32_t>>?): Int {
     registrationId!!.pointed.value = userData!!.asStableRef<SignalProtocolStore>().get().getLocalRegistrationId().toUInt();
     return 1;
 }
 
-@OptIn(ExperimentalForeignApi::class)
 private fun save_identity(address: CPointer<signal_protocol_address>?, keyData: CPointer<UByteVarOf<uint8_t>>?, keyLen: ULong, userData: COpaquePointer?): Int {
     val addr = SignalProtocolAddress.fromPointer(address!!);
     val identityKey = IdentityKey(ECPublicKeyImpl(keyData!!.readBytes(keyLen.toInt())));
@@ -294,7 +276,6 @@ private fun save_identity(address: CPointer<signal_protocol_address>?, keyData: 
     return 1;
 }
 
-@OptIn(ExperimentalForeignApi::class)
 private fun is_trusted_identity(address: CPointer<signal_protocol_address>?,  keyData: CPointer<UByteVarOf<uint8_t>>?, keyLen: ULong, userData: COpaquePointer?): Int {
     val addr = SignalProtocolAddress.fromPointer(address!!);
     val identityKey = IdentityKey(ECPublicKeyImpl(keyData!!.readBytes(keyLen.toInt())));
@@ -302,12 +283,10 @@ private fun is_trusted_identity(address: CPointer<signal_protocol_address>?,  ke
     return if (result) 1 else 0;
 }
 
-@OptIn(ExperimentalForeignApi::class)
 fun ByteArray.toSignalBuffer(): CPointer<signal_buffer>? {
     return signal_buffer_create(this.toUByteArray().toCValues(), this.size.toULong());
 }
 
-@OptIn(ExperimentalForeignApi::class)
 fun CPointer<signal_buffer>.toByteArray(): ByteArray {
     val len = signal_buffer_len(this).toInt();
     if (len < 0) {

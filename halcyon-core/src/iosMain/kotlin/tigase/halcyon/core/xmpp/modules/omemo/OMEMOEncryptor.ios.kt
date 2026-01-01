@@ -1,3 +1,5 @@
+@file:Suppress("UnusedVariable", "UNUSED_VARIABLE", "UnusedParameter", "UNUSED_PARAMETER", "unused")
+
 package tigase.halcyon.core.xmpp.modules.omemo
 
 import OpenSSL.*
@@ -96,7 +98,7 @@ actual object OMEMOEncryptor {
                 })
                     ?: throw OMEMOException.DeviceKeyNotFoundException();
 
-            ciphertext?.let { ciphertext ->
+            ciphertext?.let {
                 val key = decryptedKey.key;
                 if (key.size < 32) {
                     throw OMEMOException.InvalidKeyLengthException();
@@ -107,8 +109,8 @@ actual object OMEMOEncryptor {
                 val tag = key.copyOfRange(16, key.size)
                 val newKey = key.copyOfRange(0, 16);
 
-                val result = engine.decrypt(iv, newKey, ciphertext, tag);
-                
+                val result = engine.decrypt(iv, newKey, it, tag);
+
                 val decryptedBody =(result?.decodeToString()) ?: "Cannot decrypt message.";
                 stanza.replaceBody(decryptedBody)
             }
@@ -144,7 +146,6 @@ actual object OMEMOEncryptor {
         }
     }
     
-    @OptIn(ExperimentalForeignApi::class)
     fun generateIV(): ByteArray {
         memScoped {
             val data = allocArray<UByteVar>(12);
@@ -153,7 +154,6 @@ actual object OMEMOEncryptor {
         }
     }
     
-    @OptIn(ExperimentalForeignApi::class)
     fun generateKey(keySize: Int = 128): ByteArray {
         val keySizeInBytes = keySize / 8;
         memScoped {
@@ -219,7 +219,6 @@ actual object OMEMOEncryptor {
 
 }
 
-@OptIn(ExperimentalForeignApi::class)
 class AesGcmEngine {
 
     private val log = LoggerFactory.logger("tigase.halcyon.core.xmpp.modules.omemo.OMEMOEncryptor");

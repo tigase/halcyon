@@ -15,6 +15,8 @@
  * along with this program. Look for COPYING file in the top folder.
  * If not, see http://www.gnu.org/licenses/.
  */
+@file:Suppress("UnusedVariable", "UNUSED_VARIABLE", "UnusedParameter", "UNUSED_PARAMETER", "unused")
+
 package tigase.halcyon.core.xmpp.modules.mix
 
 import kotlinx.datetime.Clock

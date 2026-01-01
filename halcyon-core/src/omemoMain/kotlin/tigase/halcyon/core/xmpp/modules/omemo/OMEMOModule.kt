@@ -1,3 +1,5 @@
+@file:Suppress("UnusedVariable", "UNUSED_VARIABLE", "UnusedParameter", "UNUSED_PARAMETER", "unused")
+
 package tigase.halcyon.core.xmpp.modules.omemo
 
 import tigase.halcyon.core.ClearedEvent
@@ -624,7 +626,7 @@ class OMEMOModule(
             to = address.getName().toBareJID()
             type = MessageType.Chat
         }
-        encrypt(element, listOf(address), null) { encrypted ->
+        encrypt(element, listOf(address), null) {
             context.request.message(element).send()
         }
     }
@@ -859,12 +861,12 @@ class OMEMOModule(
     }
 
     fun encrypt(element: Element, addresses: List<SignalProtocolAddress>, body: String?, callback: (Element) -> Unit) {
-        ensureSessions(addresses) { addresses ->
+        ensureSessions(addresses) {
             val localJid = context.boundJID!!.bareJID;
             val session = OMEMOSession(
                 protocolStore.getLocalRegistrationId(),
                 localJid,
-                addresses.distinct().associateBy({ k -> k }, { k -> SessionCipher(protocolStore, k) })
+                it.distinct().associateBy({ k -> k }, { k -> SessionCipher(protocolStore, k) })
                     .toMutableMap()
             )
 

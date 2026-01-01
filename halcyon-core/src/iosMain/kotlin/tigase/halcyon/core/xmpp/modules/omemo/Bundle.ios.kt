@@ -27,7 +27,6 @@ actual interface CiphertextMessage {
     
 }
 
-@OptIn(ExperimentalForeignApi::class)
 actual class IdentityKey actual constructor(val publicKey: ECPublicKey) {
 
     actual constructor(byteArray: ByteArray, offset: Int) : this(ECPublicKeyImpl(publicKey = byteArray)) {
@@ -48,7 +47,6 @@ actual class IdentityKey actual constructor(val publicKey: ECPublicKey) {
 class ECPrivateKey(val privateKey: ByteArray) {
 
     companion object {
-        @OptIn(ExperimentalForeignApi::class)
         fun fromPointer(pointer: CPointer<cnames.structs.ec_private_key>): ECPrivateKey {
             return memScoped {
                 val privateKeyBuf = allocPointerTo<cnames.structs.signal_buffer>();
@@ -62,7 +60,6 @@ class ECPrivateKey(val privateKey: ByteArray) {
 
 }
 
-@OptIn(ExperimentalForeignApi::class)
 actual class IdentityKeyPair actual constructor(val data: ByteArray) {
 
     private class Content(val publicKey: IdentityKey, val privateKey: ECPrivateKey) {
@@ -128,7 +125,6 @@ actual class SignedPreKeyRecord actual constructor(val data: ByteArray) {
 
     actual fun serialize(): ByteArray = data;
 
-    @OptIn(ExperimentalForeignApi::class)
     fun <T>pointer(fn: (CPointer<cnames.structs.session_signed_pre_key>) -> T): T {
         return memScoped {
             val pointer = allocPointerTo<cnames.structs.session_signed_pre_key>();
@@ -145,7 +141,6 @@ actual class SignedPreKeyRecord actual constructor(val data: ByteArray) {
 
 actual class ECKeyPair(val privateKey: ByteArray, val publicKey: ByteArray) {
 
-    @OptIn(ExperimentalForeignApi::class)
     companion object {
         fun fromPointer(keyPairPointer: CPointer<cnames.structs.ec_key_pair>?): ECKeyPair {
             return memScoped {
@@ -206,7 +201,6 @@ actual class PreKeyRecord actual constructor(val data: ByteArray) {
 actual interface ECPublicKey {
 
     companion object {
-        @OptIn(ExperimentalForeignApi::class)
         fun fromPointer(pointer: CPointer<cnames.structs.ec_public_key>): ECPublicKey {
             return memScoped {
                 val publicKeyBuf = allocPointerTo<cnames.structs.signal_buffer>();
@@ -225,7 +219,6 @@ actual interface ECPublicKey {
     fun pointer(fn: (CPointer<ec_public_key>) -> Unit)
 }
 
-@OptIn(ExperimentalForeignApi::class)
 class ECPublicKeyImpl(val publicKey: ByteArray): ECPublicKey {
     
     override fun serialize(): ByteArray = publicKey;
@@ -246,7 +239,6 @@ class ECPublicKeyImpl(val publicKey: ByteArray): ECPublicKey {
 
 }
 
-@OptIn(ExperimentalForeignApi::class)
 actual class PreKeyBundle(val registrationId: Int, val deviceId: Int, val preKey: PreKey, val bundle: Bundle) {
 
     fun pointer(fn: (CPointer<cnames.structs.session_pre_key_bundle>) -> Unit) {
@@ -285,7 +277,6 @@ actual class PreKeyBundle(val registrationId: Int, val deviceId: Int, val preKey
 
 }
 
-@OptIn(ExperimentalForeignApi::class)
 actual class SessionBuilder actual constructor(
     val store: SignalProtocolStore,
     val address: SignalProtocolAddress
@@ -357,7 +348,6 @@ class SignalException(var error: SignalError, message: String?): Exception(messa
     
 }
 
-@OptIn(ExperimentalForeignApi::class)
 actual class SessionCipher actual constructor(
     val store: SignalProtocolStore,
     val address: SignalProtocolAddress
@@ -447,7 +437,6 @@ actual class SessionCipher actual constructor(
     }
 }
 
-@OptIn(ExperimentalForeignApi::class)
 actual class SignalProtocolAddress actual constructor(val name: String, val deviceId: Int) {
 
     companion object {
@@ -487,7 +476,6 @@ actual class SignalProtocolAddress actual constructor(val name: String, val devi
     }
 }
 
-@OptIn(ExperimentalForeignApi::class)
 object OMEMOFileEncryptor {
 
     private val engine = AesGcmEngine();

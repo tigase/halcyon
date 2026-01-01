@@ -1,3 +1,5 @@
+@file:Suppress("UnusedVariable", "UNUSED_VARIABLE", "UnusedParameter", "UNUSED_PARAMETER", "unused")
+
 package tigase.halcyon.core.builder
 
 import tigase.halcyon.core.modules.HalcyonModule
@@ -43,7 +45,7 @@ class ModulesConfigBuilder {
             }
         }
 
-        modulesToConfigure.forEach { (provider, configuration) ->
+        modulesToConfigure.forEach { (provider, _) ->
             val module = modulesManager.getModuleOrNull<HalcyonModule>(provider.TYPE)
             provider.doAfterRegistration(module!!, modulesManager)
         }

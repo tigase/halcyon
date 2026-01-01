@@ -35,5 +35,11 @@ kotlin {
 				implementation(libs.kotlinx.coroutines.test)
 			}
 		}
+
+		all {
+			languageSettings {
+                optIn("kotlinx.coroutines.ExperimentalCoroutinesApi")
+			}
+		}
 	}
 }

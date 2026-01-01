@@ -1,3 +1,5 @@
+@file:Suppress("UnusedVariable", "UNUSED_VARIABLE", "UnusedParameter", "UNUSED_PARAMETER", "unused")
+
 package tigase.halcyon.core.modules.filter
 
 import tigase.halcyon.core.modules.StanzaFilter
@@ -39,7 +41,7 @@ class StanzaFilterProcessorTest {
         proc.addToChain(Filter3)
 
         proc.doFilters(element("test") {}) {
-            it.onSuccess { element ->
+            it.onSuccess {
                 fail()
             }
             it.onFailure {
@@ -56,7 +58,7 @@ class StanzaFilterProcessorTest {
         proc.addToChain(Filter3)
 
         proc.doFilters(element("test") {}) {
-            it.onSuccess { element ->
+            it.onSuccess {
                 throw RuntimeException("A")
             }
             it.onFailure {

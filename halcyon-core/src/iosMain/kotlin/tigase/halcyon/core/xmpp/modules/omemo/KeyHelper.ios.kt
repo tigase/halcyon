@@ -7,7 +7,6 @@ import platform.Foundation.timeIntervalSince1970
 
 actual class KeyHelper() {
     
-    @OptIn(ExperimentalForeignApi::class)
     actual companion object {
         private val signalContext: SignalContext = SignalContext.create();
 

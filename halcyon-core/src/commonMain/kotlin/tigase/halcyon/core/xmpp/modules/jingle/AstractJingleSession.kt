@@ -15,6 +15,8 @@
  * along with this program. Look for COPYING file in the top folder.
  * If not, see http://www.gnu.org/licenses/.
  */
+@file:Suppress("UnusedVariable", "UNUSED_VARIABLE", "UnusedParameter", "UNUSED_PARAMETER", "unused")
+
 package tigase.halcyon.core.xmpp.modules.jingle
 
 import tigase.halcyon.core.AsyncResult
@@ -157,7 +159,7 @@ abstract class AbstractJingleSession(
 	}
 
 	fun startedRinging() {
-		jingleModule.sendMessageInitiation(MessageInitiationAction.Ringing(sid), jid.bareJID).response { r ->
+		jingleModule.sendMessageInitiation(MessageInitiationAction.Ringing(sid), jid.bareJID).response {
 			// nothing to do, but catching all errors...
 		}.send()
 	}
