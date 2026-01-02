@@ -130,7 +130,7 @@ class Socket {
 										sockfd = -1
 										break
 									} else if (evList[i].filter == EVFILT_READ.toShort()) {
-										var read: ssize_t = 0
+										var read: ssize_t
 										memScoped {
 											do {
 												val data = allocArray<ByteVar>(2048)

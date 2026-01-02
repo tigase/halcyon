@@ -138,7 +138,6 @@ class Request<V, STT : Stanza<*>>(
 
     @Suppress("UNCHECKED_CAST")
     internal fun markAsSent() {
-        var tmp: Any? = Unit
         requestStack().forEach { req ->
             log.finest { "Marking as sent ${this@Request}" }
             req.isSent = true

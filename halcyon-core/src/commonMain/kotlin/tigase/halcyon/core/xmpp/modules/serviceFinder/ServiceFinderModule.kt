@@ -65,7 +65,7 @@ class ServiceFinderModule(
 		val domain = context.boundJID?.bareJID?.domain!!
 		val toCheck = mutableSetOf<JID>()
 		val resultList = mutableListOf<DiscoveryModule.Info>()
-		var counter=0
+		var counter: Int
 
 		discoveryModule.items(domain.toJID()).response {
 			it.onSuccess { itemsResp ->

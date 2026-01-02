@@ -63,7 +63,7 @@ object TopoSort {
 	}
 }
 
-inline fun Iterable<Item<out HalcyonModule, out Any>>.extendForDependencies(): List<Item<out HalcyonModule, out Any>> {
+fun Iterable<Item<out HalcyonModule, out Any>>.extendForDependencies(): List<Item<out HalcyonModule, out Any>> {
 
 	val result = mutableSetOf<Item<out HalcyonModule, out Any>>()
 	result.addAll(this)

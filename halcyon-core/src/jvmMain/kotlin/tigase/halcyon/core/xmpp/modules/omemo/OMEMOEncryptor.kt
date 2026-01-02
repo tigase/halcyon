@@ -178,18 +178,18 @@ actual object OMEMOEncryptor {
             val decryptedKey = retrieveKey(findKeyElements(encElement), senderAddr, store, session, healSession)
                 ?: throw OMEMOException.DeviceKeyNotFoundException();
 
-            ciphertext?.let { ciphertext ->
+            ciphertext?.let {
                 val key = decryptedKey.key;
                 if (key.size < 32) {
                     throw OMEMOException.InvalidKeyLengthException();
                 }
 
                 val authtaglength = key.size - 16
-                val newCipherText = ByteArray(key.size - 16 + ciphertext.size)
+                val newCipherText = ByteArray(key.size - 16 + it.size)
                 val newKey = ByteArray(16)
 
-                System.arraycopy(ciphertext, 0, newCipherText, 0, ciphertext.size)
-                System.arraycopy(key, 16, newCipherText, ciphertext.size, authtaglength)
+                System.arraycopy(it, 0, newCipherText, 0, it.size)
+                System.arraycopy(key, 16, newCipherText, it.size, authtaglength)
                 System.arraycopy(key, 0, newKey, 0, newKey.size)
 
                 val keySpec = SecretKeySpec(newKey, ALGORITHM_NAME)
