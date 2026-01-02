@@ -19,7 +19,6 @@ package tigase.halcyon.core.xmpp.modules.muc
 
 enum class Affiliation(
 	val xmppValue: String,
-	@Deprecated("Use ordinal instead", ReplaceWith("ordinal")) val weight: Int,
 	val isEnterOpenRoom: Boolean,
 	val isRegisterWithOpenRoom: Boolean,
 	val isRetrieveMemberList: Boolean,
@@ -34,17 +33,16 @@ enum class Affiliation(
 	val isViewOccupantsJid: Boolean,
 ) {
 
-	Outcast("outcast", 0, false, false, false, false, false, false, false, false, false, false, false, false),
-	None("none", 10, true, true, false, false, false, false, false, false, false, false, false, false),
-	Member("member", 20, true, true, true, true, false, false, false, false, false, false, false, false),
-	Admin("admin", 30, true, true, true, true, true, true, true, false, false, false, false, true),
-	Owner("owner", 40, true, true, true, true, true, true, true, true, true, true, true, true);
+	Outcast("outcast", false, false, false, false, false, false, false, false, false, false, false, false),
+	None("none", true, true, false, false, false, false, false, false, false, false, false, false),
+	Member("member", true, true, true, true, false, false, false, false, false, false, false, false),
+	Admin("admin", true, true, true, true, true, true, true, false, false, false, false, true),
+	Owner("owner", true, true, true, true, true, true, true, true, true, true, true, true);
 
 }
 
 enum class Role(
 	val xmppValue: String,
-	@Deprecated("Use ordinal instead", ReplaceWith("ordinal")) val weight: Int,
 	val isPresentInRoom: Boolean,
 	val isReceiveMessages: Boolean,
 	val isReceiveOccupantPresence: Boolean,
@@ -60,9 +58,9 @@ enum class Role(
 	val isRevokeVoice: Boolean,
 ) {
 
-	None("none", 0, false, false, false, false, false, false, false, false, false, false, false, false, false),
-	Visitor("visitor", 1, true, true, true, true, true, true, true, true, false, false, false, false, false),
-	Participant("participant", 2, true, true, true, true, true, true, true, true, true, false, false, false, false),
-	Moderator("moderator", 3, true, true, true, true, true, true, true, true, true, true, true, true, true);
+	None("none", false, false, false, false, false, false, false, false, false, false, false, false, false),
+	Visitor("visitor", true, true, true, true, true, true, true, true, false, false, false, false, false),
+	Participant("participant", true, true, true, true, true, true, true, true, true, false, false, false, false),
+	Moderator("moderator", true, true, true, true, true, true, true, true, true, true, true, true, true);
 
 }

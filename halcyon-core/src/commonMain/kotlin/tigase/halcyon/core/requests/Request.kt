@@ -37,7 +37,6 @@ class Request<V, STT : Stanza<*>>(
     private val transform: (value: Any) -> V,
     private val errorHandler: (STT) -> XMPPError,
     private val parentRequest: Request<*, STT>? = null,
-    @Deprecated("Will be removed") private val callHandlerOnSent: Boolean,
     private val onSendHandler: SendHandler<V, STT>?,
 ) {
 
@@ -143,13 +142,6 @@ class Request<V, STT : Stanza<*>>(
         requestStack().forEach { req ->
             log.finest { "Marking as sent ${this@Request}" }
             req.isSent = true
-
-            if (callHandlerOnSent) {
-                tmp = req.transform.invoke(tmp!!)
-                val res = Result.success(tmp!!)
-                req.calculatedResult = res as (Result<Nothing>)
-                req.callResponseHandler(res)
-            }
 
             req.onSendHandler?.invoke(req)
         }

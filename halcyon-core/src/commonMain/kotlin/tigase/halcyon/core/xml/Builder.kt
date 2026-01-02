@@ -80,16 +80,6 @@ open class ElementNode(internal val element: Element) {
 		}
 		get() = element.value
 
-	/**
-	 * To tkjfjkshdfjk
-	 */
-	@Deprecated("WIll be removed")
-	operator fun String.invoke(value: String): Element {
-		val n = element(this)
-		n.value = value
-		return n
-	}
-
 	operator fun String.invoke(
 		xmlns: String? = null,
 		init: (ElementNode.() -> Unit)? = null,

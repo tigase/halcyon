@@ -292,31 +292,7 @@ class DiscoveryModule(override val context: Context) : XmppModule, DiscoveryModu
 		return Info(jid, node, identities, features, forms)
 	}
 
-	/**
-	 * Helps find specific component on the server.
-	 * @param predicate function to check properties of node. Return `true` if `findComponent` should stop further search.
-	 */
-	@Deprecated("Will be removed. Please use ServiceFinderModuleConfig instead .", level = DeprecationLevel.ERROR)
-	fun findComponent(predicate: (Info) -> Boolean, consumer: (Info) -> Unit) {
-		val domain = context.boundJID?.bareJID?.domain!!
-		var found = false
-		items(domain.toJID()).response {
-			if (it.isSuccess) {
-				val items = it.getOrThrow()
-				items.items.forEach {
-					info(it.jid).response {
-						if (it.isSuccess) {
-							val inf = it.getOrThrow()
-							if (!found && predicate.invoke(inf)) {
-								found = true
-								consumer.invoke(inf)
-							}
-						}
-					}.send()
-				}
-			}
-		}.send()
-	}
+
 
 	/**
 	 * Prepares request for disco#items.

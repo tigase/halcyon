@@ -119,11 +119,6 @@ class ConfigurationBuilder {
 		this.registration = n
 	}
 
-	@Deprecated("Will be removed soon.")
-	fun modules(init: ModulesConfigBuilder.() -> Unit) {
-		this.modulesConfigBuilder.init()
-	}
-
 	/**
 	 * Installs a module with an optional configuration function.
 	 * @param provider The module provider to install.

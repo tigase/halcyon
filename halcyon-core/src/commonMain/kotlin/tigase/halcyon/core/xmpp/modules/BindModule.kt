@@ -95,10 +95,6 @@ class BindModule(override val context: AbstractHalcyon) : XmppModule, InlineProt
 	override val criteria: Criteria? = null
 	override val features = arrayOf(XMLNS)
 
-	@Deprecated("Moved to Context")
-	var boundJID: FullJID? by context::boundJID
-		internal set
-
 	/**
 	 * State of bind process.
 	 */

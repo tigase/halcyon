@@ -135,15 +135,6 @@ class ChatStateModule(override val context: Context) : XmppModule, ChatStateModu
 	}
 
 	/**
-	 * Sends Chat State request.
-	 *
-	 * @param jid recipient of chat state
-	 * @param state Chat State to publish.
-	 */
-	@Deprecated("Will be removed soon.", replaceWith = ReplaceWith("sendChatState(jid, state).send()"))
-	fun publishChatState(jid: BareJID, state: ChatState) = sendChatState(jid, state).send()
-
-	/**
 	 * Prepares Chat State request.
 	 *
 	 * @param jid recipient of chat state

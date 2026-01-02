@@ -108,7 +108,6 @@ class RequestBuilder<V, STT : Stanza<*>>(
     private val halcyon: Context,
     internal val element: Element,
     private val writeDirectly: Boolean = false,
-    @Deprecated("Use onSend() instead.") private val callHandlerOnSent: Boolean = false,
     private val transform: (value: Any?) -> V,
 ) {
 
@@ -141,7 +140,6 @@ class RequestBuilder<V, STT : Stanza<*>>(
             transform,
             errorTransformer,
             parentBuilder?.build(),
-            callHandlerOnSent,
             onSendHandler
         ).apply {
             this.stanzaHandler = responseStanzaHandler
@@ -153,7 +151,7 @@ class RequestBuilder<V, STT : Stanza<*>>(
     fun <R> map(transform: (value: V) -> R): RequestBuilder<R, STT> {
         check(!writeDirectly) { "Mapping cannot be added to directly writable request." }
         val res =
-            RequestBuilder<R, STT>(halcyon, element, writeDirectly, callHandlerOnSent, transform as (((Any?) -> R)))
+            RequestBuilder<R, STT>(halcyon, element, writeDirectly, transform as (((Any?) -> R)))
         res.errorTransformer = errorTransformer
         res.timeoutDelay = timeoutDelay
         res.resultHandler = null
@@ -243,7 +241,6 @@ class RequestConsumerBuilder<CSR, V, STT : Stanza<*>>(
     private val halcyon: Context,
     private val element: Element,
     private val writeDirectly: Boolean = false,
-    @Deprecated("Use onSend() instead.") private val callHandlerOnSent: Boolean = false,
     private val transform: (value: Any) -> V,
 ) {
 
@@ -278,7 +275,6 @@ class RequestConsumerBuilder<CSR, V, STT : Stanza<*>>(
             transform,
             errorTransformer,
             parentBuilder?.build(),
-            callHandlerOnSent,
             onSendHandler
         ).apply {
             this.stanzaHandler = responseStanzaHandler
@@ -289,7 +285,7 @@ class RequestConsumerBuilder<CSR, V, STT : Stanza<*>>(
     @Suppress("UNCHECKED_CAST")
     fun <R : Any> map(transform: (value: V) -> R): RequestConsumerBuilder<CSR, R, STT> {
         val xx: ((Any) -> R) = transform as (((Any) -> R))
-        val res = RequestConsumerBuilder<CSR, R, STT>(halcyon, element, writeDirectly, callHandlerOnSent, xx)
+        val res = RequestConsumerBuilder<CSR, R, STT>(halcyon, element, writeDirectly, xx)
         res.errorTransformer = errorTransformer
         res.timeoutDelay = timeoutDelay
         res.resultHandler = null
