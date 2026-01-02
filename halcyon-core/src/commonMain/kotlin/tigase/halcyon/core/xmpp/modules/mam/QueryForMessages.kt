@@ -47,6 +47,7 @@ class QueryForMessages(
 		summaryHandler?.invoke(rsm)
 	}
 
+	@Suppress("USELESS_ELVIS")
 	private fun processFin(complete: Boolean, rsm: RSM.Result?) {
 		log.finest { "Received summary: complete=$complete; rsm=$rsm" }
 		if (rsm?.first == null || ((!ignoreComplete) && complete)) {

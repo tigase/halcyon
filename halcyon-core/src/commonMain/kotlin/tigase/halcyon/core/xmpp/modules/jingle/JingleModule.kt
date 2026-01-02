@@ -191,6 +191,7 @@ class JingleModule(
 		}
 	}
 
+	@Suppress("USELESS_ELVIS")
 	private fun processIq(iq: Element) {
 		if (iq.attributes["type"] != "set") {
 			throw XMPPException(ErrorCondition.FeatureNotImplemented, "All messages should be of type 'set'")

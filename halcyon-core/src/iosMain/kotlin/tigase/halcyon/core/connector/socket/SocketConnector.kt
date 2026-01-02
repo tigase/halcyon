@@ -41,6 +41,7 @@ sealed class SocketConnectionErrorEvent : ConnectionErrorEvent() {
 	class TLSFailureEvent : SocketConnectionErrorEvent()
 	class HostNotFount : SocketConnectionErrorEvent()
 	class Timeout : SocketConnectionErrorEvent()
+	@Suppress("REDUNDANT_NULLABLE")
 	class Unknown(val caught: nw_error_t?) : SocketConnectionErrorEvent() {
 
 		override fun toString(): String {
