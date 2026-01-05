@@ -13,24 +13,22 @@ jobs:
   maxRetries: 3
   retryDelay: 30
   timeout: 3600
-- name: Build and publish to maven repo
+- name: Build and publish (master)
   jobExecutor: android
   steps:
   - !CheckoutStep
-    name: checkout
+    name: Checkout
     cloneCredential: !DefaultCredential {}
     withLfs: false
     withSubmodules: false
     condition: SUCCESSFUL
     optional: false
   - !CommandStep
-    name: compile and package
+    name: Build and deploy
     runInContainer: true
     image: tigase/devops-1dev-builder-image:latest
     interpreter: !DefaultInterpreter
-      commands: |
-        pwd
-        ./gradlew clean build assemble test publish -x jsBrowserTest -PmavenUsername=@secrets:tigase.internalrepo.username@ -PmavenPassword=@secrets:tigase.internalrepo.password@ --console=plain
+      commands: "./gradlew build publish \\\n\t-PmavenUsername=@secrets:tigase.internalrepo.username@ \\\n\t-PmavenPassword=@secrets:tigase.internalrepo.password@\n"
     useTTY: true
     condition: SUCCESSFUL
     optional: false
@@ -41,29 +39,30 @@ jobs:
   maxRetries: 3
   retryDelay: 30
   timeout: 3600
-- name: Build maven (PR)
-  jobExecutor: linux
+- name: Build only (feature/PR)
+  jobExecutor: android
   steps:
   - !CheckoutStep
-    name: checkout
+    name: Checkout
     cloneCredential: !DefaultCredential {}
     withLfs: false
     withSubmodules: false
     condition: SUCCESSFUL
     optional: false
   - !CommandStep
-    name: compile and package
+    name: Build
     runInContainer: true
     image: tigase/devops-1dev-builder-image:latest
     interpreter: !DefaultInterpreter
       commands: |
-        pwd
-        ./gradlew clean build assemble test -x jsBrowserTest --console=plain
+        ./gradlew build
     useTTY: true
     condition: SUCCESSFUL
     optional: false
   triggers:
   - !PullRequestUpdateTrigger {}
+  - !BranchUpdateTrigger
+    branches: feature/**
   retryCondition: never
   maxRetries: 3
   retryDelay: 30
