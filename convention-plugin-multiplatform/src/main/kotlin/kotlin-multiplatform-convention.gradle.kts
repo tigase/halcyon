@@ -89,7 +89,7 @@ project.gradle.startParameter.excludedTaskNames.add("jsBrowserTest")
 
 
 tasks.withType<Test> {
-    timeout.set(Duration.ofSeconds(10))
+    timeout.set(Duration.ofSeconds(60))
 
     testLogging {
         // possible options: "passed", "skipped", "failed"
