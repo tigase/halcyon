@@ -55,14 +55,6 @@ class ModulesManager {
         outgoingStanzaFilters.doFilters(element, result)
     }
 
-    @Deprecated("Use registerOutgoingFilter() or registerIncomingFilter()")
-    fun registerInterceptors(stanzaInterceptors: Array<StanzaInterceptor>) {
-        stanzaInterceptors.forEach { interceptor ->
-            outgoingStanzaFilters.addToChain(BeforeSendInterceptorFilter(interceptor))
-            incomingStanzaFilters.addToChain(AfterReceiveInterceptorFilter(interceptor))
-        }
-    }
-
     fun registerOutgoingFilter(filter: StanzaFilter) = outgoingStanzaFilters.addToChain(filter)
 
     fun registerIncomingFilter(filter: StanzaFilter) = incomingStanzaFilters.addToChain(filter)
