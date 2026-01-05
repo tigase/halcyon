@@ -79,8 +79,7 @@ interface DeliveryReceiptsModuleConfig {
  * Module is implementing Message Delivery Receipts ([XEP-0184](https://xmpp.org/extensions/xep-0184.html)).
  *
  */
-class DeliveryReceiptsModule(override val context: Context) : XmppModule, StanzaInterceptor,
-    DeliveryReceiptsModuleConfig {
+class DeliveryReceiptsModule(override val context: Context) : XmppModule, DeliveryReceiptsModuleConfig {
 
     /**
      * Module is implementing Message Delivery Receipts ([XEP-0184](https://xmpp.org/extensions/xep-0184.html)).
@@ -96,8 +95,21 @@ class DeliveryReceiptsModule(override val context: Context) : XmppModule, Stanza
         override fun configure(module: DeliveryReceiptsModule, cfg: DeliveryReceiptsModuleConfig.() -> Unit) =
             module.cfg()
 
-        override fun doAfterRegistration(module: DeliveryReceiptsModule, moduleManager: ModulesManager) =
-            moduleManager.registerInterceptors(arrayOf(module))
+        override fun doAfterRegistration(module: DeliveryReceiptsModule, moduleManager: ModulesManager) {
+            moduleManager.registerIncomingFilter(createFilter { element, chain ->
+                element?.let {
+                    module.afterReceive(it)
+                    chain.doFilter(it)
+                }
+            })
+
+            moduleManager.registerOutgoingFilter(createFilter { element, chain ->
+                element?.let {
+                    module.beforeSend(it)
+                    chain.doFilter(it)
+                }
+            })
+        }
 
     }
 
@@ -110,7 +122,7 @@ class DeliveryReceiptsModule(override val context: Context) : XmppModule, Stanza
 
     override fun process(element: Element) = throw XMPPException(ErrorCondition.FeatureNotImplemented)
 
-    override fun afterReceive(element: Element): Element {
+    fun afterReceive(element: Element): Element {
         if (element.name != Message.NAME) return element
         if (element.attributes["type"] == MessageType.Error.value) return element
         val from = element.attributes["from"]?.toJID() ?: return element
@@ -145,7 +157,7 @@ class DeliveryReceiptsModule(override val context: Context) : XmppModule, Stanza
         }
     }, true)
 
-    override fun beforeSend(element: Element): Element {
+    fun beforeSend(element: Element): Element {
         if (element.name != Message.NAME) return element
         if (element.attributes["type"] == MessageType.Groupchat.value) return element
         if (element.attributes["id"] == null) return element

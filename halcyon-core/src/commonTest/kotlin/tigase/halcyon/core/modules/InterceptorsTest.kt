@@ -13,6 +13,7 @@ import tigase.halcyon.core.xmpp.stanzas.IQ
 import tigase.halcyon.core.xmpp.stanzas.IQType
 import tigase.halcyon.core.xmpp.stanzas.iq
 import tigase.requestResponse
+import kotlin.collections.plusAssign
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -21,7 +22,7 @@ import kotlin.test.fail
 @HalcyonConfigDsl
 interface InterceptorTestModuleConfig
 
-class InterceptorTestModule(context: Context) : InterceptorTestModuleConfig, StanzaInterceptor, AbstractXmppIQModule(
+class InterceptorTestModule(context: Context) : InterceptorTestModuleConfig, AbstractXmppIQModule(
     context, PingModule.TYPE, arrayOf(PingModule.XMLNS), Criterion.chain(
         Criterion.name(IQ.NAME), Criterion.xmlns(PingModule.XMLNS)
     )
@@ -36,8 +37,20 @@ class InterceptorTestModule(context: Context) : InterceptorTestModuleConfig, Sta
 
         override fun instance(context: Context): InterceptorTestModule = InterceptorTestModule(context)
 
-        override fun doAfterRegistration(module: InterceptorTestModule, moduleManager: ModulesManager) =
-            moduleManager.registerInterceptors(arrayOf(module))
+        override fun doAfterRegistration(module: InterceptorTestModule, moduleManager: ModulesManager) {
+            moduleManager.registerIncomingFilter(createFilter { element, chain ->
+                element?.let {
+                    module.afterReceive(element)
+                    chain.doFilter(it)
+                }
+            })
+            moduleManager.registerOutgoingFilter(createFilter { element, chain ->
+                element?.let {
+                    module.beforeSend(element)
+                    chain.doFilter(it)
+                }
+            })
+        }
 
     }
 
@@ -63,12 +76,12 @@ class InterceptorTestModule(context: Context) : InterceptorTestModuleConfig, Sta
         throw XMPPException(ErrorCondition.NotAcceptable)
     }
 
-    override fun afterReceive(element: Element): Element {
+    fun afterReceive(element: Element): Element {
         interceptedReceived += element
         return element
     }
 
-    override fun beforeSend(element: Element): Element {
+    fun beforeSend(element: Element): Element {
         interceptedSent += element
         return element
     }

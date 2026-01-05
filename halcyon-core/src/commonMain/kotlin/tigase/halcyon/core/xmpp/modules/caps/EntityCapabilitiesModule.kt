@@ -64,7 +64,7 @@ class EntityCapabilitiesModule(
 	override val context: Context,
 	private val discoModule: DiscoveryModule,
 	private val streamFeaturesModule: StreamFeaturesModule,
-) : XmppModule, StanzaInterceptor, EntityCapabilitiesModuleConfig {
+) : XmppModule, EntityCapabilitiesModuleConfig {
 
 	/**
 	 * Represents entity capabilities for specific node.
@@ -96,7 +96,19 @@ class EntityCapabilitiesModule(
 
 		override fun doAfterRegistration(module: EntityCapabilitiesModule, moduleManager: ModulesManager) {
 			module.initialize()
-			moduleManager.registerInterceptors(arrayOf(module))
+			moduleManager.registerIncomingFilter(createFilter { element, chain ->
+				element?.let {
+					module.afterReceive(element)
+					chain.doFilter(it)
+				}
+			})
+
+			moduleManager.registerOutgoingFilter(createFilter { element, chain ->
+				element?.let {
+					module.beforeSend(it)
+					chain.doFilter(it)
+				}
+			})
 		}
 
 	}
@@ -239,14 +251,14 @@ class EntityCapabilitiesModule(
 		return receivedVer != null && calculatedVer == receivedVer
 	}
 
-	override fun afterReceive(element: Element): Element {
+	fun afterReceive(element: Element): Element {
 		if (element.name == Presence.NAME) {
 			processIncomingPresence(element)
 		}
 		return element
 	}
 
-	override fun beforeSend(element: Element): Element {
+	fun beforeSend(element: Element): Element {
 		if (element.name == Presence.NAME) {
 			processOutgoingPresence(element)
 		}

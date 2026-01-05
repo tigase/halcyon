@@ -26,6 +26,8 @@ import tigase.halcyon.core.requests.RequestBuilder
 import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xmpp.*
 import tigase.halcyon.core.xmpp.modules.caps.EntityCapabilitiesModule
+import tigase.halcyon.core.xmpp.modules.chatmarkers.ChatMarkersModule.Companion.XMLNS
+import tigase.halcyon.core.xmpp.modules.chatmarkers.ChatMarkersModule.Marker
 import tigase.halcyon.core.xmpp.modules.presence.PresenceModule
 import tigase.halcyon.core.xmpp.modules.uniqueId.getOriginID
 import tigase.halcyon.core.xmpp.stanzas.Message
@@ -84,7 +86,7 @@ interface ChatMarkersModuleConfig {
  * Module is implementing Chat Markers ([XEP-0333](https://xmpp.org/extensions/xep-0333.html)).
  *
  */
-class ChatMarkersModule(override val context: Context) : XmppModule, StanzaInterceptor, ChatMarkersModuleConfig {
+class ChatMarkersModule(override val context: Context) : XmppModule, ChatMarkersModuleConfig {
 
 	enum class Marker(val xmppValue: String) {
 
@@ -117,10 +119,21 @@ class ChatMarkersModule(override val context: Context) : XmppModule, StanzaInter
 
 		override fun configure(module: ChatMarkersModule, cfg: ChatMarkersModuleConfig.() -> Unit) = module.cfg()
 
-		override fun doAfterRegistration(module: ChatMarkersModule, moduleManager: ModulesManager) =
-			moduleManager.registerInterceptors(arrayOf(module))
+		override fun doAfterRegistration(module: ChatMarkersModule, moduleManager: ModulesManager) {
+			moduleManager.registerIncomingFilter(createFilter { element, chain ->
+				element?.let {
+					module.afterReceive(element)
+					chain.doFilter(it)
+				}
+			})
 
-
+			moduleManager.registerOutgoingFilter(createFilter { element, chain ->
+				element?.let {
+					module.beforeSend(it)
+					chain.doFilter(it)
+				}
+			})
+        }
 	}
 
 	override val criteria: Criteria? = null
@@ -150,7 +163,7 @@ class ChatMarkersModule(override val context: Context) : XmppModule, StanzaInter
 		}
 	}
 
-	override fun afterReceive(element: Element): Element {
+	fun afterReceive(element: Element): Element {
 		if (element.name != Message.NAME) return element
 		if (element.attributes["type"] == MessageType.Error.value) return element
 		val from = element.attributes["from"]?.toJID() ?: return element
@@ -203,7 +216,7 @@ class ChatMarkersModule(override val context: Context) : XmppModule, StanzaInter
 		return caps.features.contains(XMLNS)
 	}
 
-	override fun beforeSend(element: Element): Element {
+	fun beforeSend(element: Element): Element {
 		if (element.name != Message.NAME) return element
 		val to = element.attributes["to"]?.toJID() ?: return element
 		if (element.getFirstChild("body") == null) return element

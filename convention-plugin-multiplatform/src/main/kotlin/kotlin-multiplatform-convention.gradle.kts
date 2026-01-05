@@ -92,6 +92,7 @@ tasks.withType<Test> {
     timeout.set(Duration.ofSeconds(10))
 
     testLogging {
+        // possible options: "passed", "skipped", "failed"
         events("skipped", "failed")
     }
 }
