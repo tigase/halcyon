@@ -51,6 +51,8 @@ interface OMEMOModuleConfig {
     var autoCreateSession: Boolean
 
     var ignoreNotEncryptedForThisDevice: Boolean
+
+    var selfDeviceLimit: Int?
 }
 
 public data class OMEMODeviceListChanged(
@@ -136,6 +138,7 @@ class OMEMOModule(
     override var autoCreateSession: Boolean = false
     override lateinit var bundleStateStorage: BundleStateStorage;
     override var ignoreNotEncryptedForThisDevice: Boolean = false;
+    override var selfDeviceLimit: Int? = null;
 
     init {
         context.eventBus.register(PubSubItemEvent) {
@@ -932,9 +935,18 @@ fun OMEMOModule.addDevice(deviceId: Int) {
     val jid = context.boundJID?.bareJID ?: throw HalcyonException("JID not bound.")
     retrieveDevicesIds(jid).response {
         it.onSuccess { receivedList ->
-            if (!receivedList.contains(deviceId)) {
-                val newList = (receivedList + deviceId).distinct()
-                publishDeviceList(newList).send()
+            var list = receivedList;
+            var changed = false;
+            if (!list.contains(deviceId)) {
+                list = (list + deviceId).distinct()
+                changed = true;
+            }
+            selfDeviceLimit?.takeIf { list.size > it }?.let {
+                list = list.subList(list.size - it, list.size)
+                changed = true;
+            }
+            if (changed) {
+                publishDeviceList(list).send()
             }
         }
         it.onFailure {
