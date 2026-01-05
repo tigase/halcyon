@@ -39,6 +39,10 @@ jobs:
   maxRetries: 3
   retryDelay: 30
   timeout: 3600
+  postBuildActions:
+  - !SendNotificationAction
+    condition: failed or timed out
+    receivers: group(Tygrys Team)
 - name: Build only (feature/PR)
   jobExecutor: android
   steps:
@@ -67,3 +71,7 @@ jobs:
   maxRetries: 3
   retryDelay: 30
   timeout: 3600
+  postBuildActions:
+  - !SendNotificationAction
+    condition: failed or timed out
+    receivers: group(Tygrys Team)
