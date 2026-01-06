@@ -156,4 +156,8 @@ expect interface IdentityKeyStore {
     fun getIdentity(address: SignalProtocolAddress): IdentityKey?
 }
 
+interface IdentityKeyStoreStatus {
+    fun updateIdentitiesActivity(name: BareJID, activeDevices: List<Int>)
+}
+
 interface SignalProtocolStoreFlushable : SignalProtocolStore, PreKeyStoreFlushable {}

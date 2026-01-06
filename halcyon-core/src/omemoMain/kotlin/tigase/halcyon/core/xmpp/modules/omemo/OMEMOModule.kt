@@ -198,19 +198,13 @@ class OMEMOModule(
                     }
                 }
 
-                val localDeviceId = protocolStore.getLocalRegistrationId();
-                if (!deviceList.contains(localDeviceId)) {
-                    publishDeviceList(deviceList + listOf(localDeviceId)).response {
-                        it.onFailure {
-                            log.warning(it, { "failed to publish updated device list" })
-                        }
-                        it.onSuccess {
-                            log.fine("published updated device list successfully")
-                        }
-                    }.send();
-                }
+
+                publishDeviceListIfNeeded(deviceList)
             } else {
                 devices[jid.bareJID] = deviceList;
+                (protocolStore as? IdentityKeyStoreStatus)?.let { store ->
+                    store.updateIdentitiesActivity(jid.bareJID, deviceList);
+                }
                 context.eventBus.fire(OMEMODeviceListChanged(devices = devices.toMap()))
             }
 //            deviceList.forEach {
@@ -667,7 +661,7 @@ class OMEMOModule(
                             publishOwnBundle(signedPreKeyId, preKeysToPublish).response {
                                 it.onSuccess {
                                     log.info { "publication of new OMEMO bundle succeeded for account ${jid}" }
-                                    this.addDevice(registrationId)
+                                    this.publishDeviceListIfNeeded();
                                     bundleRefreshInProgress = false;
                                 }
                                 it.onFailure { ex ->
@@ -681,7 +675,7 @@ class OMEMOModule(
                                 bundleRefreshInProgress = false;
                             }.send();
                         } else {
-                            addDevice(registrationId);
+                            this.publishDeviceListIfNeeded();
                             bundleRefreshInProgress = false
                         }
                     }
@@ -695,7 +689,7 @@ class OMEMOModule(
                                    val newKeys = (0..preKeyId).filter { protocolStore.containsPreKey(it) }
                                    log.fine { "publishing own OMEMO bundle succeeded" }
                                    publishOwnBundle(signedPreKeyId, newKeys).response {
-                                       this.addDevice(registrationId)
+                                       this.publishDeviceListIfNeeded();
                                        bundleRefreshInProgress = false
                                    }.send();
                                } else {
@@ -916,6 +910,40 @@ class OMEMOModule(
         }
     }
 
+    fun publishDeviceListIfNeeded() {
+        val jid = context.boundJID?.bareJID ?: throw HalcyonException("JID not bound.")
+        retrieveDevicesIds(jid).response {
+            it.onSuccess { receivedList ->
+                publishDeviceListIfNeeded(receivedList);
+            }
+            it.onFailure {
+                if (it is XMPPError && it.error == ErrorCondition.ItemNotFound) {
+                    publishDeviceListIfNeeded(emptyList());
+                }
+            }
+        }.send()
+    }
+
+    private fun publishDeviceListIfNeeded(current: List<Int>) {
+        val deviceId = protocolStore.getLocalRegistrationId();
+        var list = current;
+        var changed = false;
+        if (deviceId != 0 && !list.contains(deviceId)) {
+            list = (list + deviceId).distinct()
+            changed = true;
+        }
+        selfDeviceLimit?.takeIf { list.size > it }?.let {
+            list = list.subList(list.size - it, list.size)
+            changed = true;
+        }
+        if (changed) {
+            log.fine("current OMEMO device list $current needs to be modified to ${list}")
+            publishDeviceList(list).send()
+        } else {
+            log.fine("current OMEMO device list $current is correct")
+        }
+    }
+
 }
 
 sealed interface EncryptMessage {
@@ -926,36 +954,6 @@ sealed interface EncryptMessage {
 private fun Element?.toDeviceList(): List<Int> =
     if (this?.name == "list" && this.xmlns == OMEMOModule.XMLNS) this.getChildren("device")
         .mapNotNull { it.attributes["id"]?.toInt() } else emptyList()
-
-/**
- * Prepare request to add device to currently published device list.
- * @param deviceId device Id to add.
- */
-fun OMEMOModule.addDevice(deviceId: Int) {
-    val jid = context.boundJID?.bareJID ?: throw HalcyonException("JID not bound.")
-    retrieveDevicesIds(jid).response {
-        it.onSuccess { receivedList ->
-            var list = receivedList;
-            var changed = false;
-            if (!list.contains(deviceId)) {
-                list = (list + deviceId).distinct()
-                changed = true;
-            }
-            selfDeviceLimit?.takeIf { list.size > it }?.let {
-                list = list.subList(list.size - it, list.size)
-                changed = true;
-            }
-            if (changed) {
-                publishDeviceList(list).send()
-            }
-        }
-        it.onFailure {
-            if (it is XMPPError && it.error == ErrorCondition.ItemNotFound) {
-                publishDeviceList(listOf(deviceId)).send()
-            }
-        }
-    }.send()
-}
 
 /**
  * Adds encryption order to message.
