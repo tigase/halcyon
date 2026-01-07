@@ -35,10 +35,21 @@ actual class SessionBuilder actual constructor(
 
 }
 
+@Throws(InvalidKeyException::class, UntrustedIdentityException::class)
+actual fun SessionBuilder.processPreKeyBundle(preKeyBundle: PreKeyBundle) {
+    try {
+        return this.process(preKeyBundle)
+    } catch (ex: org.whispersystems.libsignal.InvalidKeyException) {
+        throw InvalidKeyException(ex.message)
+    } catch (ex: org.whispersystems.libsignal.UntrustedIdentityException) {
+        throw UntrustedIdentityException(ex.message);
+    }
+}
+
 actual typealias SessionCipher = org.whispersystems.libsignal.SessionCipher
 
-actual typealias UntrustedIdentityException = org.whispersystems.libsignal.UntrustedIdentityException
-actual typealias InvalidKeyException = org.whispersystems.libsignal.InvalidKeyException;
+//actual typealias UntrustedIdentityException = org.whispersystems.libsignal.UntrustedIdentityException
+//actual typealias InvalidKeyException = org.whispersystems.libsignal.InvalidKeyException;
 
 actual typealias SignalProtocolStore = org.whispersystems.libsignal.state.SignalProtocolStore
 

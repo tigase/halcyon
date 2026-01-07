@@ -1,6 +1,4 @@
-@file:OptIn(ExperimentalForeignApi::class, ExperimentalForeignApi::class, ExperimentalForeignApi::class,
-    ExperimentalForeignApi::class
-)
+@file:OptIn(ExperimentalForeignApi::class)
 
 package tigase.halcyon.core.xmpp.modules.omemo
 
@@ -12,7 +10,6 @@ import platform.Foundation.NSOutputStream
 import tigase.halcyon.core.exceptions.HalcyonException
 import tigase.halcyon.core.logger.LoggerFactory
 
-@OptIn(kotlinx.cinterop.ExperimentalForeignApi::class)
 actual fun Bundle.getRandomPreKeyBundle(): PreKeyBundle {
     val preKey = this.preKeys.random()
     return PreKeyBundle(
@@ -48,7 +45,7 @@ class ECPrivateKey(val privateKey: ByteArray) {
 
     companion object {
         fun fromPointer(pointer: CPointer<cnames.structs.ec_private_key>): ECPrivateKey {
-            return memScoped {
+            memScoped {
                 val privateKeyBuf = allocPointerTo<cnames.structs.signal_buffer>();
                 ec_private_key_serialize(privateKeyBuf.ptr, pointer);
                 val result = ECPrivateKey(privateKeyBuf.value!!.toByteArray());
@@ -126,7 +123,7 @@ actual class SignedPreKeyRecord actual constructor(val data: ByteArray) {
     actual fun serialize(): ByteArray = data;
 
     fun <T>pointer(fn: (CPointer<cnames.structs.session_signed_pre_key>) -> T): T {
-        return memScoped {
+        memScoped {
             val pointer = allocPointerTo<cnames.structs.session_signed_pre_key>();
             if (session_signed_pre_key_deserialize(pointer.ptr, data.toUByteArray().toCValues(), data.size.toULong(), null) < 0) {
                 TODO("Not yet implemented")
@@ -284,8 +281,7 @@ actual class SessionBuilder actual constructor(
 
     private val logger = LoggerFactory.logger("tigase.halcyon.core.xmpp.modules.omemo.SessionBuilder")
     
-    @Throws(InvalidKeyException::class, UntrustedIdentityException::class)
-    actual fun process(preKeyBundle: PreKeyBundle) {
+    fun process(preKeyBundle: PreKeyBundle) {
         memScoped {
             var pointer = allocPointerTo<cnames.structs.session_builder>()
             address.pointer { addressPtr ->
@@ -305,9 +301,10 @@ actual class SessionBuilder actual constructor(
     }
 }
 
-actual class InvalidKeyException : Exception()
-
-actual class UntrustedIdentityException : Exception()
+@Throws(InvalidKeyException::class, UntrustedIdentityException::class)
+actual fun SessionBuilder.processPreKeyBundle(preKeyBundle: PreKeyBundle) {
+    process(preKeyBundle);
+}
 
 enum class SignalError(val errorCode: Int) {
     notEncrypted(-100000),

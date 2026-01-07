@@ -113,7 +113,7 @@ class DnsResolver {
     }
 }
 
-@OptIn(kotlinx.cinterop.ExperimentalForeignApi::class)
+@OptIn(ExperimentalForeignApi::class)
 class DnsResolverInternal(val directTls: Boolean) {
 
 	private val log = LoggerFactory.logger("tigase.halcyon.core.connector.socket.DnsResolver")
@@ -235,7 +235,7 @@ class DnsResolverInternal(val directTls: Boolean) {
 
 class DnsException(message: String) : Exception(message = message)
 
-@OptIn(kotlinx.cinterop.ExperimentalForeignApi::class)
+@OptIn(ExperimentalForeignApi::class)
 fun QueryRecordCallback(
 	@Suppress("UNUSED_PARAMETER")sdRef: DNSServiceRef?,
 	flags: DNSServiceFlags,

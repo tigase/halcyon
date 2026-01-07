@@ -19,7 +19,7 @@ plugins {
 	id("kotlin-multiplatform-convention")
 	id("maven-publish-convention")
 
-	alias(libs.plugins.kotlinx.serialization)
+	kotlin("plugin.serialization")
 }
 
 

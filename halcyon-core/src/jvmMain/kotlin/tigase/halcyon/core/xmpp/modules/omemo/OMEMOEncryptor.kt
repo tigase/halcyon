@@ -1,6 +1,6 @@
 package tigase.halcyon.core.xmpp.modules.omemo
 
-import korlibs.crypto.encoding.hex
+import korlibs.encoding.hex
 import org.whispersystems.curve25519.NoSuchProviderException
 import org.whispersystems.libsignal.*
 import org.whispersystems.libsignal.protocol.PreKeySignalMessage

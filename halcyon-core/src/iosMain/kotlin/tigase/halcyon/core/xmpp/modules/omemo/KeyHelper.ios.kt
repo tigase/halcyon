@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalForeignApi::class)
+
 package tigase.halcyon.core.xmpp.modules.omemo
 
 import kotlinx.cinterop.*

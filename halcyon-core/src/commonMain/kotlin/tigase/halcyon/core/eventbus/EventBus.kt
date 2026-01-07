@@ -19,4 +19,10 @@ package tigase.halcyon.core.eventbus
 
 import tigase.halcyon.core.AbstractHalcyon
 
-expect class EventBus(context: AbstractHalcyon) : AbstractEventBus
+expect class EventBus(context: AbstractHalcyon) : AbstractEventBus {
+
+    override fun createHandlersMap(): MutableMap<String, MutableSet<EventHandler<*>>>
+
+    override fun createHandlersSet(): MutableSet<EventHandler<*>>
+
+}

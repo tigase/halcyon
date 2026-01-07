@@ -23,11 +23,11 @@ import tigase.halcyon.core.connector.WebSocketConnector
 
 actual class Halcyon actual constructor(configuration: ConfigurationBuilder) : AbstractHalcyon(configuration) {
 
-    override fun createConnector(): tigase.halcyon.core.connector.AbstractConnector {
+    actual override fun createConnector(): tigase.halcyon.core.connector.AbstractConnector {
         return WebSocketConnector(this)
     }
 
-    override fun reconnect(immediately: Boolean) {
+    actual override fun reconnect(immediately: Boolean) {
         if (immediately) {
             state = State.Connecting
             startConnector()

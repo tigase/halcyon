@@ -31,14 +31,14 @@ actual class Halcyon actual constructor(configuration: ConfigurationBuilder) : A
 		// this.config.connectorConfig = SocketConnectorConfig()
 	}
 
-	override fun reconnect(immediately: Boolean) {
+	override actual fun reconnect(immediately: Boolean) {
 		log.finer { "Called reconnect. immediately=$immediately" }
 		if (!immediately) usleep(3000u)
 		state = State.Connecting
 		startConnector()
 	}
 
-	override fun createConnector(): AbstractConnector {
+	override actual fun createConnector(): AbstractConnector {
 		return SocketConnector(this)
 	}
 

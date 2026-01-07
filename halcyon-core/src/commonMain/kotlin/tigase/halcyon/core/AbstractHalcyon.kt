@@ -88,7 +88,7 @@ abstract class AbstractHalcyon(configurator: ConfigurationBuilder) : Context, Pa
     val internalDataStore = InternalDataStore()
     val requestsManager: RequestsManager = RequestsManager()
     private val executor = tigase.halcyon.core.excutor.Executor()
-    override val config: Configuration
+    final override val config: Configuration
     private val lock = Lock()
     var state = State.Stopped
         get() = lock.withLock { field }

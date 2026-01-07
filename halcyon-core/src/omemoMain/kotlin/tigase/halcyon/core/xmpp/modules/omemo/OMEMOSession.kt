@@ -18,7 +18,7 @@ data class OMEMOSession(
 fun createSession(store: SignalProtocolStore, bundle: Bundle): Result<Unit> {
     try {
         val address = SignalProtocolAddress(bundle.jid.toString(), bundle.deviceId)
-        SessionBuilder(store, address).process(bundle.getRandomPreKeyBundle())
+        SessionBuilder(store, address).processPreKeyBundle(bundle.getRandomPreKeyBundle())
         return Result.success(Unit);
     } catch (e: Exception) {
         return Result.failure(e)
@@ -38,7 +38,7 @@ fun buildCipher(store: SignalProtocolStore, address: SignalProtocolAddress, bund
     try {
         if (!store.containsSession(address)) {
             val sessionBuilder = SessionBuilder(store, address)
-            sessionBuilder.process(bundle.getRandomPreKeyBundle())
+            sessionBuilder.processPreKeyBundle(bundle.getRandomPreKeyBundle())
         }
         return SessionCipher(store, address)
     } catch (e: Exception) {

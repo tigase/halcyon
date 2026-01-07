@@ -1,13 +1,33 @@
 language = Objective-C
 package = OpenSSL
 #headers = openssl/ssl.h
-headers = openssl/OpenSSL.h
+headers = OpenSSL.h
+
+compilerOpts = -F${openSslFrameworkDir} -framework OpenSSL
+linkerOpts = -F${openSslFrameworkDir} -framework OpenSSL
+#compilerOpts.ios_x64 = -I../build/frameworks/OpenSSL.xcframework/ios-arm64_i386_x86_64-simulator/OpenSSL.framework/Headers -F../build/frameworks/OpenSSL.xcframework/ios-arm64_i386_x86_64-simulator -framework OpenSSL
+#compilerOpts.ios_arm64 = -I../build/frameworks/OpenSSL.xcframework/ios-arm64_armv7/OpenSSL.framework/Headers -F../build/frameworks/OpenSSL.xcframework/ios-arm64_armv7 -framework OpenSSL
+
+# Common flags (optional but recommended)
+#compilerOpts = -F../build/frameworks/OpenSSL.xcframework/ios-arm64_armv7 -framework OpenSSL
+#linkerOpts.ios_x64 = -F../build/frameworks/OpenSSL.xcframework/ios-arm64_armv7 -framework OpenSSL
+#linkerOpts.ios_arm64 = -F../build/frameworks/OpenSSL.xcframework/ios-arm64_armv7 -framework OpenSSL
+
+
+#compilerOpts.ios_arm64 = -F../build/frameworks/OpenSSL.xcframework/ios-arm64_armv7 -framework OpenSSL
+#linkerOpts.ios_arm64 = -F../build/frameworks/OpenSSL.xcframework/ios-arm64_armv7 -framework OpenSSL
+
+#compilerOpts.ios_x64 = -F../build/frameworks/OpenSSL.xcframework/ios-arm64_i386_x86_64-simulator -framework OpenSSL
+#linkerOpts.ios_x64 = -F../build/frameworks/OpenSSL.xcframework/ios-arm64_i386_x86_64-simulator -framework OpenSSL
+
+
+#headers = OpenSSL.h
 #headers = OpenSSL.h
 #compilerOpts = -framework OpenSSL
 #compilerOpts = "-F$projectDir/frameworks -framework OpenSSL"
-compilerOpts.ios_x64 = -I../frameworks/OpenSSL.xcframework/ios-arm64_i386_x86_64-simulator/OpenSSL.framework/Headers
+#compilerOpts.ios_x64 = -I../build/frameworks/OpenSSL.xcframework/ios-arm64_i386_x86_64-simulator/OpenSSL.framework/Headers
 #linkerOpts.ios_arm64 = -L../frameworks/OpenSSL.xcframework/ios-arm64_armv7/OpenSSL.framework -lOpenSSL
-compilerOpts.ios_arm64 = -I../frameworks/OpenSSL.xcframework/ios-arm64_armv7/OpenSSL.framework/Headers
+#compilerOpts.ios_arm64 = -I../build/frameworks/OpenSSL.xcframework/ios-arm64_armv7/OpenSSL.framework/Headers
 #linkerOpts.ios_simulator_arm64 = -L../frameworks/OpenSSL.xcframework/ios-arm64_i386_x86_64-simulator/OpenSSL.framework -lOpenSSL
 #linkerOpts.ios_arm64 = -L../frameworks/OpenSSL.xcframework/ios-arm64_armv7/OpenSSL.framework", "-lOpenSSL
 #compilerOpts = "-I/usr/local/Cellar/openssl@1.1/1.1.1m/include"

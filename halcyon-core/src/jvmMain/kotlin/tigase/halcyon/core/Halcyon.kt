@@ -39,13 +39,13 @@ actual class Halcyon actual constructor(configuration: ConfigurationBuilder) : A
 
 	private var connectionTimer: Timer? = null
 
-	override fun createConnector(): AbstractConnector {
+	override actual fun createConnector(): AbstractConnector {
 		val tlsProcessorFactory = (config.connection as SocketConnectorConfig).tlsProcessorFactory
 		log.fine("Selected TLS Processor: ${tlsProcessorFactory.NAME}")
 		return SocketConnector(this, tlsProcessorFactory)
 	}
 
-	override fun reconnect(immediately: Boolean) {
+	override actual fun reconnect(immediately: Boolean) {
 		if (!running) {
 			log.fine { "Called reconnect. immediately=$immediately, skipping reconnection as running is false!" }
 		} else {

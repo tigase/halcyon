@@ -1,6 +1,6 @@
 package tigase.halcyon.core.xmpp.modules.omemo
 
-import korlibs.crypto.encoding.hexLower
+import korlibs.encoding.hexLower
 import tigase.halcyon.core.exceptions.HalcyonException
 import tigase.halcyon.core.logger.LoggerFactory
 //import java.io.InputStream

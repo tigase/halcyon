@@ -1,9 +1,10 @@
 @file:Suppress("UnusedVariable", "UNUSED_VARIABLE", "UnusedParameter", "UNUSED_PARAMETER", "unused")
+@file:OptIn(ExperimentalForeignApi::class)
 
 package tigase.halcyon.core.xmpp.modules.omemo
 
 import OpenSSL.*
-import korlibs.crypto.encoding.hex
+import korlibs.encoding.hex
 import kotlinx.cinterop.*
 import platform.Foundation.NSInputStream
 import platform.Foundation.NSOutputStream

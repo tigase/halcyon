@@ -24,9 +24,9 @@ import java.util.concurrent.Executors
 
 actual class EventBus actual constructor(context: AbstractHalcyon) : AbstractEventBus(context) {
 
-	override fun createHandlersMap(): MutableMap<String, MutableSet<EventHandler<*>>> = ConcurrentHashMap()
+	actual override fun createHandlersMap(): MutableMap<String, MutableSet<EventHandler<*>>> = ConcurrentHashMap()
 
-	override fun createHandlersSet(): MutableSet<EventHandler<*>> = ConcurrentHashMap.newKeySet()
+	actual override fun createHandlersSet(): MutableSet<EventHandler<*>> = ConcurrentHashMap.newKeySet()
 
 	enum class Mode { NoThread,
 		ThreadPerEvent,

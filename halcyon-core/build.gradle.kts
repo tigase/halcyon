@@ -4,7 +4,7 @@ plugins {
 	id("kotlin-multiplatform-convention")
 	id("maven-publish-convention")
 
-	alias(libs.plugins.kotlinx.serialization)
+	kotlin("plugin.serialization")
 	alias(libs.plugins.jetbrains.dokka)
 }
 
@@ -13,30 +13,18 @@ val iosApply = { target: KotlinNativeTarget, openSslFrameworkDir: String, libsig
 		cinterops {
 			val OpenSSL by creating {
 				defFile("src/nativeInterop/cinterop/OpenSSL.def")
-				includeDirs("$openSslFrameworkDir/")
+				includeDirs("$openSslFrameworkDir/OpenSSL.framework/Headers/")
 				compilerOpts(
 					"-F$openSslFrameworkDir", "-framework", "OpenSSL"
 				)
 			}
 			val libsignal by creating {
 				defFile("src/nativeInterop/cinterop/libsignal.def")
-				includeDirs("$libsignalFrameworkDir/")
+				includeDirs("$libsignalFrameworkDir/libsignal.framework/Headers/")
 				compilerOpts(
 					"-F$libsignalFrameworkDir", "-framework", "libsignal"
 				)
 			}
-		}
-	}
-	target.binaries {
-		all {
-			linkerOpts(
-				"-F$openSslFrameworkDir",
-				"-framework",
-				"OpenSSL",
-				"-F$libsignalFrameworkDir",
-				"-framework",
-				"libsignal"
-			)
 		}
 	}
 }

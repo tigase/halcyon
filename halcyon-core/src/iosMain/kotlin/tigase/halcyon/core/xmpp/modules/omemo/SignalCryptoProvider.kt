@@ -1,7 +1,6 @@
 @file:OptIn(ExperimentalForeignApi::class)
 @file:Suppress("UnusedVariable", "UNUSED_VARIABLE", "UnusedParameter", "UNUSED_PARAMETER", "unused")
 
-
 package tigase.halcyon.core.xmpp.modules.omemo
 
 import cnames.structs.signal_buffer

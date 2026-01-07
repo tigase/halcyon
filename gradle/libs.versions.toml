@@ -4,8 +4,10 @@
 java-languageVersion = "17"
 
 # plugins versions
-dokka = "1.9.20"
-jetbrains-kotlin = "1.9.25"
+dokka = "2.1.0"
+# we need this old version as newer throws compilation exception about IrErrorType (most likely from some dependency and missing type... or something similar...)
+jetbrains-kotlin = "2.1.21"
+#jetbrains-kotlin = "2.2.21"
 researchgate-release = "3.1.0"
 sphinx = "2.10.1"
 task-tree = "4.0.0"
@@ -13,17 +15,16 @@ git-versioning = "6.4.4"
 
 # dependencies versions
 bouncycastle = "1.79"
-coroutines = "1.7.3"
-dateTime = "0.6.1"
-krypto = "4.0.10"
+coroutines = "1.10.2"
+dateTime = "0.6.2"
+krypto = "6.0.1"
 minidns = "1.1.1"
 reactive = "1.3.0"
-serialization = "1.6.0"
+serialization = "1.8.1"
 signalProtocol = "2.8.1"
 
 [plugins]
 jetbrains-dokka = { id = "org.jetbrains.dokka", version.ref = "dokka" }
-kotlinx-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "jetbrains-kotlin" }
 researchgate-release = { id = "net.researchgate.release", version.ref = "researchgate-release" }
 sphinx = { id = "kr.motd.sphinx", version.ref = "sphinx" }
 
@@ -42,7 +43,7 @@ kotlinx-coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-cor
 reactive-reaktive = { group = "com.badoo.reaktive", name = "reaktive", version.ref = "reactive" }
 reactive-testing = { group = "com.badoo.reaktive", name = "reaktive-testing", version.ref = "reactive" }
 
-krypto = { group = "com.soywiz.korlibs.krypto", name = "krypto", version.ref = "krypto" }
+krypto = { group = "com.soywiz", name = "korlibs-crypto", version.ref = "krypto" }
 
 minidns = { group = "org.minidns", name = "minidns-hla", version.ref = "minidns" }
 

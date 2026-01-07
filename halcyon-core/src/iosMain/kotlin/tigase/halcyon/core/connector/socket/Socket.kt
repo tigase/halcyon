@@ -71,13 +71,15 @@ class Socket {
 				inet_pton(AF_INET, ip, addr.sin_addr.ptr)
 				addr.sin_port = swapBytes(port.toUShort())
 
-				sockfd = socket(PF_INET.toInt(), SOCK_STREAM, 0)
+				sockfd = socket(PF_INET, SOCK_STREAM, 0)
 				if (sockfd < 0) {
 					log.finest("socket creation failed!")
 					state = State.disconnected
 				} else {
 					log.finest("connecting ${sockfd} to ${ip}:${swapBytes(port.toUShort())}..")
-					if (connect(sockfd, addr.ptr as CValuesRef<sockaddr>?, sockaddr_in.size.convert()) < 0) {
+					
+					val size: UInt = sizeOf<sockaddr_in>().convert();
+					if (connect(sockfd, addr.ptr.reinterpret(), size) < 0) {
 						log.finest("connection failed!")
 						state = State.disconnected
 					} else {
@@ -170,16 +172,19 @@ class Socket {
 
 	fun setKeepAlive(timeout: Int, interval: Int) {
 		memScoped {
-			var optval = 0
+			val optval = alloc<IntVarOf<Int>>();
+			optval.value = 0;
 			if ((timeout and interval) != 0) {
-				optval = 1
+				optval.value = 1;
 			}
-			var ret = setsockopt(sockfd, SOL_SOCKET, SO_KEEPALIVE, optval as CValuesRef<*>, sizeOf<IntVar>().toUInt())
+			var ret = setsockopt(sockfd, SOL_SOCKET, SO_KEEPALIVE, optval.ptr, sizeOf<IntVar>().toUInt())
 			if (ret < 0) return
 
-			if (optval != 0) {
+			if (optval.value != 0) {
+				val timeoutVal = alloc<IntVarOf<Int>>();
+				timeoutVal.value = timeout;
 				ret =
-					setsockopt(sockfd, IPPROTO_TCP, TCP_KEEPALIVE, timeout as CValuesRef<*>, sizeOf<IntVar>().toUInt())
+					setsockopt(sockfd, IPPROTO_TCP, TCP_KEEPALIVE, timeoutVal.ptr, sizeOf<IntVar>().toUInt())
 				if (ret < 0) {
 					return
 				}
