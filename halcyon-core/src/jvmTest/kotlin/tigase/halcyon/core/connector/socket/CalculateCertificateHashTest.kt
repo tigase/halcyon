@@ -1,6 +1,6 @@
 package tigase.halcyon.core.connector.socket
 
-import korlibs.crypto.encoding.base64
+import korlibs.encoding.base64
 import java.security.cert.CertificateFactory
 import java.security.cert.X509Certificate
 import kotlin.test.Test

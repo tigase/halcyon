@@ -1,6 +1,6 @@
 package tigase.halcyon.core.xmpp.modules.omemo
 
-import korlibs.crypto.encoding.unhex
+import korlibs.encoding.unhex
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import kotlin.random.Random
