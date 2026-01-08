@@ -50,7 +50,7 @@ class SocketConnectorTest {
 				println("done")
 				var results = emptyList<DnsResolver.SrvRecord>()
 				results += records
-				resultsStore.value = results.freeze()
+				resultsStore.value = results
 			}
 				.onFailure { ex ->
 					println("got exception:")
