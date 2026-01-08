@@ -78,14 +78,21 @@ kotlin {
 	}
 }
 
-tasks.withType<org.jetbrains.dokka.gradle.DokkaTask>().configureEach {
-		moduleName.set("Tigase Halcyon")
-		moduleVersion.set(project.version.toString())
+dokka {
+	moduleName.set("Tigase Halcyon")
+	moduleVersion.set(project.version.toString())
+	dokkaPublications.html {
+		suppressInheritedMembers.set(true)
 		failOnWarning.set(false)
 		suppressObviousFunctions.set(true)
 		suppressInheritedMembers.set(false)
 		offlineMode.set(false)
 	}
+
+	pluginsConfiguration.html {
+		footerMessage.set("(c) Tigase, Inc.")
+	}
+}
 
 if (booleanProperty(Modules.ios.propertyName) || booleanProperty(Modules.iosSimulator.propertyName)) {
 	val deleteOpenSSL = tasks.register<DeleteFrameworkTask>("deleteOpenSSL") {
