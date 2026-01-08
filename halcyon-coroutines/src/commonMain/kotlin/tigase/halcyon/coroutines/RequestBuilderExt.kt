@@ -13,7 +13,7 @@ suspend fun <V, STT : Stanza<*>> RequestBuilder<V, STT>.awaitResponse(): V =
 				continuation.cancel(it)
 			}
 			result.onSuccess {
-				continuation.resume(it, null)
+				continuation.resume(it) { _, _, _ -> }
 			}
 		}
 			.send()
@@ -34,7 +34,7 @@ suspend fun <V, STT : Stanza<*>> RequestBuilder<V, STT>.execute(context: Corouti
 					continuation.cancel(it)
 				}
 				result.onSuccess {
-					continuation.resume(it, null)
+					continuation.resume(it) { _, _, _ -> }
 				}
 			}
 				.send()
@@ -50,7 +50,7 @@ suspend fun <V> CoroutineContext.execute(block: ((Result<V>)->Unit)->Unit): V {
 					continuation.cancel(it)
 				}
 				result.onSuccess {
-					continuation.resume(it, null)
+					continuation.resume(it) { _, _, _ -> }
 				}
 			}
 		}
