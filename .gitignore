@@ -3,7 +3,6 @@
 .idea
 build
 local.properties
-/kotlin-js-store
 /Experiments
 /frameworks/
 docs/src/restructured/_build
