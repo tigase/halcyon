@@ -34,7 +34,7 @@ kotlin {
     compilerOptions {
         freeCompilerArgs.add("-Xexpect-actual-classes")
 //        freeCompilerArgs.add("-Xsuppress-warning=UNUSED_VARIABLE") // since kotlin 2.1
-//        freeCompilerArgs.add("-Xwarning-level=UNUSED_VARIABLE:disabled") // since kotlin 2.2
+        freeCompilerArgs.add("-Xwarning-level=UNUSED_VARIABLE:disabled") // since kotlin 2.2
     }
 
     // default targets

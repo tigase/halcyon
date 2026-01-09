@@ -38,7 +38,7 @@ val iosApply = { target: KotlinNativeTarget, openSslFrameworkDir: String, libsig
 		)
 	}
 	target.compilerOptions {
-		freeCompilerArgs = listOf(
+		freeCompilerArgs.addAll(
 			"-include-binary",
 			"$openSslFrameworkDir/OpenSSL.framework/OpenSSL",
 			"-include-binary",
