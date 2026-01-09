@@ -17,6 +17,7 @@
  */
 package tigase.halcyon.core.xmpp.modules.jingle
 
+import kotlinx.datetime.Instant
 import tigase.halcyon.core.Context
 import tigase.halcyon.core.builder.HalcyonConfigDsl
 import tigase.halcyon.core.configuration.declaredUserJID
@@ -25,6 +26,7 @@ import tigase.halcyon.core.eventbus.EventDefinition
 import tigase.halcyon.core.modules.Criteria
 import tigase.halcyon.core.modules.Criterion
 import tigase.halcyon.core.modules.XmppModule
+import tigase.halcyon.core.parseISO8601
 import tigase.halcyon.core.requests.RequestBuilder
 import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xml.ElementBuilder
@@ -89,7 +91,7 @@ class Jingle {
 		@Throws(XMPPException::class)
 		fun transportInfo(context: Context, jid: JID, sid: String, contents: List<Content>)
 
-		fun messageInitiation(context: Context, fromJid: JID, action: MessageInitiationAction)
+		fun messageInitiation(context: Context, fromJid: JID, action: MessageInitiationAction, timestamp: Instant?)
 
 		fun contentModified(context: Context, jid: JID, sid: String, action: ContentAction, contents: List<Content>, bundle: List<String>?)
 
@@ -245,6 +247,10 @@ class JingleModule(
 			MessageInitiationAction.parse(message.children.filter { "urn:xmpp:jingle-message:0".equals(it.xmlns) }
 											  .firstOrNull() ?: throw XMPPException(ErrorCondition.BadRequest))
 				?: return
+		val timestamp = message.getChildrenNS("delay", "urn:xmpp:delay")
+			?.let {
+				it.attributes["stamp"]?.let { stamp -> parseISO8601(stamp) }
+			}
 		when (action) {
 			is MessageInitiationAction.Propose -> {
 				if (action.descriptions.none { features.contains(it.xmlns) }) {
@@ -266,8 +272,8 @@ class JingleModule(
 			else -> {
 			}
 		}
-		context.eventBus.fire(JingleMessageInitiationEvent(from, action))
-		sessionManager.messageInitiation(context, from, action);
+		context.eventBus.fire(JingleMessageInitiationEvent(from, action, timestamp))
+		sessionManager.messageInitiation(context, from, action, timestamp);
 	}
 
 	fun sendMessageInitiation(
@@ -432,7 +438,7 @@ data class JingleEvent(
 
 }
 
-data class JingleMessageInitiationEvent(val jid: JID, val action: MessageInitiationAction) : Event(TYPE) {
+data class JingleMessageInitiationEvent(val jid: JID, val action: MessageInitiationAction, val timestamp: Instant?) : Event(TYPE) {
 
 	companion object : EventDefinition<JingleMessageInitiationEvent> {
 

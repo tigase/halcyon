@@ -17,8 +17,10 @@
  */
 package tigase.halcyon.core.xmpp.modules.jingle
 
+import kotlinx.datetime.Instant
 import tigase.halcyon.core.AbstractHalcyon
 import tigase.halcyon.core.Context
+import tigase.halcyon.core.configuration.declaredUserJID
 import tigase.halcyon.core.eventbus.Event
 import tigase.halcyon.core.eventbus.EventDefinition
 import tigase.halcyon.core.eventbus.handler
@@ -33,7 +35,11 @@ abstract class AbstractJingleSessionManager<S : AbstractJingleSession>(
 ) : Jingle.SessionManager {
 
 	abstract fun createSession(context: Context, account: BareJID, jid: JID, sid: String, role: Content.Creator, initiationType: InitiationType): S
+	@Deprecated("Replaced", replaceWith = ReplaceWith("reportIncomingCallAction(session, action, timestamp)"))
 	abstract fun reportIncomingCallAction(session: S, action: MessageInitiationAction)
+	open fun reportIncomingCallAction(session: S, action: MessageInitiationAction, timestamp: Instant?) {
+		reportIncomingCallAction(session, action)
+	}
 
 	private val log = LoggerFactory.logger(name)
 
@@ -116,48 +122,52 @@ abstract class AbstractJingleSessionManager<S : AbstractJingleSession>(
 		video
 	}
 
-	override fun messageInitiation(context: Context, fromJid: JID, action: MessageInitiationAction) {
+	override fun messageInitiation(context: Context, fromJid: JID, action: MessageInitiationAction, timestamp: Instant?) {
 		when (action) {
 			is MessageInitiationAction.Propose -> {
 				if (this.session(context, fromJid, action.id) != null) {
 					return;
 				}
-				val session = open(context, context.boundJID?.bareJID!!, fromJid, action.id, Content.Creator.responder, InitiationType.Message);
-				reportIncomingCallAction(session, action);
+				val localJid = context.boundJID?.bareJID ?: context.config.declaredUserJID ?: return;
+				val session = open(context, localJid, fromJid, action.id, Content.Creator.responder, InitiationType.Message);
+				reportIncomingCallAction(session, action, timestamp);
 			}
 			is MessageInitiationAction.Ringing -> {
 				session(context, fromJid, action.id)?.let {
-					reportIncomingCallAction(it, action);
+					reportIncomingCallAction(it, action, timestamp);
 				}
 			}
 			is MessageInitiationAction.Retract -> {
 				session(context, fromJid, action.id)?.let {
-					reportIncomingCallAction(it, action)
+					reportIncomingCallAction(it, action, timestamp)
 				}
 				sessionTerminated(context, fromJid, action.id, TerminateReason.Cancel)
 			}
 			is MessageInitiationAction.Accept -> {
 				session(context, fromJid, action.id)?.let {
-					reportIncomingCallAction(it, action)
+					reportIncomingCallAction(it, action, timestamp)
 				}
-				sessionTerminated(context.boundJID!!.bareJID, action.id, null);
+				val localJid = context.boundJID?.bareJID ?: context.config.declaredUserJID ?: return;
+				sessionTerminated(localJid, action.id, null);
 			}
 			is MessageInitiationAction.Reject -> {
 				session(context, fromJid, action.id)?.let {
-					reportIncomingCallAction(it, action)
+					reportIncomingCallAction(it, action, timestamp)
 				}
-				sessionTerminated(context.boundJID!!.bareJID, action.id, TerminateReason.Decline)
+				val localJid = context.boundJID?.bareJID ?: context.config.declaredUserJID ?: return;
+				sessionTerminated(localJid, action.id, TerminateReason.Decline)
 			}
 			is MessageInitiationAction.Proceed -> {
 				val session = session(context, fromJid, action.id) ?: return;
-				reportIncomingCallAction(session, action);
+				reportIncomingCallAction(session, action, timestamp);
 				session.accepted(fromJid);
 			}
 			is MessageInitiationAction.Finish -> {
 				session(context, fromJid, action.id)?.let {
-					reportIncomingCallAction(it, action)
+					reportIncomingCallAction(it, action, timestamp)
 				}
-				sessionTerminated(context.boundJID!!.bareJID, action.id, action.reason)
+				val localJid = context.boundJID?.bareJID ?: context.config.declaredUserJID ?: return;
+				sessionTerminated(localJid, action.id, action.reason)
 			}
 		}
 	}
@@ -181,7 +191,8 @@ abstract class AbstractJingleSessionManager<S : AbstractJingleSession>(
 					sid,
 					media.map { MessageInitiationDescription("urn:xmpp:jingle:apps:rtp:1", it.name) },
 					null
-				)
+				),
+				null
 			);
 		}
 	}
