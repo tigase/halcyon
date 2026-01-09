@@ -29,7 +29,6 @@ actual class IdentityKey actual constructor(val publicKey: ECPublicKey) {
     actual constructor(byteArray: ByteArray, offset: Int) : this(ECPublicKeyImpl(publicKey = byteArray)) {
     }
 
-    @OptIn(ExperimentalStdlibApi::class)
     actual fun getFingerprint(): String = getPublicKey().serialize().toHexString()
 
     actual fun getPublicKey(): ECPublicKey = publicKey;

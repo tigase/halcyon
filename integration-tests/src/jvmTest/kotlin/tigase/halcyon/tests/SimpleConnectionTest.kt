@@ -31,7 +31,6 @@ class SimpleConnectionTest {
 
 	}
 
-	@OptIn(ReflectionModuleManager::class)
 	@Test
 	fun simpleConnectionAndDisconnection() {
 		val halcyon = createHalcyon()

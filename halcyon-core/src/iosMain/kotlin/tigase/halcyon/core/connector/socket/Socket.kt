@@ -27,7 +27,6 @@ import tigase.halcyon.core.logger.LoggerFactory
 import kotlin.properties.Delegates
 import kotlin.reflect.KProperty
 
-@OptIn(kotlinx.cinterop.ExperimentalForeignApi::class)
 class Socket {
 
 	private val log = LoggerFactory.logger("tigase.halcyon.core.connector.socket.Socket")

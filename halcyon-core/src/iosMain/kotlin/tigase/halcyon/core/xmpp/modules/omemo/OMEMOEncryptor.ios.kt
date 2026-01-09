@@ -394,7 +394,6 @@ class AesGcmEngine {
         return encrypted;
     }
 
-    @OptIn(ExperimentalStdlibApi::class)
     fun encrypt(iv: ByteArray, key: ByteArray, includeAuthTag: Boolean = true, chunkProvider: () -> EncryptionStep, chunkConsumer: (UByteArray) -> Unit) {
         val ctx = EVP_CIPHER_CTX_new();
         val cipher = if (key.size == 32) { EVP_aes_256_gcm() } else { EVP_aes_128_gcm() };

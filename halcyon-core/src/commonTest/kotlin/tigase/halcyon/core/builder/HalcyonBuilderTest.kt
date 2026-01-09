@@ -93,7 +93,6 @@ class HalcyonBuilderTest {
 		assertIs<AnonymousSaslConfig>(cvg.config.sasl)
 	}
 
-	@OptIn(ReflectionModuleManager::class)
 	@Test
 	fun modules_configuration() {
 		val h = createHalcyon(false) {

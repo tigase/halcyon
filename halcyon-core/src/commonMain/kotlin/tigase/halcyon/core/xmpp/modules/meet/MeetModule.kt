@@ -73,7 +73,6 @@ class MeetModule(context: Context) : AbstractXmppModule(context, XMLNS, emptyArr
         context.eventBus.fire(MeetInvitationEvent(from, invitation));
     }
 
-    @OptIn(ReflectionModuleManager::class)
     fun findMeetComponent(callback: (List<DiscoveryModule.Info>)->Unit) {
         val serverJid = context.boundJID!!.domain.toJID()
         context.modules.getModule<DiscoveryModule>().items(serverJid).response {

@@ -39,7 +39,6 @@ open class ElementWrapperSerializer<T>(
 
     private val elementSerializer: KSerializer<Element> = Element.serializer()
 
-    @OptIn(ExperimentalSerializationApi::class)
     override val descriptor: SerialDescriptor =
         SerialDescriptor("wrapper", elementSerializer.descriptor)
 

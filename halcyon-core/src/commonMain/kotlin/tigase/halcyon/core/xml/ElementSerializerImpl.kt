@@ -15,7 +15,6 @@ object ElementListSerializer : KSerializer<List<Element>> {
 
     val listSerializer: KSerializer<List<Element>> = ListSerializer(Element.serializer())
 
-    @OptIn(ExperimentalSerializationApi::class)
     override val descriptor: SerialDescriptor =
         SerialDescriptor("children", listSerializer.descriptor)
 

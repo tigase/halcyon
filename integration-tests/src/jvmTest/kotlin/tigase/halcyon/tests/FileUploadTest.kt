@@ -25,7 +25,6 @@ class FileUploadTest {
 
 	}
 
-	@OptIn(ReflectionModuleManager::class)
 	@Test
 	fun uploadFileTest() {
 		val halcyon = createHalcyon()
