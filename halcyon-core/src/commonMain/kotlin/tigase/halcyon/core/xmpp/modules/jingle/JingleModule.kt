@@ -19,6 +19,7 @@ package tigase.halcyon.core.xmpp.modules.jingle
 
 import tigase.halcyon.core.Context
 import tigase.halcyon.core.builder.HalcyonConfigDsl
+import tigase.halcyon.core.configuration.declaredUserJID
 import tigase.halcyon.core.eventbus.Event
 import tigase.halcyon.core.eventbus.EventDefinition
 import tigase.halcyon.core.modules.Criteria
@@ -272,23 +273,25 @@ class JingleModule(
 	fun sendMessageInitiation(
 		action: MessageInitiationAction, jid: BareJID,
 	): RequestBuilder<Unit, Message> {
-		when (action) {
-			is MessageInitiationAction.Proceed -> sendMessageInitiation(
-				MessageInitiationAction.Accept(action.id), context.boundJID!!.bareJID
-			).send()
+		(context.boundJID?.bareJID ?: context.config.declaredUserJID)?.let { selfJid ->
+			when (action) {
+				is MessageInitiationAction.Proceed -> sendMessageInitiation(
+					MessageInitiationAction.Accept(action.id), selfJid
+				).send()
 
-			is MessageInitiationAction.Reject -> {
-				if (jid != context.boundJID?.bareJID) {
-					sendMessageInitiation(
-						MessageInitiationAction.Reject(action.id, action.reason), context.boundJID!!.bareJID
-					).send()
+				is MessageInitiationAction.Reject -> {
+					if (jid != selfJid) {
+						sendMessageInitiation(
+							MessageInitiationAction.Reject(action.id, action.reason), selfJid
+						).send()
+					}
+				}
+
+				else -> {
 				}
 			}
-
-			else -> {
-			}
 		}
-
+		
 		return context.request.message {
 			element(action.actionName) {
 				xmlns = "urn:xmpp:jingle-message:0"

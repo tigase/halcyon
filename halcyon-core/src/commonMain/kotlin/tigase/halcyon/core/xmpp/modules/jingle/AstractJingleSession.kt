@@ -193,8 +193,13 @@ abstract class AbstractJingleSession(
 		received(Action.ContentSet(SDP(contents, bundle ?: emptyList())))
 	}
 
+	@Throws(IllegalStateException::class)
 	fun accept() {
 		lock.withLock {
+			when (state) {
+				is State.Terminated -> throw IllegalStateException("Cannot accept terminated session!")
+				else -> {}
+			}
 			state = State.Accepted
 			if (initiationType == InitiationType.Message) {
 				jingleModule.sendMessageInitiation(MessageInitiationAction.Proceed(sid), jid.bareJID).send()
