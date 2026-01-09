@@ -6,8 +6,7 @@ java-languageVersion = "17"
 # plugins versions
 dokka = "2.1.0"
 # we need this old version as newer throws compilation exception about IrErrorType (most likely from some dependency and missing type... or something similar...)
-jetbrains-kotlin = "2.1.21"
-#jetbrains-kotlin = "2.2.21"
+jetbrains-kotlin = "2.2.21"
 researchgate-release = "3.1.0"
 sphinx = "2.10.1"
 task-tree = "4.0.0"

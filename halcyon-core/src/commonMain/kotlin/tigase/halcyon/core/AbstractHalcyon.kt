@@ -92,7 +92,7 @@ abstract class AbstractHalcyon(configurator: ConfigurationBuilder) : Context, Pa
     private val lock = Lock()
     var state = State.Stopped
         get() = lock.withLock { field }
-        internal set(value) {
+        set(value) {
             val old = lock.withLock {
                 val old = field
                 field = value

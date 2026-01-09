@@ -13,19 +13,37 @@ val iosApply = { target: KotlinNativeTarget, openSslFrameworkDir: String, libsig
 		cinterops {
 			val OpenSSL by creating {
 				defFile("src/nativeInterop/cinterop/OpenSSL.def")
-				includeDirs("$openSslFrameworkDir/OpenSSL.framework/Headers/")
+				includeDirs("$openSslFrameworkDir/")
 				compilerOpts(
 					"-F$openSslFrameworkDir", "-framework", "OpenSSL"
 				)
 			}
 			val libsignal by creating {
 				defFile("src/nativeInterop/cinterop/libsignal.def")
-				includeDirs("$libsignalFrameworkDir/libsignal.framework/Headers/")
+				includeDirs("$libsignalFrameworkDir/")
 				compilerOpts(
 					"-F$libsignalFrameworkDir", "-framework", "libsignal"
 				)
 			}
 		}
+	}
+	target.binaries.all {
+		linkerOpts(
+			"-F$openSslFrameworkDir",
+			"-framework",
+			"OpenSSL",
+			"-F$libsignalFrameworkDir",
+			"-framework",
+			"libsignal"
+		)
+	}
+	target.compilerOptions {
+		freeCompilerArgs = listOf(
+			"-include-binary",
+			"$openSslFrameworkDir/OpenSSL.framework/OpenSSL",
+			"-include-binary",
+			"$libsignalFrameworkDir/libsignal.framework/libsignal"
+		)
 	}
 }
 
