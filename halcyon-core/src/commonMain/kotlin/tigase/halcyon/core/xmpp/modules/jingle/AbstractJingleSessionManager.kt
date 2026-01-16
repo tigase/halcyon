@@ -141,7 +141,7 @@ abstract class AbstractJingleSessionManager<S : AbstractJingleSession>(
 				session(context, fromJid, action.id)?.let {
 					reportIncomingCallAction(it, action, timestamp)
 				}
-				sessionTerminated(context, fromJid, action.id, TerminateReason.Cancel)
+				sessionTerminated(context, fromJid, action.id, action.reason ?: TerminateReason.Cancel)
 			}
 			is MessageInitiationAction.Accept -> {
 				session(context, fromJid, action.id)?.let {
@@ -155,7 +155,7 @@ abstract class AbstractJingleSessionManager<S : AbstractJingleSession>(
 					reportIncomingCallAction(it, action, timestamp)
 				}
 				val localJid = context.boundJID?.bareJID ?: context.config.declaredUserJID ?: return;
-				sessionTerminated(localJid, action.id, TerminateReason.Decline)
+				sessionTerminated(localJid, action.id, action.reason ?: TerminateReason.Decline)
 			}
 			is MessageInitiationAction.Proceed -> {
 				val session = session(context, fromJid, action.id) ?: return;

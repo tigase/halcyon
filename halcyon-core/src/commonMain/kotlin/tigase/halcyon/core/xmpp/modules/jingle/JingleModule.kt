@@ -302,10 +302,22 @@ class JingleModule(
 			element(action.actionName) {
 				xmlns = "urn:xmpp:jingle-message:0"
 				attribute("id", action.id)
-				if (action is MessageInitiationAction.Propose) {
-					action.descriptions.map { it.toElement() }
-						.forEach { addChild(it) }
-					action.data?.forEach { addChild(it) }
+				
+				when (action) {
+					is MessageInitiationAction.Propose -> {
+						action.descriptions.map { it.toElement() }
+							.forEach { addChild(it) }
+						action.data?.forEach { addChild(it) }
+					}
+					is TerminateMessageInitiationAction -> {
+						action.reason?.let { reason ->
+							element("reason") {
+								xmlns = JingleModule.XMLNS
+								element(reason.value) {}
+							}
+						}
+					}
+					else -> {}
 				}
 			}
 			element("store") {

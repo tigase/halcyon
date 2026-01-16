@@ -20,6 +20,10 @@ package tigase.halcyon.core.xmpp.modules.jingle
 import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xmpp.modules.jingle.AbstractJingleSessionManager.Media
 
+interface TerminateMessageInitiationAction {
+	val reason: TerminateReason?
+}
+
 sealed class MessageInitiationAction(open val id: String, val actionName: String) {
 	
 	class Propose(override val id: String, val descriptions: List<MessageInitiationDescription>, val data: List<Element>? = null) :
@@ -27,13 +31,13 @@ sealed class MessageInitiationAction(open val id: String, val actionName: String
 			val media = descriptions.map { Media.valueOf(it.media) }
 		}
 
-	class Retract(override val id: String, val reason: TerminateReason?) : MessageInitiationAction(id, "retract")
+	class Retract(override val id: String, override val reason: TerminateReason?) : MessageInitiationAction(id, "retract"), TerminateMessageInitiationAction
 
 	class Accept(override val id: String) : MessageInitiationAction(id, "accept")
 	class Proceed(override val id: String) : MessageInitiationAction(id, "proceed")
-	class Reject(override val id: String, val reason: TerminateReason?) : MessageInitiationAction(id, "reject")
+	class Reject(override val id: String, override val reason: TerminateReason?) : MessageInitiationAction(id, "reject"), TerminateMessageInitiationAction
 	class Ringing(override val id: String) : MessageInitiationAction(id, "ringing")
-	class Finish(override val id: String, val reason: TerminateReason?) : MessageInitiationAction(id, "finish")
+	class Finish(override val id: String, override val reason: TerminateReason?) : MessageInitiationAction(id, "finish"), TerminateMessageInitiationAction
 
 	companion object {
 
