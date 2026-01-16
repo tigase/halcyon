@@ -126,6 +126,7 @@ class DnsResolverInternal(val directTls: Boolean) {
     private var serviceName: String = if (directTls) { "_xmpps-client._tcp." } else { "_xmpp-client._tcp." }
     private var sdRef: DNSServiceRef? = null
     private var readSource: NSObject? = null;
+	private var timerSource: NSObject? = null;
 
 	fun resolve(domain: String, completionHandler: (Result<List<SrvRecord>>) -> Unit) {
 		stableRef = StableRef.create(this)
@@ -181,6 +182,12 @@ class DnsResolverInternal(val directTls: Boolean) {
 			}
 			//this.freeze();
 			dispatch_resume(readSource)
+			timerSource = dispatch_source_create(DISPATCH_SOURCE_TYPE_TIMER, 0u, 0u, queue)
+			dispatch_source_set_event_handler(timerSource) {
+				failed("Query timed out")
+			}
+			dispatch_source_set_timer(timerSource, dispatch_time(DISPATCH_TIME_NOW, ((10u * NSEC_PER_SEC).toLong())), DISPATCH_TIME_FOREVER, 100u * NSEC_PER_MSEC);
+			dispatch_resume(timerSource)
 		} else {
 			DNSServiceRefDeallocate(sdRef)
 			failed("DNSServiceQueryRecord returned error: " + result);
@@ -194,9 +201,17 @@ class DnsResolverInternal(val directTls: Boolean) {
 	private fun failed(reason: String) {
         log.finest(reason);
 		lock.withLock {
-			results.value = emptyList()
-			callback?.invoke(Result.failure(DnsException(message = "DNS resolution failed! Reason: " + reason)))
-            completed()
+			if (results.value.isEmpty()) {
+				results.value = emptyList()
+				callback?.invoke(Result.failure(DnsException(message = "DNS resolution failed! Reason: " + reason)))
+				completed()
+			} else {
+				val results = this.results.value.sortedBy { it.priority }
+				log.finest("DNS resolution failed! Reason: " + reason + ", but we got ${results.size} results...");
+				callback?.invoke(Result.success(results))
+				//callback = null;
+				completed()
+			}
 		}
 	}
 
@@ -212,6 +227,8 @@ class DnsResolverInternal(val directTls: Boolean) {
     // call only from the lock!!
     private fun completed() {
         log.finest { "releasing DNSResolver for $serviceName$domain" }
+		timerSource?.let { dispatch_source_cancel(it) }
+		timerSource = null
         readSource?.let { dispatch_source_cancel(it) }
         readSource = null
         sdRef?.let { DNSServiceRefDeallocate(it) }

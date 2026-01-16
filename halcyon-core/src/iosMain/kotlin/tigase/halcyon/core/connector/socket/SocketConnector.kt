@@ -25,6 +25,8 @@ import platform.posix.usleep
 import tigase.halcyon.core.Halcyon
 import tigase.halcyon.core.configuration.declaredUserJID
 import tigase.halcyon.core.connector.*
+import tigase.halcyon.core.eventbus.Event
+import tigase.halcyon.core.eventbus.EventDefinition
 import tigase.halcyon.core.excutor.TickExecutor
 import tigase.halcyon.core.logger.Level
 import tigase.halcyon.core.logger.LoggerFactory
@@ -50,6 +52,14 @@ sealed class SocketConnectionErrorEvent : ConnectionErrorEvent() {
 		}
 	}
 
+}
+
+class SocketConnectorEvent(val message: String): Event(TYPE) {
+
+	companion object : EventDefinition<SocketConnectorEvent> {
+
+		override val TYPE = "tigase.halcyon.core.connector.socket.SocketConnectorEvent"
+	}
 }
 
 class SocketConnector(halcyon: Halcyon) : AbstractConnector(halcyon) {
@@ -144,6 +154,7 @@ class SocketConnector(halcyon: Halcyon) : AbstractConnector(halcyon) {
 			append(">")
 		}
 		send(sb)
+		halcyon.eventBus.fire(SocketConnectorEvent("started stream: ${sb}"))
 	}
 
 	fun startTLS() {
@@ -152,6 +163,7 @@ class SocketConnector(halcyon: Halcyon) : AbstractConnector(halcyon) {
 			xmlns = XMLNS_START_TLS
 		}
 		halcyon.writer.writeDirectly(element)
+		halcyon.eventBus.fire(SocketConnectorEvent("starting TLS..."))
 	}
 
 	override fun start() {
@@ -160,6 +172,7 @@ class SocketConnector(halcyon: Halcyon) : AbstractConnector(halcyon) {
 
 		socket = Socket()
 		resolveTarget { name, port, directTls ->
+			halcyon.eventBus.fire(SocketConnectorEvent("resolved server to $name:$port direct TLS = ${directTls}"))
 			socket?.readCallback = { data ->
 				log.finest("read data: " + data.size)
 				this.processSocketData(data)
@@ -170,6 +183,7 @@ class SocketConnector(halcyon: Halcyon) : AbstractConnector(halcyon) {
 					Socket.State.connected -> {
 						log.fine { "Connection established" }
 						this.state = State.Connected
+						halcyon.eventBus.fire(SocketConnectorEvent("connection established to $name:$port direct TLS = ${directTls}"))
 						restartStream()
 					}
 
@@ -184,6 +198,7 @@ class SocketConnector(halcyon: Halcyon) : AbstractConnector(halcyon) {
                 val domain = (halcyon.config.connection as SocketConnectorConfig).domain
                 sslEngine = SSLEngine(this, domain)
             }
+			halcyon.eventBus.fire(SocketConnectorEvent("connecting to server at $name:$port direct TLS = ${directTls}"))
 			socket?.connect(name = name, port = port)
 			socket?.startProcessing()
 		}
@@ -212,6 +227,7 @@ class SocketConnector(halcyon: Halcyon) : AbstractConnector(halcyon) {
 	}
 
 	private fun closeStream() {
+		halcyon.eventBus.fire(SocketConnectorEvent("closing stream: </stream:stream>"))
 		send("</stream:stream>")
 	}
 
@@ -261,12 +277,14 @@ class SocketConnector(halcyon: Halcyon) : AbstractConnector(halcyon) {
 		log.info { "Proceeding TLS" }
 		val domain = (halcyon.config.connection as SocketConnectorConfig).domain
 		sslEngine = SSLEngine(this, domain)
+		halcyon.eventBus.fire(SocketConnectorEvent("TLS started!"))
 		restartStream()
 	}
 
     private var lastEndpoint: Pair<Int,Boolean>? = null
 
 	private fun resolveTarget(completionHandler: (String, Int, Boolean) -> Unit) {
+		halcyon.eventBus.fire(SocketConnectorEvent("resolving target to connect..."))
 		val location = halcyon.getModuleOrNull(StreamManagementModule)?.resumptionLocation
 		if (location != null) {
 			return completionHandler(location, lastEndpoint?.first ?: config.port, lastEndpoint?.second ?: config.directTls)
