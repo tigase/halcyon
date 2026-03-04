@@ -305,7 +305,7 @@ class SSLEngine(connector: SocketConnector, domain: String) {
 				kCFStringEncodingUTF8,
 				isExternalRepresentation = false
 			)
-			val policy = SecPolicyCreateSSL(false, cfdomain)
+			val policy = SecPolicyCreateSSL(true, cfdomain)
 
 			memScoped {
 				val trust = trustRef.getPointer(MemScope()).pointed.value!!

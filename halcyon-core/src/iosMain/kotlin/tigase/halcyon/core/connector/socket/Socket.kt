@@ -51,7 +51,12 @@ class Socket {
 			state = State.connecting
 			memScoped {
 				val hname = gethostbyname(name)
-				val inetaddr = hname!!.pointed.h_addr_list!![0]!!
+				val inetaddr = hname?.pointed?.h_addr_list?.let { it[0] };
+				if (inetaddr == null) {
+					log.warning("connection failed! incorrect inet address for name $name")
+					state = State.disconnected
+					return@memScoped;
+				}
 				val ip = "${
 					inetaddr[0].toUInt()
 						.mod(256u)
