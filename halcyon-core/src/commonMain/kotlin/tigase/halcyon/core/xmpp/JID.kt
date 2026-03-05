@@ -17,6 +17,9 @@
  */
 package tigase.halcyon.core.xmpp
 
+import kotlinx.serialization.Serializable
+
+@Serializable
 sealed interface JID {
 
 	val localpart: String?
