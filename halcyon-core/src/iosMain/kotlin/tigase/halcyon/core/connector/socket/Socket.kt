@@ -24,8 +24,10 @@ import platform.darwin.*
 import platform.darwin.ByteVar
 import platform.posix.*
 import tigase.halcyon.core.logger.LoggerFactory
+import tigase.halcyon.core.utils.Lock
 import kotlin.properties.Delegates
 import kotlin.reflect.KProperty
+import kotlin.time.Duration.Companion.milliseconds
 
 class Socket {
 
@@ -40,11 +42,60 @@ class Socket {
 
 	private var sockfd: Int = -1
 	var state: State by Delegates.observable(State.disconnected) { _: KProperty<*>, _: State, newState: State ->
+		if (newState == State.disconnected) {
+			lock.withLock {
+				disconnection_callback?.invoke()
+			}
+		}
 		stateCallback?.invoke(newState)
 	}
 	var readCallback: ((ByteArray) -> Unit)? = null
 	var stateCallback: ((State) -> Unit)? = null
+	private var disconnection_callback: (() -> Unit)? = null
 	private val queue = dispatch_queue_create("SocketReadQueue", null)
+
+	fun awaitDisconnection() {
+		val semaphore = lock.withLock {
+			if (state == State.disconnected) {
+				log.finest("not waiting for disconnection, connection already closed!")
+				return@withLock null;
+			}
+			return@withLock memScoped {
+				val semVar = alloc<semaphore_tVar>()
+				if (semaphore_create(mach_task_self_, semVar.ptr, SYNC_POLICY_FIFO, 0) != KERN_SUCCESS) {
+					log.finest("not waiting for disconnection, couldn't create semaphore!")
+					return@memScoped null;
+				}
+
+				val semaphore = semVar.value;
+
+				disconnection_callback = {
+					semaphore_signal(semaphore);
+				}
+
+				return@memScoped semaphore;
+			}
+		}
+
+		semaphore?.let { semaphore ->
+			memScoped {
+				val timeout = alloc<mach_timespec_t>()
+				timeout.tv_sec = 0u
+				// reduced disconnection timeout from 175 ms (175_000_000) to 50 ms
+				timeout.tv_nsec = 50.milliseconds.inWholeNanoseconds.toInt()
+
+				log.info("awaiting to close connection...")
+				semaphore_timedwait(semaphore, timeout.readValue())
+				log.info("connection was closed successfully!")
+
+				lock.withLock {
+					disconnection_callback = null;
+				}
+
+				semaphore_destroy(mach_task_self_, semaphore);
+			}
+		}
+	}
 
 	fun connect(name: String, port: Int) {
 		dispatch_sync(queue) {
@@ -70,7 +121,7 @@ class Socket {
 					inetaddr[3].toUInt()
 						.mod(256u)
 				}"
-				var addr = alloc<sockaddr_in>()
+				val addr = alloc<sockaddr_in>()
 				addr.sin_family = AF_INET.convert()
 				inet_pton(AF_INET, ip, addr.sin_addr.ptr)
 				addr.sin_port = swapBytes(port.toUShort())
@@ -95,8 +146,21 @@ class Socket {
 		}
 	}
 
+	private val lock = Lock()
+	private var kq: Int? = null;
+
 	fun disconnect() {
 		memScoped {
+			lock.withLock { this@Socket.kq }?.let { kq ->
+				val triggerEv = alloc<kevent>()
+				triggerEv.ident = 1uL // To samo ID co przy rejestracji
+				triggerEv.filter = EVFILT_USER.toShort()
+				triggerEv.flags = 0.toUShort()
+				triggerEv.fflags = NOTE_TRIGGER.toUInt() // To budzi kevent!
+
+				kevent(kq, triggerEv.ptr, 1, null, 0, null)
+			}
+
 			close(sockfd)
 			sockfd = -1
 		}
@@ -107,6 +171,9 @@ class Socket {
 			log.finest("preparing kqueue...")
 			memScoped {
 				val kq = kqueue()
+				lock.withLock {
+					this@Socket.kq = kq
+				}
 				val evSet = alloc<kevent>()
 				evSet.ident = sockfd.toULong()
 				evSet.filter = EVFILT_READ.toShort()
@@ -114,6 +181,18 @@ class Socket {
 				evSet.fflags = 0.toUInt()
 				evSet.data = 0
 				evSet.udata = null
+
+				val userEv = alloc<kevent>()
+				userEv.ident = 1uL // Dowolne ID dla Twojego zdarzenia
+				userEv.filter = EVFILT_USER.toShort()
+				userEv.flags = (EV_ADD or EV_CLEAR).toUShort() // EV_CLEAR zresetuje zdarzenie po odebraniu
+				userEv.fflags = 0u
+				userEv.data = 0
+				userEv.udata = null
+
+				if (kevent(kq, userEv.ptr, 1, null, 0, null) < 0) {
+					log.severe("Failed to register EVFILT_USER")
+				}
 
 				if (kevent(kq, evSet.ptr, 1, null, 0, null) < 0) {
 					log.finest("kqueue init failed!")
@@ -127,15 +206,21 @@ class Socket {
 						log.finest("received ${nev} events from " + kq)
 						if (nev > 0) {
 							for (i in 0..(nev - 1)) {
-								val fd = evList[i].ident.toInt()
+								val event = evList[i];
+
+								if (event.filter == EVFILT_USER.toShort() && event.ident == 1uL) {
+									sockfd = -1
+									break;
+								}
+
+								val fd = event.ident.toInt()
 								if (fd == sockfd) {
-									log.finest("event ${evList[i].filter} for ${fd}, isRead: ${evList[i].filter == EVFILT_READ.toShort()}")
-									if ((evList[i].fflags and EV_EOF.toUInt()) != 0.toUInt()) {
-										state = State.disconnected
+									log.finest("event ${event.filter} for ${fd}, isRead: ${event.filter == EVFILT_READ.toShort()}")
+									if ((event.flags and EV_EOF.toUShort()) != 0.toUShort()) {
 										close(fd)
 										sockfd = -1
 										break
-									} else if (evList[i].filter == EVFILT_READ.toShort()) {
+									} else if (event.filter == EVFILT_READ.toShort()) {
 										var read: ssize_t
 										memScoped {
 											do {
@@ -156,10 +241,19 @@ class Socket {
 									}
 								}
 							}
+						} else if (nev < 0) {
+							if (errno == EBADF) {
+								log.info("Socket was closed from another thread")
+								sockfd = -1
+							}
 						}
 						log.finest("ended events processing loop")
 					}
 					log.finest("processing of events finished..")
+					lock.withLock {
+						state = State.disconnected;
+						this@Socket.kq = null
+					}
 				}
 			}
 		}

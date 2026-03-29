@@ -21,7 +21,6 @@ import kotlinx.cinterop.toKString
 import platform.Network.nw_error_get_error_code
 import platform.Network.nw_error_t
 import platform.darwin.*
-import platform.posix.usleep
 import tigase.halcyon.core.Halcyon
 import tigase.halcyon.core.configuration.declaredUserJID
 import tigase.halcyon.core.connector.*
@@ -211,9 +210,11 @@ class SocketConnector(halcyon: Halcyon) : AbstractConnector(halcyon) {
 				if (state == State.Connected) closeStream()
 				state = State.Disconnecting
 				whitespacePingExecutor.stop()
-				usleep(175000u)
-				if (state != State.Disconnected) {
-					socket?.disconnect()
+				socket?.awaitDisconnection()
+				socket?.let {
+					if (it.state != Socket.State.disconnected) {
+						it.disconnect()
+					}
 				}
 			} finally {
 				// delayed firing "disconnected" event, to delay reconnection to process all events before reconnection
