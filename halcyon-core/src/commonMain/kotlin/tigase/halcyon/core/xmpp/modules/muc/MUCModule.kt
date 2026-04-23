@@ -51,6 +51,15 @@ enum class State {
  */
 class Occupant(pr: Presence) {
 
+    val nick: String
+        get() = presence.from?.resource!!;
+
+    val occupantId: String?
+        get() = presence.getChildrenNS("occupant-id", "urn:xmpp:occupant-id:0")?.attributes["id"]
+
+    val jid: JID?
+        get() = MucUserExt.createUserExt(presence)?.jid;
+
     /**
      * Last received presence stanza of occupant.
      */
@@ -229,6 +238,9 @@ class MucUserExt(private val element: Element) {
             Affiliation.values().first { it.xmppValue == a }
         }.firstOrNull() ?: Affiliation.None
 
+    val jid: JID?
+        get() = element.getChildren("item").mapNotNull { it.attributes["jid"] }.map { it.toJID() }.firstOrNull()
+
     init {
         _statuses.addAll(extractStatuses())
     }
@@ -241,6 +253,11 @@ class MucUserExt(private val element: Element) {
 
         fun createUserExt(presence: Presence): MucUserExt? {
             val x = presence.getChildrenNS("x", "${MUCModule.XMLNS}#user") ?: return null
+            return MucUserExt(x)
+        }
+
+        fun createUserExt(message: Message): MucUserExt? {
+            val x = message.getChildrenNS("x", "${MUCModule.XMLNS}#user") ?: return null
             return MucUserExt(x)
         }
 
