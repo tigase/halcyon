@@ -24,6 +24,8 @@ import tigase.halcyon.core.xmpp.forms.FormType
 import tigase.halcyon.core.xmpp.forms.JabberDataForm
 import tigase.halcyon.core.xmpp.modules.mam.MAMModule
 import tigase.halcyon.core.xmpp.modules.mam.MAMQueryFinished
+import tigase.halcyon.core.xmpp.modules.mix.getMixAnnotation
+import tigase.halcyon.core.xmpp.modules.muc.MUCModule
 import tigase.halcyon.core.xmpp.modules.pubsub.PubSubItemEvent
 import tigase.halcyon.core.xmpp.modules.pubsub.PubSubModule
 import tigase.halcyon.core.xmpp.modules.uniqueId.getStanzaIDBy
@@ -547,7 +549,15 @@ class OMEMOModule(
             localJid,
             emptyMap<SignalProtocolAddress, SessionCipher>().toMutableMap()
         )
-        val result = OMEMOEncryptor.decrypt(protocolStore, session, wrap(element), healSession = { address ->
+        val message: Message = wrap(element);
+        val sender = when (message.type) {
+            MessageType.Groupchat -> (message.getMixAnnotation()?.jid ?: senderJid.resource?.let { nick ->
+                context.modules.getModuleOrNull(MUCModule)?.store?.findRoom(senderJid.bareJID)?.occupants[nick]?.jid?.bareJID
+            } ?: senderJid.bareJID)
+            else -> senderJid.bareJID;
+        }
+
+        val result = OMEMOEncryptor.decrypt(protocolStore, session, sender, message, healSession = { address ->
             val hasStableId = context.boundJID?.bareJID?.let { element.getStanzaIDBy(it) } != null;
             if (hasStableId) {
                 if (postpone) {

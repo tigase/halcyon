@@ -16,10 +16,9 @@ import tigase.halcyon.core.logger.LoggerFactory
 import tigase.halcyon.core.toBase64
 import tigase.halcyon.core.xml.Element
 import tigase.halcyon.core.xml.element
-import tigase.halcyon.core.xmpp.modules.mix.getMixAnnotation
+import tigase.halcyon.core.xmpp.BareJID
 import tigase.halcyon.core.xmpp.modules.uniqueId.getStanzaIDBy
 import tigase.halcyon.core.xmpp.stanzas.Message
-import tigase.halcyon.core.xmpp.toBareJID
 
 actual object OMEMOEncryptor {
     
@@ -73,6 +72,7 @@ actual object OMEMOEncryptor {
     actual fun decrypt(
         store: SignalProtocolStore,
         session: OMEMOSession,
+        sender: BareJID,
         stanza: Message,
         healSession: (SignalProtocolAddress)->Unit
     ): OMEMOMessage {
@@ -86,7 +86,7 @@ actual object OMEMOEncryptor {
             }
             val senderId = encElement.getFirstChild("header")?.attributes?.get("sid")?.toInt()
                 ?: throw OMEMOException.NoSidAttribute()
-            val senderAddr = SignalProtocolAddress((stanza.getMixAnnotation()?.jid ?: stanza.attributes["from"]!!.toBareJID()).toString(), senderId)
+            val senderAddr = SignalProtocolAddress(sender.toString(), senderId)
             val iv = encElement.getFirstChild("header")?.getFirstChild("iv")?.value?.fromBase64()
                 ?: throw OMEMOException.NoIV()
 
