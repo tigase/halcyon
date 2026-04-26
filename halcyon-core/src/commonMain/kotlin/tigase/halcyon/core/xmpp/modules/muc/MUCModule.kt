@@ -630,6 +630,7 @@ class MUCModule(override val context: Context) : XmppModule, MUCModuleConfig {
                         attributes["affiliation"] = a.affiliation.xmppValue
                         a.jid?.let { attributes["jid"] = it.toString() }
                         a.role?.let { attributes["role"] = it.xmppValue }
+                        a.nickname?.let { attributes["nick"] = it }
                     }
                 }
             }
