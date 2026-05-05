@@ -357,7 +357,7 @@ class MUCModule(override val context: Context) : XmppModule, MUCModuleConfig {
             return;
         }
         val room = store.findRoom(stanza.from!!.bareJID) ?: throw XMPPException(ErrorCondition.ServiceUnavailable)
-        val nickname = stanza.from?.resource ?: return
+        val nickname = stanza.from?.resource;
 
         if (stanza.type != MessageType.Error) {
             context.eventBus.fire(MucRoomEvents.ReceivedMessage(room, nickname, stanza))

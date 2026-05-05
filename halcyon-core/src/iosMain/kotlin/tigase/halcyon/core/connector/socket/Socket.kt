@@ -166,6 +166,10 @@ class Socket {
 		}
 	}
 
+	private val writeQueue = ArrayDeque<ByteArray>();
+	private var writeOffset = 0;
+	private var writeEventRegistered = false;
+
 	fun startProcessing() {
 		dispatch_async(queue) {
 			log.finest("preparing kqueue...")
@@ -215,29 +219,72 @@ class Socket {
 
 								val fd = event.ident.toInt()
 								if (fd == sockfd) {
-									log.finest("event ${event.filter} for ${fd}, isRead: ${event.filter == EVFILT_READ.toShort()}")
+									log.finest("event ${event.filter} for ${fd}, isRead: ${event.filter == EVFILT_READ.toShort()}, isWrite: ${event.filter == EVFILT_WRITE.toShort()}")
 									if ((event.flags and EV_EOF.toUShort()) != 0.toUShort()) {
 										close(fd)
 										sockfd = -1
 										break
-									} else if (event.filter == EVFILT_READ.toShort()) {
-										var read: ssize_t
-										memScoped {
-											do {
-												val data = allocArray<ByteVar>(2048)
-												read = read(fd, data, 2048.toULong())
-												log.finest("read ${read} bytes from socket " + fd)
-												if (read >= 0) {
-													readCallback?.invoke(data.readBytes(read.toInt()))
+									} else {
+										when (event.filter.toInt()) {
+											EVFILT_READ -> {
+												var read: ssize_t
+												memScoped {
+													do {
+														val data = allocArray<ByteVar>(2048)
+														read = read(fd, data, 2048.toULong())
+														log.finest("read ${read} bytes from socket " + fd)
+														if (read >= 0) {
+															readCallback?.invoke(data.readBytes(read.toInt()))
+														}
+														val socketStatus = fcntl(fd, F_GETFL);
+														log.finest("socket status reported as: " + socketStatus)
+													} while (read > 0)
 												}
-												val socketStatus = fcntl(fd, F_GETFL);
-												log.finest("socket status reported as: " + socketStatus)
-											} while (read > 0)
+											}
+											EVFILT_WRITE -> {
+												writeLock.withLock {
+													writeEventRegistered = false
+													while (writeQueue.isNotEmpty()) {
+														val data = writeQueue.first();
+														val result = memScoped {
+															send(
+																sockfd,
+																data.refTo(writeOffset),
+																(data.size - writeOffset).convert(),
+																0
+															)
+														}
+
+														when {
+															result > 0 -> {
+																writeOffset += result.toInt()
+																if (writeOffset >= data.size) {
+																	writeQueue.removeFirst()
+																	writeOffset = 0
+																}
+															}
+															result < 0 -> {
+																val err = errno
+																if (err == EAGAIN || err == EWOULDBLOCK) {
+																	log.info("socket buffer was full, waiting for next write event!")
+																	registerWriteEvent()
+																	writeEventRegistered = true
+																	return@withLock
+																} else {
+																	log.warning("send failed errno=$err, disconnecting")
+																	state = State.disconnected
+																	return@withLock
+																}
+															}
+															else -> {
+																state = State.disconnected
+																return@withLock
+															}
+														}
+													}
+												}
+											}
 										}
-//                            if (read < 0) {
-//                                close(fd);
-//                                break;
-//                            }
 									}
 								}
 							}
@@ -290,22 +337,77 @@ class Socket {
 		}
 	}
 
+	private val writeLock = Lock();
+
 	fun send(data: ByteArray) {
 		if (data.size <= 0) {
 			log.finest("skipping sending data, empty buffer..")
 			return
 		}
 
-		memScoped {
-			val result = send(sockfd, data.refTo(0), data.size.convert(), 0)
-			log.finest("sent ${result} bytes")
-			if (result < data.size) {
-				log.warning("disconnecting, we failed to send ${data.size} bytes, sent only ${result}")
-				// FIXME: we got disconnected!!
-				state = State.disconnected
+		lock.withLock {
+			if (writeQueue.isEmpty() && !writeEventRegistered) {
+				val sent = memScoped {
+					send(sockfd, data.refTo(0), data.size.convert(), 0)
+				}
+				when {
+					sent >= data.size -> return@withLock
+					sent > 0 -> {
+						writeQueue.addLast(data.sliceArray(sent.toInt() until data.size))
+					}
+					else -> {
+						if (errno != EAGAIN && errno != EWOULDBLOCK) {
+							log.warning("disconnecting, we failed to send ${data.size} bytes, sent only ${sent}, error = $errno")
+							// FIXME: we got disconnected!!
+							state = State.disconnected
+						}
+						writeQueue.addLast(data)
+					}
+				}
+			} else {
+				writeQueue.addLast(data);
+			}
+
+			if (!writeEventRegistered) {
+				registerWriteEvent();
+				writeEventRegistered = true;
 			}
 		}
 	}
+
+	private fun registerWriteEvent() {
+		lock.withLock {
+			val kq = this.kq ?: return@withLock;
+			memScoped {
+				val evSet = alloc<kevent>()
+				evSet.ident = sockfd.toULong()
+				evSet.filter = EVFILT_WRITE.toShort()
+				evSet.flags = (EV_ADD or EV_ONESHOT).toUShort()
+				evSet.fflags = 0.toUInt()
+				evSet.data = 0
+				evSet.udata = null
+
+				kevent(kq, evSet.ptr, 1, null, 0, null)
+			}
+		}
+	}
+
+//	fun write(data: ByteArray) {
+//		if (data.size <= 0) {
+//			log.finest("skipping sending data, empty buffer..")
+//			return
+//		}
+//
+//		memScoped {
+//			val result = send(sockfd, data.refTo(0), data.size.convert(), 0)
+//			log.finest("sent ${result} bytes")
+//			if (result < data.size) {
+//				log.warning("disconnecting, we failed to send ${data.size} bytes, sent only ${result}")
+//				// FIXME: we got disconnected!!
+//				state = State.disconnected
+//			}
+//		}
+//	}
 
 	private fun swapBytes(v: UShort): UShort {
 		val p1 = (v.toInt() and 0xFF) shl 8
