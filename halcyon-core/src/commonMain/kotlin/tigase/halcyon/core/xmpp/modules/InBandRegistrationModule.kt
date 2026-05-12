@@ -128,7 +128,9 @@ class InBandRegistrationModule(context: Context) : InBandRegistrationModuleConfi
 		}
 	}.map { }
 
-	fun cancelRegistration(): RequestBuilder<Unit, IQ> = context.request.iq {
+	fun cancelRegistration(toJID: BareJID): RequestBuilder<Unit, IQ> = context.request.iq {
+		type = IQType.Set
+		to = toJID
 		query(XMLNS) {
 			"remove" {}
 		}

@@ -393,7 +393,11 @@ class MUCModule(override val context: Context) : XmppModule, MUCModuleConfig {
 
         val selfPresence = (mucExt != null && mucExt.statuses.contains(110)) || nickname == room.nickname
 
-        if (room.state == State.Joined && selfPresence) {
+        if (room.state == State.Joined && selfPresence && when (stanza.type) {
+                PresenceType.Error, PresenceType.Unavailable -> true
+                else -> false
+            }
+        ) {
             // you leave room
             room.state = State.NotJoined
             room.occupants.clear()
@@ -465,7 +469,9 @@ class MUCModule(override val context: Context) : XmppModule, MUCModuleConfig {
                 }
             }
         }.onSend {
-            room.state = State.RequestSent
+            if (room.state != State.Joined) {
+                room.state = State.RequestSent
+            }
         }
     }
 
